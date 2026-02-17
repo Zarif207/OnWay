@@ -181,7 +181,40 @@ const AboutUs = () => {
                     </div>
                 </div>
             </section>
-            
+            {/* 6. Timeline / Milestone Section */}
+            <section className="py-24 px-6 max-w-7xl mx-auto">
+                <div className="text-center mb-20">
+                    <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">
+                        Our <span className="bg-black text-white px-4">Evolution</span>
+                    </h2>
+                </div>
+
+                <div className="relative">
+                    {/* Vertical Line for Desktop */}
+                    <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gray-200"></div>
+
+                    <div className="space-y-16">
+                        {[
+                            { year: "2021", title: "The Spark", desc: "Started with just 10 bikes and a dream to fix Dhaka's traffic." },
+                            { year: "2022", title: "Expansion", desc: "Reached 100k active riders and expanded to Chittagong." },
+                            { year: "2024", title: "Tech Revolution", desc: "Launched our AI-driven route optimization system." }
+                        ].map((milestone, idx) => (
+                            <div key={idx} className={`flex flex-col md:flex-row items-center w-full ${idx % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+                                <div className="w-full md:w-1/2 flex justify-center md:justify-start px-12">
+                                    <div className={`${idx % 2 === 0 ? 'md:text-left' : 'md:text-right'} text-center w-full`}>
+                                        <h3 className="text-4xl font-black text-green-500 mb-2">{milestone.year}</h3>
+                                        <h4 className="text-xl font-bold uppercase mb-2 text-black">{milestone.title}</h4>
+                                        <p className="text-gray-500">{milestone.desc}</p>
+                                    </div>
+                                </div>
+                                {/* Circle on line */}
+                                <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-black border-4 border-green-500 rounded-full hidden md:block"></div>
+                                <div className="w-full md:w-1/2"></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
             {/* 6. Safety Banner */}
             <section className="bg-black py-20 px-6 m-24 w-full mx-auto">

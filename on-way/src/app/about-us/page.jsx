@@ -152,6 +152,38 @@ const AboutUs = () => {
           </div>
         </div>
       </section>
+       {/* 4. Safety Banner */}
+      <section className="bg-black py-20 px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-white text-4xl md:text-5xl font-black italic mb-8 uppercase tracking-tighter">
+            Safe. Secure.{" "}
+            <span className="text-green-500">Unstoppable.</span>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="text-white">
+              <h4 className="text-green-500 font-bold mb-2">GPS TRACKED</h4>
+              <p className="text-gray-400 text-sm">
+                Every meter of your journey is recorded.
+              </p>
+            </div>
+
+            <div className="text-white">
+              <h4 className="text-green-500 font-bold mb-2">VERIFIED</h4>
+              <p className="text-gray-400 text-sm">
+                Drivers are vetted with strict protocols.
+              </p>
+            </div>
+
+            <div className="text-white">
+              <h4 className="text-green-500 font-bold mb-2">24/7 HELPLINE</h4>
+              <p className="text-gray-400 text-sm">
+                We are just one tap away, anytime.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

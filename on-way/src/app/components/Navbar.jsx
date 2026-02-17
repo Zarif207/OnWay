@@ -26,6 +26,9 @@ const Navbar = () => {
           <Link href="/safety" className="hover:text-yellow-400 transition">
             SOS
           </Link>
+          <Link href="/help" className="hover:text-yellow-400 transition">
+            Help
+          </Link>
         </div>
 
         {/* Buttons */}
@@ -64,6 +67,9 @@ const Navbar = () => {
           </Link>
           <Link href="/safety" className="block hover:text-yellow-400">
             SOS
+          </Link>
+          <Link href="/help" className="block hover:text-yellow-400">
+            Help
           </Link>
           <Link href="/login" className="block hover:text-yellow-400">
             Login

@@ -98,6 +98,60 @@ const AboutUs = () => {
           ))}
         </div>
       </section>
+      {/* 3. Team Section */}
+      <section className="py-24 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+          
+          {/* Left Intro */}
+          <div className="lg:col-span-1">
+            <h2 className="text-4xl font-black italic uppercase leading-none mb-6">
+              The <br /> Architects
+            </h2>
+            <p className="text-gray-500 mb-8">
+              We are a team of dreamers and doers dedicated to making Dhaka
+              better.
+            </p>
+            <button className="bg-green-500 text-white px-6 py-2 font-bold uppercase text-sm">
+              Join Us
+            </button>
+          </div>
+
+          {/* Right Grid */}
+          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teamMembers.map((member, index) => (
+              <div
+                key={index}
+                className="bg-white p-4 shadow-xl shadow-gray-200/50 border border-gray-100 hover:-translate-y-2 transition-transform duration-300"
+              >
+                <div className="aspect-4/5 overflow-hidden mb-6">
+                  <img
+                    src={member.img}
+                    alt={member.name}
+                    className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                  />
+                </div>
+
+                <h3 className="text-xl font-black uppercase tracking-tighter">
+                  {member.name}
+                </h3>
+
+                <div className="flex items-center gap-1 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-green-500 text-xs">
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                <p className="text-gray-500 text-sm leading-snug">
+                  Expert in {member.role.toLowerCase()} with a passion for urban
+                  mobility.
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

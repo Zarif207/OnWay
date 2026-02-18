@@ -26,7 +26,7 @@ export default function Platform() {
             <SectionHeading
               eyebrow="The OnWay platform"
               title="Everything you need, right in your pocket"
-              description="Ride, travel, eat, send, and pay — OnWay brings everyday services together with a consistent experience across mobile and web."
+              description="Ride, travel, and pay — OnWay brings everyday mobility services together with a consistent experience across mobile and web."
             />
           </div>
 
@@ -122,9 +122,9 @@ export default function Platform() {
                 Consistent quality across every service
               </h3>
               <p className="mt-4 text-sm leading-relaxed text-zinc-600">
-                Whether it’s a quick ride, a family trip, a late-night meal, or
-                a last-minute document delivery — OnWay keeps the experience
-                simple, fast, and dependable.
+                Whether it’s a quick ride, a family trip, or a budget-friendly
+                CNG commute — OnWay keeps the experience simple, fast, and
+                dependable.
               </p>
 
               <div className="mt-7 grid gap-3">
@@ -152,5 +152,6 @@ export default function Platform() {
     </section>
   );
 }
+
 
 

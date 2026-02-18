@@ -15,7 +15,7 @@ export default function Safety() {
             <SectionHeading
               eyebrow="Every step of the way"
               title="Safety and support built into every trip"
-              description="OnWay pairs smart safety features with responsive support so you can ride, order, and deliver with confidence."
+              description="OnWay pairs smart safety features with responsive support so you can ride and travel with confidence."
             />
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -75,5 +75,6 @@ export default function Safety() {
     </section>
   );
 }
+
 
 

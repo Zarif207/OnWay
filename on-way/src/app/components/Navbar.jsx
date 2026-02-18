@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronDown, Download, Menu, X } from "lucide-react";
+import Image from "next/image";
 
 const nav = [
   { label: "Home", href: "/" },
@@ -14,7 +15,6 @@ const nav = [
 ];
 
 const more = [
-  { label: "OnWay for Business", href: "#business" },
   { label: "Press", href: "#press" },
 ];
 
@@ -38,13 +38,13 @@ const Navbar = () => {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="text-2xl font-extrabold tracking-tight text-zinc-900"
+          className="flex items-center  text-2xl font-extrabold tracking-tight text-zinc-900"
           aria-label="OnWay"
         >
-          <span className="rounded-xl bg-yellow-400 px-2 py-1 text-zinc-950">
-            On
-          </span>
-          <span className="ml-1">Way</span>
+
+          <Image src="https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png" alt="OnWay" width={64} height={64} />
+
+          <span className="text-3xl font-extrabold tracking-tight text-zinc-900 mt-2">Way</span>
         </Link>
 
         <div className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 md:flex">

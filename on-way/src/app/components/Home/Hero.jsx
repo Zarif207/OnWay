@@ -1,160 +1,240 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BadgeCheck, MapPin, Shield, Clock, ChevronDown, Navigation2 } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Clock,
+  Headphones,
+  MapPin,
+  Navigation2,
+  ShieldCheck,
+  Star,
+  Wallet,
+} from "lucide-react";
 import Container from "./Container";
-import { Button, Pill } from "./ui";
+import { Button } from "./ui";
+import Image from "next/image";
 
 export default function Hero() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-gradient-to-b from-zinc-50 to-white"
+      className="relative min-h-screen overflow-hidden"
     >
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-28 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-yellow-300/30 blur-3xl" />
-        <div className="absolute -bottom-36 -left-24 h-[520px] w-[520px] rounded-full bg-indigo-400/20 blur-3xl" />
+      {/* Full Background Image */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="relative h-full w-full">
+          <Image
+            src="https://i.ibb.co/fzFZnkkH/7263163c0bf80eb3fade3c80e145d6d1.jpg"
+            alt="Yellow taxi cab background"
+            fill
+            className="object-cover object-center"
+            priority
+            quality={90}
+            sizes="100vw"
+          />
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40" />
+        </div>
       </div>
 
-      <Container className="relative py-14 sm:py-18 lg:py-24">
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          <div data-aos="fade-up">
-            <Pill className="w-fit">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 text-zinc-900">
-                <BadgeCheck className="h-4 w-4" />
-              </span>
-              One app, all journeys — OnWay
-            </Pill>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut" }}
-              className="mt-5 text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl lg:text-6xl"
-            >
-              Your everyday{" "}
-              <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                mobility & delivery
-              </span>{" "}
-              super app.
-            </motion.h1>
-
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-zinc-600 sm:text-lg">
-              Book rides, travel in comfort, get food delivered, send parcels,
-              and pay securely — all inside OnWay. Built for speed, safety, and
-              reliability.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button as="link" href="#download" variant="accent">
-                Download OnWay <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button as="link" href="#services" variant="outline">
-                Explore services
-              </Button>
-            </div>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 backdrop-blur">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <MapPin className="h-4 w-4 text-yellow-500" />
-                  Live tracking
+      <Container className="relative z-20 py-10 sm:py-14 lg:py-20">
+        <div className="grid items-start gap-10 lg:grid-cols-[440px_1fr] lg:gap-14">
+          {/* Left Side - Booking Form */}
+          <div data-aos="fade-up" className="relative z-30">
+            <div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_30px_80px_-55px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <span className="grid h-9 w-9 place-items-center rounded-2xl bg-yellow-400 text-zinc-950">
+                    <MapPin className="h-4 w-4" />
+                  </span>
+                  Bogra, BD
                 </div>
-                <p className="mt-2 text-sm text-zinc-600">
-                  Share ETA and track every step in real time.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 backdrop-blur">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <Shield className="h-4 w-4 text-yellow-500" />
-                  Safety-first
-                </div>
-                <p className="mt-2 text-sm text-zinc-600">
-                  Trip checks, verified partners, and support.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 backdrop-blur">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <BadgeCheck className="h-4 w-4 text-yellow-500" />
-                  Trusted
-                </div>
-                <p className="mt-2 text-sm text-zinc-600">
-                  Transparent pricing and reliable service.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div data-aos="fade-left" className="relative">
-            <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
-              {/* City Selection Header */}
-              <div className="mb-6 flex items-center gap-2 text-sm">
-                <MapPin className="h-4 w-4" />
-                <span className="font-medium text-zinc-900">Bogra, BD</span>
-                <button className="text-zinc-600 underline underline-offset-4 hover:text-zinc-900">
+                <button className="text-xs font-semibold text-white/60 hover:text-white">
                   Change city
                 </button>
               </div>
 
-              {/* Main Heading */}
-              <h2 className="text-4xl font-bold leading-tight tracking-tight text-zinc-900 lg:text-5xl">
-                Go anywhere with <br />
-                OnWay
-              </h2>
-
-              {/* Pickup Timing Selector */}
-              <div className="mt-6">
-                <button className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-200">
-                  <Clock className="h-4 w-4" />
-                  Pickup now
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+              <div className="mt-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-yellow-300/90">
+                  Book a ride
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  Go anywhere with OnWay
+                </h2>
               </div>
 
-              {/* Location Inputs */}
-              <div className="relative mt-6 space-y-2">
-                {/* Visual Line connecting points */}
-                <div className="absolute left-[1.125rem] top-8 bottom-8 w-0.5 bg-zinc-900" />
-                
-                <div className="relative flex items-center gap-4 rounded-lg bg-zinc-100 p-4 transition-all focus-within:ring-2 focus-within:ring-zinc-900">
-                  <div className="z-10 flex h-3 w-3 items-center justify-center rounded-full bg-zinc-900">
-                    <div className="h-1 w-1 rounded-full bg-white" />
+              <div className="mt-5 grid gap-3">
+                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                    <Clock className="h-4 w-4 text-yellow-300" />
+                    Pickup now
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Pickup location"
-                    className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder-zinc-500 outline-none"
-                  />
-                  <Navigation2 className="h-4 w-4 rotate-45 text-red-600" fill="currentColor" />
+                  <span className="text-xs font-semibold text-white/50">
+                    Anytime
+                  </span>
                 </div>
 
-                <div className="relative flex items-center gap-4 rounded-lg bg-zinc-100 p-4 transition-all focus-within:ring-2 focus-within:ring-zinc-900">
-                  <div className="z-10 h-3 w-3 bg-zinc-900" />
-                  <input
-                    type="text"
-                    placeholder="Dropoff location"
-                    className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder-zinc-500 outline-none"
-                  />
+                <div className="grid gap-2">
+                  <label className="text-xs font-semibold text-white/70">
+                    Pickup
+                  </label>
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-yellow-400/50 focus-within:ring-2 focus-within:ring-yellow-400/20">
+                    <span className="h-2.5 w-2.5 rounded-full bg-yellow-300" />
+                    <input
+                      type="text"
+                      placeholder="Enter pickup location"
+                      className="w-full bg-transparent text-sm font-medium text-white placeholder-white/40 outline-none"
+                    />
+                    <Navigation2
+                      className="h-4 w-4 rotate-45 text-red-400"
+                      fill="currentColor"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-xs font-semibold text-white/70">
+                    Dropoff
+                  </label>
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-yellow-400/50 focus-within:ring-2 focus-within:ring-yellow-400/20">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-white/70" />
+                    <input
+                      type="text"
+                      placeholder="Enter destination"
+                      className="w-full bg-transparent text-sm font-medium text-white placeholder-white/40 outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* CTA Section */}
-              <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <Button className="rounded-lg px-8" variant="primary">
-                  See prices
+              <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <Button
+                  className="w-full rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-300"
+                  variant="accent"
+                >
+                  See prices <ArrowRight className="h-4 w-4" />
                 </Button>
-                <button className="text-sm font-medium text-zinc-900 underline underline-offset-4 hover:text-zinc-600">
-                  Log in to see your recent activity
+                <button className="text-center text-xs font-semibold text-white/60 hover:text-white sm:text-right">
+                  Log in to view recent trips
                 </button>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                  <ShieldCheck className="h-4 w-4 text-yellow-300" />
+                  Safety tools
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                  <Wallet className="h-4 w-4 text-yellow-300" />
+                  Cashless payments
+                </span>
               </div>
             </div>
+          </div>
 
-            <div className="pointer-events-none absolute -right-10 -top-10 hidden h-36 w-36 rounded-full bg-yellow-400/30 blur-2xl lg:block" />
+          {/* Right Side - Value prop */}
+          <div
+            data-aos="fade-left"
+            className="relative z-30 flex flex-col justify-start pt-2 lg:pt-10"
+          >
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/70"
+            >
+              <BadgeCheck className="h-4 w-4 text-yellow-300" />
+              Trusted rides & transport
+            </motion.p>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut", delay: 0.08 }}
+              className="mt-5 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
+            >
+              Move smarter with{" "}
+              <span className="bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                OnWay
+              </span>
+              .
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut", delay: 0.16 }}
+              className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg"
+            >
+              Request a ride, track your trip, and pay securely — built for busy
+              days and late nights. Fast pickups, consistent safety, and support
+              that answers.
+            </motion.p>
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  icon: Star,
+                  title: "4.9",
+                  desc: "Average rating",
+                },
+                {
+                  icon: Headphones,
+                  title: "24/7",
+                  desc: "Support",
+                },
+                {
+                  icon: ShieldCheck,
+                  title: "Safety",
+                  desc: "Tools included",
+                },
+              ].map((c) => {
+                const Icon = c.icon;
+                return (
+                  <div
+                    key={c.title}
+                    className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-yellow-400/15 text-yellow-300">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-lg font-bold text-white">{c.title}</p>
+                        <p className="text-xs font-semibold text-white/60">
+                          {c.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button
+                as="link"
+                href="#services"
+                variant="accent"
+                className="rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-300"
+              >
+                Explore services <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                as="link"
+                href="#earn"
+                variant="outline"
+                className="rounded-2xl border-white/15 bg-white/0 px-6 py-3 text-white hover:bg-white/5"
+              >
+                Earn with OnWay
+              </Button>
+            </div>
           </div>
         </div>
       </Container>
     </section>
   );
 }
-
-

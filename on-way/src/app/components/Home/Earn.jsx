@@ -8,23 +8,13 @@ import { Button } from "./ui";
 const roles = [
   {
     title: "Become a Rider",
-    description: "Earn flexibly with quick trips and transparent payouts.",
+    description: "Earn flexibly with quick bike trips and transparent payouts.",
     icon: Bike,
   },
   {
     title: "Become a Driver",
-    description: "Drive with comfort-focused trips and schedule options.",
+    description: "Drive with comfort-focused car trips and schedule options.",
     icon: Car,
-  },
-  {
-    title: "Become a Courier Partner",
-    description: "Deliver parcels on demand — perfect for daily earners.",
-    icon: Package,
-  },
-  {
-    title: "Grow as a Merchant",
-    description: "List your shop or restaurant and reach more customers.",
-    icon: Store,
   },
 ];
 
@@ -37,7 +27,7 @@ export default function Earn() {
             <SectionHeading
               eyebrow="Earn with OnWay"
               title="Turn time into income"
-              description="Join OnWay as a rider, driver, courier partner, or merchant. Tools, support, and steady demand — designed for real people."
+              description="Join OnWay as a rider or driver. Tools, support, and steady demand — designed for real people."
             />
           </div>
           <div data-aos="fade-up" data-aos-delay="60">
@@ -76,5 +66,6 @@ export default function Earn() {
     </section>
   );
 }
+
 
 

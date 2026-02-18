@@ -31,9 +31,6 @@ const Navbar = () => {
           <Link href="/help" className="hover:text-yellow-400 transition">
             Help
           </Link>
-          <Link href="/about-us" className="hover:text-yellow-400 transition">
-            About Us
-          </Link>
         </div>
 
         {/* Buttons */}

@@ -1,0 +1,349 @@
+[
+  {
+    "id": 1,
+    "slug": "introducing-onway-smart-urban-mobility",
+    "title": "Introducing OnWay: Smarter Urban Mobility for Everyone",
+    "excerpt": "OnWay is redefining transportation with intelligent ride matching and transparent pricing.",
+    "content": "OnWay is designed to modernize urban transportation by combining AI-powered ride matching with real-time safety monitoring. Our platform reduces waiting time, optimizes routes, and ensures secure rides for passengers and drivers alike.",
+    "author": "OnWay Editorial Team",
+    "category": "Company",
+    "tags": [
+      "Mobility",
+      "Innovation",
+      "Ride Sharing"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1000",
+    "publishedAt": "2026-01-01",
+    "readTime": "5 min read",
+    "featured": true
+  },
+  {
+    "id": 2,
+    "slug": "how-onway-ensures-ride-safety",
+    "title": "How OnWay Ensures Maximum Ride Safety",
+    "excerpt": "Safety is our highest priority with verified drivers and real-time tracking.",
+    "content": "Every OnWay driver undergoes background verification and training. Our real-time GPS tracking and emergency support system ensure safe journeys for all passengers.",
+    "author": "Safety Team",
+    "category": "Safety",
+    "tags": [
+      "Safety",
+      "Trust",
+      "Secure Ride"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000",
+    "publishedAt": "2026-01-05",
+    "readTime": "4 min read",
+    "featured": false
+  },
+  {
+    "id": 3,
+    "slug": "earning-more-with-onway",
+    "title": "Earning More with Flexible Driving on OnWay",
+    "excerpt": "Drivers earn more with flexible schedules and bonus incentives.",
+    "content": "OnWay empowers drivers with flexible work hours, transparent earnings reports, and weekly performance bonuses to maximize income potential.",
+    "author": "Driver Success Team",
+    "category": "Drivers",
+    "tags": [
+      "Drivers",
+      "Income",
+      "Gig Economy"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1494905998402-395d579af36f?q=80&w=1000",
+    "publishedAt": "2026-01-10",
+    "readTime": "6 min read",
+    "featured": true
+  },
+  {
+    "id": 4,
+    "slug": "future-of-sustainable-transport",
+    "title": "Building a Sustainable Future for Urban Transport",
+    "excerpt": "OnWay is committed to reducing emissions and supporting eco-friendly rides.",
+    "content": "With route optimization and eco-driving initiatives, OnWay is taking active steps toward sustainable transportation solutions in modern cities.",
+    "author": "Tech Innovation Team",
+    "category": "Technology",
+    "tags": [
+      "Sustainability",
+      "Future",
+      "AI"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=1000",
+    "publishedAt": "2026-01-12",
+    "readTime": "7 min read",
+    "featured": false
+  },
+  {
+    "id": 5,
+    "slug": "why-onway-is-different",
+    "title": "Why OnWay is Different from Other Ride Platforms",
+    "excerpt": "Transparency, innovation, and safety make OnWay unique.",
+    "content": "Unlike traditional ride-sharing platforms, OnWay emphasizes community, safety, and transparent fare systems to build long-term trust.",
+    "author": "OnWay Editorial",
+    "category": "Company",
+    "tags": [
+      "Brand",
+      "Innovation"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=1000",
+    "publishedAt": "2026-01-15",
+    "readTime": "5 min read",
+    "featured": false
+  },
+  {
+    "id": 6,
+    "slug": "ai-powered-route-optimization",
+    "title": "AI-Powered Route Optimization Explained",
+    "excerpt": "Smarter algorithms mean shorter rides and lower costs.",
+    "content": "OnWay’s AI engine analyzes traffic, road conditions, and demand patterns to provide optimized routes in real time.",
+    "author": "Engineering Team",
+    "category": "Technology",
+    "tags": [
+      "AI",
+      "Optimization",
+      "Tech"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000",
+    "publishedAt": "2026-01-18",
+    "readTime": "6 min read",
+    "featured": false
+  },
+  {
+    "id": 7,
+    "slug": "customer-experience-at-onway",
+    "title": "Delivering Exceptional Customer Experience",
+    "excerpt": "From booking to drop-off, we prioritize user experience.",
+    "content": "OnWay’s user-friendly app interface and 24/7 support system ensure smooth and hassle-free ride booking experiences.",
+    "author": "Support Team",
+    "category": "Experience",
+    "tags": [
+      "Customer",
+      "UX",
+      "Service"
+    ],
+    "featuredImage": "https://images.pexels.com/photos/8867431/pexels-photo-8867431.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "publishedAt": "2026-01-20",
+    "readTime": "4 min read",
+    "featured": false
+  },
+  {
+    "id": 8,
+    "slug": "how-to-book-ride-onway",
+    "title": "How to Book a Ride on OnWay in 3 Simple Steps",
+    "excerpt": "Booking a ride has never been easier with OnWay app.",
+    "content": "Open the app, choose your destination, confirm your ride — that’s it. OnWay simplifies the entire ride-booking experience.",
+    "author": "Product Team",
+    "category": "Guide",
+    "tags": [
+      "Guide",
+      "App Usage"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=1000",
+    "publishedAt": "2026-01-22",
+    "readTime": "3 min read",
+    "featured": false
+  },
+  {
+    "id": 9,
+    "slug": "driver-safety-training-program",
+    "title": "Inside Our Driver Safety Training Program",
+    "excerpt": "Training ensures safe and responsible driving for all.",
+    "content": "All OnWay drivers complete a structured safety and customer service training program before onboarding.",
+    "author": "Operations Team",
+    "category": "Drivers",
+    "tags": [
+      "Training",
+      "Safety"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1502633596457-450f383e207b?q=80&w=1000",
+    "publishedAt": "2026-01-25",
+    "readTime": "5 min read",
+    "featured": false
+  },
+  {
+    "id": 10,
+    "slug": "digital-payments-onway",
+    "title": "Secure and Seamless Digital Payments on OnWay",
+    "excerpt": "Multiple secure payment methods supported for your ease.",
+    "content": "OnWay supports digital wallets, cards, and secure transactions for a seamless payment experience.",
+    "author": "Finance Team",
+    "category": "Payments",
+    "tags": [
+      "Payments",
+      "Security"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?q=80&w=1000",
+    "publishedAt": "2026-01-28",
+    "readTime": "4 min read",
+    "featured": false
+  },
+  {
+    "id": 11,
+    "slug": "expanding-onway-to-new-cities",
+    "title": "Expanding OnWay to New Cities Across the Region",
+    "excerpt": "We are growing to serve more communities every day.",
+    "content": "OnWay is expanding operations into new cities to provide reliable and affordable transport options nationwide.",
+    "author": "Expansion Team",
+    "category": "Company",
+    "tags": [
+      "Expansion",
+      "Growth"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1000",
+    "publishedAt": "2026-02-01",
+    "readTime": "5 min read",
+    "featured": true
+  },
+  {
+    "id": 12,
+    "slug": "benefits-of-carpooling",
+    "title": "The Benefits of Carpooling with OnWay Rides",
+    "excerpt": "Save money and reduce carbon emissions with carpooling.",
+    "content": "Carpooling reduces traffic congestion and lowers ride costs while promoting environmental sustainability.",
+    "author": "Sustainability Team",
+    "category": "Sustainability",
+    "tags": [
+      "Carpool",
+      "Eco"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000",
+    "publishedAt": "2026-02-03",
+    "readTime": "6 min read",
+    "featured": false
+  },
+  {
+    "id": 13,
+    "slug": "how-onway-supports-drivers",
+    "title": "How OnWay Supports Drivers Beyond Earnings",
+    "excerpt": "Driver support programs and insurance benefits explained.",
+    "content": "OnWay provides performance insights, dedicated support lines, and reward programs for high-performing drivers.",
+    "author": "Driver Relations",
+    "category": "Drivers",
+    "tags": [
+      "Support",
+      "Drivers"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=1000",
+    "publishedAt": "2026-02-05",
+    "readTime": "5 min read",
+    "featured": false
+  },
+  {
+    "id": 14,
+    "slug": "ride-sharing-trends-2026",
+    "title": "Top Ride-Sharing Trends to Watch in 2026",
+    "excerpt": "What the future holds for global mobility platforms.",
+    "content": "AI integration, sustainability, and autonomous vehicles are shaping the future of ride-sharing platforms worldwide.",
+    "author": "Research Team",
+    "category": "Technology",
+    "tags": [
+      "Trends",
+      "Future"
+    ],
+    "featuredImage": "https://images.pexels.com/photos/1105379/pexels-photo-1105379.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "publishedAt": "2026-02-08",
+    "readTime": "7 min read",
+    "featured": false
+  },
+  {
+    "id": 15,
+    "slug": "onway-community-impact",
+    "title": "OnWay’s Positive Impact on Local Communities",
+    "excerpt": "Creating jobs and improving city transport infrastructure.",
+    "content": "OnWay contributes to economic growth by creating flexible earning opportunities for thousands of drivers.",
+    "author": "Community Team",
+    "category": "Community",
+    "tags": [
+      "Community",
+      "Impact"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1000",
+    "publishedAt": "2026-02-10",
+    "readTime": "4 min read",
+    "featured": false
+  },
+  {
+    "id": 16,
+    "slug": "smart-pricing-system",
+    "title": "Understanding OnWay’s Smart Pricing System",
+    "excerpt": "Fair and transparent pricing model explained for riders.",
+    "content": "Our dynamic pricing model ensures fair fares while maintaining driver incentives during peak demand hours.",
+    "author": "Finance Team",
+    "category": "Pricing",
+    "tags": [
+      "Pricing",
+      "Transparency"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000",
+    "publishedAt": "2026-02-12",
+    "readTime": "6 min read",
+    "featured": false
+  },
+  {
+    "id": 17,
+    "slug": "how-we-handle-customer-support",
+    "title": "How We Handle Customer Support at Scale",
+    "excerpt": "24/7 live support ensures smooth ride experiences every time.",
+    "content": "OnWay provides round-the-clock assistance to resolve ride issues quickly and efficiently.",
+    "author": "Support Team",
+    "category": "Experience",
+    "tags": [
+      "Support",
+      "Service"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1549923746-c502d488b3ea?q=80&w=1000",
+    "publishedAt": "2026-02-14",
+    "readTime": "5 min read",
+    "featured": false
+  },
+  {
+    "id": 18,
+    "slug": "technology-behind-onway-app",
+    "title": "The Advanced Technology Behind OnWay App",
+    "excerpt": "Scalable cloud infrastructure and real-time AI analytics.",
+    "content": "Built using modern cloud infrastructure and intelligent matching algorithms, OnWay delivers seamless ride experiences.",
+    "author": "Engineering Team",
+    "category": "Technology",
+    "tags": [
+      "Cloud",
+      "AI",
+      "App"
+    ],
+    "featuredImage": "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "publishedAt": "2026-02-16",
+    "readTime": "7 min read",
+    "featured": false
+  },
+  {
+    "id": 19,
+    "slug": "eco-friendly-driving-initiative",
+    "title": "Our Eco-Friendly Driving Initiative for Drivers",
+    "excerpt": "Driving towards a greener tomorrow for our cities.",
+    "content": "We promote eco-driving practices and reward drivers who reduce fuel consumption and emissions.",
+    "author": "Sustainability Team",
+    "category": "Sustainability",
+    "tags": [
+      "Eco",
+      "Green"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1000",
+    "publishedAt": "2026-02-18",
+    "readTime": "5 min read",
+    "featured": false
+  },
+  {
+    "id": 20,
+    "slug": "onway-roadmap-2026",
+    "title": "OnWay Roadmap 2026: What’s Next for Mobility?",
+    "excerpt": "New features and massive expansion plans revealed.",
+    "content": "In 2026, OnWay plans to expand internationally, integrate AI-based predictions, and introduce new mobility solutions.",
+    "author": "Leadership Team",
+    "category": "Company",
+    "tags": [
+      "Roadmap",
+      "Future"
+    ],
+    "featuredImage": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000",
+    "publishedAt": "2026-02-20",
+    "readTime": "6 min read",
+    "featured": true
+  }
+]

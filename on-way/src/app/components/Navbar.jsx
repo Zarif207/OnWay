@@ -9,9 +9,11 @@ const Navbar = () => {
   return (
     <nav className="w-full bg-black text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        
         {/* Logo */}
-        <Link href="/" className="text-2xl font-bold tracking-wide text-yellow-400">
+        <Link
+          href="/"
+          className="text-2xl font-bold tracking-wide text-yellow-400"
+        >
           OnWay
         </Link>
 

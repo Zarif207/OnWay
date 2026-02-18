@@ -3,6 +3,7 @@ import Hero from "./components/Home/Hero";
 import Stats from "./components/Home/Stats";
 import Platform from "./components/Home/Platform";
 import Safety from "./components/Home/Safety";
+import Earn from "./components/Home/Earn";
 export default function Home() {
   return (
     <>
@@ -14,6 +15,7 @@ export default function Home() {
         </div>
         <Platform></Platform>
         <Safety></Safety>
+        <Earn></Earn>
 
       </main>
     </>

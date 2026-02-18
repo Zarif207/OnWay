@@ -82,14 +82,14 @@ const AboutUs = () => {
 
             {/* 2. Stats Section */}
             <section className="py-12 bg-gray-100 border-b">
-                <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div className="container mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     {[
                         { l: "Active Riders", v: "500K+" },
                         { l: "Trips", v: "10M+" },
                         { l: "Cities", v: "12" },
                         { l: "Rating", v: "4.9/5" },
                     ].map((s, i) => (
-                        <div key={i}>
+                        <div className="rounded-full border border-amber-300 p-10 shadow " key={i}>
                             <h3 className="text-3xl font-black text-black">{s.v}</h3>
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                                 {s.l}

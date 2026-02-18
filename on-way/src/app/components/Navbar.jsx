@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Download, Menu, X } from "lucide-react";
 
 const nav = [
-  { label: "Home", href: "#home" },
-  { label: "Services", href: "#services" },
-  { label: "Safety", href: "#safety" },
+  { label: "Home", href: "/" },
+  { label: "Book Ride", href: "#services" },
+  { label: "About Us", href: "about-us" },
   { label: "Earn", href: "#earn" },
-  { label: "Blog", href: "#blog" },
-  { label: "Help", href: "#contact" },
+  { label: "Blog", href: "blog" },
+  { label: "Help", href: "help" },
 ];
 
 const more = [

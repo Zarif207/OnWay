@@ -78,6 +78,7 @@ export default function HelpPage() {
           </div>
         </div>
       </div>
+      <div></div>
 
       {/* Categories Section */}
       <div className="max-w-6xl mx-auto px-6 py-16">

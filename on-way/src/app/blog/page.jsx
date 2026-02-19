@@ -9,15 +9,26 @@ export default function BlogPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Hero Section */}
-            <section className="bg-secondary text-white py-16 px-4">
-                <div className="container mx-auto text-center">
-                    <h1 className="text-4xl md:text-6xl font-black mb-4">OnWay Insights</h1>
-                    <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-                        Stay updated with the latest in smart urban mobility, driver success stories, and future tech.
+
+            <div className="bg-linear-to-r from-gray-900 via-gray-800 to-black text-white py-20">
+                <div className="max-w-4xl mx-auto px-6 text-center">
+                    <h1 className="text-5xl font-bold mb-4">OnWay Insights</h1>
+                    <p className="text-lg text-gray-300 mb-8">
+                    Stay updated with the latest in smart urban mobility, driver success stories, and future tech.
                     </p>
+                    <div className="relative max-w-2xl mx-auto">
+                        <input
+                            type="text"
+                            placeholder="Search for Blogs..."
+                            className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        />
+                        <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-yellow-400 text-black px-6 py-2 rounded-full hover:bg-yellow-500 transition font-medium">
+                            Search
+                        </button>
+                    </div>
                 </div>
-            </section>
+            </div>
+         
 
 
             <div className="container mx-auto px-2 mt-10 mb-20">

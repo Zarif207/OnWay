@@ -14,8 +14,8 @@ const Footer = () => {
             <span className="ml-1">Way</span>
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-zinc-400">
-            OnWay is your everyday mobility and delivery super app — ride, car,
-            food, parcel, and secure payments in one seamless experience.
+            OnWay is your everyday mobility super app — ride, car,
+            CNG, and secure payments in one seamless experience.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold text-zinc-400">
@@ -23,10 +23,7 @@ const Footer = () => {
               Rides
             </span>
             <span className="rounded-full border border-zinc-800 px-3 py-1">
-              Food
-            </span>
-            <span className="rounded-full border border-zinc-800 px-3 py-1">
-              Parcel
+              CNG
             </span>
             <span className="rounded-full border border-zinc-800 px-3 py-1">
               Pay
@@ -49,12 +46,7 @@ const Footer = () => {
             </li>
             <li>
               <a href="#services" className="hover:text-yellow-300">
-                OnWay Food
-              </a>
-            </li>
-            <li>
-              <a href="#services" className="hover:text-yellow-300">
-                OnWay Parcel
+                OnWay CNG
               </a>
             </li>
             <li>
@@ -80,12 +72,12 @@ const Footer = () => {
             </li>
             <li>
               <a href="#earn" className="hover:text-yellow-300">
-                Courier Partner
+                Become a CNG Driver
               </a>
             </li>
             <li>
-              <a href="#business" className="hover:text-yellow-300">
-                OnWay for Business
+              <a href="#press" className="hover:text-yellow-300">
+                Press
               </a>
             </li>
           </ul>

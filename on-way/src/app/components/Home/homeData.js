@@ -2,16 +2,15 @@ import {
   Bike,
   Car,
   CreditCard,
-  Package,
+  Leaf,
   ShieldCheck,
-  ShoppingBag,
   Sparkles,
   Wallet,
 } from "lucide-react";
 
 export const stats = [
   { label: "App Downloads", value: 1500000, suffix: "+" },
-  { label: "Trips & Orders Served", value: 22000000, suffix: "+" },
+  { label: "Trips Served", value: 22000000, suffix: "+" },
   { label: "Cities Covered", value: 35, suffix: "+" },
   { label: "Partners Empowered", value: 180000, suffix: "+" },
 ];
@@ -44,29 +43,16 @@ export const services = [
     accent: "from-sky-500/20 to-indigo-500/20",
   },
   {
-    key: "food",
-    name: "OnWay Food",
-    icon: ShoppingBag,
-    tagline: "Your favorites, delivered fast.",
+    key: "cng",
+    name: "OnWay CNG",
+    icon: Leaf,
+    tagline: "Eco-friendly, budget-friendly rides.",
     bullets: [
-      "Curated restaurants & trending spots",
-      "Real-time order updates",
-      "Deals, bundles, and rewards",
+      "Optimized for short city distances",
+      "Affordable rates with fixed pricing",
+      "Available across all major city hubs",
     ],
-    cta: { label: "Explore Food", href: "#services" },
-    accent: "from-rose-500/20 to-yellow-400/20",
-  },
-  {
-    key: "parcel",
-    name: "OnWay Parcel",
-    icon: Package,
-    tagline: "On‑demand delivery at your doorstep.",
-    bullets: [
-      "Send documents or packages in minutes",
-      "Verified delivery partners",
-      "Proof of pickup & drop",
-    ],
-    cta: { label: "Explore Parcel", href: "#services" },
+    cta: { label: "Explore CNG", href: "#services" },
     accent: "from-emerald-500/20 to-teal-500/20",
   },
   {
@@ -75,7 +61,7 @@ export const services = [
     icon: Wallet,
     tagline: "Move money the way you want.",
     bullets: [
-      "One wallet across rides & deliveries",
+      "One wallet across all rides",
       "Split bills, top-up, and pay later options",
       "Track spending with smart insights",
     ],
@@ -107,7 +93,7 @@ export const safetyFeatures = [
 
 export const press = [
   { name: "Forbes", blurb: "OnWay is helping cities move smarter." },
-  { name: "TechCrunch", blurb: "A super app experience built for everyday life." },
+  { name: "TechCrunch", blurb: "A super app experience built for everyday mobility." },
   { name: "The Financial Express", blurb: "OnWay expands services across new regions." },
   { name: "The Business Standard", blurb: "OnWay raises the bar on safety & support." },
   { name: "Rest of World", blurb: "OnWay reimagines urban mobility." },
@@ -125,7 +111,7 @@ export const blogPosts = [
     title: "Rewards That Move With You",
     date: "OnWay Pay • Jan 2026",
     excerpt:
-      "Earn points on rides, food, and parcels — then redeem them anywhere in-app.",
+      "Earn points on rides and referrals — then redeem them anywhere in-app.",
     tag: "Pay",
   },
   {
@@ -136,4 +122,5 @@ export const blogPosts = [
     tag: "Safety",
   },
 ];
+
 

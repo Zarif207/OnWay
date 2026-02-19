@@ -6,8 +6,23 @@ const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Turbopack is currently causing a fatal panic with Tailwind v4 on this environment.
-  // Falling back to default loader for stability.
+  // Prevent Next from inferring the wrong workspace root (common when an extra
+  // lockfile exists up-tree), which can break node_modules resolution.
+  turbopack: {
+    root: __dirname,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

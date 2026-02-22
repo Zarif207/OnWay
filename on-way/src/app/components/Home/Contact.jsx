@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { CheckCircle2, Mail, MessageSquare, Phone } from "lucide-react";
 import Container from "./Container";
 import SectionHeading from "./SectionHeading";
-import { Button } from "./ui";
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
@@ -151,7 +150,7 @@ export default function Contact() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button
+                <button
                   variant="accent"
                   className="w-full sm:w-auto"
                   as="button"
@@ -159,7 +158,7 @@ export default function Contact() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Sending..." : "Send message"}
-                </Button>
+                </button>
 
                 {submitted ? (
                   <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">

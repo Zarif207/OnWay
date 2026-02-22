@@ -4,7 +4,7 @@ import { AlertTriangle, PhoneCall } from "lucide-react";
 import Container from "./Container";
 import SectionHeading from "./SectionHeading";
 import { safetyFeatures } from "./homeData";
-import { Button } from "./ui";
+
 
 export default function Safety() {
   return (
@@ -19,12 +19,12 @@ export default function Safety() {
             />
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button as="link" href="#contact" variant="primary">
+              <button as="link" href="#contact" variant="primary">
                 Talk to support <PhoneCall className="h-4 w-4" />
-              </Button>
-              <Button as="link" href="#download" variant="outline">
+              </button>
+              <button as="link" href="#download" variant="outline">
                 Download the app
-              </Button>
+              </button>
             </div>
 
             <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-6">

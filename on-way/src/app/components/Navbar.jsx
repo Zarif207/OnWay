@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronDown, Download, Menu, X } from "lucide-react";
 import Image from "next/image";
-
+import logoImage from "../../../public/favicon.png";
 const nav = [
   { label: "Home", href: "/" },
   { label: "Book Ride", href: "#services" },
@@ -14,9 +14,7 @@ const nav = [
   { label: "Help", href: "help" },
 ];
 
-const more = [
-  { label: "Press", href: "#press" },
-];
+const more = [{ label: "Press", href: "#press" }];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,10 +39,7 @@ const Navbar = () => {
           className="flex items-center  text-2xl font-extrabold tracking-tight text-zinc-900"
           aria-label="OnWay"
         >
-
-          <Image src="https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png" alt="OnWay" width={64} height={64} />
-
-          <span className="text-3xl font-extrabold tracking-tight text-zinc-900 mt-2">Way</span>
+          <Image src={logoImage} alt="OnWay" width={120} height={120} />
         </Link>
 
         <div className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 md:flex">

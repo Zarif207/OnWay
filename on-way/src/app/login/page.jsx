@@ -56,7 +56,6 @@ const Login = () => {
                             {isForgotPassword ? "Don't worry, we'll help you get back on track." : "Welcome back! Your next ride is just a few clicks away."}
                         </p>
                     </div>
-
                     <div className="relative z-10">
                         <div className="h-1.5 w-12 bg-secondary mb-6 rounded-full shadow-[0_0_15px_rgba(29,104,209,0.8)]"></div>
                         <h2 className="text-4xl font-extrabold leading-tight">
@@ -66,7 +65,6 @@ const Login = () => {
                             </span> {isForgotPassword ? "" : "again?"}
                         </h2>
                     </div>
-
                     <div className="relative z-10 flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
                         <span>Fast • Safe • OnWay</span>
                     </div>

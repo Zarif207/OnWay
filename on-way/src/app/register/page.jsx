@@ -84,7 +84,7 @@ const Register = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-[11px] font-bold uppercase text-gray-500 ml-1">Email</label>
-                                <input {...register("email", { required: "Email is required" })} type="email" className="input input-bordered w-full rounded-2xl" placeholder="mail@onway.com" />
+                                <input {...register("email", { required: "Email is required" })} type="email" className="input input-bordered w-full rounded-2xl" placeholder="Enter Your Email" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[11px] font-bold uppercase text-gray-500 ml-1">Phone</label>

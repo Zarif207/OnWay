@@ -3,7 +3,6 @@ import nodemailer from 'nodemailer';
 
 export async function POST(req) {
     try {
-        // ১. ডাটা রিসিভ করা
         const { email, otp } = await req.json();
 
         if (!email || !otp) {
@@ -13,17 +12,14 @@ export async function POST(req) {
             );
         }
 
-        // ২. ট্রান্সপোর্টার সেটআপ
         const transporter = nodemailer.createTransport({
             service: 'gmail',
-            // secure: true, // Port 465 এর জন্য চাইলে ব্যবহার করতে পারেন
             auth: {
                 user: process.env.GMAIL_USER,
                 pass: process.env.GMAIL_APP_PASSWORD,
             },
         });
 
-        // ৩. ইমেইল টেমপ্লেট (আপনার ডিজাইনটিকেই আরও একটু অপ্টিমাইজ করা হয়েছে)
         const mailOptions = {
             from: `"OnWay Team" <${process.env.GMAIL_USER}>`,
             to: email,
@@ -35,7 +31,7 @@ export async function POST(req) {
                     
                     <h2 style="font-weight: 800; color: #111; font-size: 24px;">Account Verification</h2>
                     <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 30px;">
-                        OnWay-তে আপনাকে স্বাগতম! আপনার রেজিস্ট্রেশন সম্পন্ন করতে নিচের ভেরিফিকেশন কোডটি ব্যবহার করুন:
+                        Welcome to OnWay! To complete your registration, please use the verification code below:
                     </p>
                     
                     <div style="background-color: #fff0f9; border-radius: 20px; padding: 30px; margin: 20px 0; border: 2px dashed #ef269f;">
@@ -43,17 +39,17 @@ export async function POST(req) {
                     </div>
 
                     <p style="font-size: 13px; color: #888; margin-top: 30px; line-height: 1.5;">
-                        নিরাপত্তার খাতিরে এই কোডটি কাউকে বলবেন না। এটি পরবর্তী <b>১০ মিনিটের</b> জন্য কার্যকর থাকবে।
+                        For security reasons, do not share this code with anyone. 
+                        This code will remain valid for the next <b>10 minutes</b>.
                     </p>
                     
                     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
-                        <p style="font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">OnWay Inc • Bangladesh</p>
+                        <p style="font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">OnWay Inc • Built for Bangladesh</p>
                     </div>
                 </div>
             `,
         };
 
-        // ৪. ইমেইল পাঠানো
         await transporter.sendMail(mailOptions);
 
         return NextResponse.json(

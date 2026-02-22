@@ -1,6 +1,8 @@
  import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import AuthProvider from "./AuthProvider/AuthProvider";
+import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "OnWay - Your Journey, Your Way",
@@ -16,9 +18,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="onwaytheme">
       <body>
-        <Navbar/>
-        {children}
-        <Footer/>
+        <AuthProvider>
+          <Navbar />
+          {children}
+          <Toaster position="top-center" reverseOrder={false} />
+          <Footer />
+        </AuthProvider>
+
       </body>
     </html>
   );

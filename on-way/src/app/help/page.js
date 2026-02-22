@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function HelpPage() {
   const [openFaq, setOpenFaq] = useState(null);
 
   const categories = [
-    { name: "Getting Started", icon: "🚀", color: "bg-pink-100" },
-    { name: "Booking Rides", icon: "🚗", color: "bg-purple-100" },
-    { name: "Payments", icon: "💳", color: "bg-blue-100" },
-    { name: "Safety", icon: "🛡️", color: "bg-green-100" },
-    { name: "Driver Info", icon: "👨‍✈️", color: "bg-yellow-100" },
-    { name: "Account", icon: "👤", color: "bg-indigo-100" },
+    { name: "Getting Started", icon: "🚀", color: "bg-pink-100", type: "emoji" },
+    { name: "Booking Rides", icon: "/ride.png", color: "bg-purple-100", type: "image" },
+    { name: "Payments", icon: "💳", color: "bg-blue-100", type: "emoji" },
+    { name: "Safety", icon: "🛡️", color: "bg-green-100", type: "emoji" },
+    { name: "Driver Info", icon: "👨‍✈️", color: "bg-yellow-100", type: "emoji" },
+    { name: "Account", icon: "👤", color: "bg-indigo-100", type: "emoji" },
   ];
 
   const faqs = [
@@ -91,8 +92,18 @@ export default function HelpPage() {
               key={index}
               className="flex flex-col items-center p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition cursor-pointer"
             >
-              <div className={`text-4xl mb-3 p-4 rounded-full ${category.color}`}>
-                {category.icon}
+              <div className={`mb-3 rounded-full ${category.color} flex items-center justify-center w-28 h-28`}>
+                {category.type === "image" ? (
+                  <Image
+                    src={category.icon}
+                    alt={category.name}
+                    width={84}
+                    height={84}
+                    className="object-contain"
+                  />
+                ) : (
+                  <span className="text-7xl">{category.icon}</span>
+                )}
               </div>
               <p className="text-sm font-medium text-gray-700 text-center">
                 {category.name}

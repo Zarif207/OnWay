@@ -116,7 +116,7 @@ const VerifyEmail = () => {
                 </form>
 
                 <p className="mt-8 text-center text-xs text-gray-400">
-                    Didn't receive the code?
+                    didn't receive the code?
                     <button
                         onClick={() => window.location.reload()}
                         className="text-secondary font-bold ml-1 hover:underline"

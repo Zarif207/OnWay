@@ -219,7 +219,7 @@ export default function Hero() {
                 as="link"
                 href="#services"
                 variant="accent"
-                className="rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-300"
+                className="rounded-2xl bg-red-500 px-6 py-3 text-zinc-950 hover:bg-red-500"
               >
                 Explore services <ArrowRight className="h-4 w-4" />
               </Button>

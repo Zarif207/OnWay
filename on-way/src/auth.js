@@ -1,3 +1,4 @@
+
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -18,18 +19,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             credentials: {
                 email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" },
+                name: { label: "Name", type: "text" }
             },
             async authorize(credentials) {
-                if (
-                    credentials?.email === "test@onway.com" &&
-                    credentials?.password === "123456"
-                ) {
+                if (credentials?.email && credentials?.password) {
+
                     return {
-                        id: "1",
-                        name: "OnWay User",
-                        email: "test@onway.com",
+                        id: credentials.email,
+                        name: credentials.name || "OnWay User",
+                        email: credentials.email,
                     };
                 }
+
                 return null;
             },
         }),
@@ -41,8 +42,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         signIn: "/login",
     },
     callbacks: {
+        async jwt({ token, user }) {
+            if (user) {
+                token.id = user.id;
+                token.name = user.name;
+            }
+            return token;
+        },
         async session({ session, token }) {
-            session.user.id = token.sub;
+            if (session.user) {
+                session.user.id = token.id;
+                session.user.name = token.name;
+            }
             return session;
         },
     },

@@ -6,7 +6,7 @@ const OnWayBookPage = () => {
     <div className="min-h-screen w-full bg-[#ffffff] flex justify-center pt-15 pb-6">
       
       {/* Main Container */}
-      <div className="w-full max-w-[1300px] h-[80vh] flex gap-6 mx-auto">
+      <div className="w-full max-w-[1300px] flex gap-6 mx-auto">
         
         {/* LEFT SIDEBAR */}
         <div className="

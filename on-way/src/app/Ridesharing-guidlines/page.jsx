@@ -1,7 +1,6 @@
 import { AlertTriangle, Car, Info, ShieldAlert } from 'lucide-react';
 import React from 'react';
 
-// Define the data outside the component to prevent re-renders
 const trafficRules = [
     { offense: "Driving without a license", penalty: "6 months imprisonment and 25,000 TK fine" },
     { offense: "Unregistered vehicle", penalty: "6 months imprisonment or 50,000 TK fine or both" },
@@ -21,44 +20,54 @@ const trafficRules = [
 
 const Ridesharing = () => {
     return (
-       <main className="min-h-screen bg-[#F7F9FC] pb-10">
-            {/* Navbar / Header Like Pathao */}
-            <div className="bg-black text-white px-6 py-10 rounded-b-[40px] shadow-lg mb-8">
-                <div className="max-w-4xl mx-auto">
-                    <div className="flex items-center gap-2 mb-2">
-                        <ShieldAlert size={28} />
-                        <h1 className="text-3xl font-extrabold tracking-tight">Traffic Safety</h1>
+        <main className="min-h-screen bg-base-100 pb-10">
+            {/* Header: Using Theme Primary Color */}
+            <div className="bg-primary text-white px-6 py-12 rounded-b-[40px] shadow-lg mb-8 border-b-4 border-secondary">
+                <div className="max-w-4xl mx-auto text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
+                        <ShieldAlert size={32} className="text-secondary" />
+                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight italic uppercase">
+                            OnWay <span className="text-secondary">Safety</span>
+                        </h1>
                     </div>
-                    <p className="text-white/80 font-medium">Be aware of the penalties, ride safe.</p>
+                    <p className="text-gray-300 font-medium max-w-lg">
+                        Follow road laws, reach your destination safely. Legal action is ensured for violating traffic rules.                    </p>
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4">
-                {/* Search Bar Placeholder (Optional) */}
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex items-center gap-3">
-                    <Info className="text-[#00B14F]" size={20} />
-                    <span className="text-gray-500 text-sm italic">According to Road Transport Act 2018</span>
+            <div className="max-w-5xl mx-auto px-4">
+                {/* Info Bar */}
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8 flex items-center gap-3">
+                    <div className="bg-accent/10 p-2 rounded-full">
+                        <Info className="text-accent" size={20} />
+                    </div>
+                    <span className="text-primary font-semibold text-sm">
+                        List of fines according to the Road Transport Act, 2018.
+                    </span>
                 </div>
 
                 {/* Grid Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                     {trafficRules.map((item, index) => (
-                        <div 
-                            key={index} 
-                            className="bg-white p-5 rounded-2xl border-l-4 border-[#00B14F] shadow-sm hover:shadow-md transition-shadow"
+                        <div
+                            key={index}
+                            className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                         >
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="text-slate-800 font-bold text-lg leading-tight">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-primary font-bold text-lg leading-tight group-hover:text-accent transition-colors">
                                     {item.offense}
                                 </h3>
-                                <AlertTriangle size={18} className="text-orange-400 shrink-0 ml-2" />
+                                <AlertTriangle size={20} className="text-secondary shrink-0 ml-2 fill-secondary/20" />
                             </div>
-                            
-                            <div className="mt-3 bg-gray-50 p-3 rounded-xl">
-                                <p className="text-[#00B14F] font-bold text-sm uppercase tracking-wide mb-1">
-                                    Penalty:
+
+                            <div className="relative overflow-hidden bg-primary rounded-2xl p-4">
+                                {/* Small decorative accent line */}
+                                <div className="absolute top-0 left-0 w-2 h-full bg-accent"></div>
+
+                                <p className="text-secondary font-bold text-[10px] uppercase tracking-widest mb-1 opacity-80">
+                                    Penalty Detail
                                 </p>
-                                <p className="text-slate-600 text-sm font-medium leading-relaxed">
+                                <p className="text-white text-sm font-medium leading-relaxed">
                                     {item.penalty}
                                 </p>
                             </div>
@@ -66,11 +75,15 @@ const Ridesharing = () => {
                     ))}
                 </div>
 
-                {/* Footer Section */}
-                <div className="mt-10 bg-slate-800 text-white p-6 rounded-3xl text-center">
-                    <Car className="mx-auto mb-3 opacity-50" size={32} />
-                    <h2 className="text-lg font-bold mb-1">Stay Safe on the Road</h2>
-                    <p className="text-slate-400 text-xs">OnWay encourages all riders and drivers to follow traffic regulations strictly.</p>
+                {/* Footer Section: Using Theme Accent and Primary */}
+                <div className="mt-16 bg-primary text-white p-8 rounded-[40px] text-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-secondary/10 rounded-full -ml-12 -mb-12"></div>
+
+                    <Car className="mx-auto mb-4 text-secondary animate-pulse" size={40} />
+                    <h2 className="text-2xl font-bold mb-2">Have a safe journey with OnWay.</h2>
+                    <p className="text-gray-400 text-sm max-w-md mx-auto">
+                        We are committed to ensuring your safety. Please follow traffic signals and carry valid documents with you.                    </p>
                 </div>
             </div>
         </main>

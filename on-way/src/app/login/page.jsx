@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaChevronRight, FaGithub } from 
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -129,6 +130,7 @@ const Login = () => {
                             <div className="flex justify-between items-center">
                                 <label className="text-[11px] font-bold uppercase text-gray-500 ml-1">Password</label>
                                 <a href="#" className="text-[10px] font-bold text-secondary hover:underline">Forgot Password</a>
+                                <Link href="/forgot-password" className="text-[10px] font-bold text-secondary hover:underline">Forgot Password</Link>
                             </div>
                             <div className="relative">
                                 <FaLock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.password ? 'text-error' : 'text-gray-300'}`} />

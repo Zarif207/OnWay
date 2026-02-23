@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaChevronRight, FaGithub } from 
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -19,29 +20,38 @@ const Login = () => {
 
     const onSubmit = async (data) => {
         setLoading(true);
-        const toastId = toast.loading("Logging in... Please wait.");
+        const toastId = toast.loading("Logging in...");
 
         try {
-            const result = await signIn("credentials", {
-                email: data.email,
-                password: data.password,
-                redirect: false,
-            });
+            const allUsers = JSON.parse(localStorage.getItem("allUsers") || "[]");
+            const userFound = allUsers.find(
+                (u) => u.email === data.email && u.password === data.password
+            );
 
-            if (result?.error) {
-                toast.error("ইমেইল বা পাসওয়ার্ড ভুল!", { id: toastId });
-                setLoading(false);
+            if (userFound) {
+                const result = await signIn("credentials", {
+                    email: data.email,
+                    password: data.password,
+                    name: userFound.name,
+                    redirect: false,
+                });
+
+                if (result?.error) {
+                    toast.error("Login failed!", { id: toastId });
+                } else {
+                    toast.success(`Welcome, ${userFound.name}!`, { id: toastId });
+                    router.push("/");
+                    router.refresh();
+                }
             } else {
-                toast.success("Login Successful!", { id: toastId });
-                router.push("/");
-                router.refresh();
+                toast.error("User not found or wrong password!", { id: toastId });
             }
         } catch (error) {
-            toast.error("Something went wrong!", { id: toastId });
+            toast.error("Something went wrong!");
+        } finally {
             setLoading(false);
         }
     };
-
     const handleSocialLogin = async (provider) => {
         try {
             await signIn(provider, { callbackUrl: "/" });
@@ -65,12 +75,12 @@ const Login = () => {
                             backgroundPosition: 'center'
                         }}
                     ></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral via-neutral/70 to-secondary/30 z-0"></div>
+                    <div className="absolute inset-0 bg-linear-to-t from-neutral via-neutral/70 to-secondary/30 z-0"></div>
                     <div className="relative z-10">
                         <h1 className="text-4xl font-black italic tracking-tighter flex items-center gap-1">
                             OnWay<span className="text-primary">.</span>
                         </h1>
-                        <p className="mt-4 text-gray-300 text-sm font-medium leading-relaxed max-w-[220px]">
+                        <p className="mt-4 text-gray-300 text-sm font-medium leading-relaxed max-w-55">
                             Welcome back! Your next ride is just a few clicks away.
                         </p>
                     </div>
@@ -78,7 +88,7 @@ const Login = () => {
                         <div className="h-1.5 w-12 bg-secondary mb-6 rounded-full shadow-[0_0_15px_rgba(29,104,209,0.8)]"></div>
                         <h2 className="text-4xl font-extrabold leading-tight">
                             Ready to <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Move</span> again?
+                            <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-secondary">Move</span> again?
                         </h2>
                     </div>
                     <div className="relative z-10 flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
@@ -120,6 +130,7 @@ const Login = () => {
                             <div className="flex justify-between items-center">
                                 <label className="text-[11px] font-bold uppercase text-gray-500 ml-1">Password</label>
                                 <a href="#" className="text-[10px] font-bold text-secondary hover:underline">Forgot Password</a>
+                                <Link href="/forgot-password" className="text-[10px] font-bold text-secondary hover:underline">Forgot Password</Link>
                             </div>
                             <div className="relative">
                                 <FaLock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.password ? 'text-error' : 'text-gray-300'}`} />

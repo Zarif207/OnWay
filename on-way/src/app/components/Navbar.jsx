@@ -8,11 +8,10 @@ import logoImage from "../../../public/favicon.png";
 import { useSession } from "next-auth/react";
 const nav = [
   { label: "Home", href: "/" },
-  { label: "Book Ride", href: "#services" },
-  { label: "About Us", href: "about-us" },
-  { label: "Earn", href: "#earn" },
-  { label: "Blog", href: "blog" },
-  { label: "Help", href: "help" },
+  { label: "OnWay Book", href: "/onway-book" },
+  { label: "About", href: "/about" },
+  { label: "Blog", href: "/blog" },
+  { label: "Help", href: "/help" },
 ];
 
 const more = [{ label: "Press", href: "#press" }];

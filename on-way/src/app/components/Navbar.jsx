@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X, LogOut, User, UserPlus, LogIn } from "lucide-react";
 import Image from "next/image";
-import logoImage from "../../../public/favicon.png";
+import logoImage from "../../../public/icon2.png";
 import { useSession } from "next-auth/react";
 const nav = [
   { label: "Home", href: "/" },
   { label: "OnWay Book", href: "/onway-book" },
+  { label: "Earn With OnWay ", href: "/earn-with-onway" },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog" },
   { label: "Help", href: "/help" },
@@ -43,7 +44,7 @@ const Navbar = () => {
           className="flex items-center text-2xl font-extrabold tracking-tight text-zinc-900"
           aria-label="OnWay"
         >
-          <Image src={logoImage} alt="OnWay" width={120} height={64} />
+          <Image src={logoImage} alt="OnWay" width={120} height={94} />
         </Link>
 
         {/* Desktop Menu */}

@@ -1,4 +1,4 @@
- import "./globals.css";
+import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AuthProvider from "./AuthProvider/AuthProvider";
@@ -6,11 +6,12 @@ import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "OnWay - Your Journey, Your Way",
-  description: "Book rides, travel in comfort, get food delivered, and pay securely — all inside OnWay.",
+  description:
+    "Book rides, travel in comfort, get food delivered, and pay securely — all inside OnWay.",
   icons: {
-    icon: "https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png",
-    shortcut: "https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png",
-    apple: "https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 

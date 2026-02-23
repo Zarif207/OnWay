@@ -14,7 +14,11 @@ const nav = [
   { label: "Help", href: "/help" },
 ];
 
-const more = [{ label: "Press", href: "#press" }];
+const more = [
+  { label: "Press", href: "#press" },
+  { label: "Ridesharing-guidlines", href: "Ridesharing-guidlines" },
+  { label: "Safety-Coverage", href: "Safety-Coverage" },
+];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -129,8 +129,8 @@ const Login = () => {
                         <div className="space-y-1">
                             <div className="flex justify-between items-center">
                                 <label className="text-[11px] font-bold uppercase text-gray-500 ml-1">Password</label>
-                                <a href="#" className="text-[10px] font-bold text-secondary hover:underline">Forgot Password</a>
-                                <Link href="/forgot-password" className="text-[10px] font-bold text-secondary hover:underline">Forgot Password</Link>
+                              
+                                <Link href="/forgot-password" className="text-[10px] font-bold text-primary hover:underline">Forgot Password</Link>
                             </div>
                             <div className="relative">
                                 <FaLock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.password ? 'text-error' : 'text-gray-300'}`} />
@@ -155,7 +155,7 @@ const Login = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="btn btn-secondary w-full border-none text-white font-black rounded-2xl shadow-xl shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-xs h-14"
+                                className="btn btn-secondary w-full border-none text-black font-black rounded-2xl shadow-xl shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-xs h-14"
                             >
                                 {loading ? <span className="loading loading-spinner"></span> : "Log In"}
                             </button>

@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }) {
       {/* Dashboard Content */}
       <div>
         {children}
-      </div>
+      </div> 
 
     </div>
   );

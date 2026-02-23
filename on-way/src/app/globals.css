@@ -12,8 +12,9 @@
 [data-theme="onwaytheme"] {
   --color-primary: #303841;
   --color-secondary: #FFF200;
-  --color-accent: #D6E6F2;
-  --color-neutral: #F5F5F5;
+  --color-accent: #23b440;
+  --color-neutral: #0f172a;
+  --base-100: #f8fafc;
 }
 
 @theme {

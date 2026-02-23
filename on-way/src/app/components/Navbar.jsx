@@ -15,7 +15,6 @@ const nav = [
 ];
 
 const more = [
-  { label: "Press", href: "#press" },
   { label: "Ridesharing-guidlines", href: "Ridesharing-guidlines" },
   { label: "Safety-Coverage", href: "Safety-Coverage" },
 ];

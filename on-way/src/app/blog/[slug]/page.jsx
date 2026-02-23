@@ -2,14 +2,26 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import blogData from "../../../../public/blogs.json";
+import axios from "axios";
 import BlogCard from "@/app/components/BlogCard";
-
 
 export default function BlogDetails() {
   const { slug } = useParams();
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [blogData, setBlogData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    axios.get("/blogs.json")
+      .then((res) => {
+        setBlogData(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching blogs:", err);
+        setLoading(false);
+      });
+  }, []);
 
   const blog = blogData.find((b) => b.slug === slug);
 
@@ -25,7 +37,8 @@ export default function BlogDetails() {
   }, []);
 
 
-  if (!blog) return <div className="p-20 text-center font-bold">Loading...</div>;
+  if (loading) return <div className="p-20 text-center font-bold">Loading...</div>;
+  if (!blog) return <div className="p-20 text-center font-bold">Blog not found</div>;
 
 
   const relatedPosts = blogData

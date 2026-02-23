@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X, LogOut, User, UserPlus, LogIn } from "lucide-react";
 import Image from "next/image";
 import logoImage from "../../../public/favicon.png";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 const nav = [
   { label: "Home", href: "/" },
   { label: "OnWay Book", href: "/onway-book" },

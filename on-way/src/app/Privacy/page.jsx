@@ -56,7 +56,7 @@ const Privacy = () => {
               </div>
             </section>
 
-            {/* Section 02 - Visual Callout (Pathao Accent Style) */}
+            {/* Section 02 - Visual Callout */}
             <section className="bg-primary/5 border-l-8 border-primary p-10">
               <h3 className="text-2xl font-bold mb-4 italic">How we use your data</h3>
               <p className="text-gray-700 text-lg leading-relaxed mb-6">

@@ -1,12 +1,11 @@
-
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X, LogOut, User, UserPlus, LogIn } from "lucide-react";
 import Image from "next/image";
-import { useSession, signOut } from "next-auth/react";
-
+import logoImage from "../../../public/favicon.png";
+import { useSession } from "next-auth/react";
 const nav = [
   { label: "Home", href: "/" },
   { label: "OnWay Book", href: "/onway-book" },
@@ -45,8 +44,7 @@ const Navbar = () => {
           className="flex items-center text-2xl font-extrabold tracking-tight text-zinc-900"
           aria-label="OnWay"
         >
-          <Image src="https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png" alt="OnWay" width={64} height={64} />
-          <span className="text-3xl font-extrabold tracking-tight text-zinc-900 mt-2">Way</span>
+          <Image src={logoImage} alt="OnWay" width={120} height={120} />
         </Link>
 
         {/* Desktop Menu */}
@@ -163,7 +161,7 @@ const Navbar = () => {
                   className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white"
                   onClick={() => setIsOpen(false)}
                 >
-                  <UserPlus className="h-4 w-4" /> Register
+                  <UserPlus className="h-4 w-4" /> Register 
                 </Link>
               </>
             )}

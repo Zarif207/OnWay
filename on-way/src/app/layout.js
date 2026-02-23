@@ -1,7 +1,6 @@
-import "./globals.css";
-// import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+ import "./globals.css";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import AuthProvider from "./AuthProvider/AuthProvider";
 import { Toaster } from "react-hot-toast";
 

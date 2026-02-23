@@ -8,8 +8,9 @@ const Privacy = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F6] text-[#1F1F1F] font-sans">
 
-      <div className="max-w-300 mx-auto py-12 px-6 md:py-20 flex flex-col md:flex-row gap-16">
-    
+      <div className="max-w-[1200px] mx-auto py-12 px-6 md:py-20 flex flex-col md:flex-row gap-16">
+        
+        {/* Sidebar - Pathao Style Bold Nav */}
         <aside className="md:w-1/4">
           <div className="sticky top-10">
             <h1 className="text-4xl font-black mb-8 leading-tight uppercase italic text-black">
@@ -59,7 +60,7 @@ const Privacy = () => {
             <section className="bg-primary/5 border-l-8 border-primary p-10">
               <h3 className="text-2xl font-bold mb-4 italic">How we use your data</h3>
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
-                Your data isn&apos;t just numbers to us. It&apos;s the fuel that makes your commute possible. 
+                Your data isn't just numbers to us. It's the fuel that makes your commute possible. 
                 We use it for:
               </p>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 font-bold text-gray-800">
@@ -108,7 +109,7 @@ const Privacy = () => {
 
       {/* Simple Footer */}
       <footer className="bg-white border-t border-gray-200 py-10 px-6">
-        <div className="max-w-300 mx-auto flex flex-col md:flex-row justify-between items-center text-sm font-bold text-gray-400">
+        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center text-sm font-bold text-gray-400">
           <p>© 2026 ONWAY RIDE TECHNOLOGIES</p>
           <div className="flex gap-10 mt-4 md:mt-0 uppercase tracking-widest">
             <span className="hover:text-black cursor-pointer">Terms</span>

@@ -16,13 +16,13 @@ import {
   Car,
 } from "lucide-react";
 import Image from "next/image";
-import logoImage from "../../../public/favicon.png";
-import { useSession, signOut } from "next-auth/react";
+import logoImage from "../../../public/icon2.png";
+import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-
 const nav = [
   { label: "Home", href: "/" },
   { label: "OnWay Book", href: "/onway-book" },
+  { label: "Earn With OnWay ", href: "/earn-with-onway" },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog" },
   { label: "Help", href: "/help" },
@@ -56,10 +56,12 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        
-        {/* Logo */}
-        <Link href="/" className="flex items-center">
-          <Image src={logoImage} alt="OnWay" width={120} height={64} />
+        <Link
+          href="/"
+          className="flex items-center text-2xl font-extrabold tracking-tight text-zinc-900"
+          aria-label="OnWay"
+        >
+          <Image src={logoImage} alt="OnWay" width={120} height={94} />
         </Link>
 
         {/* Center Menu (ALWAYS SAME) */}

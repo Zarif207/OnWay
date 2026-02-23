@@ -1,262 +1,411 @@
 "use client";
 
-import React, { useState } from "react";
-import { Clock, ChevronDown, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import axios from "axios";
+import { getDrivingRoute } from "@/utils/routingService";
+import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
 
-const OnWayBookPage = () => {
-  const [pickupTime, setPickupTime] = useState("Pick up now");
-  const [pickupTimeOpen, setPickupTimeOpen] = useState(false);
+// Dynamically import the Leaflet map (disables SSR)
+const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl animate-pulse">
+      <span className="text-gray-500 font-medium tracking-wide">Loading Route Map...</span>
+    </div>
+  ),
+});
 
-  const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("Today");
-  const [selectedTime, setSelectedTime] = useState("Now");
+export default function BookRidePage() {
+  const [pickupQuery, setPickupQuery] = useState("");
+  const [dropoffQuery, setDropoffQuery] = useState("");
+  
+  const [pickupLocation, setPickupLocation] = useState(null);
+  const [dropoffLocation, setDropoffLocation] = useState(null);
+  
+  // Real Route Data State
+  const [routeGeometry, setRouteGeometry] = useState([]);
+  const [distance, setDistance] = useState(0);     // In KM
+  const [duration, setDuration] = useState(0);     // In Minutes
+  
+  const [rideType, setRideType] = useState("standard");
+  const [fare, setFare] = useState(0);
 
-  const [rideFor, setRideFor] = useState("For me");
-  const [rideForOpen, setRideForOpen] = useState(false);
+  const [isSearchingPickup, setIsSearchingPickup] = useState(false);
+  const [isSearchingDropoff, setIsSearchingDropoff] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
+  const [error, setError] = useState("");
+
+  // Track which input the user is focusing on to know where to put the map click coordinate
+  const [activeInput, setActiveInput] = useState("pickup");
+
+  // 1. Fetch Real Route when locations change
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (pickupLocation && dropoffLocation) {
+        setIsRouting(true);
+        setError("");
+        try {
+          const routeData = await getDrivingRoute(pickupLocation, dropoffLocation);
+          if (routeData) {
+            setDistance(routeData.distanceKm);
+            setDuration(routeData.durationMin);
+            setRouteGeometry(routeData.geometry);
+          } else {
+            setError("Could not find a driving route between these locations.");
+            resetRouteState();
+          }
+        } catch (err) {
+          setError(err.message || "Failed to fetch route details.");
+          resetRouteState();
+        } finally {
+          setIsRouting(false);
+        }
+      } else {
+        resetRouteState();
+      }
+    };
+
+    fetchRoute();
+  }, [pickupLocation, dropoffLocation]);
+
+  // 2. Update Fare dynamically when distance or rideType changes
+  useEffect(() => {
+    setFare(calculateFare(distance, rideType));
+  }, [distance, rideType]);
+
+  const resetRouteState = () => {
+    setDistance(0);
+    setDuration(0);
+    setRouteGeometry([]);
+    setFare(0);
+  };
+
+  // Geocoding helper
+  const geocodeAddress = async (query) => {
+    if (!query.trim()) return null;
+    try {
+      const response = await axios.get("https://nominatim.openstreetmap.org/search", {
+        params: {
+          q: query + ", Bangladesh",
+          format: "json",
+          limit: 1,
+        },
+      });
+      if (response.data && response.data.length > 0) {
+        return {
+          lat: parseFloat(response.data[0].lat),
+          lon: parseFloat(response.data[0].lon),
+          name: response.data[0].display_name,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error("Geocoding failed:", err);
+      return null;
+    }
+  };
+
+  const handleSearchPickup = async () => {
+    if (!pickupQuery) return;
+    setIsSearchingPickup(true);
+    setError("");
+    const result = await geocodeAddress(pickupQuery);
+    if (result) {
+      setPickupLocation(result);
+    } else {
+      setError("Pickup location not found. Try a more general area.");
+    }
+    setIsSearchingPickup(false);
+  };
+
+  const handleSearchDropoff = async () => {
+    if (!dropoffQuery) return;
+    setIsSearchingDropoff(true);
+    setError("");
+    const result = await geocodeAddress(dropoffQuery);
+    if (result) {
+      setDropoffLocation(result);
+    } else {
+      setError("Drop-off location not found. Try a more general area.");
+    }
+    setIsSearchingDropoff(false);
+  };
+
+  // Reverse Geocoding helper
+  const reverseGeocode = async (lat, lon) => {
+    try {
+      const response = await axios.get("https://nominatim.openstreetmap.org/reverse", {
+        params: {
+          lat: lat,
+          lon: lon,
+          format: "json",
+        },
+      });
+      if (response.data && response.data.display_name) {
+        return response.data.display_name;
+      }
+      return `${lat.toFixed(4)}, ${lon.toFixed(4)}`; // fallback to coords
+    } catch (err) {
+      console.error("Reverse geocoding failed:", err);
+      return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    }
+  };
+
+  // Get Current Location
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsLocating(true);
+    setError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const addressName = await reverseGeocode(latitude, longitude);
+          const name = addressName && addressName !== `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
+            ? addressName 
+            : "Current Location";
+          
+          const newLocationObj = {
+            lat: latitude,
+            lon: longitude,
+            name: name,
+          };
+
+          if (activeInput === "pickup") {
+            setPickupLocation(newLocationObj);
+            setPickupQuery(name);
+            setActiveInput("dropoff");
+          } else {
+            setDropoffLocation(newLocationObj);
+            setDropoffQuery(name);
+          }
+        } catch (err) {
+          setError("Failed to get address for current location.");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        setError("Failed to get current location. Please check your permissions.");
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  // Handle click on the map
+  const handleMapClick = async (coords) => {
+    setError("");
+    const addressName = await reverseGeocode(coords.lat, coords.lon);
+    
+    const newLocationObj = {
+      lat: coords.lat,
+      lon: coords.lon,
+      name: addressName,
+    };
+
+    if (activeInput === "pickup") {
+      setPickupLocation(newLocationObj);
+      setPickupQuery(addressName);
+      setActiveInput("dropoff"); // Auto-switch focus to dropoff next
+    } else {
+      setDropoffLocation(newLocationObj);
+      setDropoffQuery(addressName);
+    }
+  };
 
   return (
-    <div className="min-h-screen w-full bg-white flex justify-center px-4 sm:px-6 pt-6 pb-6">
-      <div className="w-full max-w-[1300px] flex flex-col lg:flex-row gap-20">
-        {/* LEFT SIDEBAR */}
-        <div className="w-full lg:w-[380px] bg-white rounded-2xl shadow-sm flex flex-col p-6">
-          <div className="mb-6">
-            <h1 className="text-xl font-semibold text-gray-900">Find a ride</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Enter your trip details
-            </p>
+    <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+        
+        {/* LEFT SIDE: Form Section */}
+        <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit">
+          
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
+            <p className="text-gray-500 text-sm">Real-time navigation & dynamic pricing.</p>
           </div>
+          
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {error}
+            </div>
+          )}
 
-          <div className="bg-green-50 text-green-600 text-xs px-3 py-2 rounded-lg mb-4">
-            30% off your next ride. Up to BDT 75.
-          </div>
+          {/* Locations Input */}
+          <div className="flex flex-col gap-5 relative">
+            <div className="absolute left-[15px] top-[45px] bottom-[45px] w-[2px] bg-gray-200 z-0"></div>
 
-          <div className="space-y-4">
             {/* Pickup */}
-            <div className="flex items-center gap-4 bg-neutral rounded-2xl px-5 py-4 hover:bg-accent transition cursor-text">
-              <div className="w-4 h-4 rounded-full border-[3px] border-black"></div>
-              <input
-                type="text"
-                placeholder="Pick-up location"
-                className="bg-transparent outline-none text-base w-full placeholder:text-gray-600 text-black"
-              />
-            </div>
-
-            {/* Dropoff */}
-            <div className="flex items-center gap-4 bg-neutral rounded-2xl px-5 py-4 hover:bg-accent transition cursor-text">
-              <div className="w-4 h-4 bg-black"></div>
-              <input
-                type="text"
-                placeholder="Drop-off location"
-                className="bg-transparent outline-none text-base w-full placeholder:text-gray-600 text-black"
-              />
-            </div>
-
-            {/* Pickup Time Dropdown */}
-            <div className="relative">
-              <div
-                onClick={() => setPickupTimeOpen(!pickupTimeOpen)}
-                className="flex items-center justify-between bg-gray-200 rounded-2xl px-5 py-4 cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <Clock size={18} />
-                  <span className="text-base font-medium">{pickupTime}</span>
-                </div>
-                <ChevronDown size={18} />
+            <div className="flex items-start gap-4 relative z-10">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                <div className="w-3 h-3 rounded-full bg-blue-600"></div>
               </div>
-
-              {pickupTimeOpen && (
-                <div className="absolute w-full mt-2 bg-white rounded-2xl shadow-lg border z-30 overflow-hidden">
-                  <div
-                    onClick={() => {
-                      setPickupTime("Pick up now");
-                      setSelectedDate("Today");
-                      setSelectedTime("Now");
-                      setPickupTimeOpen(false);
-                      setScheduleOpen(true);
-                    }}
-                    className="px-5 py-4 hover:bg-gray-100 cursor-pointer transition"
+              <div className="flex-1 flex flex-col gap-2">
+                <label className={`text-xs font-semibold uppercase tracking-wider transition-colors ${activeInput === 'pickup' ? 'text-blue-600' : 'text-gray-500'}`}>
+                  Pickup Location {activeInput === "pickup" && "(Click Map)"}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="E.g., Dhanmondi, Dhaka"
+                    className={`w-full bg-gray-50 border rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${activeInput === "pickup" ? "border-blue-400 bg-blue-50/30" : "border-gray-200"}`}
+                    value={pickupQuery}
+                    onChange={(e) => setPickupQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchPickup()}
+                    onFocus={() => setActiveInput("pickup")}
+                  />
+                  <button
+                    onClick={handleSearchPickup}
+                    disabled={isSearchingPickup || !pickupQuery}
+                    className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:hover:bg-blue-600 font-medium"
                   >
-                    Pick up now
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setPickupTimeOpen(false);
-                      setScheduleOpen(true);
-                    }}
-                    className="px-5 py-4 hover:bg-gray-100 cursor-pointer transition"
-                  >
-                    Schedule for later
-                  </div>
+                    {isSearchingPickup ? "..." : "Find"}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Ride For Dropdown */}
-            <div className="relative w-fit">
-              <div
-                onClick={() => setRideForOpen(!rideForOpen)}
-                className="inline-flex items-center gap-3 bg-gray-200 rounded-full px-5 py-3 cursor-pointer"
-              >
-                <User size={16} />
-                <span className="text-base font-medium">{rideFor}</span>
-                <ChevronDown size={16} />
+            {/* Drop-off */}
+            <div className="flex items-start gap-4 relative z-10">
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                <div className="w-3 h-3 rounded-full bg-red-600"></div>
               </div>
-
-              {rideForOpen && (
-                <div className="absolute mt-2 bg-white rounded-xl shadow-md border w-52 z-20">
-                  <div
-                    onClick={() => {
-                      setRideFor("For me");
-                      setRideForOpen(false);
-                    }}
-                    className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+              <div className="flex-1 flex flex-col gap-2">
+                <label className={`text-xs font-semibold uppercase tracking-wider transition-colors ${activeInput === 'dropoff' ? 'text-red-600' : 'text-gray-500'}`}>
+                  Drop-off Location {activeInput === "dropoff" && "(Click Map)"}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="E.g., Gulshan 2, Dhaka"
+                    className={`w-full bg-gray-50 border rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all ${activeInput === "dropoff" ? "border-red-400 bg-red-50/30" : "border-gray-200"}`}
+                    value={dropoffQuery}
+                    onChange={(e) => setDropoffQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchDropoff()}
+                    onFocus={() => setActiveInput("dropoff")}
+                  />
+                  <button
+                    onClick={handleSearchDropoff}
+                    disabled={isSearchingDropoff || !dropoffQuery}
+                    className="bg-red-600 text-white px-5 py-3 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:hover:bg-red-600 font-medium"
                   >
-                    For me
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setRideFor("For someone else");
-                      setRideForOpen(false);
-                    }}
-                    className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
-                  >
-                    For someone else
-                  </div>
+                    {isSearchingDropoff ? "..." : "Find"}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
+
+          <div className="h-[1px] w-full bg-gray-100 my-2"></div>
 
           {/* Ride Types */}
-          <div className="pt-6 space-y-2">
-            {[
-              {
-                name: "Standard",
-                desc: "Affordable everyday rides",
-                price: "BDT 180",
-              },
-              { name: "Premium", desc: "Comfortable rides", price: "BDT 320" },
-              {
-                name: "Bike",
-                desc: "Fast & budget friendly",
-                price: "BDT 120",
-              },
-            ].map((ride) => (
-              <div
-                key={ride.name}
-                className="border rounded-xl p-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer transition"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {ride.name}
-                  </p>
-                  <p className="text-xs text-gray-500">{ride.desc}</p>
-                </div>
-                <span className="text-sm font-medium">{ride.price}</span>
-              </div>
-            ))}
+          <div className="flex flex-col gap-4">
+            <h3 className="font-semibold text-gray-800">Available Rides</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {Object.entries(FARE_RATES).map(([key, data]) => (
+                <button
+                  key={key}
+                  onClick={() => setRideType(key)}
+                  className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${
+                    rideType === key
+                      ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
+                      : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
+                  }`}
+                >
+                  <span className="text-2xl mb-1">{data.icon}</span>
+                  <span className={`font-semibold capitalize ${rideType === key ? "text-gray-900" : "text-gray-700"}`}>{data.name}</span>
+                  <span className="text-xs text-gray-500 mt-0.5">{data.perKm} ৳/km</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <button className="w-full mt-6 bg-black text-white text-sm py-3 rounded-xl font-medium hover:bg-gray-900 transition">
-            Search
+          {/* Pricing & Route Summary */}
+          {isRouting ? (
+             <div className="bg-gray-50 p-6 rounded-2xl mt-2 border border-gray-200 flex flex-col items-center justify-center text-center">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <span className="text-gray-600 font-medium">Calculating best route...</span>
+             </div>
+          ) : routeGeometry && routeGeometry.length > 0 ? (
+            <div className="bg-gray-900 text-white p-6 rounded-2xl mt-2 shadow-lg relative overflow-hidden">
+               <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
+              
+               <div className="flex gap-4 mb-4 relative z-10 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                  <div className="flex-1 flex flex-col items-center justify-center border-r border-white/20">
+                     <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Time</span>
+                     <span className="font-bold text-lg">{duration} <span className="text-sm font-normal">min</span></span>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                     <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Distance</span>
+                     <span className="font-bold text-lg">{distance} <span className="text-sm font-normal">km</span></span>
+                  </div>
+               </div>
+
+              <div className="flex justify-between items-end relative z-10 pt-2 border-t border-white/10">
+                <span className="text-gray-300 font-medium">Estimated Fare</span>
+                <span className="font-bold text-4xl text-emerald-400">{fare} <span className="text-2xl">৳</span></span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 p-5 rounded-2xl mt-2 border border-gray-100 border-dashed flex items-center justify-center text-center px-8">
+              <span className="text-gray-400 text-sm">Select both locations to calculate distance and fare</span>
+            </div>
+          )}
+
+          <button
+            disabled={!routeGeometry || routeGeometry.length === 0}
+            className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:hover:bg-blue-600 shadow-[0_4px_14px_0_rgb(37,99,235,0.39)] disabled:shadow-none mt-2 active:scale-[0.98]"
+          >
+            Confirm Booking
           </button>
         </div>
 
-        {/* RIGHT MAP */}
-        <div className="hidden lg:block flex-1 rounded-2xl overflow-hidden shadow-sm min-h-[500px]">
-          <iframe
-            src="https://maps.google.com/maps?q=dhaka&t=&z=13&ie=UTF8&iwloc=&output=embed"
-            className="w-full h-full border-0"
-            loading="lazy"
+        {/* RIGHT SIDE: Map View */}
+        <div className="w-full flex-1 h-[500px] lg:h-auto min-h-[600px] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-200 relative z-0 cursor-crosshair">
+          <RideMap 
+            pickup={pickupLocation} 
+            dropoff={dropoffLocation} 
+            routeGeometry={routeGeometry}
+            durationMin={duration}
+            onMapClick={handleMapClick}
           />
+
+          {/* Current Location Button */}
+          <button
+            onClick={handleGetCurrentLocation}
+            disabled={isLocating}
+            className="absolute bottom-6 right-6 z-[1000] bg-white p-3 rounded-xl shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-100 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group"
+            title="Get Current Location"
+          >
+            {isLocating ? (
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 group-hover:text-blue-600 transition-colors">
+                <path d="M12 2v2M12 20v2M2 12h2M20 12h2"></path>
+                <circle cx="12" cy="12" r="8"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            )}
+          </button>
         </div>
+
       </div>
-
-      {/* SCHEDULE MODAL */}
-      {scheduleOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-6">
-            <div className="flex justify-between items-center">
-              <button
-                onClick={() => setScheduleOpen(false)}
-                className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"
-              >
-                ←
-              </button>
-
-              <button
-                onClick={() => {
-                  setSelectedDate("Today");
-                  setSelectedTime("Now");
-                }}
-                className="text-sm font-medium"
-              >
-                Clear
-              </button>
-            </div>
-
-            <h2 className="text-2xl font-semibold leading-snug">
-              When do you want to be picked up?
-            </h2>
-
-            {/* Date Selector (REAL DATE) */}
-            <div className="bg-gray-100 rounded-2xl p-4 relative">
-              <input
-                type="date"
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
-              <div className="flex justify-between items-center pointer-events-none">
-                <span className="flex items-center gap-3">
-                  📅 {selectedDate}
-                </span>
-                ⌄
-              </div>
-            </div>
-
-            {/* Time Selector (REAL TIME) */}
-            <div className="bg-gray-100 rounded-2xl p-4 relative">
-              <input
-                type="time"
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
-              <div className="flex justify-between items-center pointer-events-none">
-                <span className="flex items-center gap-3">
-                  🕒 {selectedTime}
-                </span>
-                ⌄
-              </div>
-            </div>
-
-            <div className="space-y-4 text-sm text-gray-600">
-              <div className="flex gap-3">
-                📅 Choose your pick-up time up to 30 days in advance
-              </div>
-              <div className="flex gap-3">
-                ⏳ Extra wait time included to meet your trip
-              </div>
-              <div className="flex gap-3">
-                ▬ Cancel at no charge up to 60 minutes in advance
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                setPickupTime(`${selectedDate} • ${selectedTime}`);
-                setScheduleOpen(false);
-              }}
-              className="w-full bg-black text-white rounded-2xl py-4 text-lg font-medium"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
-
-export default OnWayBookPage;
+}

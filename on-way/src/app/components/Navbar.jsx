@@ -44,7 +44,7 @@ const Navbar = () => {
           className="flex items-center text-2xl font-extrabold tracking-tight text-zinc-900"
           aria-label="OnWay"
         >
-          <Image src={logoImage} alt="OnWay" width={120} height={120} />
+          <Image src={logoImage} alt="OnWay" width={120} height={64} />
         </Link>
 
         {/* Desktop Menu */}

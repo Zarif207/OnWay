@@ -133,7 +133,7 @@ const Footer = () => {
             © {new Date().getFullYear()} OnWay. All rights reserved.
           </p>
           <div className="flex flex-wrap gap-4 text-zinc-400">
-            <Link href="/terms" className="hover:text-yellow-300">
+            <Link href="/Terms" className="hover:text-yellow-300">
               Terms
             </Link>
             <Link href="/privacy" className="hover:text-yellow-300">

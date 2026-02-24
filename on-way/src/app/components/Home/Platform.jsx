@@ -5,7 +5,6 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import Container from "./Container";
 import SectionHeading from "./SectionHeading";
 import { services } from "./homeData";
-import { Button } from "./ui";
 
 export default function Platform() {
   const initial = services[0]?.key ?? "ride";
@@ -98,12 +97,12 @@ export default function Platform() {
                 </ul>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <Button as="link" href={current.cta.href} variant="primary">
+                  <button as="link" href={current.cta.href} variant="primary">
                     {current.cta.label} <ArrowRight className="h-4 w-4" />
-                  </Button>
-                  <Button as="link" href="#download" variant="outline">
+                  </button>
+                  <button as="link" href="#download" variant="outline">
                     Get the app
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>

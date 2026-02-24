@@ -13,15 +13,12 @@ import {
   Wallet,
 } from "lucide-react";
 import Container from "./Container";
-import { Button } from "./ui";
+
 import Image from "next/image";
 
 export default function Hero() {
   return (
-    <section
-      id="home"
-      className="relative min-h-screen overflow-hidden"
-    >
+    <section id="home" className="relative min-h-screen overflow-hidden">
       {/* Full Background Image */}
       <div className="pointer-events-none absolute inset-0 z-0">
         <div className="relative h-full w-full">
@@ -111,12 +108,12 @@ export default function Hero() {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                <Button
-                  className="w-full rounded-2xl bg-yellow-400 px-6 py-3 text-base-100 "
-                 
+                <button
+                  className="w-full rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-400 active:bg-yellow-400 focus:bg-yellow-400"
+                  variant="accent"
                 >
                   See prices <ArrowRight className="h-4 w-4" />
-                </Button>
+                </button>
                 <button className="text-center text-xs font-semibold text-white/60 hover:text-white sm:text-right">
                   Log in to view recent trips
                 </button>
@@ -203,7 +200,9 @@ export default function Hero() {
                         <Icon className="h-5 w-5" />
                       </span>
                       <div>
-                        <p className="text-lg font-bold text-white">{c.title}</p>
+                        <p className="text-lg font-bold text-white">
+                          {c.title}
+                        </p>
                         <p className="text-xs font-semibold text-white/60">
                           {c.desc}
                         </p>
@@ -215,22 +214,25 @@ export default function Hero() {
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button
+              <button
                 as="link"
                 href="#services"
                 variant="accent"
-                className="rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-300"
+                className="rounded-2xl !bg-[#fdc800] px-6 py-3 !text-zinc-950
+             hover:!bg-[##fdc800] hover:!text-zinc-950
+             active:!bg-[#fdc800]
+             focus:!bg-[#fdc800]"
               >
                 Explore services <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button
+              </button>
+              <button
                 as="link"
                 href="#earn"
                 variant="outline"
                 className="rounded-2xl border-white/15 bg-white/0 px-6 py-3 text-white hover:bg-white/5"
               >
                 Earn with OnWay
-              </Button>
+              </button>
             </div>
           </div>
         </div>

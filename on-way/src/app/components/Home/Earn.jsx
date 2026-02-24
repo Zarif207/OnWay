@@ -3,7 +3,6 @@
 import { ArrowRight, Bike, Car, Package, Store } from "lucide-react";
 import Container from "./Container";
 import SectionHeading from "./SectionHeading";
-import { Button } from "./ui";
 
 const roles = [
   {
@@ -31,9 +30,9 @@ export default function Earn() {
             />
           </div>
           <div data-aos="fade-up" data-aos-delay="60">
-            <Button as="link" href="#contact" variant="accent">
+            <button as="link" href="#contact" variant="accent">
               Start earning <ArrowRight className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
 

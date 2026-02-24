@@ -1,11 +1,30 @@
+"use client";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import BlogCard from "../components/BlogCard";
-import blogData from "../../../public/blogs.json";
-
 
 export default function BlogPage() {
+    const [blogData, setBlogData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        axios.get("/blogs.json")
+            .then(res => {
+                setBlogData(res.data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Error fetching blogs:", err);
+                setLoading(false);
+            });
+    }, []);
+
     const featuredBlogs = blogData.filter((blog) => blog.featured);
     const otherBlogs = blogData.filter((blog) => !blog.featured);
 
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center text-white font-bold text-xl">Loading...</div>;
+    }
 
     return (
         <div className="min-h-screen">

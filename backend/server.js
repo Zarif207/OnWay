@@ -2,7 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); 
+const bcrypt = require("bcryptjs");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const uri = process.env.MONGODB_URI;
@@ -65,7 +66,7 @@ io.on("connection", (socket) => {
   // Receive GPS update from driver and broadcast to ride room
   socket.on("gpsUpdate", async (data) => {
     const { rideId, driverId, latitude, longitude } = data;
-    
+
     // Broadcast to everyone in the room (including passenger)
     io.to(rideId).emit("receiveGpsUpdate", {
       driverId,
@@ -84,6 +85,9 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "onWay Backend running " });
 });
 
+
+// -----------------------------------------------------------------------
+// Get Users
 app.get("/api/users", async (req, res) => {
   try {
     const users = await usersCollection.find({}).toArray();
@@ -93,33 +97,86 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-//  POST:  user add 
+// Get User
+app.get("/api/users/find", async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    const user = await usersCollection.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Post User 
 app.post("/api/users", async (req, res) => {
   try {
-    const newUser = req.body;
-    
-    if (!newUser.email || !newUser.name) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and name are required" 
+    const { name, email, password } = req.body;
+
+    if (!email || !name || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, Name and Password are required"
       });
     }
-    
+
+    const existingUser = await usersCollection.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = {
+      name,
+      email,
+      password: hashedPassword,
+      createdAt: new Date()
+    };
+
     const result = await usersCollection.insertOne(newUser);
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: "User created successfully",
-      data: { _id: result.insertedId, ...newUser }
+      data: { id: result.insertedId, name, email }
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// Patch User
+app.patch("/api/users/update-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const result = await usersCollection.updateOne(
+      { email: email },
+      { $set: { password: hashedPassword } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// -------------------------------------------------------------------------
+
 
 // BLOGS ROUTES
-
-
 app.get("/api/blogs", async (req, res) => {
   try {
     const blogs = await blogsCollection.find({}).toArray();
@@ -192,9 +249,9 @@ app.get("/api/ride/active-location/:rideId", async (req, res) => {
 });
 
 app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: "Route not found" 
+  res.status(404).json({
+    success: false,
+    message: "Route not found"
   });
 });
 

@@ -45,7 +45,6 @@ html {
 
 /* globals.css */
 @theme {
-  /* ... apnar ager theme variables ... */
   --clip-login: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
   --clip-signup: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
 }

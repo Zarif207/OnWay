@@ -9,6 +9,8 @@ import {
   FileSignature,
   AlertCircle,
   Download,
+  Wallet,
+  ShieldAlert,
 } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -18,6 +20,7 @@ const Terms = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
+    // Initializing AOS for smooth scroll animations
     AOS.init({ duration: 600 });
   }, []);
 
@@ -43,6 +46,28 @@ const Terms = () => {
       ],
     },
     {
+      id: "payments",
+      title: "Payment & Fares",
+      icon: <Wallet size={18} />,
+      details: [
+        "Fares are calculated based on distance, estimated time, and real-time traffic conditions.",
+        "Digital payments (bKash, Nagad, Cards) must be authorized before the ride starts if selected.",
+        "A cancellation fee may apply if a ride is cancelled after 3 minutes of booking.",
+        "Any disputes regarding fares must be reported within 24 hours of the trip completion.",
+      ],
+    },
+    {
+      id: "safety",
+      title: "Safety & Insurance",
+      icon: <ShieldAlert size={18} />,
+      details: [
+        "OnWay provides an in-app Emergency SOS button that connects directly to local authorities.",
+        "While we facilitate safe transport, users are responsible for their personal belongings.",
+        "All registered rides are covered under our basic accident insurance policy as per local regulations.",
+        "Any form of harassment, physical or verbal, will lead to an immediate and permanent account ban.",
+      ],
+    },
+    {
       id: "conduct",
       title: "User Conduct",
       icon: <Scale size={18} />,
@@ -64,10 +89,17 @@ const Terms = () => {
     },
   ];
 
+  const handleDownload = () => {
+    setIsDownloading(true);
+    // Simulating a delay for PDF generation
+    setTimeout(() => {
+      setIsDownloading(false);
+    }, 2000);
+  };
+
   return (
     <section className="min-h-screen bg-[#f2f2f2] py-16 px-4">
       <div className="max-w-6xl mx-auto">
-
         {/* Header */}
         <div className="mb-14" data-aos="fade-down">
           <p className="text-sm text-gray-500 uppercase tracking-widest mb-3">
@@ -77,17 +109,16 @@ const Terms = () => {
             Terms of Service
           </h1>
           <p className="mt-4 text-gray-600 max-w-2xl">
-            Please read these terms carefully before using our platform.
-            Your access to and use of the service is conditioned upon your
-            acceptance of these terms.
+            Please read these terms carefully before using our platform. Your
+            access to and use of the service is conditioned upon your acceptance
+            of these terms.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-
           {/* Sidebar */}
           <div className="lg:col-span-4" data-aos="fade-right">
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 sticky top-10">
               <h3 className="text-sm font-semibold text-gray-800 mb-6 uppercase tracking-wider">
                 Overview
               </h3>
@@ -99,11 +130,13 @@ const Terms = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-3 px-4 py-3 text-left rounded-md text-sm transition ${
                       activeTab === tab.id
-                        ? "bg-gray-100 text-black font-semibold"
+                        ? "bg-gray-100 text-black font-semibold shadow-sm"
                         : "text-gray-600 hover:bg-gray-50"
                     }`}
                   >
-                    <span className="text-gray-500">{tab.icon}</span>
+                    <span className={activeTab === tab.id ? "text-black" : "text-gray-500"}>
+                      {tab.icon}
+                    </span>
                     {tab.title}
                   </button>
                 ))}
@@ -111,16 +144,15 @@ const Terms = () => {
             </div>
           </div>
 
-          {/* Content */}
+          {/* Content Area */}
           <div className="lg:col-span-8" data-aos="fade-left">
-            <div className="bg-white border border-gray-200 rounded-xl p-10 min-h-[500px]">
-
+            <div className="bg-white border border-gray-200 rounded-xl p-6 md:p-10 min-h-137.5 shadow-sm">
               {termsData.map(
                 (content) =>
                   activeTab === content.id && (
-                    <div key={content.id}>
+                    <div key={content.id} className="animate-in fade-in duration-500">
                       <div className="flex items-center gap-3 mb-8">
-                        <div className="text-gray-600">
+                        <div className="p-2 bg-gray-100 rounded-lg text-gray-700">
                           {content.icon}
                         </div>
                         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">
@@ -128,45 +160,49 @@ const Terms = () => {
                         </h2>
                       </div>
 
-                      <div className="space-y-5">
+                      <div className="space-y-6">
                         {content.details.map((point, idx) => (
-                          <div key={idx} className="flex gap-3">
-                            <div className="w-2 h-2 mt-2 rounded-full bg-gray-400"></div>
-                            <p className="text-gray-700 text-base leading-7">
+                          <div key={idx} className="flex gap-4">
+                            <div className="shrink-0 w-1.5 h-1.5 mt-2.5 rounded-full bg-black"></div>
+                            <p className="text-gray-700 text-base leading-relaxed">
                               {point}
                             </p>
                           </div>
                         ))}
                       </div>
 
-                      {/* Note Box */}
-                      <div className="mt-10 p-5 bg-gray-50 border border-gray-200 rounded-md flex gap-3">
+                      {/* Warning Box */}
+                      <div className="mt-12 p-5 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
                         <AlertCircle
-                          size={18}
-                          className="text-gray-500 mt-1"
+                          size={20}
+                          className="text-amber-600 mt-0.5 shrink-0"
                         />
-                        <p className="text-sm text-gray-600">
-                          Violation of these terms may result in account
-                          suspension or legal action.
+                        <p className="text-sm text-amber-800 leading-relaxed">
+                          <strong>Note:</strong> Violation of these rules may result in
+                          immediate account suspension, permanent banning, or legal
+                          action depending on the severity of the case.
                         </p>
                       </div>
 
-                      {/* Download Button */}
-                      <div className="mt-10 pt-6 border-t border-gray-200">
+                      {/* Download Section */}
+                      <div className="mt-10 pt-8 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <p className="text-sm text-gray-500">
+                          Last Updated: October 2023
+                        </p>
                         <a
                           href="/Terms.pdf"
                           download
-                          onClick={() => setIsDownloading(true)}
-                          className={`inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-md transition ${
+                          onClick={handleDownload}
+                          className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-lg transition-all ${
                             isDownloading
-                              ? "bg-gray-300 cursor-not-allowed"
-                              : "bg-black text-white hover:bg-gray-800"
+                              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                              : "bg-black text-white hover:bg-gray-800 active:scale-95"
                           }`}
                         >
                           <Download size={16} />
                           {isDownloading
-                            ? "Generating PDF..."
-                            : "Download Full Terms (PDF)"}
+                            ? "Processing PDF..."
+                            : "Download Full PDF"}
                         </a>
                       </div>
                     </div>

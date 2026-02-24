@@ -48,7 +48,7 @@ async function connectDB() {
 connectDB();
 
 const database = client.db("onWayDB"); //  database name
-const usersCollection = database.collection("users"); // users collection
+const passengerCollection = database.collection("passenger"); // users collection
 const blogsCollection = database.collection("blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
 
@@ -84,9 +84,9 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "onWay Backend running " });
 });
 
-app.get("/api/users", async (req, res) => {
+app.get("/api/passenger", async (req, res) => {
   try {
-    const users = await usersCollection.find({}).toArray();
+    const users = await passengerCollection.find({}).toArray();
     res.json({ success: true, count: users.length, data: users });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -94,7 +94,7 @@ app.get("/api/users", async (req, res) => {
 });
 
 //  POST:  user add 
-app.post("/api/users", async (req, res) => {
+app.post("/api/passenger", async (req, res) => {
   try {
     const newUser = req.body;
     
@@ -105,7 +105,7 @@ app.post("/api/users", async (req, res) => {
       });
     }
     
-    const result = await usersCollection.insertOne(newUser);
+    const result = await passengerCollection.insertOne(newUser);
     res.status(201).json({ 
       success: true, 
       message: "User created successfully",

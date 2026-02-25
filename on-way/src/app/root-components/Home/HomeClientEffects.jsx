@@ -18,7 +18,7 @@ export default function HomeClientEffects() {
     const lenis = new Lenis({
       smoothWheel: true,
       syncTouch: true,
-      lerp: 0.085,
+      lerp: 0.50,
     });
 
     let rafId = 0;

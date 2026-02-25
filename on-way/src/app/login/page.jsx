@@ -37,41 +37,6 @@ const Login = () => {
         redirect: false
       });
 
-<<<<<<< HEAD
-            if (userFound) {
-                const result = await signIn("credentials", {
-                    email: data.email,
-                    password: data.password,
-                    name: userFound.name,
-                    redirect: false,
-                });
-
-                if (result?.error) {
-                    toast.error("Login failed!", { id: toastId });
-                    console.log(result);
-                } else {
-                    toast.success(`Welcome, ${userFound.name}!`, { id: toastId });
-                    router.push("/");
-                    router.refresh();
-                }
-            } else {
-                toast.error("User not found or wrong password!", { id: toastId });
-            }
-        } catch (error) {
-            toast.error("Something went wrong!");
-        } finally {
-            setLoading(false);
-        }
-    };
-    const handleSocialLogin = async (provider) => {
-        try {
-            await signIn(provider, { callbackUrl: "/" });
-            toast.success(`Connecting to ${provider}...`);
-        } catch (error) {
-            toast.error("Social login failed!");
-        }
-    };
-=======
       if (result?.error) {
         toast.error("Invalid login credentials", { id: toastId });
       } else {
@@ -85,7 +50,6 @@ const Login = () => {
       setLoading(false);
     }
   };
->>>>>>> b0356446cc46b58100f96796db481de0082a0d6f
 
   if (status === "loading") {
     return (

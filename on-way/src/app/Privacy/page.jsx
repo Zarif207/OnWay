@@ -8,7 +8,7 @@ const Privacy = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F6] text-[#1F1F1F] font-sans">
 
-      <div className="max-w-300 mx-auto py-12 px-6 md:py-20 flex flex-col md:flex-row gap-16">
+      <div className="max-w-[1200px] mx-auto py-12 px-6 md:py-20 flex flex-col md:flex-row gap-16">
         
         {/* Sidebar - Pathao Style Bold Nav */}
         <aside className="md:w-1/4">
@@ -56,7 +56,7 @@ const Privacy = () => {
               </div>
             </section>
 
-            {/* Section 02 - Visual Callout (Pathao Accent Style) */}
+            {/* Section 02 - Visual Callout */}
             <section className="bg-primary/5 border-l-8 border-primary p-10">
               <h3 className="text-2xl font-bold mb-4 italic">How we use your data</h3>
               <p className="text-gray-700 text-lg leading-relaxed mb-6">

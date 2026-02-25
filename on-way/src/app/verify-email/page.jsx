@@ -12,13 +12,11 @@ const VerifyEmail = () => {
     const [tempUser, setTempUser] = useState(null);
     const inputRefs = useRef([]);
     const router = useRouter();
-<<<<<<< HEAD
-    
-=======
+
+    console.log(tempUser);
 
     const { registerUser } = useUsers();
 
->>>>>>> b0356446cc46b58100f96796db481de0082a0d6f
     useEffect(() => {
         const storedData = localStorage.getItem("tempUser");
         if (!storedData) {
@@ -60,7 +58,8 @@ const VerifyEmail = () => {
                     name: tempUser.name,
                     email: tempUser.email,
                     phone: tempUser.phone,
-                    password: tempUser.password
+                    password: tempUser.password,
+                    role: "passenger"
                 };
 
                 const result = await registerUser(userData);

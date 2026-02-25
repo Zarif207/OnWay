@@ -1,13 +1,14 @@
-import HomeClientEffects from "./components/Home/HomeClientEffects";
-import Hero from "./components/Home/Hero";
-import Stats from "./components/Home/Stats";
-import Platform from "./components/Home/Platform";
-import Safety from "./components/Home/Safety";
-import Earn from "./components/Home/Earn";
-import Contact from "./components/Home/Contact";
-import ScrollProgress from "./components/ScrollProgress";
 import HowItWorks from "./components/Home/HowItWorks";
 import Testimonials from "./components/Home/Testimonials";
+import ScrollProgress from "./components/ScrollProgress";
+import Contact from "./root-components/Home/Contact";
+import Earn from "./root-components/Home/Earn";
+import Hero from "./root-components/Home/Hero";
+import HomeClientEffects from "./root-components/Home/HomeClientEffects";
+import Platform from "./root-components/Home/Platform";
+import Safety from "./root-components/Home/Safety";
+import Stats from "./root-components/Home/Stats";
+
 export default function Home() {
   return (
     <ScrollProgress>

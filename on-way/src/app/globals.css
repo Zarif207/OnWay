@@ -40,3 +40,26 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+/* globals.css */
+@theme {
+  --clip-login: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
+  --clip-signup: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+/* Custom Utilities for Diagonal Shape */
+.clip-diagonal-left {
+  clip-path: var(--clip-login);
+}
+
+.clip-diagonal-right {
+  clip-path: var(--clip-signup);
+}
+
+@media (max-width: 768px) {
+
+  .clip-diagonal-left,
+  .clip-diagonal-right {
+    clip-path: none !important;
+  }
+}

@@ -50,7 +50,7 @@ connectDB();
 
 const database = client.db("onWayDB"); //  database name
 const passengerCollection = database.collection("passenger"); // passenger collection
-const usersCollection = database.collection("users"); // users collection
+// const passengerCollection = database.collection("users"); // users collection
 const blogsCollection = database.collection("blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
 
@@ -89,9 +89,9 @@ app.get("/api/health", (req, res) => {
 
 // -----------------------------------------------------------------------
 // Get Users
-app.get("/api/users", async (req, res) => {
+app.get("/api/passenger", async (req, res) => {
   try {
-    const users = await usersCollection.find({}).toArray();
+    const users = await passengerCollection.find({}).toArray();
     res.json({ success: true, count: users.length, data: users });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -99,13 +99,13 @@ app.get("/api/users", async (req, res) => {
 });
 
 // Get User
-app.get("/api/users/find", async (req, res) => {
+app.get("/api/passenger/find", async (req, res) => {
   try {
     const email = req.query.email;
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
-    const user = await usersCollection.findOne({ email: email });
+    const user = await passengerCollection.findOne({ email: email });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -116,7 +116,7 @@ app.get("/api/users/find", async (req, res) => {
 });
 
 // Post User 
-app.post("/api/users", async (req, res) => {
+app.post("/api/passenger", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -127,7 +127,7 @@ app.post("/api/users", async (req, res) => {
       });
     }
 
-    const existingUser = await usersCollection.findOne({ email });
+    const existingUser = await passengerCollection.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: "User already exists" });
     }
@@ -141,7 +141,7 @@ app.post("/api/users", async (req, res) => {
       createdAt: new Date()
     };
 
-    const result = await usersCollection.insertOne(newUser);
+    const result = await passengerCollection.insertOne(newUser);
     res.status(201).json({
       success: true,
       message: "User created successfully",
@@ -153,14 +153,14 @@ app.post("/api/users", async (req, res) => {
 });
 
 // Patch User
-app.patch("/api/users/update-password", async (req, res) => {
+app.patch("/api/passenger/update-password", async (req, res) => {
   try {
     const { email, newPassword } = req.body;
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    const result = await usersCollection.updateOne(
+    const result = await passengerCollection.updateOne(
       { email: email },
       { $set: { password: hashedPassword } }
     );

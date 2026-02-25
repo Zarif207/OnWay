@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 export default function DashboardPage() {
-  const role = "passenger"; // change manually for testing
+  const role = "admin"; // change manually for testing
 
   if (role === "admin") {
     redirect("/dashboard/admin");

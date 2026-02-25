@@ -33,6 +33,7 @@ const baseNav = [
 const more = [
   { label: "ridesharing-guidlines", href: "/ridesharing-guidlines" },
   { label: "Safety-Coverage", href: "/Safety-Coverage" },
+  { label: "pricing", href: "/pricing" },
 ];
 
 const Navbar = () => {

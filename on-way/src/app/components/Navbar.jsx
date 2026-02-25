@@ -1,46 +1,81 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   ChevronDown,
   Menu,
   X,
   LogOut,
   User,
-  UserPlus,
-  LogIn,
   MapPin,
   Shield,
   Headphones,
   Car,
+  Wallet,
+  History,
+  LayoutDashboard,
 } from "lucide-react";
 import Image from "next/image";
 import logoImage from "../../../public/icon2.png";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-const nav = [
+
+const baseNav = [
   { label: "Home", href: "/" },
   { label: "OnWay Book", href: "/onway-book" },
-  { label: "Earn With OnWay ", href: "/earn-with-onway" },
+  { label: "Earn With OnWay", href: "/earn-with-onway" },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog" },
   { label: "Help", href: "/help" },
-  { label: "Dashboard", href: "/dashboard/passenger" },
 ];
 
 const more = [
-  { label: "Ridesharing-guidlines", href: "Ridesharing-guidlines" },
-  { label: "Safety-Coverage", href: "Safety-Coverage" },
+  { label: "rideSharing-Guidlines", href: "/RideSharing-Guidlines" },
+  { label: "Safety-Coverage", href: "/Safety-Coverage" },
 ];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
+
   const { data: session } = useSession();
   const pathname = usePathname();
 
   const isDashboard = pathname.startsWith("/dashboard");
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/login" });
+  };
+  const role = session?.user?.role;
+
+  // ✅ Dynamic Dashboard Link
+  const dashboardHref = useMemo(() => {
+    if (!role) return "/dashboard/passenger";
+    return `/dashboard/${role}`;
+  }, [role]);
+
+  // ✅ Role-based dashboard page icons
+  const roleIcons = {
+    passenger: [
+      { href: "/dashboard/passenger/book-ride", icon: <Car className="h-5 w-5" />, label: "Book Ride" },
+      { href: "/dashboard/passenger/ride-history", icon: <History className="h-5 w-5" />, label: "My Rides" },
+      { href: "/dashboard/passenger/active-ride", icon: <LayoutDashboard className="h-5 w-5" />, label: "Tracking" },
+      { href: "/dashboard/passenger/wallet", icon: <Wallet className="h-5 w-5" />, label: "Wallet" },
+      { href: "/dashboard/passenger/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
+    ],
+    rider: [
+      { href: "/dashboard/rider/requests", icon: <Car className="h-5 w-5" />, label: "Ride Requests" },
+      { href: "/dashboard/rider/trips", icon: <History className="h-5 w-5" />, label: "My Trips" },
+      { href: "/dashboard/rider/earnings", icon: <Wallet className="h-5 w-5" />, label: "Earnings" },
+      { href: "/dashboard/rider/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
+    ],
+    admin: [
+      { href: "/dashboard/admin", icon: <Shield className="h-5 w-5" />, label: "Admin Panel" },
+    ],
+    supportAgent: [
+      { href: "/dashboard/supportAgent", icon: <Headphones className="h-5 w-5" />, label: "Support Panel" },
+    ],
+  };
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -56,17 +91,16 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="flex items-center text-2xl font-extrabold tracking-tight text-zinc-900"
-          aria-label="OnWay"
-        >
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center text-2xl font-extrabold">
           <Image src={logoImage} alt="OnWay" width={120} height={94} />
         </Link>
 
-        {/* Center Menu (ALWAYS SAME) */}
+        {/* Center Menu */}
         <div className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 md:flex">
-          {nav.map((item) => (
+
+          {baseNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -75,6 +109,16 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
+
+          {/* Show Dashboard only when NOT inside dashboard */}
+          {session && !isDashboard && (
+            <Link
+              href={dashboardHref}
+              className="transition hover:text-zinc-950"
+            >
+              Dashboard
+            </Link>
+          )}
 
           {/* More Dropdown */}
           <div className="relative">
@@ -104,44 +148,37 @@ const Navbar = () => {
         </div>
 
         {/* Right Side */}
-        <div className="hidden items-center gap-4 md:flex">
-          
-          {isDashboard ? (
-            // 🔵 Dashboard Mode → Show role icons
+        <div className="hidden items-center gap-6 md:flex">
+          {isDashboard && session ? (
             <>
-              <Link href="/dashboard/passenger">
-                <User className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
+              {roleIcons[role]?.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="relative group text-zinc-700 hover:text-black"
+                >
+                  {item.icon}
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100">
+                    {item.label}
+                  </span>
+                </Link>
+              ))}
 
-              <Link href="/dashboard/rider">
-                <Car className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <Link href="/dashboard/admin">
-                <Shield className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <Link href="/dashboard/support-agent">
-                <Headphones className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <button onClick={() => signOut()}>
+              <button onClick={() => handleSignOut()}>
                 <LogOut className="h-5 w-5 text-red-500 hover:text-red-600" />
               </button>
             </>
           ) : session ? (
-            // 🟢 Logged In (Normal pages)
             <>
               <MapPin className="h-5 w-5 text-zinc-700" />
               <button
-                onClick={() => signOut()}
+                onClick={() => handleSignOut()}
                 className="text-sm font-semibold"
               >
                 Logout
               </button>
             </>
           ) : (
-            // 🟢 Guest (Normal pages)
             <>
               <MapPin className="h-5 w-5 text-zinc-700" />
               <Link

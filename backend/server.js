@@ -51,7 +51,7 @@ connectDB();
 const database = client.db("onWayDB"); //  database name
 const passengerCollection = database.collection("passenger"); // passenger collection
 // const passengerCollection = database.collection("users"); // users collection
-const blogsCollection = database.collection("blogs"); // blogs collection
+const blogsCollection = database.collection("Blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
 
 // Socket.io Event Handling
@@ -118,12 +118,12 @@ app.get("/api/passenger/find", async (req, res) => {
 // Post User 
 app.post("/api/passenger", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, phone, password, role, image, authProvider } = req.body;
 
-    if (!email || !name || !password) {
+    if (!email || !name || (!password && !authProvider)) {
       return res.status(400).json({
         success: false,
-        message: "Email, Name and Password are required"
+        message: "Missing required fields"
       });
     }
 
@@ -132,14 +132,20 @@ app.post("/api/passenger", async (req, res) => {
       return res.status(400).json({ success: false, message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = {
+    let newUser = {
       name,
       email,
-      password: hashedPassword,
-      createdAt: new Date()
+      phone,
+      image: image || "",
+      role: role || "passenger",
+      authProvider: authProvider || "credentials",
+      createdAt: new Date(),
+      lastLogin: new Date(),
     };
+
+    if (password) {
+      newUser.password = await bcrypt.hash(password, 10);
+    }
 
     const result = await passengerCollection.insertOne(newUser);
     res.status(201).json({
@@ -147,6 +153,23 @@ app.post("/api/passenger", async (req, res) => {
       message: "User created successfully",
       data: { id: result.insertedId, name, email }
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update Last Login 
+app.patch("/api/passenger/update-login", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const result = await passengerCollection.updateOne(
+      { email: email },
+      { $set: { lastLogin: new Date() } }
+    );
+
+    res.json({ success: true, message: "Login time updated" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

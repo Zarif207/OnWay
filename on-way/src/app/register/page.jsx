@@ -16,6 +16,8 @@ const Register = () => {
   const router = useRouter();
   const { findUser } = useUsers();
 
+  console.log(findUser);
+  
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/");

@@ -19,6 +19,7 @@ import Image from "next/image";
 import logoImage from "../../../public/icon2.png";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const baseNav = [
   { label: "Home", href: "/" },
@@ -45,7 +46,9 @@ const Navbar = () => {
   const handleSignOut = () => {
     signOut({ callbackUrl: "/login" });
   };
-  const role = session?.user?.role;
+  // const role = session?.user?.role;
+  const { user } = useCurrentUser();
+  const role = user?.role || "passenger";
 
   // Dynamic Dashboard Link
   const dashboardHref = useMemo(() => {

@@ -30,8 +30,8 @@ const nav = [
 ];
 
 const more = [
-  { label: "Ridesharing-guidlines", href: "Ridesharing-guidlines" },
-  { label: "Safety-Coverage", href: "Safety-Coverage" },
+  { label: "Ridesharing-guidlines", href: "/Ridesharing-guidlines" },
+  { label: "Safety-Coverage", href: "/Safety-Coverage" },
 ];
 
 const Navbar = () => {

@@ -30,7 +30,7 @@ export default function Earn() {
             />
           </div>
           <div data-aos="fade-up" data-aos-delay="60">
-            <button as="link" href="#contact" variant="accent">
+            <button as="link" href="#contact" variant="accent" className="flex items-center gap-2">
               Start earning <ArrowRight className="h-4 w-4" />
             </button>
           </div>

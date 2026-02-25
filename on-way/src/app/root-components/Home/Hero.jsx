@@ -109,7 +109,7 @@ export default function Hero() {
 
               <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                 <button
-                  className="w-full flex items-center justify-center gap-3 rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-400 active:bg-yellow-400 focus:bg-yellow-400"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-400 active:bg-yellow-400 focus:bg-yellow-400"
                   variant="accent"
                 >
                   See prices <ArrowRight className="h-4 w-4" />
@@ -218,10 +218,7 @@ export default function Hero() {
                 as="link"
                 href="#services"
                 variant="accent"
-                className="rounded-2xl flex items-center justify-center gap-3 !bg-[#fdc800] px-6 py-3 !text-zinc-950
-             hover:!bg-[##fdc800] hover:!text-zinc-950
-             active:!bg-[#fdc800]
-             focus:!bg-[#fdc800]"
+                className="flex items-center gap-2 rounded-2xl !bg-[#fdc800] px-6 py-3 !text-zinc-950 hover:!bg-[#fdc800] hover:!text-zinc-950 active:!bg-[#fdc800] focus:!bg-[#fdc800]"
               >
                 Explore services <ArrowRight className="h-4 w-4" />
               </button>

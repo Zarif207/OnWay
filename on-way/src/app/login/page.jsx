@@ -2,7 +2,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaGithub, FaGoogle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaGithub, FaGoogle, FaChevronLeft } from 'react-icons/fa';
+import { FcGoogle } from "react-icons/fc";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
@@ -71,16 +72,16 @@ const Login = () => {
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.8, ease: "anticipate" }}
-          className="md:w-[48%] bg-neutral relative clip-diagonal-left hidden md:flex flex-col justify-between p-16 text-white min-h-screen"
+          className="md:w-[48%] bg-primary relative clip-diagonal-left hidden md:flex flex-col justify-between p-16 text-accent/90 min-h-screen"
         >
           <motion.div
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
             transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-            className="absolute inset-0 z-0 opacity-50"
+            className="absolute inset-0 z-0 opacity-80"
             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070')", backgroundSize: 'cover', backgroundPosition: 'center' }}
           ></motion.div>
-          <div className="absolute inset-0 bg-linear-to-t from-neutral via-neutral/60 to-transparent z-0"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-neutral via-neutral/10 to-transparent z-0"></div>
 
           <div className="relative z-10">
             <motion.h1
@@ -89,13 +90,13 @@ const Login = () => {
               transition={{ delay: 0.3 }}
               className="text-6xl font-black italic tracking-tighter"
             >
-              OnWay<span className="text-primary">.</span>
+              OnWay<span className="text-accent">.</span>
             </motion.h1>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-6 text-gray-300 text-lg max-w-sm font-medium leading-relaxed"
+              className="mt-6 text-accent/70 text-lg max-w-sm font-medium leading-relaxed"
             >
               The most reliable commuting partner for your daily life.
             </motion.p>
@@ -124,8 +125,12 @@ const Login = () => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mb-2 md:-mt-20"
+              className="mb-2"
             >
+              <Link href="/" className="text-xs mb-8 w-30 font-bold text-gray-400 hover:text-primary flex items-center gap-1 group">
+                <FaChevronLeft className="group-hover:translate-x-1 transition-transform" size={10} /> BACK TO HOME
+              </Link>
+
               <h3 className="text-4xl font-black text-neutral uppercase tracking-tighter">Login</h3>
               <div className="h-2 w-12 bg-primary mt-2 rounded-full"></div>
             </motion.div>
@@ -179,13 +184,13 @@ const Login = () => {
                 onClick={() => signIn("google")}
                 className="btn flex-1 bg-white border-gray-100 rounded-2xl py-2 hover:bg-gray-50 h-12 shadow-sm uppercase text-[11px] font-bold transition-all justify-center items-center"
               >
-                <FaGoogle className="mr-1 text-cyan-600/95 h-4 w-4 -mt-1" /> Google
+                <FcGoogle className="mr-1 text-cyan-600/95 h-4 w-4 -mt-1" /> Google
               </motion.button>
               <motion.button
                 type="button"
                 whileHover={{ y: -2 }}
                 onClick={() => signIn("github")}
-                className="btn flex-1 bg-neutral text-white border-none rounded-2xl py-2 hover:bg-black h-12 shadow-sm uppercase text-[11px] font-bold transition-all"
+                className="btn flex-1 bg-black/80 text-white border-none rounded-2xl py-2  h-12 shadow-sm uppercase text-[11px] font-bold transition-all"
               >
                 <FaGithub className="mr-2" /> GitHub
               </motion.button>
@@ -197,7 +202,7 @@ const Login = () => {
               transition={{ delay: 0.8 }}
               className="mt-6 text-center text-sm font-medium text-gray-500"
             >
-              New here? <Link href="/register" className="text-primary font-black hover:underline underline-offset-4 ml-1">Create Account</Link>
+              New here? <Link href="/register" className="text-primary font-bold hover:underline underline-offset-4 ml-1">Create Account?</Link>
             </motion.p>
           </div>
         </motion.div>

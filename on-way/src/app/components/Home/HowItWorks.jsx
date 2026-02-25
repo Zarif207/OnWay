@@ -30,7 +30,7 @@ const HowItWorks = () => {
         <div className="text-center mb-16">
           {/* Text-e Primary color bebohar kora hoyeche */}
           <h2 className="text-4xl font-extrabold text-primary mb-4 tracking-tight uppercase">
-            How Onway Works
+            How OnWay Works
           </h2>
           <div className="w-24 h-1 bg-secondary mx-auto mb-6"></div> {/* Ekta yellow divider line */}
           <p className="text-primary/80 max-w-2xl mx-auto text-lg">

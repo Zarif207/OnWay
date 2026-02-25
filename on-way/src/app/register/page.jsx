@@ -130,9 +130,9 @@ const Register = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={loading}
-                className="btn btn-primary w-full text-white rounded-2xl h-14 uppercase tracking-[0.2em] font-black shadow-2xl shadow-primary/30 mt-4 border-none"
+                className="btn btn-primary w-full text-white rounded-2xl h-14 uppercase tracking-[0.2em] font-black shadow shadow-primary/20 mt-4 border-none"
               >
-                {loading ? <span className="loading loading-spinner"></span> : "Get OTP Code"}
+                {loading ? <span className="loading text-primary loading-spinner"></span> : "Get OTP Code"}
               </motion.button>
             </form>
           </div>
@@ -143,7 +143,7 @@ const Register = () => {
           initial={{ x: 100 }}
           animate={{ x: 0 }}
           transition={{ duration: 0.8, ease: "anticipate" }}
-          className="md:w-[48%] bg-neutral relative clip-diagonal-right hidden md:flex flex-col justify-between p-16 text-white min-h-screen order-1 md:order-2 text-right items-end"
+          className="md:w-[48%] bg-primary relative clip-diagonal-right hidden md:flex flex-col justify-between p-16 text-accent/80 min-h-screen order-1 md:order-2 text-right items-end"
         >
           <motion.div
             initial={{ scale: 1.2, opacity: 0 }}
@@ -161,13 +161,13 @@ const Register = () => {
               transition={{ delay: 0.4 }}
               className="text-6xl font-black italic tracking-tighter"
             >
-              OnWay<span className="text-primary animate-pulse">.</span>
+              OnWay<span className="text-accent animate-pulse">.</span>
             </motion.h1>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="mt-6 text-gray-300 text-lg max-w-sm font-medium leading-relaxed"
+              className="mt-6 text-white/70 text-lg max-w-sm font-medium leading-relaxed"
             >
               Join the fastest growing commuting network in the country.
             </motion.p>

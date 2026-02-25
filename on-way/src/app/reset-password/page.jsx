@@ -28,7 +28,7 @@ const ResetPassword = () => {
         const toastId = toast.loading("Updating password...");
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/update-password`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/update-password`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

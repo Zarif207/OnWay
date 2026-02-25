@@ -25,7 +25,7 @@ const ForgotPasswordContent = () => {
         const toastId = toast.loading("Checking user...");
 
         try {
-            const checkUser = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/find?email=${email}`);
+            const checkUser = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${email}`);
 
             if (!checkUser.ok) {
                 toast.error("User not found with this email!", { id: toastId });

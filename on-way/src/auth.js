@@ -19,7 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/find?email=${credentials.email}`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${credentials.email}`);
                 const user = await res.json();
 
                 if (!user || !user.password) {

@@ -2,7 +2,7 @@
 
 export const useUsers = () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const usersApi = `${baseUrl}/users`;
+    const usersApi = `${baseUrl}/passenger`;
 
     const findUser = async (email) => {
         try {

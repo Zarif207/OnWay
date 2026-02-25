@@ -3,14 +3,15 @@ import nodemailer from 'nodemailer';
 
 export async function POST(req) {
     try {
-        const { email, otp } = await req.json();
+        const { email } = await req.json();
 
-        if (!email || !otp) {
+        if (!email) {
             return NextResponse.json(
-                { success: false, message: "Email and OTP are required" },
+                { success: false, message: "Email is required" },
                 { status: 400 }
             );
         }
+        const otp = Math.floor(100000 + Math.random() * 900000);
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -52,8 +53,9 @@ export async function POST(req) {
 
         await transporter.sendMail(mailOptions);
 
+        // ✅ OTP return করো
         return NextResponse.json(
-            { success: true, message: "OTP sent successfully to " + email },
+            { success: true, message: "OTP sent successfully to " + email, otp: otp },
             { status: 200 }
         );
 

@@ -10,7 +10,7 @@ const VerifyEmail = () => {
     const [tempUser, setTempUser] = useState(null);
     const inputRefs = useRef([]);
     const router = useRouter();
-
+    
     useEffect(() => {
         const storedData = localStorage.getItem("tempUser");
         if (!storedData) {

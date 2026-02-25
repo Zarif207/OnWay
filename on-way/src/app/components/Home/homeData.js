@@ -17,7 +17,7 @@ export const stats = [
 
 export const services = [
   {
-    key: "ride",
+    key: "Bike",
     name: "OnWay Ride",
     icon: Bike,
     tagline: "Beat the traffic, arrive on time.",

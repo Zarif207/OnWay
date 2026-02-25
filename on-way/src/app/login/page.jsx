@@ -38,6 +38,7 @@ const Login = () => {
 
                 if (result?.error) {
                     toast.error("Login failed!", { id: toastId });
+                    console.log(result);
                 } else {
                     toast.success(`Welcome, ${userFound.name}!`, { id: toastId });
                     router.push("/");

@@ -8,26 +8,39 @@ export default function BlogPage() {
     const [blogData, setBlogData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const blogsPerPage = 6;
 
     useEffect(() => {
-        axios.get("/blogs.json")
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/blogs`)
             .then(res => {
-                setBlogData(res.data);
+                setBlogData(res.data.data || []);
                 setLoading(false);
             })
             .catch(err => {
-                console.error("Error fetching blogs:", err);
+                console.error("Error fetching blogs from DB:", err);
                 setLoading(false);
             });
     }, []);
 
+    // Filter logic (Search)
     const filteredBlogs = blogData.filter(blog =>
         blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         blog.content?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const featuredBlogs = filteredBlogs.filter((blog) => blog.featured);
-    const otherBlogs = filteredBlogs.filter((blog) => !blog.featured);
+    const indexOfLastBlog = currentPage * blogsPerPage;
+    const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
+    const currentBlogs = filteredBlogs.slice(indexOfFirstBlog, indexOfLastBlog);
+    const totalPages = Math.ceil(filteredBlogs.length / blogsPerPage);
+
+    const paginate = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 400, behavior: 'smooth' });
+    };
+
+    const featuredBlogs = filteredBlogs.filter((blog) => blog.featured).slice(0, 3);
+    const otherBlogs = currentBlogs.filter((blog) => !blog.featured || filteredBlogs.length <= blogsPerPage);
 
     if (loading) {
         return (
@@ -40,7 +53,7 @@ export default function BlogPage() {
 
     return (
         <ScrollProgress>
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen  mx-auto">
                 {/* Hero Section */}
                 <div className="bg-linear-to-r from-gray-900 via-gray-800 to-black text-white py-20">
                     <div className="max-w-4xl mx-auto px-6 text-center">
@@ -52,13 +65,13 @@ export default function BlogPage() {
                             <input
                                 type="text"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                                 placeholder="Search for Blogs..."
-                                className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                                className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
                             />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-yellow-400 text-black px-6 py-2 rounded-full font-medium">
-                                Search
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -66,8 +79,7 @@ export default function BlogPage() {
                 {/* Blog Content */}
                 <div className="container mx-auto px-4 md:px-6 mt-10 mb-20">
 
-                    {/* Featured Section */}
-                    {featuredBlogs.length > 0 && (
+                    {currentPage === 1 && featuredBlogs.length > 0 && !searchQuery && (
                         <div className="mb-16">
                             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                                 <span className="w-8 h-1 bg-yellow-400 rounded-full inline-block"></span>
@@ -75,7 +87,7 @@ export default function BlogPage() {
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {featuredBlogs.map((blog) => (
-                                    <BlogCard key={blog.id} blog={blog} />
+                                    <BlogCard key={blog._id || blog.id} blog={blog} />
                                 ))}
                             </div>
                         </div>
@@ -84,12 +96,32 @@ export default function BlogPage() {
                     {/* Regular Feed */}
                     <section>
                         <h2 className="text-2xl font-bold mb-8">Latest Updates</h2>
-                        {otherBlogs.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {otherBlogs.map((blog) => (
-                                    <BlogCard key={blog.id} blog={blog} />
-                                ))}
-                            </div>
+                        {currentBlogs.length > 0 ? (
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {currentBlogs.map((blog) => (
+                                        <BlogCard key={blog._id || blog.id} blog={blog} />
+                                    ))}
+                                </div>
+
+                                {/* --- Pagination UI --- */}
+                                {totalPages > 1 && (
+                                    <div className="flex justify-center mt-12 gap-2">
+                                        {[...Array(totalPages)].map((_, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => paginate(index + 1)}
+                                                className={`px-4 py-2 rounded-lg font-bold transition ${currentPage === index + 1
+                                                    ? "bg-secondary/50 text-black"
+                                                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                                    }`}
+                                            >
+                                                {index + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="text-center py-20 text-gray-500 text-xl">
                                 No blogs found matching your search.

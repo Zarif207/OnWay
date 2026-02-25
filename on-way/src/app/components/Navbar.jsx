@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -17,15 +16,15 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import logoImage from "../../../public/icon2.png";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+
 const nav = [
   { label: "Home", href: "/" },
   { label: "OnWay Book", href: "/onway-book" },
-  { label: "Earn With OnWay ", href: "/earn-with-onway" },
+  { label: "Earn With OnWay", href: "/earn-with-onway" },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog" },
-  { label: "Help", href: "/help" },
   { label: "Dashboard", href: "/dashboard/passenger" },
 ];
 
@@ -34,12 +33,18 @@ const more = [
   { label: "Safety-Coverage", href: "/Safety-Coverage" },
 ];
 
+const helpItems = [
+  { label: "FAQ", href: "/help/faq" },
+  { label: "Contact Us", href: "/help/contact" },
+  { label: "Support", href: "/help/support" },
+];
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
+  const [openHelp, setOpenHelp] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
-  console.log(session);
 
   const isDashboard = pathname.startsWith("/dashboard");
 
@@ -48,53 +53,96 @@ const Navbar = () => {
       if (e.key === "Escape") {
         setIsOpen(false);
         setOpenMenu(false);
+        setOpenHelp(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // Outside click theke dropdown close korte
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".help-dropdown")) setOpenHelp(false);
+      if (!e.target.closest(".more-dropdown")) setOpenMenu(false);
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="flex items-center text-2xl font-extrabold tracking-tight text-zinc-900"
-          aria-label="OnWay"
-        >
-          <Image src={logoImage} alt="OnWay" width={120} height={94} />
+    <nav className="w-full bg-white shadow-md px-6 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        
+        {/* Logo */}
+        <Link href="/">
+          <Image src={logoImage} alt="OnWay Logo" width={120} height={40} />
         </Link>
 
-        {/* Center Menu (ALWAYS SAME) */}
-        <div className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 md:flex">
+        {/* Center Menu - Desktop */}
+        <div className="hidden md:flex items-center gap-6">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="transition hover:text-zinc-950"
+              className={`text-sm font-medium hover:text-primary transition-colors ${
+                pathname === item.href ? "text-primary font-semibold" : "text-gray-700"
+              }`}
             >
               {item.label}
             </Link>
           ))}
 
-          {/* More Dropdown */}
-          <div className="relative">
+          {/* Help Dropdown */}
+          <div className="relative help-dropdown">
             <button
-              className="inline-flex items-center gap-2 transition hover:text-zinc-950"
-              onClick={() => setOpenMenu((v) => !v)}
+              onClick={() => {
+                setOpenHelp((v) => !v);
+                setOpenMenu(false);
+              }}
               type="button"
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
             >
-              More <ChevronDown className="h-4 w-4" />
+              Help <ChevronDown size={16} className={`transition-transform ${openHelp ? "rotate-180" : ""}`} />
+            </button>
+
+            {openHelp && (
+              <div className="absolute top-full mt-2 bg-white shadow-lg rounded-md w-48 z-50 border border-gray-100">
+                {helpItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpenHelp(false)}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* More Dropdown */}
+          <div className="relative more-dropdown">
+            <button
+              onClick={() => {
+                setOpenMenu((v) => !v);
+                setOpenHelp(false);
+              }}
+              type="button"
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+            >
+              More <ChevronDown size={16} className={`transition-transform ${openMenu ? "rotate-180" : ""}`} />
             </button>
 
             {openMenu && (
-              <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-zinc-200 bg-white p-2 shadow-lg">
+              <div className="absolute top-full mt-2 bg-white shadow-lg rounded-md w-48 z-50 border border-gray-100">
                 {more.map((m) => (
                   <Link
-                    key={m.label}
+                    key={m.href}
                     href={m.href}
-                    className="block rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950"
                     onClick={() => setOpenMenu(false)}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
                   >
                     {m.label}
                   </Link>
@@ -105,71 +153,141 @@ const Navbar = () => {
         </div>
 
         {/* Right Side */}
-        <div className="hidden items-center gap-4 md:flex">
-          
+        <div className="hidden md:flex items-center gap-3">
           {isDashboard ? (
-            // 🔵 Dashboard Mode → Show role icons
+            // Dashboard Mode
             <>
-              <Link href="/dashboard/passenger">
-                <User className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <Link href="/dashboard/rider">
-                <Car className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <Link href="/dashboard/admin">
-                <Shield className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <Link href="/dashboard/support-agent">
-                <Headphones className="h-5 w-5 text-zinc-700 hover:text-black" />
-              </Link>
-
-              <button onClick={() => signOut()}>
-                <LogOut className="h-5 w-5 text-red-500 hover:text-red-600" />
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-1 text-sm font-semibold text-red-500 hover:text-red-600"
+              >
+                <LogOut size={16} /> Logout
               </button>
             </>
           ) : session ? (
-            //  Logged In (Normal pages)
+            // Logged In
             <>
-              <MapPin className="h-5 w-5 text-zinc-700" />
+              <Link href="/dashboard/passenger">
+                <User size={20} className="text-gray-700 hover:text-primary" />
+              </Link>
               <button
                 onClick={() => signOut()}
-                className="text-sm font-semibold"
+                className="text-sm font-semibold text-red-500 hover:text-red-600"
               >
                 Logout
               </button>
             </>
           ) : (
-            //  Guest (Normal pages)
+            // Guest
             <>
-              <MapPin className="h-5 w-5 text-zinc-700" />
               <Link
                 href="/login"
-                className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-primary"
               >
-                Log In
+                <LogIn size={16} /> Log In
               </Link>
               <Link
                 href="/register"
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+                className="flex items-center gap-1 text-sm font-medium bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90"
               >
-                Sign Up
+                <UserPlus size={16} /> Sign Up
               </Link>
             </>
           )}
         </div>
 
-        {/* Mobile Button */}
+        {/* Mobile Menu Button */}
         <button
-          className="md:hidden rounded-xl border border-zinc-200 bg-white p-2 text-zinc-900"
           onClick={() => setIsOpen((v) => !v)}
           type="button"
+          className="md:hidden text-gray-700"
         >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden mt-3 flex flex-col gap-3 px-4 pb-4 border-t pt-4">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsOpen(false)}
+              className="text-sm font-medium text-gray-700 hover:text-primary"
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          {/* Mobile Help */}
+          <div>
+            <button
+              onClick={() => setOpenHelp((v) => !v)}
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 w-full"
+            >
+              Help <ChevronDown size={16} className={`transition-transform ${openHelp ? "rotate-180" : ""}`} />
+            </button>
+            {openHelp && (
+              <div className="ml-3 mt-2 flex flex-col gap-2">
+                {helpItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => { setOpenHelp(false); setIsOpen(false); }}
+                    className="text-sm text-gray-600 hover:text-primary"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile More */}
+          <div>
+            <button
+              onClick={() => setOpenMenu((v) => !v)}
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 w-full"
+            >
+              More <ChevronDown size={16} className={`transition-transform ${openMenu ? "rotate-180" : ""}`} />
+            </button>
+            {openMenu && (
+              <div className="ml-3 mt-2 flex flex-col gap-2">
+                {more.map((m) => (
+                  <Link
+                    key={m.href}
+                    href={m.href}
+                    onClick={() => { setOpenMenu(false); setIsOpen(false); }}
+                    className="text-sm text-gray-600 hover:text-primary"
+                  >
+                    {m.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Auth */}
+          {session ? (
+            <button
+              onClick={() => signOut()}
+              className="text-sm font-semibold text-red-500 text-left"
+            >
+              Logout
+            </button>
+          ) : (
+            <div className="flex gap-3">
+              <Link href="/login" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-700">
+                Log In
+              </Link>
+              <Link href="/register" onClick={() => setIsOpen(false)} className="text-sm font-medium text-primary">
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

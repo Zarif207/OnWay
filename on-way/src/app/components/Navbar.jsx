@@ -1,7 +1,6 @@
 "use client";
-
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react"; // useRef added
 import {
   ChevronDown,
   Menu,
@@ -31,30 +30,29 @@ const baseNav = [
 ];
 
 const more = [
-  { label: "rideSharing-Guidlines", href: "/RideSharing-Guidlines" },
+  { label: "ridesharing-guidlines", href: "/ridesharing-guidlines" },
   { label: "Safety-Coverage", href: "/Safety-Coverage" },
 ];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
-
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { data: session } = useSession();
   const pathname = usePathname();
-
   const isDashboard = pathname.startsWith("/dashboard");
   const handleSignOut = () => {
     signOut({ callbackUrl: "/login" });
   };
   const role = session?.user?.role;
 
-  // ✅ Dynamic Dashboard Link
+  // Dynamic Dashboard Link
   const dashboardHref = useMemo(() => {
     if (!role) return "/dashboard/passenger";
     return `/dashboard/${role}`;
   }, [role]);
 
-  // ✅ Role-based dashboard page icons
   const roleIcons = {
     passenger: [
       { href: "/dashboard/passenger/book-ride", icon: <Car className="h-5 w-5" />, label: "Book Ride" },
@@ -77,19 +75,43 @@ const Navbar = () => {
     ],
   };
 
+  // Logic for scroll behavior and Escape key
   useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
     const onKeyDown = (e) => {
       if (e.key === "Escape") {
         setIsOpen(false);
         setOpenMenu(false);
       }
     };
+
+    window.addEventListener("scroll", handleScroll);
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [lastScrollY]);
+
+  // Helper function to check if route is active
+  const isActive = (path) => pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur">
+    <nav
+      className={`sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur transition-transform duration-300 ${isVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 
         {/* Logo */}
@@ -99,22 +121,22 @@ const Navbar = () => {
 
         {/* Center Menu */}
         <div className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 md:flex">
-
           {baseNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="transition hover:text-zinc-950"
+              className={`transition hover:text-zinc-950 ${isActive(item.href) ? "text-zinc-950 font-bold border-b-2 border-zinc-950" : "text-zinc-600"
+                }`}
             >
               {item.label}
             </Link>
           ))}
 
-          {/* Show Dashboard only when NOT inside dashboard */}
           {session && !isDashboard && (
             <Link
               href={dashboardHref}
-              className="transition hover:text-zinc-950"
+              className={`transition hover:text-zinc-950 ${pathname.includes("/dashboard") ? "text-zinc-950 font-bold" : "text-zinc-600"
+                }`}
             >
               Dashboard
             </Link>
@@ -136,7 +158,8 @@ const Navbar = () => {
                   <Link
                     key={m.label}
                     href={m.href}
-                    className="block rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950"
+                    className={`block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-zinc-50 hover:text-zinc-950 ${isActive(m.href) ? "bg-zinc-100 text-zinc-950" : "text-zinc-700"
+                      }`}
                     onClick={() => setOpenMenu(false)}
                   >
                     {m.label}
@@ -155,9 +178,13 @@ const Navbar = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="relative group text-zinc-700 hover:text-black"
+                  className={`relative group transition ${isActive(item.href) ? "text-black" : "text-zinc-500 hover:text-black"
+                    }`}
                 >
                   {item.icon}
+                  {isActive(item.href) && (
+                    <span className="absolute -bottom-1 left-0 h-0.5 w-full bg-black"></span>
+                  )}
                   <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100">
                     {item.label}
                   </span>
@@ -173,7 +200,7 @@ const Navbar = () => {
               <MapPin className="h-5 w-5 text-zinc-700" />
               <button
                 onClick={() => handleSignOut()}
-                className="text-sm font-semibold"
+                className="text-sm font-semibold text-zinc-700 hover:text-black"
               >
                 Logout
               </button>
@@ -206,6 +233,22 @@ const Navbar = () => {
           {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
+
+      {/* Mobile Menu (Optional - ensuring visibility updates) */}
+      {isOpen && (
+        <div className="md:hidden bg-white border-t border-zinc-100 p-4 space-y-4">
+          {baseNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsOpen(false)}
+              className={`block text-lg font-medium ${isActive(item.href) ? "text-black font-bold" : "text-zinc-600"}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };

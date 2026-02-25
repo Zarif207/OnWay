@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaGithub, FaGoogle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaGithub, FaGoogle, FaChevronLeft } from 'react-icons/fa';
 import { FcGoogle } from "react-icons/fc";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -125,8 +125,12 @@ const Login = () => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mb-2 md:-mt-20"
+              className="mb-2"
             >
+              <Link href="/" className="text-xs mb-8 w-30 font-bold text-gray-400 hover:text-primary flex items-center gap-1 group">
+                <FaChevronLeft className="group-hover:translate-x-1 transition-transform" size={10} /> BACK TO HOME
+              </Link>
+
               <h3 className="text-4xl font-black text-neutral uppercase tracking-tighter">Login</h3>
               <div className="h-2 w-12 bg-primary mt-2 rounded-full"></div>
             </motion.div>
@@ -198,7 +202,7 @@ const Login = () => {
               transition={{ delay: 0.8 }}
               className="mt-6 text-center text-sm font-medium text-gray-500"
             >
-              New here? <Link href="/register" className="text-primary font-black hover:underline underline-offset-4 ml-1">Create Account</Link>
+              New here? <Link href="/register" className="text-primary font-bold hover:underline underline-offset-4 ml-1">Create Account?</Link>
             </motion.p>
           </div>
         </motion.div>

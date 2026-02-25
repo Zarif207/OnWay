@@ -45,7 +45,7 @@ const ReportSafety = () => {
 
             <button className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-lg hover:bg-orange-600 transition">
               <FileText size={18} />
-              Export PDF
+              Export PDF File
             </button>
           </div>
         </div>

@@ -5,20 +5,21 @@ import Platform from "./components/Home/Platform";
 import Safety from "./components/Home/Safety";
 import Earn from "./components/Home/Earn";
 import Contact from "./components/Home/Contact";
+import ScrollProgress from "./components/ScrollProgress";
 export default function Home() {
   return (
-    <>
+    <ScrollProgress>
       <HomeClientEffects />
       <main>
         <Hero />
         <div className="pb-10">
           <Stats />
         </div>
-        <Platform></Platform>
-        <Safety></Safety>
-        <Earn></Earn>
-        <Contact></Contact>
+        <Platform />
+        <Safety />
+        <Earn />
+        <Contact />
       </main>
-    </>
+    </ScrollProgress>
   );
 }

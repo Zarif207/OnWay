@@ -3,7 +3,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import BlogCard from "@/app/components/BlogCard";
+import BlogCard from "@/app/root-components/BlogCard";
 
 export default function BlogDetails() {
   const { slug } = useParams();
@@ -12,7 +12,8 @@ export default function BlogDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/blogs.json")
+    axios
+      .get("/blogs.json")
       .then((res) => {
         setBlogData(res.data);
         setLoading(false);
@@ -25,26 +26,25 @@ export default function BlogDetails() {
 
   const blog = blogData.find((b) => b.slug === slug);
 
-
   useEffect(() => {
     const updateScroll = () => {
       const currentScroll = window.scrollY;
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       setScrollProgress((currentScroll / scrollHeight) * 100);
     };
     window.addEventListener("scroll", updateScroll);
     return () => window.removeEventListener("scroll", updateScroll);
   }, []);
 
-
-  if (loading) return <div className="p-20 text-center font-bold">Loading...</div>;
-  if (!blog) return <div className="p-20 text-center font-bold">Blog not found</div>;
-
+  if (loading)
+    return <div className="p-20 text-center font-bold">Loading...</div>;
+  if (!blog)
+    return <div className="p-20 text-center font-bold">Blog not found</div>;
 
   const relatedPosts = blogData
     .filter((b) => b.category === blog.category && b.slug !== slug)
     .slice(0, 3);
-
 
   return (
     <article className=" min-h-screen">
@@ -53,7 +53,6 @@ export default function BlogDetails() {
         className="fixed top-0 left-0 h-1.5 bg-primary z-50 transition-all duration-150"
         style={{ width: `${scrollProgress}%` }}
       />
-
 
       {/* Header Section: Pathao Style Clean Background */}
       <header className="p-10">
@@ -65,18 +64,17 @@ export default function BlogDetails() {
             ← Back to Updates
           </Link>
 
-
           <div className="flex justify-center mb-6">
             <span className="bg-primary/10 text-primary px-5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
               {blog.category}
             </span>
           </div>
 
-
           <h1 className="text-2xl md:text-4xl font-black leading-tight text-neutral mb-10 tracking-tight">
-            {blog.title.length > 50 ? blog.title.slice(0, 50) + "..." : blog.title}
+            {blog.title.length > 50
+              ? blog.title.slice(0, 50) + "..."
+              : blog.title}
           </h1>
-
 
           <div className="flex items-center justify-center gap-8 border-t border-gray-200 pt-8">
             <div className="flex items-center gap-3">
@@ -84,23 +82,32 @@ export default function BlogDetails() {
                 {blog.author[0]}
               </div>
               <div className="text-left">
-                <p className="text-neutral font-bold leading-none">{blog.author}</p>
-                <p className="text-xs text-gray-500 mt-1 uppercase tracking-tighter">Editorial Team</p>
+                <p className="text-neutral font-bold leading-none">
+                  {blog.author}
+                </p>
+                <p className="text-xs text-gray-500 mt-1 uppercase tracking-tighter">
+                  Editorial Team
+                </p>
               </div>
             </div>
             <div className="h-8 w-px bg-gray-300 hidden sm:block"></div>
             <div className="text-left hidden sm:block">
-              <p className="text-xs text-gray-400 uppercase font-bold">Published</p>
-              <p className="text-sm font-bold text-neutral">{blog.publishedAt}</p>
+              <p className="text-xs text-gray-400 uppercase font-bold">
+                Published
+              </p>
+              <p className="text-sm font-bold text-neutral">
+                {blog.publishedAt}
+              </p>
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-400 uppercase font-bold">Read Time</p>
+              <p className="text-xs text-gray-400 uppercase font-bold">
+                Read Time
+              </p>
               <p className="text-sm font-bold text-neutral">{blog.readTime}</p>
             </div>
           </div>
         </div>
       </header>
-
 
       {/* Hero Image with Negative Margin */}
       <div className="container mx-auto px-4 -mt-4 max-w-6xl">
@@ -111,7 +118,6 @@ export default function BlogDetails() {
         />
       </div>
 
-
       {/* Main Content Area */}
       <div className="container mx-auto px-4 max-w-3xl py-20">
         <div className="prose prose-zinc lg:prose-xl max-w-none">
@@ -120,23 +126,23 @@ export default function BlogDetails() {
             {blog.excerpt}
           </p>
 
-
           {/* Main Body Text */}
           <div className="text-gray-700 leading-loose space-y-8 text-xl font-normal">
             {blog.content}
           </div>
         </div>
 
-
         {/* Tags Section */}
         <div className="mt-16 pt-10 border-t border-gray-100 flex flex-wrap gap-3">
           {blog.tags.map((tag, i) => (
-            <span key={i} className="px-6 py-2.5 bg-[#f8fafc] text-neutral border border-gray-100 rounded-xl text-sm font-black hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer shadow-sm">
+            <span
+              key={i}
+              className="px-6 py-2.5 bg-[#f8fafc] text-neutral border border-gray-100 rounded-xl text-sm font-black hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer shadow-sm"
+            >
               #{tag.toUpperCase()}
             </span>
           ))}
         </div>
-
 
         {/* Author Bio Card */}
         <div className="mt-20 p-10 bg-secondary rounded-4xl text-white flex items-center gap-8">
@@ -144,14 +150,17 @@ export default function BlogDetails() {
             {blog.author[0]}
           </div>
           <div>
-            <h4 className="text-2xl font-black mb-2">Written by {blog.author}</h4>
+            <h4 className="text-2xl font-black mb-2">
+              Written by {blog.author}
+            </h4>
             <p className="text-gray-400 leading-relaxed">
-              Building the future of urban mobility at OnWay. Dedicated to providing insights into smart transportation and sustainable city living.
+              Building the future of urban mobility at OnWay. Dedicated to
+              providing insights into smart transportation and sustainable city
+              living.
             </p>
           </div>
         </div>
       </div>
-
 
       {/* Related Content: Uber Style Grid */}
       {relatedPosts.length > 0 && (
@@ -159,10 +168,17 @@ export default function BlogDetails() {
           <div className="container mx-auto px-4">
             <div className="flex justify-between items-end mb-12">
               <div>
-                <h2 className="text-4xl font-black text-neutral">Keep Reading</h2>
-                <p className="text-gray-500 mt-2 font-medium">Handpicked stories for you</p>
+                <h2 className="text-4xl font-black text-neutral">
+                  Keep Reading
+                </h2>
+                <p className="text-gray-500 mt-2 font-medium">
+                  Handpicked stories for you
+                </p>
               </div>
-              <Link href="/blog" className="hidden md:block font-black text-primary border-b-2 border-primary pb-1">
+              <Link
+                href="/blog"
+                className="hidden md:block font-black text-primary border-b-2 border-primary pb-1"
+              >
                 View all posts
               </Link>
             </div>
@@ -177,4 +193,3 @@ export default function BlogDetails() {
     </article>
   );
 }
-

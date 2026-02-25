@@ -1,10 +1,10 @@
-import HomeClientEffects from "./components/Home/HomeClientEffects";
-import Hero from "./components/Home/Hero";
-import Stats from "./components/Home/Stats";
-import Platform from "./components/Home/Platform";
-import Safety from "./components/Home/Safety";
-import Earn from "./components/Home/Earn";
-import Contact from "./components/Home/Contact";
+import HomeClientEffects from "./root-components/Home/HomeClientEffects";
+import Hero from "./root-components/Home/Hero";
+import Stats from "./root-components/Home/Stats";
+import Platform from "./root-components/Home/Platform";
+import Safety from "./root-components/Home/Safety";
+import Earn from "./root-components/Home/Earn";
+import Contact from "./root-components/Home/Contact";
 export default function Home() {
   return (
     <>

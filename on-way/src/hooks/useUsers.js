@@ -3,24 +3,16 @@
 export const useUsers = () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     const usersApi = `${baseUrl}/passenger`;
-
     const findUser = async (email) => {
         try {
-            const res = await fetch(usersApi);
-            if (!res.ok) throw new Error("Failed to fetch users");
-
-            const result = await res.json();
-
-            if (result.success && Array.isArray(result.data)) {
-                return result.data.find(u => u.email === email);
-            }
-            return null;
+            const res = await fetch(`${baseUrl}/passenger/find?email=${email}`);
+            if (!res.ok) return null;
+            return await res.json();
         } catch (error) {
             console.error("Fetch Error:", error);
             return null;
         }
     };
-
     const registerUser = async (userData) => {
         try {
             const res = await fetch(usersApi, {

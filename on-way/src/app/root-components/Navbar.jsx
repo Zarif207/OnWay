@@ -43,6 +43,9 @@ const Navbar = () => {
   const pathname = usePathname();
 
   const isDashboard = pathname.startsWith("/dashboard");
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/login" });
+  };
   const role = session?.user?.role;
 
   // ✅ Dynamic Dashboard Link
@@ -88,7 +91,7 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        
+
         {/* Logo */}
         <Link href="/" className="flex items-center text-2xl font-extrabold">
           <Image src={logoImage} alt="OnWay" width={120} height={94} />
@@ -96,7 +99,7 @@ const Navbar = () => {
 
         {/* Center Menu */}
         <div className="hidden items-center gap-7 text-sm font-semibold text-zinc-700 md:flex">
-          
+
           {baseNav.map((item) => (
             <Link
               key={item.href}
@@ -161,14 +164,17 @@ const Navbar = () => {
                 </Link>
               ))}
 
-              <button onClick={() => signOut()}>
+              <button onClick={() => handleSignOut()}>
                 <LogOut className="h-5 w-5 text-red-500 hover:text-red-600" />
               </button>
             </>
           ) : session ? (
             <>
               <MapPin className="h-5 w-5 text-zinc-700" />
-              <button onClick={() => signOut()} className="text-sm font-semibold">
+              <button
+                onClick={() => handleSignOut()}
+                className="text-sm font-semibold"
+              >
                 Logout
               </button>
             </>

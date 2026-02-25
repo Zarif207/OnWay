@@ -12,17 +12,15 @@
 [data-theme="onwaytheme"] {
   --color-primary: #303841;
   --color-secondary: #FFF200;
-  --color-accent: #23b440;
-  --color-neutral: #0f172a;
-  --base-100: #f8fafc;
+  --color-accent: #F5F5F5;
+  /* --color-neutral: #D6E6F2; */
 }
 
 @theme {
   --color-primary: var(--color-primary);
   --color-secondary: var(--color-secondary);
   --color-accent: var(--color-accent);
-  --color-neutral: var(--color-neutral);
-  --color-base-100: var(--base-100);
+  /* --color-neutral: var(--color-neutral); */
   --font-sans: Arial, Helvetica, sans-serif;
 }
 

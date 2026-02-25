@@ -49,6 +49,7 @@ async function connectDB() {
 connectDB();
 
 const database = client.db("onWayDB"); //  database name
+const passengerCollection = database.collection("passenger"); // passenger collection
 const usersCollection = database.collection("users"); // users collection
 const blogsCollection = database.collection("blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection

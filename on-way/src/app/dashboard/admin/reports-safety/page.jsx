@@ -1,11 +1,11 @@
 import React from 'react';
 
-const Wallet = () => {
+const DriverManagement = () => {
     return (
         <div>
-            Wallet Page
+            
         </div>
     );
 };
 
-export default Wallet;
+export default DriverManagement;

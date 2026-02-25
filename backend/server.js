@@ -2,7 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); 
+const bcrypt = require("bcryptjs");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const uri = process.env.MONGODB_URI;
@@ -48,7 +49,8 @@ async function connectDB() {
 connectDB();
 
 const database = client.db("onWayDB"); //  database name
-const usersCollection = database.collection("users"); // users collection
+const passengerCollection = database.collection("passenger"); // passenger collection
+// const passengerCollection = database.collection("users"); // users collection
 const blogsCollection = database.collection("blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
 
@@ -65,7 +67,7 @@ io.on("connection", (socket) => {
   // Receive GPS update from driver and broadcast to ride room
   socket.on("gpsUpdate", async (data) => {
     const { rideId, driverId, latitude, longitude } = data;
-    
+
     // Broadcast to everyone in the room (including passenger)
     io.to(rideId).emit("receiveGpsUpdate", {
       driverId,
@@ -84,42 +86,98 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "onWay Backend running " });
 });
 
-app.get("/api/users", async (req, res) => {
+
+// -----------------------------------------------------------------------
+// Get Users
+app.get("/api/passenger", async (req, res) => {
   try {
-    const users = await usersCollection.find({}).toArray();
+    const users = await passengerCollection.find({}).toArray();
     res.json({ success: true, count: users.length, data: users });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-//  POST:  user add 
-app.post("/api/users", async (req, res) => {
+// Get User
+app.get("/api/passenger/find", async (req, res) => {
   try {
-    const newUser = req.body;
-    
-    if (!newUser.email || !newUser.name) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and name are required" 
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    const user = await passengerCollection.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Post User 
+app.post("/api/passenger", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!email || !name || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, Name and Password are required"
       });
     }
-    
-    const result = await usersCollection.insertOne(newUser);
-    res.status(201).json({ 
-      success: true, 
+
+    const existingUser = await passengerCollection.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = {
+      name,
+      email,
+      password: hashedPassword,
+      createdAt: new Date()
+    };
+
+    const result = await passengerCollection.insertOne(newUser);
+    res.status(201).json({
+      success: true,
       message: "User created successfully",
-      data: { _id: result.insertedId, ...newUser }
+      data: { id: result.insertedId, name, email }
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// Patch User
+app.patch("/api/passenger/update-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const result = await passengerCollection.updateOne(
+      { email: email },
+      { $set: { password: hashedPassword } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// -------------------------------------------------------------------------
+
 
 // BLOGS ROUTES
-
-
 app.get("/api/blogs", async (req, res) => {
   try {
     const blogs = await blogsCollection.find({}).toArray();
@@ -192,9 +250,9 @@ app.get("/api/ride/active-location/:rideId", async (req, res) => {
 });
 
 app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: "Route not found" 
+  res.status(404).json({
+    success: false,
+    message: "Route not found"
   });
 });
 

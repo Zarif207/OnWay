@@ -174,7 +174,7 @@ app.patch("/api/passenger/update-password", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-// -------------------------------------------------------------------------
+// ---------------------------------------------------------------
 
 
 // BLOGS ROUTES

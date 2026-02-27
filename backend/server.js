@@ -28,7 +28,7 @@ app.use(express.json());
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*", // Adjust this in production to your frontend URL
+    origin: "https://on-way-three.vercel.app",
     methods: ["GET", "POST"]
   }
 });

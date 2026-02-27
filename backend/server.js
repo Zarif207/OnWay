@@ -86,7 +86,6 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "onWay Backend running " });
 });
 
-// -----------------------------------------------------------------------
 // Get Users
 app.get("/api/passenger", async (req, res) => {
   try {
@@ -299,3 +298,5 @@ process.on("SIGINT", async () => {
   console.log("✅ MongoDB connection closed");
   process.exit(0);
 });
+
+module.exports = server;

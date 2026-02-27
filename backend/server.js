@@ -53,6 +53,7 @@ const passengerCollection = database.collection("passenger"); // passenger colle
 // const passengerCollection = database.collection("users"); // users collection
 const blogsCollection = database.collection("blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
+const ridesCollection = database.collection("rides"); // rides collection
 
 // Socket.io Event Handling
 io.on("connection", (socket) => {
@@ -184,6 +185,71 @@ app.get("/api/blogs", async (req, res) => {
     res.json({ success: true, count: blogs.length, data: blogs });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Ride Management Routes
+app.post("/api/rides", async (req, res) => {
+  try {
+    const { passengerId, driverId, pickupLocation, dropLocation, fare, status } = req.body;
+    if (!passengerId || !driverId) return res.status(400).json({ success: false, message: "Missing data" });
+
+    const newRide = {
+      passengerId, driverId, pickupLocation, dropLocation, fare,
+      status: status || "pending",
+      createdAt: new Date()
+    };
+
+    const result = await ridesCollection.insertOne(newRide);
+    res.status(201).json({ success: true, rideId: result.insertedId });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get("/api/rides", async (req, res) => {
+  try {
+    const rides = await ridesCollection.find({}).toArray();
+    res.json({ success: true, count: rides.length, data: rides });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ---------------------------------------------------------------
+// Get Ride History for a Specific Passenger
+// ---------------------------------------------------------------
+app.get("/api/rides/history/:passengerId", async (req, res) => {
+  try {
+    const { passengerId } = req.params;
+
+    const rides = await ridesCollection
+      .find({ passengerId: passengerId }) 
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    if (!rides || rides.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No ride history found for this passenger",
+        count: 0,
+        data: []
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: rides.length,
+      data: rides
+    });
+
+  } catch (error) {
+    console.error("Error fetching ride history:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal Server Error",
+      error: error.message 
+    });
   }
 });
 

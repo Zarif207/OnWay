@@ -1,8 +1,8 @@
 "use client";
 
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "./root-components/Navbar";
+import Footer from "./root-components/Footer";
 import AuthProvider from "./AuthProvider/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import { usePathname } from "next/navigation";

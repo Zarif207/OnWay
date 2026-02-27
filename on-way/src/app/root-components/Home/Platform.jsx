@@ -96,8 +96,8 @@ export default function Platform() {
                   ))}
                 </ul>
 
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button as="link" href={current.cta.href} variant="primary">
+                <div className="mt-8 gap-10 flex flex-col sm:flex-row sm:items-center">
+                  <button className="flex items-center justify-center gap-2" as="link" href={current.cta.href} variant="primary">
                     {current.cta.label} <ArrowRight className="h-4 w-4" />
                   </button>
                   <button as="link" href="#download" variant="outline">

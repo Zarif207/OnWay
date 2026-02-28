@@ -12,6 +12,8 @@ const blogRoutes = require("./routes/blog");
 const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
+const bookingsRoutes = require("./routes/bookings");
+
 const paymentRoutes = require("./routes/payment");
 // ---------------------------------------
 
@@ -24,9 +26,7 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-// ---------------------------------------
 
-// ---------------------------------------
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -35,9 +35,8 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 const PORT = process.env.PORT || 5000;
-// --------------------------------------
 
-// --------------------------------------
+
 async function connectDB() {
   try {
     await client.connect();
@@ -48,7 +47,6 @@ async function connectDB() {
     process.exit(1);
   }
 }
-// --------------------------------------
 
 // --------------------------------------
 async function startServer() {
@@ -61,6 +59,7 @@ async function startServer() {
   const gpsLocationsCollection = database.collection("gpsLocations");
   const ridesCollection = database.collection("rides");
   const reviewsCollection = database.collection("reviews");
+  const bookingsCollection = database.collection("bookings");
   const paymentsCollection = database.collection("payments");
   //------------------------------------------------------
 
@@ -70,6 +69,7 @@ async function startServer() {
   app.use("/api/location", locationRoutes(gpsLocationsCollection));
   app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
+  app.use("/api/bookings", bookingsRoutes(bookingsCollection));
   app.use("/api/payment", paymentRoutes(paymentsCollection));
   // ---------------------------------------------------
 
@@ -87,7 +87,6 @@ async function startServer() {
       console.log(`🔌 Client disconnected`);
     });
   });
-  // --------------------------------------
 
   // ----------------------------------------
   app.get("/api/health", (req, res) => {
@@ -99,7 +98,6 @@ async function startServer() {
   server.listen(PORT, () => {
     console.log(`🚀 Backend running on http://localhost:${PORT}`);
   });
-  // -----------------------------------------
 }
 
 startServer();

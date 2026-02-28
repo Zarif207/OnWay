@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function PassengerLanding() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F4F6F9] via-[#EEF1F6] to-[#E9EDF3] px-6 py-14">
+    <div className="min-h-screen bg-linear-to-br from-[#F4F6F9] via-[#EEF1F6] to-[#E9EDF3] px-6 py-14">
       <div className="max-w-7xl mx-auto space-y-16">
 
         {/* ================= HERO SECTION ================= */}

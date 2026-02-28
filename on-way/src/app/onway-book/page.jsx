@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import axios from "axios";
 import { getDrivingRoute } from "@/utils/routingService";
 import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
+import { useRouter } from "next/navigation";
 
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
@@ -35,7 +36,10 @@ export default function BookRidePage() {
   const [isSearchingDropoff, setIsSearchingDropoff] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const router =useRouter()
 
   // Track which input the user is focusing on to know where to put the map click coordinate
   const [activeInput, setActiveInput] = useState("pickup");
@@ -226,6 +230,62 @@ export default function BookRidePage() {
     }
   };
 
+  const handleConfirmBooking = async () => {
+    if (!pickupLocation || !dropoffLocation || routeGeometry.length === 0) {
+      setError("Please select both pickup and drop-off locations.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const bookingData = {
+        pickupLocation: {
+          name: pickupLocation.name,
+          lat: pickupLocation.lat,
+          lng: pickupLocation.lon,
+        },
+        dropoffLocation: {
+          name: dropoffLocation.name,
+          lat: dropoffLocation.lat,
+          lng: dropoffLocation.lon,
+        },
+        routeGeometry: routeGeometry.map((coord) => ({
+          lat: coord[0],
+          lng: coord[1],
+        })),
+        distance,
+        duration,
+        price: fare,
+        passengerId: null, // Optional
+        bookingStatus: "pending",
+      };
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+      const response = await fetch(`${apiUrl}/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        router.push(`/dashboard/passenger/book-ride?bookingId=${result.booking._id}`);
+      } else {
+        setError(result.message || "Failed to confirm booking. Please try again.");
+      }
+    } catch (err) {
+      console.error("Booking submission error:", err);
+      setError("An error occurred while confirming your booking. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
@@ -369,10 +429,11 @@ export default function BookRidePage() {
           )}
 
           <button
-            disabled={!routeGeometry || routeGeometry.length === 0}
+            onClick={handleConfirmBooking}
+            disabled={!routeGeometry || routeGeometry.length === 0 || isSubmitting}
             className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:hover:bg-blue-600 shadow-[0_4px_14px_0_rgb(37,99,235,0.39)] disabled:shadow-none mt-2 active:scale-[0.98]"
           >
-            Confirm Booking
+            {isSubmitting ? "Confirming..." : "Confirm Booking"}
           </button>
         </div>
 

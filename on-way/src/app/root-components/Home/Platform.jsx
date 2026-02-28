@@ -7,7 +7,7 @@ import SectionHeading from "./SectionHeading";
 import { services } from "./homeData";
 
 export default function Platform() {
-  const initial = services[0]?.key ?? "ride";
+  const initial = services[0]?.key ?? "Bike";
   const [active, setActive] = useState(initial);
 
   const current = useMemo(

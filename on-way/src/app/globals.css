@@ -5,6 +5,7 @@
 @import "swiper/css/pagination";
 @import "swiper/css/navigation";
 
+
 @plugin "daisyui" {
   themes: onwaytheme --all;
 }
@@ -12,7 +13,7 @@
 [data-theme="onwaytheme"] {
   --color-primary: #259461;
   --color-secondary: #001820;
-  --color-accent: ##2cbe6b;
+  --color-accent: #2cbe6b;
   --color-neutral: ##fffcfd;
 }
 

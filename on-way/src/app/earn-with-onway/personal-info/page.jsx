@@ -66,7 +66,7 @@ export default function PersonalInfoPage() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
               <h1 className="text-4xl font-extrabold text-[#001820] mb-8 leading-tight">
-                Become an <br /> <span className="text-[#31ca71]">OnWay Partner</span>
+                Become an <br /> <span className="text-accent">OnWay Partner</span>
               </h1>
 
               {/* Progress Stepper */}

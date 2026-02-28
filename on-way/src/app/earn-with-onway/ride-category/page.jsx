@@ -53,7 +53,7 @@ export default function RideCategoryPage() {
           {activeCategory === "cars" && (
             <div className="mt-5 space-y-3">
 
-              {["Sedan", "SUV", "Truck"].map((type) => (
+              {["Sedan", "SUV", "Pickup Truck"].map((type) => (
                 <div
                   key={type}
                   onClick={() => handleSelect(type)}
@@ -67,40 +67,6 @@ export default function RideCategoryPage() {
                 </div>
               ))}
 
-              {/* Luxury */}
-              <div>
-                <div
-                  onClick={() => setOpenLuxury(!openLuxury)}
-                  className="flex justify-between bg-zinc-800 p-3 rounded-xl cursor-pointer"
-                >
-                  Luxury
-                  <ChevronDown
-                    className={`transition ${
-                      openLuxury ? "rotate-180" : ""
-                    }`}
-                  />
-                </div>
-
-                {openLuxury && (
-                  <div className="mt-2 space-y-2 pl-4">
-                    {["Premium Sedan", "Executive SUV", "VIP Limousine"].map(
-                      (type) => (
-                        <div
-                          key={type}
-                          onClick={() => handleSelect(type)}
-                          className={`p-2 rounded-lg cursor-pointer ${
-                            selectedVehicle === type
-                              ? "bg-yellow-500 text-black"
-                              : "bg-zinc-700"
-                          }`}
-                        >
-                          {type}
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>

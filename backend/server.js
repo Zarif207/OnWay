@@ -48,8 +48,11 @@ async function connectDB() {
 // Connect to database
 connectDB();
 
+
+// _______COLLECTIONS_______
 const database = client.db("onWayDB"); //  database name
 const passengerCollection = database.collection("passenger"); // passenger collection
+const riderCollection = database.collection("riders"); // rider collection
 // const passengerCollection = database.collection("users"); // users collection
 const blogsCollection = database.collection("Blogs"); // blogs collection
 const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
@@ -85,6 +88,110 @@ io.on("connection", (socket) => {
 app.get("/api/health", (req, res) => {
   res.json({ status: "onWay Backend running " });
 });
+
+// -----------------------------------------------------------------------
+// ===== RIDER'S API =====
+
+// POST Rider (Register Rider)
+app.post("/api/rider", async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      password,
+      image,
+      nidNumber,
+      licenseNumber,
+      vehicleType,
+      vehicleNumber,
+      vehicleModel,
+    } = req.body;
+
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !password ||
+      !nidNumber ||
+      !licenseNumber ||
+      !vehicleType ||
+      !vehicleNumber
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided",
+      });
+    }
+
+    const existingRider = await riderCollection.findOne({ email });
+    if (existingRider) {
+      return res.status(400).json({
+        success: false,
+        message: "Rider already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newRider = {
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role: "rider",
+      image: image || "",
+      nidNumber,
+      licenseNumber,
+      vehicleType,
+      vehicleNumber,
+      vehicleModel: vehicleModel || "",
+      status: "pending", // Admin approval required
+      createdAt: new Date(),
+      lastLogin: new Date(),
+    };
+
+    const result = await riderCollection.insertOne(newRider);
+    res.status(201).json({
+      success: true,
+      message: "Rider registered successfully",
+      data: { id: result.insertedId, email },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+
+// Get All Riders (Admin Use)
+app.get("/api/rider", async (req, res) => {
+  try {
+    const riders = await riderCollection.find({}).toArray();
+    res.json({ success: true, count: riders.length, data: riders });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Approve / Reject Rider (Admin)
+app.patch("/api/rider/approve/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await riderCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status: "approved" } }
+    );
+
+    res.json({ success: true, message: "Rider approved" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+
 
 // -----------------------------------------------------------------------
 // Get Users

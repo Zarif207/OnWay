@@ -72,7 +72,7 @@ const Navbar = () => {
       { href: "/dashboard/passenger/wallet", icon: <Wallet className="h-5 w-5" />, label: "Wallet" },
       { href: "/dashboard/passenger/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
     ],
-    rider: [
+    rider: [ 
       { href: "/dashboard/rider/requests", icon: <Car className="h-5 w-5" />, label: "Ride Requests" },
       { href: "/dashboard/rider/trips", icon: <History className="h-5 w-5" />, label: "My Trips" },
       { href: "/dashboard/rider/earnings", icon: <Wallet className="h-5 w-5" />, label: "Earnings" },

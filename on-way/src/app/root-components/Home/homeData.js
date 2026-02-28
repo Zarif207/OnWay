@@ -2,7 +2,7 @@ import {
   Bike,
   Car,
   CreditCard,
-  Leaf,
+  BriefcaseMedical,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -17,8 +17,8 @@ export const stats = [
 
 export const services = [
   {
-    key: "Bike",
-    name: "OnWay Ride",
+    key: "bike",
+    name: "OnWay Bike",
     icon: Bike,
     tagline: "Beat the traffic, arrive on time.",
     bullets: [
@@ -43,16 +43,16 @@ export const services = [
     accent: "from-sky-500/20 to-indigo-500/20",
   },
   {
-    key: "cng",
-    name: "OnWay CNG",
-    icon: Leaf,
+    key: "ambulance",
+    name: "OnWay Ambulance",
+    icon: BriefcaseMedical,
     tagline: "Eco-friendly, budget-friendly rides.",
     bullets: [
       "Optimized for short city distances",
       "Affordable rates with fixed pricing",
       "Available across all major city hubs",
     ],
-    cta: { label: "Explore CNG", href: "#services" },
+    cta: { label: "Explore Ambulance", href: "#services" },
     accent: "from-emerald-500/20 to-teal-500/20",
   },
   {

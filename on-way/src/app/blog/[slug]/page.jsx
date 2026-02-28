@@ -4,8 +4,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import BlogCard from "@/app/components/BlogCard";
+
 import { Calendar, Clock, ArrowLeft, Share2, Bookmark } from "lucide-react";
+import BlogCard from "@/app/root-components/BlogCard";
 
 export default function BlogDetails() {
   const { slug } = useParams();

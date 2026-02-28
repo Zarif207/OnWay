@@ -29,8 +29,8 @@ app.use(express.json());
 const io = new Server(server, {
   cors: {
     origin: "*", // Adjust this in production to your frontend URL
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
 // Database connection
@@ -73,7 +73,7 @@ io.on("connection", (socket) => {
       driverId,
       latitude,
       longitude,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   });
 
@@ -85,7 +85,6 @@ io.on("connection", (socket) => {
 app.get("/api/health", (req, res) => {
   res.json({ status: "onWay Backend running " });
 });
-
 
 // -----------------------------------------------------------------------
 // Get Users
@@ -103,11 +102,15 @@ app.get("/api/passenger/find", async (req, res) => {
   try {
     const email = req.query.email;
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
     const user = await passengerCollection.findOne({ email: email });
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
     res.json(user);
   } catch (error) {
@@ -115,7 +118,7 @@ app.get("/api/passenger/find", async (req, res) => {
   }
 });
 
-// Post User 
+// Post User
 app.post("/api/passenger", async (req, res) => {
   try {
     const { name, email, phone, password, role, image, authProvider } = req.body;
@@ -129,7 +132,9 @@ app.post("/api/passenger", async (req, res) => {
 
     const existingUser = await passengerCollection.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: "User already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
     }
 
     let newUser = {
@@ -151,7 +156,7 @@ app.post("/api/passenger", async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User created successfully",
-      data: { id: result.insertedId, name, email }
+      data: { id: result.insertedId, name, email },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -185,11 +190,13 @@ app.patch("/api/passenger/update-password", async (req, res) => {
 
     const result = await passengerCollection.updateOne(
       { email: email },
-      { $set: { password: hashedPassword } }
+      { $set: { password: hashedPassword } },
     );
 
     if (result.matchedCount === 0) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     res.json({ success: true, message: "Password updated successfully" });
@@ -198,7 +205,6 @@ app.patch("/api/passenger/update-password", async (req, res) => {
   }
 });
 // -------------------------------------------------------------------------
-
 
 // BLOGS ROUTES
 app.get("/api/blogs", async (req, res) => {
@@ -232,13 +238,13 @@ app.post("/api/location/update", async (req, res) => {
       timestamp: new Date(),
     };
 
-    // Keep history by inserting a new record each time. 
+    // Keep history by inserting a new record each time.
     // Alternatively, to only keep the latest, use updateOne with upsert: true.
     const result = await gpsLocationsCollection.insertOne(payload);
 
     res.status(200).json({
       success: true,
-      data: payload
+      data: payload,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -253,7 +259,7 @@ app.get("/api/ride/active-location/:rideId", async (req, res) => {
     // Get the most recent location for this ride
     const location = await gpsLocationsCollection.findOne(
       { rideId: rideId },
-      { sort: { timestamp: -1 } } // Sort descending to get the latest
+      { sort: { timestamp: -1 } }, // Sort descending to get the latest
     );
 
     if (!location) {
@@ -265,7 +271,7 @@ app.get("/api/ride/active-location/:rideId", async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: location
+      data: location,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -275,17 +281,15 @@ app.get("/api/ride/active-location/:rideId", async (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "Route not found"
+    message: "Route not found",
   });
 });
-
 
 // Start Server
 // ============================================
 server.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
-
 
 // Graceful Shutdown
 

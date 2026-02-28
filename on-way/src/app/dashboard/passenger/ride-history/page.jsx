@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MapPin, Calendar, Star, Download, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { MapPin, Calendar, Star, Download, AlertCircle } from "lucide-react";
 
 /* ---------------------------------------------------------------- */
 /* Simple Card Component (No external import needed) */
@@ -17,23 +17,18 @@ function Card({ children }) {
 /* ---------------------------------------------------------------- */
 /* Simple Button Component */
 /* ---------------------------------------------------------------- */
-function Button({ children, variant = 'primary', onClick }) {
+function Button({ children, variant = "primary", onClick }) {
   const base =
-    'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center';
+    "px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center";
 
   const styles = {
-    primary: 'bg-[#011421] text-white hover:opacity-90',
-    outline:
-      'border border-gray-300 text-gray-700 hover:bg-gray-100',
-    danger:
-      'bg-red-600 text-white hover:bg-red-700',
+    primary: "bg-[#011421] text-white hover:opacity-90",
+    outline: "border border-gray-300 text-gray-700 hover:bg-gray-100",
+    danger: "bg-red-600 text-white hover:bg-red-700",
   };
 
   return (
-    <button
-      onClick={onClick}
-      className={`${base} ${styles[variant]}`}
-    >
+    <button onClick={onClick} className={`${base} ${styles[variant]}`}>
       {children}
     </button>
   );
@@ -44,41 +39,41 @@ function Button({ children, variant = 'primary', onClick }) {
 /* ---------------------------------------------------------------- */
 const mockRides = [
   {
-    id: 'R001',
-    passengerId: 'U001',
-    pickupLocation: 'Downtown Mall',
-    dropLocation: 'Airport Terminal 1',
-    requestedAt: '2025-02-10',
+    id: "R001",
+    passengerId: "U001",
+    pickupLocation: "Downtown Mall",
+    dropLocation: "Airport Terminal 1",
+    requestedAt: "2025-02-10",
     distance: 12,
-    paymentMethod: 'Card',
+    paymentMethod: "Card",
     fare: 25,
-    status: 'completed',
-    driverName: 'John Smith',
+    status: "completed",
+    driverName: "John Smith",
     rating: 4,
   },
   {
-    id: 'R002',
-    passengerId: 'U001',
-    pickupLocation: 'Central Park',
-    dropLocation: 'City Hospital',
-    requestedAt: '2025-02-12',
+    id: "R002",
+    passengerId: "U001",
+    pickupLocation: "Central Park",
+    dropLocation: "City Hospital",
+    requestedAt: "2025-02-12",
     distance: 6,
-    paymentMethod: 'Cash',
+    paymentMethod: "Cash",
     fare: 12,
-    status: 'completed',
-    driverName: 'Michael Brown',
+    status: "completed",
+    driverName: "Michael Brown",
     rating: null,
   },
   {
-    id: 'R003',
-    passengerId: 'U001',
-    pickupLocation: 'University Gate',
-    dropLocation: 'Home',
-    requestedAt: '2025-02-15',
+    id: "R003",
+    passengerId: "U001",
+    pickupLocation: "University Gate",
+    dropLocation: "Home",
+    requestedAt: "2025-02-15",
     distance: 8,
-    paymentMethod: 'Card',
+    paymentMethod: "Card",
     fare: 16,
-    status: 'cancelled',
+    status: "cancelled",
     driverName: null,
     rating: null,
   },
@@ -88,26 +83,19 @@ const mockRides = [
 /* Main Ride History Component */
 /* ---------------------------------------------------------------- */
 export default function RideHistory() {
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
 
-  const userRides = mockRides.filter(
-    (r) => r.passengerId === 'U001'
-  );
+  const userRides = mockRides.filter((r) => r.passengerId === "U001");
 
   const filteredRides =
-    filter === 'all'
-      ? userRides
-      : userRides.filter((r) => r.status === filter);
+    filter === "all" ? userRides : userRides.filter((r) => r.status === filter);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 lg:p-10">
       <div className="max-w-6xl mx-auto">
-
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#011421]">
-            Ride History
-          </h1>
+          <h1 className="text-3xl font-bold text-[#011421]">Ride History</h1>
           <p className="text-gray-600 mt-2">
             View past rides, download receipts, rate drivers, or dispute rides.
           </p>
@@ -116,22 +104,22 @@ export default function RideHistory() {
         {/* Filter Buttons */}
         <div className="flex gap-3 mb-8">
           <Button
-            variant={filter === 'all' ? 'primary' : 'outline'}
-            onClick={() => setFilter('all')}
+            variant={filter === "all" ? "primary" : "outline"}
+            onClick={() => setFilter("all")}
           >
             All
           </Button>
 
           <Button
-            variant={filter === 'completed' ? 'primary' : 'outline'}
-            onClick={() => setFilter('completed')}
+            variant={filter === "completed" ? "primary" : "outline"}
+            onClick={() => setFilter("completed")}
           >
             Completed
           </Button>
 
           <Button
-            variant={filter === 'cancelled' ? 'primary' : 'outline'}
-            onClick={() => setFilter('cancelled')}
+            variant={filter === "cancelled" ? "primary" : "outline"}
+            onClick={() => setFilter("cancelled")}
           >
             Cancelled
           </Button>
@@ -142,10 +130,8 @@ export default function RideHistory() {
           {filteredRides.map((ride) => (
             <Card key={ride.id}>
               <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
-
                 {/* LEFT SIDE */}
                 <div className="flex-1">
-
                   <div className="flex items-center gap-3 mb-4">
                     <h3 className="font-semibold text-lg text-[#011421]">
                       Ride #{ride.id}
@@ -153,9 +139,9 @@ export default function RideHistory() {
 
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        ride.status === 'completed'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
+                        ride.status === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
                       }`}
                     >
                       {ride.status}
@@ -182,9 +168,7 @@ export default function RideHistory() {
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>
-                        {new Date(
-                          ride.requestedAt
-                        ).toLocaleDateString()}
+                        {new Date(ride.requestedAt).toISOString().split("T")[0]}
                       </span>
                     </div>
 
@@ -195,7 +179,6 @@ export default function RideHistory() {
 
                 {/* RIGHT SIDE */}
                 <div className="lg:text-right space-y-3">
-
                   <p className="text-2xl font-bold text-green-600">
                     ${ride.fare}
                   </p>
@@ -206,9 +189,8 @@ export default function RideHistory() {
                     </p>
                   )}
 
-                  {ride.status === 'completed' && (
+                  {ride.status === "completed" && (
                     <div className="space-y-2">
-
                       {/* Rating */}
                       {ride.rating ? (
                         <div className="flex items-center gap-1 lg:justify-end">
@@ -220,9 +202,7 @@ export default function RideHistory() {
                           ))}
                         </div>
                       ) : (
-                        <Button variant="outline">
-                          Rate Driver
-                        </Button>
+                        <Button variant="outline">Rate Driver</Button>
                       )}
 
                       <Button variant="outline">
@@ -234,22 +214,17 @@ export default function RideHistory() {
                         <AlertCircle className="w-4 h-4 mr-2" />
                         Dispute Ride
                       </Button>
-
                     </div>
                   )}
                 </div>
-
               </div>
             </Card>
           ))}
         </div>
 
         {filteredRides.length === 0 && (
-          <div className="text-center py-16 text-gray-500">
-            No rides found.
-          </div>
+          <div className="text-center py-16 text-gray-500">No rides found.</div>
         )}
-
       </div>
     </div>
   );

@@ -11,7 +11,15 @@ export default function PaymentPage() {
     productName: "Ride Payment",
   });
 
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [loading, setLoading] = useState(false);
+
+  const paymentMethods = [
+    { id: "card", name: "Credit/Debit Card", icon: "💳" },
+    { id: "bkash", name: "bKash", icon: "📱" },
+    { id: "nagad", name: "Nagad", icon: "💰" },
+    { id: "cash", name: "Cash on Service", icon: "💵" },
+  ];
 
   const handleChange = (e) => {
     setPaymentData({
@@ -24,14 +32,43 @@ export default function PaymentPage() {
     e.preventDefault();
     setLoading(true);
 
-    // SSLCommerz integration korar jonno ekhane code likhben
-    console.log("Payment Data:", paymentData);
+    try {
+      const response = await fetch("http://localhost:4000/api/payment/initiate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: paymentData.amount,
+          customerName: paymentData.customerName,
+          customerEmail: paymentData.customerEmail,
+          customerPhone: paymentData.customerPhone,
+          productName: paymentData.productName,
+          paymentMethod: paymentMethod,
+        }),
+      });
 
-    // Simulate payment process
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (data.success) {
+        if (paymentMethod === "cash") {
+          alert("Cash on Service confirmed! Payment will be collected during service.");
+        } else if (data.gatewayUrl) {
+          // SSLCommerz gateway e redirect
+          window.location.href = data.gatewayUrl;
+        } else {
+          alert("Payment initiated successfully!");
+          console.log(data);
+        }
+      } else {
+        alert("Payment failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed. Please try again.");
+    } finally {
       setLoading(false);
-      alert("Payment gateway ready for SSLCommerz integration");
-    }, 1000);
+    }
   };
 
   return (
@@ -48,6 +85,32 @@ export default function PaymentPage() {
           </div>
 
           <form onSubmit={handlePayment} className="space-y-6">
+            {/* Payment Method Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Select Payment Method
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {paymentMethods.map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.id)}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      paymentMethod === method.id
+                        ? "border-indigo-600 bg-indigo-50"
+                        : "border-gray-200 hover:border-indigo-300"
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">{method.icon}</div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {method.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Amount (BDT)
@@ -145,13 +208,19 @@ export default function PaymentPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Processing..." : "Proceed to Payment"}
+              {loading
+                ? "Processing..."
+                : paymentMethod === "cash"
+                ? "Confirm Cash Payment"
+                : "Proceed to Payment"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              Secured by SSLCommerz
+              {paymentMethod === "cash"
+                ? "Pay cash when service is provided"
+                : "Secured by SSLCommerz"}
             </p>
           </div>
         </div>

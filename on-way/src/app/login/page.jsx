@@ -168,7 +168,7 @@ const Login = () => {
                 disabled={loading}
                 className="btn btn-primary w-full text-white rounded-2xl h-12 uppercase tracking-[0.2em] font-black  mt-4 border-none transition-all"
               >
-                {loading ? <span className="loading loading-spinner"></span> : "Sign In"}
+                {loading ? <span className="loading loading-spinner"></span> : "Login"}
               </motion.button>
             </form>
 

@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  Calendar, 
-  Car, 
-  User, 
-  Navigation2, 
-  Download, 
+import {
+  Calendar,
+  Car,
+  User,
+  Navigation2,
+  Download,
   AlertCircle,
   Search
 } from "lucide-react";
+import OnWayLoading from "@/app/components/Loading/page";
 
-// PDF এর জন্য সঠিক ইমপোর্ট পদ্ধতি
+// Correct import method for PDF.js and autoTable
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -39,22 +41,24 @@ export default function RideHistoryPage() {
         throw new Error("Failed to fetch rides");
       }
     } catch (err) {
-      setError("রাইড হিস্ট্রি লোড করতে সমস্যা হচ্ছে। আবার চেষ্টা করুন।");
+      setError("Failed to fetch ride history");
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000); // 2000ms = 2 seconds
     }
   };
 
-  // --- আপডেট করা PDF জেনারেশন ফাংশন ---
+  // Updated PDF generation function with error handling and better formatting
   const generateInvoice = (ride) => {
     try {
       const doc = new jsPDF();
-      
+
       // Header
       doc.setFontSize(22);
       doc.setTextColor(30, 41, 59); // Slate-800
       doc.text("RIDE INVOICE", 14, 22);
-      
+
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text(`Invoice No: INV-${ride._id.slice(-6).toUpperCase()}`, 14, 30);
@@ -69,21 +73,22 @@ export default function RideHistoryPage() {
         ["Total Fare", `BDT ${ride.fare}`],
       ];
 
-      // সরাসরি autoTable ফাংশন ব্যবহার (Error Fix)
+      //Use the autoTable function directly (Error Fix)
+
       autoTable(doc, {
         startY: 45,
         head: [["Description", "Details"]],
         body: tableData,
         theme: 'striped',
-        headStyles: { 
+        headStyles: {
           fillColor: [79, 70, 229], // Indigo-600
           fontSize: 11,
-          fontStyle: 'bold' 
+          fontStyle: 'bold'
         },
-        styles: { 
-          cellPadding: 5, 
+        styles: {
+          cellPadding: 5,
           fontSize: 10,
-          font: "helvetica" 
+          font: "helvetica"
         },
         columnStyles: {
           0: { cellWidth: 50, fontStyle: 'bold' }
@@ -100,42 +105,37 @@ export default function RideHistoryPage() {
       doc.save(`Invoice_${ride._id.slice(-6)}.pdf`);
     } catch (err) {
       console.error("PDF generation error:", err);
-      alert("ইনভয়েস তৈরি করতে সমস্যা হয়েছে।");
+      alert("There was a problem creating the invoice. Please try again.");
     } finally {
       setDownloadingId(null);
     }
   };
 
-  const filteredRides = rides.filter(ride => 
+  const filteredRides = rides.filter(ride =>
     ride.pickupLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ride.dropLocation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc]">
-        <span className="loading loading-ring loading-lg text-indigo-600"></span>
-        <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading</p>
-      </div>
-    );
+    return <OnWayLoading />;
   }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 md:p-12 text-slate-900">
       <div className="max-w-6xl mx-auto">
-        
+
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
             <h1 className="text-4xl font-black tracking-tight text-slate-900">Ride History</h1>
             <p className="text-slate-500 mt-2 font-medium">Detailed report of all your rides</p>
           </div>
-          
+
           <div className="relative group">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search by destination…" 
+            <input
+              type="text"
+              placeholder="Search by destination…"
               className="input input-bordered bg-white border-slate-200 pl-10 rounded-2xl w-full md:w-80 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-400 outline-none"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -144,20 +144,20 @@ export default function RideHistoryPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Rides</p>
-                <h2 className="text-3xl font-black text-slate-800">{rides.length}</h2>
-              </div>
-              <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-500"><Car /></div>
-           </div>
-           <div className="bg-indigo-600 p-6 rounded-3xl shadow-xl shadow-indigo-100 flex items-center justify-between text-white">
-              <div>
-                <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Total Spent</p>
-                <h2 className="text-3xl font-black">৳ {rides.reduce((acc, r) => acc + (Number(r.fare) || 0), 0)}</h2>
-              </div>
-              <div className="p-4 bg-white/10 rounded-2xl"><Navigation2 /></div>
-           </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Rides</p>
+              <h2 className="text-3xl font-black text-slate-800">{rides.length}</h2>
+            </div>
+            <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-500"><Car /></div>
+          </div>
+          <div className="bg-indigo-600 p-6 rounded-3xl shadow-xl shadow-indigo-100 flex items-center justify-between text-white">
+            <div>
+              <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Total Spent</p>
+              <h2 className="text-3xl font-black">৳ {rides.reduce((acc, r) => acc + (Number(r.fare) || 0), 0)}</h2>
+            </div>
+            <div className="p-4 bg-white/10 rounded-2xl"><Navigation2 /></div>
+          </div>
         </div>
 
         {/* Table */}
@@ -178,7 +178,7 @@ export default function RideHistoryPage() {
                     <td className="pl-10 py-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-slate-100 rounded-xl flex flex-col items-center justify-center font-bold text-slate-600">
-                          <span className="text-[9px] uppercase">{new Date(ride.createdAt).toLocaleString('default', {month: 'short'})}</span>
+                          <span className="text-[9px] uppercase">{new Date(ride.createdAt).toLocaleString('default', { month: 'short' })}</span>
                           <span className="text-sm leading-none">{new Date(ride.createdAt).getDate()}</span>
                         </div>
                         <Calendar className="w-4 h-4 text-slate-300" />
@@ -201,11 +201,10 @@ export default function RideHistoryPage() {
                           generateInvoice(ride);
                         }}
                         disabled={downloadingId === ride._id}
-                        className={`btn btn-sm h-10 px-5 rounded-xl border-none font-bold transition-all shadow-sm ${
-                          downloadingId === ride._id 
-                          ? 'bg-slate-100 text-slate-400' 
-                          : 'bg-slate-900 text-white hover:bg-indigo-600'
-                        }`}
+                        className={`btn btn-sm h-10 px-5 rounded-xl border-none font-bold transition-all shadow-sm ${downloadingId === ride._id
+                            ? 'bg-slate-100 text-slate-400'
+                            : 'bg-slate-900 text-white hover:bg-indigo-600'
+                          }`}
                       >
                         {downloadingId === ride._id ? (
                           <span className="loading loading-spinner loading-xs"></span>

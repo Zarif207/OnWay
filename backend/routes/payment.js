@@ -30,11 +30,11 @@ module.exports = function (paymentsCollection) {
         });
       }
 
-      // SSLCommerz integration ekhane hobe
-      // const SSLCommerzPayment = require('sslcommerz-lts');
-      // const store_id = process.env.SSLCOMMERZ_STORE_ID;
-      // const store_passwd = process.env.SSLCOMMERZ_STORE_PASSWORD;
-      // const is_live = false; // true for live, false for sandbox
+      // SSLCommerz integration
+      const SSLCommerzPayment = require('sslcommerz-lts');
+      const store_id = process.env.SSLCOMMERZ_STORE_ID;
+      const store_passwd = process.env.SSLCOMMERZ_STORE_PASSWORD;
+      const is_live = process.env.SSLCOMMERZ_IS_LIVE === 'true';
 
       const transactionId = `TXN-${Date.now()}`;
 
@@ -68,18 +68,15 @@ module.exports = function (paymentsCollection) {
         createdAt: new Date(),
       });
 
-      // SSLCommerz integration uncomment korben:
-      // const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-      // const apiResponse = await sslcz.init(paymentData);
-      // return res.json({ success: true, gatewayUrl: apiResponse.GatewayPageURL });
-
-      // Temporary response (SSLCommerz setup na hole)
-      res.json({
-        success: true,
-        message: "Payment initiated. SSLCommerz integration pending.",
-        transactionId,
-        paymentData,
-      });
+      // SSLCommerz integration
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      const apiResponse = await sslcz.init(paymentData);
+      
+      if (apiResponse.GatewayPageURL) {
+        return res.json({ success: true, gatewayUrl: apiResponse.GatewayPageURL });
+      } else {
+        return res.status(400).json({ success: false, message: "Failed to initialize payment gateway" });
+      }
     } catch (error) {
       console.error("Payment initiate error:", error);
       res.status(500).json({ success: false, message: "Payment initiation failed" });

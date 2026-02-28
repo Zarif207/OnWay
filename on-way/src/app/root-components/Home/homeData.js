@@ -27,7 +27,7 @@ export const services = [
       "Safety-first rides with trusted partners",
     ],
     cta: { label: "Explore Ride", href: "#services" },
-    accent: "from-yellow-400/20 to-orange-500/20",
+    accent: "from-primary/20 to-orange-500/20",
   },
   {
     key: "car",

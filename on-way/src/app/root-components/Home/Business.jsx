@@ -32,7 +32,7 @@ export default function Business() {
             data-aos="fade-up"
             data-aos-delay="80"
           >
-            <div className="rounded-3xl bg-gradient-to-br from-yellow-400/20 to-orange-500/20 p-6">
+            <div className="rounded-3xl bg-gradient-to-br from-primary/20 to-orange-500/20 p-6">
               <div className="flex items-center gap-3">
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/70 text-zinc-900">
                   <Package className="h-6 w-6" />

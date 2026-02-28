@@ -14,6 +14,9 @@ import {
   Wallet,
   History,
   LayoutDashboard,
+  Users,
+  Map,
+  BarChart3,
 } from "lucide-react";
 import Image from "next/image";
 import logoImage from "../../../public/icon2.png";
@@ -59,23 +62,87 @@ const Navbar = () => {
 
   const roleIcons = {
     passenger: [
-      { href: "/dashboard/passenger/book-ride", icon: <Car className="h-5 w-5" />, label: "Book Ride" },
-      { href: "/dashboard/passenger/ride-history", icon: <History className="h-5 w-5" />, label: "My Rides" },
-      { href: "/dashboard/passenger/active-ride", icon: <LayoutDashboard className="h-5 w-5" />, label: "Tracking" },
-      { href: "/dashboard/passenger/wallet", icon: <Wallet className="h-5 w-5" />, label: "Wallet" },
-      { href: "/dashboard/passenger/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
+      {
+        href: "/dashboard/passenger/book-ride",
+        icon: <Car className="h-5 w-5" />,
+        label: "Book Ride",
+      },
+      {
+        href: "/dashboard/passenger/ride-history",
+        icon: <History className="h-5 w-5" />,
+        label: "My Rides",
+      },
+      {
+        href: "/dashboard/passenger/active-ride",
+        icon: <LayoutDashboard className="h-5 w-5" />,
+        label: "Tracking",
+      },
+      {
+        href: "/dashboard/passenger/wallet",
+        icon: <Wallet className="h-5 w-5" />,
+        label: "Wallet",
+      },
+      {
+        href: "/dashboard/passenger/profile",
+        icon: <User className="h-5 w-5" />,
+        label: "Profile",
+      },
     ],
     rider: [
-      { href: "/dashboard/rider/requests", icon: <Car className="h-5 w-5" />, label: "Ride Requests" },
-      { href: "/dashboard/rider/trips", icon: <History className="h-5 w-5" />, label: "My Trips" },
-      { href: "/dashboard/rider/earnings", icon: <Wallet className="h-5 w-5" />, label: "Earnings" },
-      { href: "/dashboard/rider/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
+      {
+        href: "/dashboard/rider/requests",
+        icon: <Car className="h-5 w-5" />,
+        label: "Ride Requests",
+      },
+      {
+        href: "/dashboard/rider/trips",
+        icon: <History className="h-5 w-5" />,
+        label: "My Trips",
+      },
+      {
+        href: "/dashboard/rider/earnings",
+        icon: <Wallet className="h-5 w-5" />,
+        label: "Earnings",
+      },
+      {
+        href: "/dashboard/rider/profile",
+        icon: <User className="h-5 w-5" />,
+        label: "Profile",
+      },
     ],
     admin: [
-      { href: "/dashboard/admin", icon: <Shield className="h-5 w-5" />, label: "Admin Panel" },
+      {
+        href: "/dashboard/admin/dashboard-overview",
+        icon: <Shield className="h-5 w-5" />,
+        label: "Dashboard Overview",
+      },
+      {
+        href: "/dashboard/admin/user-management",
+        icon: <Users className="h-5 w-5" />,
+        label: "User Management",
+      },
+      {
+        href: "/dashboard/admin/driver-management",
+        icon: <Car className="h-5 w-5" />,
+        label: "Driver Management",
+      },
+      {
+        href: "/dashboard/admin/ride-management",
+        icon: <Map className="h-5 w-5" />,
+        label: "Ride Management",
+      },
+      {
+        href: "/dashboard/admin/reports-safety",
+        icon: <BarChart3 className="h-5 w-5" />,
+        label: "Reports & Safety",
+      },
     ],
     supportAgent: [
-      { href: "/dashboard/supportAgent", icon: <Headphones className="h-5 w-5" />, label: "Support Panel" },
+      {
+        href: "/dashboard/supportAgent",
+        icon: <Headphones className="h-5 w-5" />,
+        label: "Support Panel",
+      },
     ],
   };
 
@@ -113,11 +180,11 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur transition-transform duration-300 ${isVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
+      className={`sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur transition-transform duration-300 ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-
         {/* Logo */}
         <Link href="/" className="flex items-center text-2xl font-extrabold">
           <Image src={logoImage} alt="OnWay" width={120} height={94} />
@@ -129,8 +196,11 @@ const Navbar = () => {
             <Link
               key={item.href}
               href={item.href}
-              className={`transition hover:text-zinc-950 ${isActive(item.href) ? "text-zinc-950 font-bold border-b-2 border-zinc-950" : "text-zinc-600"
-                }`}
+              className={`transition hover:text-zinc-950 ${
+                isActive(item.href)
+                  ? "text-zinc-950 font-bold border-b-2 border-zinc-950"
+                  : "text-zinc-600"
+              }`}
             >
               {item.label}
             </Link>
@@ -139,8 +209,11 @@ const Navbar = () => {
           {session && !isDashboard && (
             <Link
               href={dashboardHref}
-              className={`transition hover:text-zinc-950 ${pathname.includes("/dashboard") ? "text-zinc-950 font-bold" : "text-zinc-600"
-                }`}
+              className={`transition hover:text-zinc-950 ${
+                pathname.includes("/dashboard")
+                  ? "text-zinc-950 font-bold"
+                  : "text-zinc-600"
+              }`}
             >
               Dashboard
             </Link>
@@ -162,8 +235,11 @@ const Navbar = () => {
                   <Link
                     key={m.label}
                     href={m.href}
-                    className={`block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-zinc-50 hover:text-zinc-950 ${isActive(m.href) ? "bg-zinc-100 text-zinc-950" : "text-zinc-700"
-                      }`}
+                    className={`block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-zinc-50 hover:text-zinc-950 ${
+                      isActive(m.href)
+                        ? "bg-zinc-100 text-zinc-950"
+                        : "text-zinc-700"
+                    }`}
                     onClick={() => setOpenMenu(false)}
                   >
                     {m.label}
@@ -182,8 +258,11 @@ const Navbar = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative group transition ${isActive(item.href) ? "text-black" : "text-zinc-500 hover:text-black"
-                    }`}
+                  className={`relative group transition ${
+                    isActive(item.href)
+                      ? "text-black"
+                      : "text-zinc-500 hover:text-black"
+                  }`}
                 >
                   {item.icon}
                   {isActive(item.href) && (

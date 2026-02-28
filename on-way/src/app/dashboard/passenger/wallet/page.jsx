@@ -26,7 +26,7 @@ function Button({ children, variant = 'primary', className = '' }) {
   const styles = {
     primary: 'bg-black text-white hover:opacity-90',
     outline: 'border border-gray-300 text-gray-700 hover:bg-gray-100',
-    accent: 'bg-yellow-400 text-black hover:bg-yellow-500',
+    accent: 'bg-primary text-black hover:bg-primary',
   };
 
   return (
@@ -88,7 +88,7 @@ export default function Wallet() {
         </div>
 
         {/* Balance Card */}
-        <Card className="mb-8 border-l-4 border-yellow-400">
+        <Card className="mb-8 border-l-4 border-primary">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-gray-500 mb-2">
@@ -99,7 +99,7 @@ export default function Wallet() {
               </h2>
             </div>
 
-            <div className="w-14 h-14 bg-yellow-400 rounded-full flex items-center justify-center">
+            <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center">
               <DollarSign className="text-black w-6 h-6" />
             </div>
           </div>
@@ -129,11 +129,11 @@ export default function Wallet() {
             </Button>
           </div>
 
-          <div className="p-4 border-2 border-yellow-400 bg-yellow-50 rounded-lg">
+          <div className="p-4 border-2 border-primary bg-primary rounded-lg">
             <div className="flex justify-between items-center">
               <div className="flex gap-4 items-center">
                 <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
-                  <CreditCard className="text-yellow-400 w-6 h-6" />
+                  <CreditCard className="text-primary w-6 h-6" />
                 </div>
                 <div>
                   <p className="font-semibold text-black">
@@ -144,7 +144,7 @@ export default function Wallet() {
                   </p>
                 </div>
               </div>
-              <span className="px-3 py-1 bg-yellow-400 text-black text-sm rounded-full font-medium">
+              <span className="px-3 py-1 bg-primary text-black text-sm rounded-full font-medium">
                 Default
               </span>
             </div>
@@ -164,7 +164,7 @@ export default function Wallet() {
                 className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <TicketPercent className="text-yellow-500" />
+                  <TicketPercent className="text-primary" />
                   <div>
                     <p className="font-semibold text-black">
                       {promo.code}

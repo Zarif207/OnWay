@@ -1,4 +1,5 @@
 import HowItWorks from "./components/Home/HowItWorks";
+import HomeLatestReviews from "./components/Home/LatestReviews";
 import Testimonials from "./components/Home/Testimonials";
 import ScrollProgress from "./components/ScrollProgress";
 import Contact from "./root-components/Home/Contact";
@@ -24,6 +25,7 @@ export default function Home() {
         <Earn />
         <Testimonials />
         <Contact />
+        <HomeLatestReviews />
       </main>
     </ScrollProgress>
   );

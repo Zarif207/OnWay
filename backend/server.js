@@ -7,11 +7,11 @@ const bcrypt = require("bcryptjs");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
 // Routes ---------------------------------
-const passengerRoutes = require("./routes/passenger.routes");
-const blogRoutes = require("./routes/blog.routes");
-const locationRoutes = require("./routes/location.routes");
-const ridesRoutes = require("./routes/rides.routes.js");
-const reviewsRoutes = require("./routes/reviews.routes");
+const passengerRoutes = require("./routes/passenger");
+const blogRoutes = require("./routes/blog");
+const locationRoutes = require("./routes/location");
+const ridesRoutes = require("./routes/rides");
+const reviewsRoutes = require("./routes/reviews");
 // ---------------------------------------
 
 // ---------------------------------------

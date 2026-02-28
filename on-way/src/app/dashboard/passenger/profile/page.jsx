@@ -25,7 +25,7 @@ function Button({ children, variant = 'primary', className = '' }) {
 
   const styles = {
     primary: 'bg-black text-white hover:opacity-90',
-    accent: 'bg-yellow-400 text-black hover:bg-yellow-500',
+    accent: 'bg-primary text-black hover:bg-primary',
     outline: 'border border-gray-300 text-gray-700 hover:bg-gray-100',
   };
 
@@ -72,7 +72,7 @@ export default function Profile() {
         <Card className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-black flex items-center gap-2">
-              <MapPin className="text-yellow-500" />
+              <MapPin className="text-primary" />
               Saved Addresses
             </h3>
             <Button variant="accent">Add Address</Button>
@@ -102,7 +102,7 @@ export default function Profile() {
         <Card className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-black flex items-center gap-2">
-              <Phone className="text-yellow-500" />
+              <Phone className="text-primary" />
               Emergency Contacts
             </h3>
             <Button variant="accent">Add Contact</Button>
@@ -131,7 +131,7 @@ export default function Profile() {
         {/* Ride Preferences */}
         <Card className="mb-8">
           <h3 className="text-xl font-semibold text-black mb-6 flex items-center gap-2">
-            <Settings className="text-yellow-500" />
+            <Settings className="text-primary" />
             Ride Preferences
           </h3>
 
@@ -181,7 +181,7 @@ export default function Profile() {
         {/* Notifications & Language */}
         <Card>
           <h3 className="text-xl font-semibold text-black mb-6 flex items-center gap-2">
-            <Bell className="text-yellow-500" />
+            <Bell className="text-primary" />
             Notifications & Language
           </h3>
 
@@ -209,7 +209,7 @@ export default function Profile() {
             {/* Language */}
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Globe className="text-yellow-500" />
+                <Globe className="text-primary" />
                 <p className="font-semibold text-black">
                   Language
                 </p>
@@ -218,7 +218,7 @@ export default function Profile() {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option>English</option>
                 <option>Spanish</option>

@@ -36,7 +36,7 @@ const ScrollProgress = ({ children }) => {
                     className="h-full bg-primary transition-all duration-150 rounded-r-full ease-out"
                     style={{
                         width: `${scrollWidth}%`,
-                        backgroundColor: '#303841'
+                        backgroundColor: '#001820'
                     }}
                 ></div>
             </div>

@@ -207,7 +207,7 @@ export default function PassengerBookRide() {
               {scheduleType === "later" && (
                 <input
                   type="datetime-local"
-                  className="mt-4 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#FFD600]"
+                  className="mt-4 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#2FCA71]"
                 />
               )}
             </div>
@@ -225,7 +225,7 @@ export default function PassengerBookRide() {
                     onClick={() => setSelectedVehicle(vehicle.id)}
                     className={`p-4 border-2 rounded-xl cursor-pointer transition ${
                       selectedVehicle === vehicle.id
-                        ? "border-[#FFD600] bg-yellow-50"
+                        ? "border-[#2FCA71] bg-primary"
                         : "border-gray-200 hover:border-gray-400"
                     }`}
                   >
@@ -258,7 +258,7 @@ export default function PassengerBookRide() {
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                   placeholder="Enter promo code"
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD600]"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCA71]"
                 />
               </div>
             </div>
@@ -286,8 +286,8 @@ export default function PassengerBookRide() {
             </div>
 
             {/* Confirm */}
-            <button className="w-full bg-[#FFD600] text-black font-semibold py-4 rounded-xl hover:opacity-90 transition">
-              Confirm Booking - {displayFare} ৳
+            <button className="w-full bg-[#2FCA71] text-black font-semibold py-4 rounded-xl hover:opacity-90 transition">
+              Confirm Booking - ${estimatedFare}
             </button>
 
           </div>
@@ -332,7 +332,7 @@ export default function PassengerBookRide() {
               </div>
 
               {promoCode && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-[#FFD600] rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-primary border border-[#2FCA71] rounded-lg text-sm">
                   Promo code applied
                 </div>
               )}

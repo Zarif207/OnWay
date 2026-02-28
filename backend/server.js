@@ -14,6 +14,8 @@ const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
 const bookingsRoutes = require("./routes/bookings");
 
+const paymentRoutes = require("./routes/payment");
+// ---------------------------------------
 
 // ---------------------------------------
 const uri = process.env.MONGODB_URI;
@@ -58,6 +60,8 @@ async function startServer() {
   const ridesCollection = database.collection("rides");
   const reviewsCollection = database.collection("reviews");
   const bookingsCollection = database.collection("bookings");
+  const paymentsCollection = database.collection("payments");
+  //------------------------------------------------------
 
   // Routes -----------------------------------------
   app.use("/api/passenger", passengerRoutes(passengerCollection));
@@ -66,6 +70,8 @@ async function startServer() {
   app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
   app.use("/api/bookings", bookingsRoutes(bookingsCollection));
+  app.use("/api/payment", paymentRoutes(paymentsCollection));
+  // ---------------------------------------------------
 
   // Socket.io ----------------------------
   io.on("connection", (socket) => {

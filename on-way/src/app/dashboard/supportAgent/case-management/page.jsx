@@ -92,7 +92,7 @@ export default function CaseManagement() {
                   onClick={() => setActiveFilter(filter)}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition ${
                     activeFilter === filter
-                      ? 'bg-yellow-500 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -109,7 +109,7 @@ export default function CaseManagement() {
                   onClick={() => setSelectedTicket(ticket)}
                   className={`p-4 rounded-lg border cursor-pointer transition ${
                     selectedTicket?.id === ticket.id
-                      ? 'border-yellow-500 bg-yellow-50'
+                      ? 'border-primary bg-primary'
                       : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
@@ -144,7 +144,7 @@ export default function CaseManagement() {
               {/* Chat Section */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-yellow-500" />
+                  <MessageCircle className="w-5 h-5 text-primary" />
                   Direct Chat
                 </h3>
 
@@ -161,7 +161,7 @@ export default function CaseManagement() {
                       <span
                         className={`inline-block px-3 py-2 rounded-lg ${
                           msg.sender === 'Agent'
-                            ? 'bg-yellow-500 text-white'
+                            ? 'bg-primary text-white'
                             : 'bg-white border'
                         }`}
                       >
@@ -178,11 +178,11 @@ export default function CaseManagement() {
                     placeholder="Type message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button
                     onClick={sendMessage}
-                    className="bg-yellow-500 text-white px-4 rounded-lg hover:bg-yellow-600 transition"
+                    className="bg-primary text-white px-4 rounded-lg hover:bg-primary transition"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -198,7 +198,7 @@ export default function CaseManagement() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add resolution details..."
-                  className="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   rows="4"
                 />
               </div>
@@ -224,7 +224,7 @@ export default function CaseManagement() {
 function PriorityBadge({ priority }) {
   const styles = {
     High: 'bg-red-100 text-red-600',
-    Medium: 'bg-yellow-100 text-yellow-700',
+    Medium: 'bg-primary text-primary',
     Low: 'bg-blue-100 text-blue-600',
   };
 

@@ -71,7 +71,7 @@ const RideManagement = () => {
     if (status === "ongoing")
       return "bg-blue-100 text-blue-700";
     if (status === "pending")
-      return "bg-yellow-100 text-yellow-700";
+      return "bg-primary text-primary";
     return "bg-gray-100 text-gray-600";
   };
 
@@ -101,7 +101,7 @@ const RideManagement = () => {
           <StatCard title="Total Rides" value="5" />
           <StatCard title="Completed" value="3" color="text-green-600" />
           <StatCard title="Ongoing" value="1" color="text-blue-600" />
-          <StatCard title="Pending" value="1" color="text-yellow-600" />
+          <StatCard title="Pending" value="1" color="text-primary" />
         </div>
 
         {/* Filters */}

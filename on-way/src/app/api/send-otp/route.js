@@ -27,16 +27,16 @@ export async function POST(req) {
             subject: "Verify Your OnWay Account",
             html: `
                 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 24px; padding: 40px; color: #333; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                    <h1 style="color: #ef269f; font-style: italic; font-size: 42px; margin-bottom: 5px; font-weight: 900;">OnWay<span style="color: #111;">.</span></h1>
-                    <div style="height: 4px; width: 40px; background: #ef269f; margin: 0 auto 20px auto; border-radius: 10px;"></div>
+                    <h1 style="color: #2FCA71; font-style: italic; font-size: 42px; margin-bottom: 5px; font-weight: 900;">OnWay<span style="color: #001820;">.</span></h1>
+                    <div style="height: 4px; width: 40px; background: #2FCA71; margin: 0 auto 20px auto; border-radius: 10px;"></div>
                     
-                    <h2 style="font-weight: 800; color: #111; font-size: 24px;">Account Verification</h2>
+                    <h2 style="font-weight: 800; color: #2FCA71; font-size: 24px;">Account Verification</h2>
                     <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 30px;">
                         Welcome to OnWay! To complete your registration, please use the verification code below:
                     </p>
                     
-                    <div style="background-color: #fff0f9; border-radius: 20px; padding: 30px; margin: 20px 0; border: 2px dashed #ef269f;">
-                        <span style="font-size: 48px; font-weight: 900; letter-spacing: 15px; color: #ef269f; font-family: monospace;">${otp}</span>
+                    <div style="background-color: #fff0f9; border-radius: 20px; padding: 30px; margin: 20px 0; border: 2px dashed #2FCA71;">
+                        <span style="font-size: 48px; font-weight: 900; letter-spacing: 15px; color: #2FCA71; font-family: monospace;">${otp}</span>
                     </div>
 
                     <p style="font-size: 13px; color: #888; margin-top: 30px; line-height: 1.5;">

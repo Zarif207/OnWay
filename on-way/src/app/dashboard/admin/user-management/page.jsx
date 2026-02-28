@@ -32,7 +32,7 @@ const UserManagement = () => {
         {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#011421]">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#2FCA71]">
               User Management
             </h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">
@@ -59,11 +59,11 @@ const UserManagement = () => {
               <input
                 type="text"
                 placeholder="Search by name, email or phone..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
-            <select className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <select className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
               <option>All Status</option>
               <option>Active</option>
               <option>Inactive</option>
@@ -130,7 +130,7 @@ const UserManagement = () => {
 
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-1 text-sm">
-                        <span className="text-yellow-500">★</span>
+                        <span className="text-primary">★</span>
                         <span className="font-semibold text-gray-800">
                           {user.rating}
                         </span>

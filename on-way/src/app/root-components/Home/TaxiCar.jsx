@@ -44,7 +44,7 @@ export default function TaxiCar() {
         {/* Taxi Body - Yellow with gradient effect */}
         <defs>
           <linearGradient id="taxiGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFD700" />
+            <stop offset="0%" stopColor="#2FCA71" />
             <stop offset="100%" stopColor="#FFA500" />
           </linearGradient>
         </defs>
@@ -59,10 +59,10 @@ export default function TaxiCar() {
         />
         
         {/* Windows with reflection */}
-        <rect x="140" y="65" width="70" height="35" rx="5" fill="#1a1a1a" opacity="0.4" />
+        <rect x="140" y="65" width="70" height="35" rx="5" fill="#001820" opacity="0.4" />
         <rect x="140" y="65" width="70" height="12" rx="5" fill="#fff" opacity="0.2" />
         
-        <rect x="240" y="65" width="70" height="35" rx="5" fill="#1a1a1a" opacity="0.4" />
+        <rect x="240" y="65" width="70" height="35" rx="5" fill="#001820" opacity="0.4" />
         <rect x="240" y="65" width="70" height="12" rx="5" fill="#fff" opacity="0.2" />
         
         {/* TAXI Sign on Roof */}
@@ -71,7 +71,7 @@ export default function TaxiCar() {
           x="220"
           y="53"
           textAnchor="middle"
-          fill="#FFD700"
+          fill="#2FCA71"
           fontSize="16"
           fontWeight="bold"
           fontFamily="Arial, sans-serif"
@@ -104,15 +104,15 @@ export default function TaxiCar() {
         {/* Wheels with detail */}
         <g>
           {/* Front Wheel */}
-          <circle cx="140" cy="200" r="22" fill="#2a2a2a" />
-          <circle cx="140" cy="200" r="18" fill="#1a1a1a" />
+          <circle cx="140" cy="200" r="22" fill="#001820" />
+          <circle cx="140" cy="200" r="18" fill="#001820" />
           <circle cx="140" cy="200" r="14" fill="#333" />
           <circle cx="140" cy="200" r="8" fill="#4a4a4a" />
           <circle cx="140" cy="200" r="4" fill="#666" />
           
           {/* Back Wheel */}
-          <circle cx="310" cy="200" r="22" fill="#2a2a2a" />
-          <circle cx="310" cy="200" r="18" fill="#1a1a1a" />
+          <circle cx="310" cy="200" r="22" fill="#001820" />
+          <circle cx="310" cy="200" r="18" fill="#001820" />
           <circle cx="310" cy="200" r="14" fill="#333" />
           <circle cx="310" cy="200" r="8" fill="#4a4a4a" />
           <circle cx="310" cy="200" r="4" fill="#666" />
@@ -120,19 +120,19 @@ export default function TaxiCar() {
         
         {/* Headlights */}
         <circle cx="360" cy="140" r="10" fill="#fff" opacity="0.9" />
-        <circle cx="360" cy="140" r="7" fill="#FFD700" />
+        <circle cx="360" cy="140" r="7" fill="#2FCA71" />
         <circle cx="360" cy="140" r="4" fill="#fff" />
         
         {/* Grille */}
-        <rect x="360" y="115" width="25" height="35" fill="#1a1a1a" rx="2" />
+        <rect x="360" y="115" width="25" height="35" fill="#001820" rx="2" />
         <line x1="365" y1="120" x2="365" y2="145" stroke="#333" strokeWidth="2" />
         <line x1="370" y1="120" x2="370" y2="145" stroke="#333" strokeWidth="2" />
         <line x1="375" y1="120" x2="375" y2="145" stroke="#333" strokeWidth="2" />
         <line x1="380" y1="120" x2="380" y2="145" stroke="#333" strokeWidth="2" />
         
         {/* Side mirrors */}
-        <rect x="85" y="75" width="8" height="15" rx="2" fill="#FFD700" />
-        <rect x="357" y="75" width="8" height="15" rx="2" fill="#FFD700" />
+        <rect x="85" y="75" width="8" height="15" rx="2" fill="#2FCA71" />
+        <rect x="357" y="75" width="8" height="15" rx="2" fill="#2FCA71" />
         
         {/* Door handles */}
         <rect x="190" y="135" width="30" height="4" rx="2" fill="#333" />

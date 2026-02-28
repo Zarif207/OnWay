@@ -10,6 +10,7 @@ const { MongoClient, ServerApiVersion } = require("mongodb");
 const passengerRoutes = require("./routes/passenger.routes");
 const blogRoutes = require("./routes/blog.routes");
 const locationRoutes = require("./routes/location.routes");
+const ridesRoutes = require("./routes/rides.routes.js");
 const reviewsRoutes = require("./routes/reviews.routes");
 // ---------------------------------------
 
@@ -57,13 +58,15 @@ async function startServer() {
   const passengerCollection = database.collection("passenger");
   const blogsCollection = database.collection("Blogs");
   const gpsLocationsCollection = database.collection("gpsLocations");
+  const ridesCollection = database.collection("rides");
   const reviewsCollection = database.collection("reviews");
-  // -----------------------------------------------------
+  //------------------------------------------------------
 
   // Routes -----------------------------------------
   app.use("/api/passenger", passengerRoutes(passengerCollection));
   app.use("/api/blogs", blogRoutes(blogsCollection));
   app.use("/api/location", locationRoutes(gpsLocationsCollection));
+  app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
   // ---------------------------------------------------
 

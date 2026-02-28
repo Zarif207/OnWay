@@ -10,10 +10,10 @@
 }
 
 [data-theme="onwaytheme"] {
-  --color-primary: #303841;
-  --color-secondary: #FFF200;
-  --color-accent: #F5F5F5;
-  /* --color-neutral: #D6E6F2; */
+  --color-primary: #259461;
+  --color-secondary: #001820;
+  --color-accent: ##2cbe6b;
+  --color-neutral: ##fffcfd;
 }
 
 @theme {

@@ -11,7 +11,7 @@ export default function BlogCard({ blog }) {
         : "Recent Post";
 
     return (
-        <div className="group flex flex-col h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-yellow-400/50 hover:shadow-md transition-all duration-300">
+        <div className="group flex flex-col h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-md transition-all duration-300">
             <div className="relative h-52 w-full overflow-hidden bg-gray-100">
                 <img
                     src={blog.featuredImage || "https://via.placeholder.com/600x400?text=OnWay+Blog"}

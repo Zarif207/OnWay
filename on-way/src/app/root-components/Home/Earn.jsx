@@ -45,8 +45,8 @@ export default function Earn() {
                 className="group rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                 data-aos="fade-up"
               >
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-yellow-400/20 text-zinc-900">
-                  <Icon className="h-6 w-6 text-yellow-600" />
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/20 text-zinc-900">
+                  <Icon className="h-6 w-6 text-primary" />
                 </span>
                 <p className="mt-4 text-base font-bold text-zinc-900">
                   {r.title}

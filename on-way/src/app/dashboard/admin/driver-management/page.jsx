@@ -56,7 +56,7 @@ const DriverManagement = () => {
   const getStatusStyle = (status) => {
     if (status === "Online") return "bg-green-100 text-green-700";
     if (status === "Offline") return "bg-gray-200 text-gray-700";
-    return "bg-yellow-100 text-yellow-700";
+    return "bg-primary text-primary";
   };
 
   return (
@@ -171,7 +171,7 @@ const DriverManagement = () => {
                       ${driver.earnings.toFixed(2)}
                     </td>
 
-                    <td className="px-6 py-4 text-yellow-600 font-semibold">
+                    <td className="px-6 py-4 text-primary font-semibold">
                       ★ {driver.rating}
                     </td>
 

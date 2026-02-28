@@ -185,7 +185,7 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
       {routeGeometry && routeGeometry.length > 0 && (
         <Polyline 
           positions={routeGeometry} 
-          color="#2563eb" // Tailwind blue-600
+          color="#2FCA71" // Tailwind blue-600
           weight={5} 
           opacity={0.8} 
         />

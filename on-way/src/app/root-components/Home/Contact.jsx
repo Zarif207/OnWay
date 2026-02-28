@@ -45,21 +45,21 @@ export default function Contact() {
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <div className="rounded-3xl border border-zinc-200 bg-white p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <Phone className="h-4 w-4 text-yellow-500" />
+                  <Phone className="h-4 w-4 text-primary" />
                   Helpline
                 </div>
                 <p className="mt-2 text-sm text-zinc-600">+1 (555) 010‑010</p>
               </div>
               <div className="rounded-3xl border border-zinc-200 bg-white p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <Mail className="h-4 w-4 text-yellow-500" />
+                  <Mail className="h-4 w-4 text-primary" />
                   Email
                 </div>
                 <p className="mt-2 text-sm text-zinc-600">support@onway.app</p>
               </div>
               <div className="rounded-3xl border border-zinc-200 bg-white p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <MessageSquare className="h-4 w-4 text-yellow-500" />
+                  <MessageSquare className="h-4 w-4 text-primary" />
                   Live chat
                 </div>
                 <p className="mt-2 text-sm text-zinc-600">In-app, 24/7</p>
@@ -79,7 +79,7 @@ export default function Contact() {
                     Full name
                   </label>
                   <input
-                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
+                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                     placeholder="Your name"
                     {...register("name", { required: "Name is required" })}
                   />
@@ -95,7 +95,7 @@ export default function Contact() {
                     Email
                   </label>
                   <input
-                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
+                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                     placeholder="you@company.com"
                     {...register("email", {
                       required: "Email is required",
@@ -118,7 +118,7 @@ export default function Contact() {
                   Topic
                 </label>
                 <select
-                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
+                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                   {...register("topic")}
                 >
                   <option>General</option>
@@ -135,7 +135,7 @@ export default function Contact() {
                   Message
                 </label>
                 <textarea
-                  className="mt-2 min-h-[120px] w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
+                  className="mt-2 min-h-[120px] w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                   placeholder="How can we help?"
                   {...register("message", {
                     required: "Message is required",

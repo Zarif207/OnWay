@@ -22,7 +22,7 @@ function Button({ children, variant = "primary", onClick }) {
     "px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center";
 
   const styles = {
-    primary: "bg-[#011421] text-white hover:opacity-90",
+    primary: "bg-[#2FCA71] text-[#001820] hover:opacity-90",
     outline: "border border-gray-300 text-gray-700 hover:bg-gray-100",
     danger: "bg-red-600 text-white hover:bg-red-700",
   };
@@ -95,7 +95,7 @@ export default function RideHistory() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#011421]">Ride History</h1>
+          <h1 className="text-3xl font-bold text-[#2FCA71]">Ride History</h1>
           <p className="text-gray-600 mt-2">
             View past rides, download receipts, rate drivers, or dispute rides.
           </p>
@@ -133,16 +133,15 @@ export default function RideHistory() {
                 {/* LEFT SIDE */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-4">
-                    <h3 className="font-semibold text-lg text-[#011421]">
+                    <h3 className="font-semibold text-lg text-[#2FCA71]">
                       Ride #{ride.id}
                     </h3>
 
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        ride.status === "completed"
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${ride.status === "completed"
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
-                      }`}
+                        }`}
                     >
                       {ride.status}
                     </span>
@@ -150,7 +149,7 @@ export default function RideHistory() {
 
                   <div className="space-y-2 mb-4">
                     <div className="flex items-start gap-2">
-                      <MapPin className="w-5 h-5 text-[#FF5A1F] mt-1" />
+                      <MapPin className="w-5 h-5 text-[#2FCA71] mt-1" />
                       <p className="text-sm text-gray-700">
                         {ride.pickupLocation}
                       </p>
@@ -197,7 +196,7 @@ export default function RideHistory() {
                           {[...Array(ride.rating)].map((_, i) => (
                             <Star
                               key={i}
-                              className="w-4 h-4 text-yellow-400 fill-current"
+                              className="w-4 h-4 text-primary fill-current"
                             />
                           ))}
                         </div>

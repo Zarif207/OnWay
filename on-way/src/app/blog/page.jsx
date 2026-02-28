@@ -49,7 +49,7 @@ export default function BlogPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-        <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="font-bold text-xl">Loading Insights...</p>
       </div>
     );
@@ -76,7 +76,7 @@ export default function BlogPage() {
                   setCurrentPage(1);
                 }}
                 placeholder="Search for Blogs..."
-                className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function BlogPage() {
                         onClick={() => paginate(index + 1)}
                         className={`px-4 py-2 rounded-lg font-bold transition ${
                           currentPage === index + 1
-                            ? "bg-yellow-400 text-black"
+                            ? "bg-primary text-black"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                         }`}
                       >

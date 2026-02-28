@@ -2,236 +2,144 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
-  BadgeCheck,
   Clock,
-  Headphones,
   MapPin,
   Navigation2,
-  ShieldCheck,
-  Star,
-  Wallet,
 } from "lucide-react";
-import Container from "./Container";
-
 import Image from "next/image";
+import Container from "./Container";
 
 export default function Hero() {
   return (
-    <section id="home" className="relative min-h-screen overflow-hidden">
-      {/* Full Background Image */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="relative h-full w-full">
-          <Image
-            src="https://i.ibb.co/fzFZnkkH/7263163c0bf80eb3fade3c80e145d6d1.jpg"
-            alt="Yellow taxi cab background"
-            fill
-            className="object-cover object-center"
-            priority
-            quality={90}
-            sizes="100vw"
-          />
-          {/* Gradient overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40" />
-        </div>
-      </div>
+    <section id="home" className="relative min-h-screen bg-[#001820] overflow-hidden flex items-center pt-24 pb-16">
+      <Container className="relative z-20 w-full">
+        {/* Uber-Inspired Grid Layout: Content/Form left, Illustration Card right */}
+        <div className="grid items-start gap-16 lg:grid-cols-[1fr_1.1fr] xl:grid-cols-[1fr_1.2fr] lg:gap-12 xl:gap-24">
 
-      <Container className="relative z-20 py-10 sm:py-14 lg:py-20">
-        <div className="grid items-start gap-10 lg:grid-cols-[440px_1fr] lg:gap-14">
-          {/* Left Side - Booking Form */}
-          <div data-aos="fade-up" className="relative z-30">
-            <div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_30px_80px_-55px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <span className="grid h-9 w-9 place-items-center rounded-2xl bg-yellow-400 text-zinc-950">
-                    <MapPin className="h-4 w-4" />
-                  </span>
-                  Bogra, BD
-                </div>
-                <button className="text-xs font-semibold text-white/60 hover:text-white">
-                  Change city
-                </button>
-              </div>
+          {/* Left Column - Typography & Booking Form Widget */}
+          <div data-aos="fade-right" className="relative z-30 flex flex-col justify-start w-full max-w-lg xL:max-w-xl mx-auto lg:mx-0">
 
-              <div className="mt-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-yellow-300/90">
-                  Book a ride
-                </p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  Go anywhere with OnWay
-                </h2>
-              </div>
-
-              <div className="mt-5 grid gap-3">
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
-                    <Clock className="h-4 w-4 text-yellow-300" />
-                    Pickup now
-                  </div>
-                  <span className="text-xs font-semibold text-white/50">
-                    Anytime
-                  </span>
-                </div>
-
-                <div className="grid gap-2">
-                  <label className="text-xs font-semibold text-white/70">
-                    Pickup
-                  </label>
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-yellow-400/50 focus-within:ring-2 focus-within:ring-yellow-400/20">
-                    <span className="h-2.5 w-2.5 rounded-full bg-yellow-300" />
-                    <input
-                      type="text"
-                      placeholder="Enter pickup location"
-                      className="w-full bg-transparent text-sm font-medium text-white placeholder-white/40 outline-none"
-                    />
-                    <Navigation2
-                      className="h-4 w-4 rotate-45 text-red-400"
-                      fill="currentColor"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <label className="text-xs font-semibold text-white/70">
-                    Dropoff
-                  </label>
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-yellow-400/50 focus-within:ring-2 focus-within:ring-yellow-400/20">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-white/70" />
-                    <input
-                      type="text"
-                      placeholder="Enter destination"
-                      className="w-full bg-transparent text-sm font-medium text-white placeholder-white/40 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                <button
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-6 py-3 text-zinc-950 hover:bg-yellow-400 active:bg-yellow-400 focus:bg-yellow-400"
-                  variant="accent"
-                >
-                  See prices <ArrowRight className="h-4 w-4" />
-                </button>
-                <button className="text-center text-xs font-semibold text-white/60 hover:text-white sm:text-right">
-                  Log in to view recent trips
-                </button>
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-white/60">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
-                  <ShieldCheck className="h-4 w-4 text-yellow-300" />
-                  Safety tools
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
-                  <Wallet className="h-4 w-4 text-yellow-300" />
-                  Cashless payments
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Value prop */}
-          <div
-            data-aos="fade-left"
-            className="relative z-30 flex flex-col justify-start pt-2 lg:pt-10"
-          >
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
+            {/* Header / Location Indicator */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut" }}
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/70"
+              transition={{ duration: 0.5 }}
+              className="flex items-center gap-2 mb-6"
             >
-              <BadgeCheck className="h-4 w-4 text-yellow-300" />
-              Trusted rides & transport
-            </motion.p>
+              <MapPin className="h-4 w-4 text-[#2FCA71]" />
+              <p className="text-sm font-bold text-white tracking-wide">
+                Bogra, BD <span className="ml-2 font-medium text-white/50 underline cursor-pointer hover:text-white transition-colors">Change city</span>
+              </p>
+            </motion.div>
 
+            {/* Massive Headline */}
             <motion.h1
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut", delay: 0.08 }}
-              className="mt-5 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
+              transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+              className="text-5xl font-extrabold tracking-tight text-white md:text-6xl xl:text-7xl leading-[1.1] mb-10"
             >
-              Move smarter with{" "}
-              <span className="bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
-                OnWay
-              </span>
-              .
+              Go anywhere with <br />
+              <span className="text-[#2FCA71]">OnWay.</span>
             </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut", delay: 0.16 }}
-              className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg"
+            {/* Integrated Booking Form */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="w-full bg-[#001820]/50 border border-white/5 rounded-3xl p-6 shadow-2xl backdrop-blur-sm"
             >
-              Request a ride, track your trip, and pay securely — built for busy
-              days and late nights. Fast pickups, consistent safety, and support
-              that answers.
-            </motion.p>
+              {/* Top Controls */}
+              <div className="flex gap-4 mb-6">
+                <button className="flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#001820] hover:bg-zinc-200 transition-colors">
+                  <Clock className="h-4 w-4" /> Pickup now
+                </button>
+              </div>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
-              {[
-                {
-                  icon: Star,
-                  title: "4.9",
-                  desc: "Average rating",
-                },
-                {
-                  icon: Headphones,
-                  title: "24/7",
-                  desc: "Support",
-                },
-                {
-                  icon: ShieldCheck,
-                  title: "Safety",
-                  desc: "Tools included",
-                },
-              ].map((c) => {
-                const Icon = c.icon;
-                return (
-                  <div
-                    key={c.title}
-                    className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-yellow-400/15 text-yellow-300">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <div>
-                        <p className="text-lg font-bold text-white">
-                          {c.title}
-                        </p>
-                        <p className="text-xs font-semibold text-white/60">
-                          {c.desc}
-                        </p>
-                      </div>
-                    </div>
+              {/* Input Group */}
+              <div className="relative flex flex-col gap-3">
+                {/* Vertical Connector Line */}
+                <div className="absolute left-[24px] top-[26px] bottom-[26px] w-[2px] bg-white/20" />
+
+                {/* Pickup Input */}
+                <div className="flex items-center gap-4 rounded-xl px-4 py-3.5 bg-black/40 border border-white/5 focus-within:border-[#2FCA71]/50 transition-colors group">
+                  <div className="relative flex items-center justify-center shrink-0 w-3 h-3 z-10 bg-black box-content border-[3px] border-transparent group-focus-within:border-black/50 transition-colors">
+                    <span className="w-2 h-2 rounded-full bg-white opacity-40 group-focus-within:opacity-100 group-focus-within:bg-[#2FCA71]" />
                   </div>
-                );
-              })}
-            </div>
+                  <input
+                    type="text"
+                    placeholder="Pickup location"
+                    className="w-full bg-transparent text-[15px] font-medium text-white placeholder-white/40 outline-none"
+                  />
+                  <Navigation2 className="h-4 w-4 text-white/40 group-focus-within:text-[#2FCA71] shrink-0 transition-colors" fill="currentColor" />
+                </div>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button
-                as="link"
-                href="#services"
-                variant="accent"
-                className="flex items-center gap-2 rounded-2xl !bg-[#fdc800] px-6 py-3 !text-zinc-950 hover:!bg-[#fdc800] hover:!text-zinc-950 active:!bg-[#fdc800] focus:!bg-[#fdc800]"
-              >
-                Explore services <ArrowRight className="h-4 w-4" />
-              </button>
-              <button
-                as="link"
-                href="#earn"
-                variant="outline"
-                className="rounded-2xl border-white/15 bg-white/0 px-6 py-3 text-white hover:bg-white/5"
-              >
-                Earn with OnWay
-              </button>
-            </div>
+                {/* Dropoff Input */}
+                <div className="flex items-center gap-4 rounded-xl px-4 py-3.5 bg-black/40 border border-white/5 focus-within:border-[#2FCA71]/50 transition-colors group">
+                  <div className="relative flex items-center justify-center shrink-0 w-3 h-3 z-10 bg-black box-content border-[3px] border-transparent group-focus-within:border-black/50 transition-colors">
+                    <span className="w-2 h-2 bg-white" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Dropoff location"
+                    className="w-full bg-transparent text-[15px] font-medium text-white placeholder-white/40 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Area */}
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-5">
+                <button className="flex-1 sm:flex-none flex items-center justify-center rounded-xl bg-[#2FCA71] px-8 py-3.5 text-[15px] font-bold text-[#001820] hover:bg-white transition-colors shadow-lg shadow-[#2FCA71]/20">
+                  See prices
+                </button>
+                <button className="text-[13px] font-semibold text-white/50 hover:text-white transition-colors underline-offset-4 hover:underline">
+                  Log in to see your recent activity
+                </button>
+              </div>
+            </motion.div>
           </div>
+
+          {/* Right Column - Illustration Card (Matches Uber Structure) */}
+          <div data-aos="fade-left" data-aos-delay="200" className="relative z-30 h-full hidden lg:flex flex-col justify-center">
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="relative w-full aspect-[4/3] max-h-[600px] rounded-[32px] overflow-hidden group shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 bg-[#000E13]"
+            >
+              {/* Inner ambient glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-[#2FCA71] rounded-full blur-[100px] opacity-[0.15] mix-blend-screen pointer-events-none transition-opacity group-hover:opacity-[0.25] duration-700" />
+
+              {/* The 3D generated car asset */}
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <Image
+                  src="/hero_car_illustration.png"
+                  alt="OnWay Premium Vehicle"
+                  width={900}
+                  height={700}
+                  priority
+                  className="w-full h-auto object-contain drop-shadow-2xl scale-105 group-hover:scale-[1.08] transition-transform duration-700 ease-out"
+                />
+              </div>
+
+              {/* Uber-style embedded "Ready to travel?" banner inside the card */}
+              <div className="absolute bottom-6 left-6 right-6 lg:bottom-8 lg:left-8 lg:right-8">
+                <div className="flex items-center justify-between bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl p-4 lg:p-5 shadow-2xl translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                  <div className="pr-4">
+                    <h3 className="text-white font-bold text-[15px] lg:text-base">Ready to travel?</h3>
+                    <p className="text-white/60 text-xs lg:text-sm font-medium mt-0.5">Schedule a ride up to 30 days ahead.</p>
+                  </div>
+                  <button className="shrink-0 flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[#001820] hover:bg-[#2FCA71] transition-colors">
+                    Schedule ahead
+                  </button>
+                </div>
+              </div>
+
+            </motion.div>
+          </div>
+
         </div>
       </Container>
     </section>

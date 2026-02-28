@@ -54,7 +54,7 @@ export default function RideMonitoring() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Car className="text-yellow-500 w-7 h-7" />
+            <Car className="text-primary w-7 h-7" />
             Ride Monitoring
           </h1>
           <p className="text-gray-600 mt-2">
@@ -70,7 +70,7 @@ export default function RideMonitoring() {
               onClick={() => setFilter(status)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition ${
                 filter === status
-                  ? 'bg-yellow-500 text-white'
+                  ? 'bg-primary text-white'
                   : 'bg-white border text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -111,7 +111,7 @@ export default function RideMonitoring() {
 
                 <p className="flex items-center gap-2">
                   <Star className={`w-4 h-4 ${
-                    ride.rating < 3.5 ? 'text-red-500' : 'text-yellow-500'
+                    ride.rating < 3.5 ? 'text-red-500' : 'text-primary'
                   }`} />
                   Driver Rating: {ride.rating}
                 </p>
@@ -140,7 +140,7 @@ export default function RideMonitoring() {
               placeholder="Enter Area (e.g. Airport, Downtown)"
               value={dispatchArea}
               onChange={(e) => setDispatchArea(e.target.value)}
-              className="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              className="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
 
             <button
@@ -148,7 +148,7 @@ export default function RideMonitoring() {
                 alert(`Manual dispatch triggered for ${dispatchArea}`);
                 setDispatchArea('');
               }}
-              className="bg-yellow-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-yellow-600 transition flex items-center gap-2"
+              className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-primary transition flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               Dispatch Drivers

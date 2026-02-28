@@ -60,7 +60,7 @@ export default function DashboardOverview() {
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold tracking-tight">
-            Dashboard <span className="text-yellow-500">Overview</span>
+            Dashboard <span className="text-primary">Overview</span>
           </h1>
           <p className="text-gray-500 mt-3 text-lg">
             Real-time monitoring of system performance and safety metrics.
@@ -92,7 +92,7 @@ export default function DashboardOverview() {
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#facc15"
+                  stroke="#2FCA71"
                   strokeWidth={3}
                 />
               </LineChart>
@@ -115,7 +115,7 @@ export default function DashboardOverview() {
                   label
                 >
                   <Cell fill="#22c55e" />
-                  <Cell fill="#facc15" />
+                  <Cell fill="#2FCA71" />
                   <Cell fill="#ef4444" />
                 </Pie>
                 <Tooltip />
@@ -135,7 +135,7 @@ export default function DashboardOverview() {
               <XAxis dataKey="hour" stroke="#555" />
               <YAxis stroke="#555" />
               <Tooltip />
-              <Bar dataKey="rides" fill="#facc15" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="rides" fill="#2FCA71" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -152,7 +152,7 @@ function StatCard({ title, value, icon: Icon, danger }) {
       <div className="flex items-center justify-between mb-5">
         <div
           className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-            danger ? 'bg-red-500' : 'bg-yellow-400'
+            danger ? 'bg-red-500' : 'bg-primary'
           }`}
         >
           <Icon className="w-6 h-6 text-black" />

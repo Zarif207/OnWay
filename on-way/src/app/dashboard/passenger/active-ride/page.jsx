@@ -48,7 +48,7 @@ export default function ActiveRide() {
               </div>
 
               {/* ETA */}
-              <div className="mt-6 flex justify-between items-center bg-yellow-50 border border-[#FFD600] rounded-lg p-4">
+              <div className="mt-6 flex justify-between items-center bg-primary border border-[#2FCA71] rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <Clock className="text-black w-5 h-5" />
                   <span className="font-semibold text-black">
@@ -69,12 +69,12 @@ export default function ActiveRide() {
               </h3>
 
               <div className="flex gap-4">
-                <button className="flex-1 bg-black text-white py-3 rounded-lg flex items-center justify-center hover:bg-[#222] transition">
+                <button className="flex-1 bg-black text-white py-3 rounded-lg flex items-center justify-center hover:bg-[#2FCA71] transition">
                   <Phone className="w-5 h-5 mr-2" />
                   Call Driver
                 </button>
 
-                <button className="flex-1 border border-black text-black py-3 rounded-lg flex items-center justify-center hover:bg-[#FFD600] transition">
+                <button className="flex-1 border border-black text-black py-3 rounded-lg flex items-center justify-center hover:bg-[#2FCA71] transition">
                   <MessageCircle className="w-5 h-5 mr-2" />
                   Chat
                 </button>
@@ -102,7 +102,7 @@ export default function ActiveRide() {
                     Michael Johnson
                   </h4>
                   <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Star className="w-4 h-4 text-[#FFD600]" />
+                    <Star className="w-4 h-4 text-[#2FCA71]" />
                     4.9 Rating
                   </div>
                 </div>

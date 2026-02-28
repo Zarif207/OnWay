@@ -12,6 +12,7 @@ const blogRoutes = require("./routes/blog");
 const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
+const paymentRoutes = require("./routes/payment");
 // ---------------------------------------
 
 // ---------------------------------------
@@ -60,6 +61,7 @@ async function startServer() {
   const gpsLocationsCollection = database.collection("gpsLocations");
   const ridesCollection = database.collection("rides");
   const reviewsCollection = database.collection("reviews");
+  const paymentsCollection = database.collection("payments");
   //------------------------------------------------------
 
   // Routes -----------------------------------------
@@ -68,6 +70,7 @@ async function startServer() {
   app.use("/api/location", locationRoutes(gpsLocationsCollection));
   app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
+  app.use("/api/payment", paymentRoutes(paymentsCollection));
   // ---------------------------------------------------
 
   // Socket.io ----------------------------

@@ -1,21 +1,20 @@
+import Image from "next/image";
+import logoImage from "../../../public/icon2.png";
 import Link from "next/link";
 
 const Footer = () => {
   return (
     <footer className="bg-zinc-950 text-zinc-300">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:px-8">
-        
         {/* Brand */}
         <div className="lg:col-span-4">
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">
-            <span className="rounded-xl bg-yellow-400 px-2 py-1 text-zinc-950">
-              On
-            </span>
-            <span className="ml-1">Way</span>
-          </h2>
+          {/* Logo */}
+          <Link href="/" className="flex items-center text-2xl font-extrabold">
+            <Image src={logoImage} alt="OnWay" width={120} height={94} />
+          </Link>
           <p className="mt-4 text-sm leading-relaxed text-zinc-400">
-            OnWay is your everyday mobility super app — ride, car,
-            CNG, and secure payments in one seamless experience.
+            OnWay is your everyday mobility super app — ride, car, CNG, and
+            secure payments in one seamless experience.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold text-zinc-400">
@@ -133,7 +132,7 @@ const Footer = () => {
             © {new Date().getFullYear()} OnWay. All rights reserved.
           </p>
           <div className="flex flex-wrap gap-4 text-zinc-400">
-            <Link href="/Terms" className="hover:text-yellow-300">
+            <Link href="/terms" className="hover:text-yellow-300">
               Terms
             </Link>
             <Link href="/privacy" className="hover:text-yellow-300">

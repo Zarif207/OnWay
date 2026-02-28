@@ -1,8 +1,10 @@
+
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { FaShieldAlt, FaArrowLeft } from 'react-icons/fa';
+import { useUsers } from '@/hooks/useUsers';
 
 const VerifyEmail = () => {
     const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -10,6 +12,10 @@ const VerifyEmail = () => {
     const [tempUser, setTempUser] = useState(null);
     const inputRefs = useRef([]);
     const router = useRouter();
+
+    console.log(tempUser);
+
+    const { registerUser } = useUsers();
 
     useEffect(() => {
         const storedData = localStorage.getItem("tempUser");
@@ -23,8 +29,8 @@ const VerifyEmail = () => {
 
     const handleChange = (element, index) => {
         if (isNaN(element.value)) return false;
-
-        setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
+        const newOtp = [...otp.map((d, idx) => (idx === index ? element.value : d))];
+        setOtp(newOtp);
 
         if (element.nextSibling && element.value !== "") {
             element.nextSibling.focus();
@@ -43,26 +49,33 @@ const VerifyEmail = () => {
         if (enteredOtp.length < 6) return toast.error("Enter 6 digits");
 
         setLoading(true);
-        const toastId = toast.loading("Verifying...");
+        const toastId = toast.loading("Verifying & Creating Account...");
 
         try {
             if (parseInt(enteredOtp) === tempUser.otp) {
 
-                const existingUsers = JSON.parse(localStorage.getItem("allUsers") || "[]");
-                const newUser = { ...tempUser };
-                delete newUser.otp;
-                existingUsers.push(newUser);
+                const userData = {
+                    name: tempUser.name,
+                    email: tempUser.email,
+                    phone: tempUser.phone,
+                    password: tempUser.password,
+                    role: "passenger"
+                };
 
-                localStorage.setItem("allUsers", JSON.stringify(existingUsers));
+                const result = await registerUser(userData);
 
-                toast.success("Registration Successful!", { id: toastId });
-                localStorage.removeItem("tempUser");
-                router.push("/login");
+                if (result.success) {
+                    toast.success("Registration Successful!", { id: toastId });
+                    localStorage.removeItem("tempUser");
+                    router.push("/login");
+                } else {
+                    toast.error(result.message || "Failed to register", { id: toastId });
+                }
             } else {
-                toast.error("Invalid OTP!", { id: toastId });
+                toast.error("Invalid OTP code!", { id: toastId });
             }
         } catch (error) {
-            toast.error("Error occurred!");
+            toast.error("Something went wrong!", { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -101,7 +114,7 @@ const VerifyEmail = () => {
                                 value={data}
                                 onChange={(e) => handleChange(e.target, index)}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                className="w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-black bg-base-100 border-2 border-gray-100 rounded-2xl focus:border-primary focus:outline-none transition-all text-neutral"
+                                className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-black bg-base-100 border-2 border-gray-100 rounded-xl focus:border-primary focus:outline-none transition-all text-neutral"
                             />
                         ))}
                     </div>
@@ -118,6 +131,7 @@ const VerifyEmail = () => {
                 <p className="mt-8 text-center text-xs text-gray-400">
                     didn't receive the code?
                     <button
+                        type="button"
                         onClick={() => window.location.reload()}
                         className="text-secondary font-bold ml-1 hover:underline"
                     >

@@ -1,30 +1,34 @@
- import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+"use client";
+
+import "./globals.css";
+import Navbar from "./root-components/Navbar";
+import Footer from "./root-components/Footer";
 import AuthProvider from "./AuthProvider/AuthProvider";
 import { Toaster } from "react-hot-toast";
-
-export const metadata = {
-  title: "OnWay - Your Journey, Your Way",
-  description: "Book rides, travel in comfort, get food delivered, and pay securely — all inside OnWay.",
-  icons: {
-    icon: "https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png",
-    shortcut: "https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png",
-    apple: "https://i.ibb.co/pBKvRznM/92d917d29a33a23b7c186d8ffc81d4bb-removebg-preview.png",
-  },
-};
+import { usePathname } from "next/navigation";
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+
+  const hideNavbarFooter = pathname === "/login" || pathname === "/register";
+
   return (
     <html lang="en" data-theme="onwaytheme">
+      <head>
+        <title>OnWay - Your Journey, Your Way</title>
+        <meta name="description" content="Book rides, travel in comfort, get food delivered, and pay securely — all inside OnWay." />
+        <link rel="icon" href="/favicon.png" />
+      </head>
       <body>
         <AuthProvider>
-          <Navbar />
-          {children}
-          <Toaster position="top-center" reverseOrder={false} />
-          <Footer />
-        </AuthProvider>
+          {!hideNavbarFooter && <Navbar />}
 
+          <main>{children}</main>
+
+          <Toaster position="top-center" reverseOrder={false} />
+
+          {!hideNavbarFooter && <Footer />}
+        </AuthProvider>
       </body>
     </html>
   );

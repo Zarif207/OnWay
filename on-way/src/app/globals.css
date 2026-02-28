@@ -12,18 +12,15 @@
 [data-theme="onwaytheme"] {
   --color-primary: #303841;
   --color-secondary: #FFF200;
-  --color-accent: #23b440;
-  --color-neutral: #0f172a;
-  --base-100: #f8fafc;
-
+  --color-accent: #F5F5F5;
+  /* --color-neutral: #D6E6F2; */
 }
 
 @theme {
   --color-primary: var(--color-primary);
   --color-secondary: var(--color-secondary);
   --color-accent: var(--color-accent);
-  --color-neutral: var(--color-neutral);
-  --color-base-100: var(--base-100);
+  /* --color-neutral: var(--color-neutral); */
   --font-sans: Arial, Helvetica, sans-serif;
 }
 
@@ -42,4 +39,27 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+/* globals.css */
+@theme {
+  --clip-login: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
+  --clip-signup: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+/* Custom Utilities for Diagonal Shape */
+.clip-diagonal-left {
+  clip-path: var(--clip-login);
+}
+
+.clip-diagonal-right {
+  clip-path: var(--clip-signup);
+}
+
+@media (max-width: 768px) {
+
+  .clip-diagonal-left,
+  .clip-diagonal-right {
+    clip-path: none !important;
+  }
 }

@@ -31,7 +31,7 @@ const baseNav = [
 ];
 
 const more = [
-  { label: "ridesharing-guidelines", href: "/ridesharing-guidelines" },
+  { label: "rideSharing-guidlines", href: "/rideSharing-guidlines" },
   { label: "Safety-Coverage", href: "/Safety-Coverage" },
   { label: "pricing", href: "/pricing" },
 ];

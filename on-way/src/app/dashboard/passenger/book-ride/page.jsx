@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import {
   MapPin,
   Calendar,
@@ -10,12 +12,38 @@ import {
   Users,
   DollarSign,
   Tag,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 
+// Dynamically import RideMap
+const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl animate-pulse">
+      <span className="text-gray-500 font-medium tracking-wide">Loading Route Map...</span>
+    </div>
+  ),
+});
+
 export default function PassengerBookRide() {
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("bookingId");
+
   const [selectedVehicle, setSelectedVehicle] = useState("sedan");
   const [scheduleType, setScheduleType] = useState("now");
   const [promoCode, setPromoCode] = useState("");
+  
+  // States for autofill
+  const [pickupLocation, setPickupLocation] = useState(null);
+  const [dropoffLocation, setDropoffLocation] = useState(null);
+  const [distance, setDistance] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [fare, setFare] = useState(0);
+  const [routeGeometry, setRouteGeometry] = useState([]);
+  
+  const [loading, setLoading] = useState(!!bookingId);
+  const [error, setError] = useState("");
 
   const vehicleTypes = [
     { id: "bike", name: "OnWay Bike", icon: Bike, base: 8.5 },
@@ -24,10 +52,62 @@ export default function PassengerBookRide() {
     { id: "share", name: "OnWay Share", icon: Users, base: 6.5 },
   ];
 
-  const distanceKm = 5.2;
+  useEffect(() => {
+    const fetchBooking = async () => {
+      if (!bookingId) return;
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+        const response = await fetch(`${apiUrl}/bookings/${bookingId}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const b = result.booking;
+          setPickupLocation({
+            lat: b.pickupLocation.lat,
+            lon: b.pickupLocation.lng,
+            name: b.pickupLocation.name
+          });
+          setDropoffLocation({
+            lat: b.dropoffLocation.lat,
+            lon: b.dropoffLocation.lng,
+            name: b.dropoffLocation.name
+          });
+          setDistance(b.distance);
+          setDuration(b.duration);
+          setFare(b.price);
+          // Convert routeGeometry back to [lat, lng] arrays for RideMap
+          setRouteGeometry(b.routeGeometry.map(coord => [coord.lat, coord.lng]));
+        } else {
+          setError(result.message || "Failed to load booking details.");
+        }
+      } catch (err) {
+        console.error("Error fetching booking:", err);
+        setError("An error occurred while fetching your ride details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooking();
+  }, [bookingId]);
 
   const selected = vehicleTypes.find((v) => v.id === selectedVehicle);
-  const estimatedFare = (selected.base + distanceKm * 1.2).toFixed(2);
+  const displayFare = fare > 0 ? fare : (selected.base + distance * 1.2).toFixed(2);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-black animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading your ride details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] p-4 sm:p-6 lg:p-8">
@@ -42,6 +122,13 @@ export default function PassengerBookRide() {
             Quick and intuitive ride booking
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6">
 
@@ -58,7 +145,9 @@ export default function PassengerBookRide() {
                   <input
                     type="text"
                     placeholder="Pickup location"
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD600]"
+                    value={pickupLocation?.name || ""}
+                    readOnly
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD600] bg-gray-50"
                   />
                 </div>
 
@@ -67,17 +156,21 @@ export default function PassengerBookRide() {
                   <input
                     type="text"
                     placeholder="Drop-off location"
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD600]"
+                    value={dropoffLocation?.name || ""}
+                    readOnly
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD600] bg-gray-50"
                   />
                 </div>
               </div>
 
-              {/* Map Picker */}
-              <div className="mt-6 h-64 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <MapPin className="w-10 h-10 mx-auto mb-2" />
-                  <p>Map Picker (Google Maps API ready)</p>
-                </div>
+              {/* Real Route Map */}
+              <div className="mt-6 h-96 rounded-xl overflow-hidden border border-gray-200 relative z-0">
+                <RideMap 
+                  pickup={pickupLocation} 
+                  dropoff={dropoffLocation} 
+                  routeGeometry={routeGeometry}
+                  durationMin={duration}
+                />
               </div>
             </div>
 
@@ -194,7 +287,7 @@ export default function PassengerBookRide() {
 
             {/* Confirm */}
             <button className="w-full bg-[#FFD600] text-black font-semibold py-4 rounded-xl hover:opacity-90 transition">
-              Confirm Booking - ${estimatedFare}
+              Confirm Booking - {displayFare} ৳
             </button>
 
           </div>
@@ -203,14 +296,21 @@ export default function PassengerBookRide() {
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white border border-gray-200 shadow-sm p-6 rounded-xl">
               <h3 className="text-xl font-semibold mb-4">
-                Fare Estimator
+                Ride Summary
               </h3>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Distance</span>
                   <span className="font-semibold">
-                    {distanceKm} km
+                    {distance} km
+                  </span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Duration</span>
+                  <span className="font-semibold">
+                    {duration} min
                   </span>
                 </div>
 
@@ -221,12 +321,12 @@ export default function PassengerBookRide() {
                   </span>
                 </div>
 
-                <div className="flex justify-between text-lg">
+                <div className="flex justify-between pt-2 border-t border-gray-100 text-lg">
                   <span className="font-semibold text-black">
                     Estimated Fare
                   </span>
                   <span className="font-bold text-black">
-                    ${estimatedFare}
+                    {displayFare} ৳
                   </span>
                 </div>
               </div>

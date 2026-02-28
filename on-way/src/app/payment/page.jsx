@@ -143,6 +143,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Payment</h1>
@@ -150,6 +151,7 @@ export default function PaymentPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
+          
           {/* Left Side - Payment Methods & Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Payment Methods */}
@@ -165,7 +167,7 @@ export default function PaymentPage() {
                     onClick={() => setPaymentMethod(method.id)}
                     className={`relative p-4 rounded-xl transition-all ${
                       paymentMethod === method.id
-                        ? `bg-gradient-to-br ${method.color} text-white shadow-lg scale-105`
+                        ? `bg-linear-to-br ${method.color} text-white shadow-lg scale-105`
                         : "bg-gray-50 hover:bg-gray-100 text-gray-700"
                     }`}
                   >
@@ -351,7 +353,7 @@ export default function PaymentPage() {
               <button
                 onClick={handlePayment}
                 disabled={loading || !paymentData.amount}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">

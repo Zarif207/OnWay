@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 module.exports = function (paymentsCollection) {
-  // Payment initiate - SSLCommerz integration er jonno
+  
   router.post("/initiate", async (req, res) => {
     try {
       const { amount, customerName, customerEmail, customerPhone, productName, paymentMethod } = req.body;
@@ -59,7 +59,22 @@ module.exports = function (paymentsCollection) {
         product_profile: "general",
       };
 
-      // Database e payment record save
+      // Direct payment method routing
+      if (paymentMethod === "bkash") {
+        paymentData.allowed_bin = "bkash";
+        paymentData.multi_card_name = "bkash";
+        paymentData.emi_option = 0;
+      } else if (paymentMethod === "nagad") {
+        paymentData.allowed_bin = "nagad";
+        paymentData.multi_card_name = "nagad";
+        paymentData.emi_option = 0;
+      } else if (paymentMethod === "card") {
+        paymentData.allowed_bin = "visa,master,amex";
+        paymentData.multi_card_name = "visa,master,amex";
+        paymentData.emi_option = 0;
+      }
+
+     
       await paymentsCollection.insertOne({
         transactionId,
         ...paymentData,
@@ -73,7 +88,16 @@ module.exports = function (paymentsCollection) {
       const apiResponse = await sslcz.init(paymentData);
       
       if (apiResponse.GatewayPageURL) {
-        return res.json({ success: true, gatewayUrl: apiResponse.GatewayPageURL });
+        let gatewayUrl = apiResponse.GatewayPageURL;
+        
+        
+        if (paymentMethod === "bkash" || paymentMethod === "nagad") {
+          gatewayUrl += "?type=mobilebanking";
+        } else if (paymentMethod === "card") {
+          gatewayUrl += "?type=cards";
+        }
+        
+        return res.json({ success: true, gatewayUrl: gatewayUrl });
       } else {
         return res.status(400).json({ success: false, message: "Failed to initialize payment gateway" });
       }

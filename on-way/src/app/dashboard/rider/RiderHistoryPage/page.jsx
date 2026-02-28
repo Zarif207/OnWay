@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import OnWayLoading from "@/app/components/Loading/page";
 
-// Correct import method for PDF.js and autoTable
-
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -43,20 +41,17 @@ export default function RideHistoryPage() {
     } catch (err) {
       setError("Failed to fetch ride history");
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 2000); // 2000ms = 2 seconds
+      setTimeout(() => setLoading(false), 2000); // 2s delay
     }
   };
 
-  // Updated PDF generation function with error handling and better formatting
+  // Single ride invoice
   const generateInvoice = (ride) => {
     try {
       const doc = new jsPDF();
 
-      // Header
       doc.setFontSize(22);
-      doc.setTextColor(30, 41, 59); // Slate-800
+      doc.setTextColor(30, 41, 59);
       doc.text("RIDE INVOICE", 14, 22);
 
       doc.setFontSize(10);
@@ -73,35 +68,21 @@ export default function RideHistoryPage() {
         ["Total Fare", `BDT ${ride.fare}`],
       ];
 
-      //Use the autoTable function directly (Error Fix)
-
       autoTable(doc, {
         startY: 45,
         head: [["Description", "Details"]],
         body: tableData,
         theme: 'striped',
-        headStyles: {
-          fillColor: [79, 70, 229], // Indigo-600
-          fontSize: 11,
-          fontStyle: 'bold'
-        },
-        styles: {
-          cellPadding: 5,
-          fontSize: 10,
-          font: "helvetica"
-        },
-        columnStyles: {
-          0: { cellWidth: 50, fontStyle: 'bold' }
-        }
+        headStyles: { fillColor: [79, 70, 229], fontSize: 11, fontStyle: 'bold' },
+        styles: { cellPadding: 5, fontSize: 10, font: "helvetica" },
+        columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } }
       });
 
-      // Footer
       const finalY = doc.lastAutoTable.finalY;
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text("Thank you for choosing our service!", 14, finalY + 15);
 
-      // Download
       doc.save(`Invoice_${ride._id.slice(-6)}.pdf`);
     } catch (err) {
       console.error("PDF generation error:", err);
@@ -111,19 +92,63 @@ export default function RideHistoryPage() {
     }
   };
 
-  const filteredRides = rides.filter(ride =>
-    ride.pickupLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ride.dropLocation.toLowerCase().includes(searchTerm.toLowerCase())
+  // Full ride history PDF
+  const downloadFullHistoryPDF = () => {
+    try {
+      setDownloadingId("all");
+      const doc = new jsPDF();
+
+      doc.setFontSize(22);
+      doc.setTextColor(30, 41, 59);
+      doc.text("RIDE HISTORY REPORT", 14, 22);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      const tableData = rides.map((ride) => [
+        new Date(ride.createdAt).toLocaleDateString(),
+        ride.pickupLocation,
+        ride.dropLocation,
+        ride.driverId?.slice(-6).toUpperCase() || "N/A",
+        ride.status || "Completed",
+        `BDT ${ride.fare}`
+      ]);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [["Date", "Pickup", "Drop", "Driver ID", "Status", "Fare"]],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229], fontSize: 11, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 5 },
+      });
+
+      const finalY = doc.lastAutoTable.finalY;
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text("Thank you for using our service!", 14, finalY + 15);
+
+      doc.save("Ride_History_Report.pdf");
+    } catch (err) {
+      console.error("Error generating full PDF:", err);
+      alert("Failed to generate ride history PDF");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const filteredRides = rides.filter(
+    (ride) =>
+      ride.pickupLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ride.dropLocation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <OnWayLoading />;
-  }
+  if (loading) return <OnWayLoading />;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 md:p-12 text-slate-900">
       <div className="max-w-6xl mx-auto">
-
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
@@ -142,22 +167,22 @@ export default function RideHistoryPage() {
           </div>
         </header>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Rides</p>
-              <h2 className="text-3xl font-black text-slate-800">{rides.length}</h2>
-            </div>
-            <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-500"><Car /></div>
+        {/* Download All Button */}
+        <div className="bg-primary p-6 rounded-3xl shadow-xl shadow-indigo-100 flex items-center justify-between text-white mb-8">
+          <div>
+            <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">
+              Download Ride History
+            </p>
+            <h2 className="text-xl font-black">Full Report</h2>
           </div>
-          <div className="bg-indigo-600 p-6 rounded-3xl shadow-xl shadow-indigo-100 flex items-center justify-between text-white">
-            <div>
-              <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Total Spent</p>
-              <h2 className="text-3xl font-black">৳ {rides.reduce((acc, r) => acc + (Number(r.fare) || 0), 0)}</h2>
-            </div>
-            <div className="p-4 bg-white/10 rounded-2xl"><Navigation2 /></div>
-          </div>
+
+          <button
+            onClick={downloadFullHistoryPDF}
+            disabled={downloadingId === "all"}
+            className="btn bg-white text-primary hover:bg-slate-100 hover:text-slate-700 transition-colors rounded-2xl font-bold"
+          >
+            {downloadingId === "all" ? "Downloading..." : "Download PDF"}
+          </button>
         </div>
 
         {/* Table */}
@@ -169,7 +194,6 @@ export default function RideHistoryPage() {
                   <th className="py-6 pl-10 font-bold uppercase text-[10px] tracking-widest">Date</th>
                   <th className="font-bold uppercase text-[10px] tracking-widest">Route</th>
                   <th className="font-bold uppercase text-[10px] tracking-widest">Fare</th>
-                  <th className="text-right pr-10 font-bold uppercase text-[10px] tracking-widest">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -194,33 +218,13 @@ export default function RideHistoryPage() {
                     <td>
                       <span className="text-lg font-black text-slate-800">৳{ride.fare}</span>
                     </td>
-                    <td className="text-right pr-10">
-                      <button
-                        onClick={() => {
-                          setDownloadingId(ride._id);
-                          generateInvoice(ride);
-                        }}
-                        disabled={downloadingId === ride._id}
-                        className={`btn btn-sm h-10 px-5 rounded-xl border-none font-bold transition-all shadow-sm ${downloadingId === ride._id
-                            ? 'bg-slate-100 text-slate-400'
-                            : 'bg-slate-900 text-white hover:bg-indigo-600'
-                          }`}
-                      >
-                        {downloadingId === ride._id ? (
-                          <span className="loading loading-spinner loading-xs"></span>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            Download <Download className="w-3 h-3" />
-                          </div>
-                        )}
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+
       </div>
     </div>
   );

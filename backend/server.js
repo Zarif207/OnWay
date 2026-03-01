@@ -12,6 +12,7 @@ const blogRoutes = require("./routes/blog");
 const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
+const supportRoutes = require("./routes/support");
 // ---------------------------------------
 
 // ---------------------------------------
@@ -19,10 +20,11 @@ const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
-    strict: true,
+    strict: false,
     deprecationErrors: true,
   },
 });
+
 // ---------------------------------------
 
 // ---------------------------------------
@@ -60,6 +62,8 @@ async function startServer() {
   const gpsLocationsCollection = database.collection("gpsLocations");
   const ridesCollection = database.collection("rides");
   const reviewsCollection = database.collection("reviews");
+  const knowledgeCollection = database.collection("knowledge");
+  await knowledgeCollection.createIndex({ question: "text", answer: "text" });
   //------------------------------------------------------
 
   // Routes -----------------------------------------
@@ -68,6 +72,7 @@ async function startServer() {
   app.use("/api/location", locationRoutes(gpsLocationsCollection));
   app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
+  app.use("/api/support", supportRoutes(knowledgeCollection));
   // ---------------------------------------------------
 
   // Socket.io ----------------------------

@@ -49,38 +49,117 @@ async function connectDB() {
   }
 }
 
-// --------------------------------------
-async function startServer() {
-  await connectDB();
-  const database = client.db("onWayDB");
+// Connect to database
+connectDB();
 
-  // ------------------------------------------------
-  const passengerCollection = database.collection("passenger");
-  const blogsCollection = database.collection("Blogs");
-  const gpsLocationsCollection = database.collection("gpsLocations");
-  const ridesCollection = database.collection("rides");
-  const reviewsCollection = database.collection("reviews");
-  const bookingsCollection = database.collection("bookings");
-  const paymentsCollection = database.collection("payments");
-  const ridersCollection = database.collection("riders");
-  //------------------------------------------------------
+const database = client.db("onWayDB"); //  database name
+const passengerCollection = database.collection("passenger"); // passenger collection
+// const passengerCollection = database.collection("users"); // users collection
+const blogsCollection = database.collection("Blogs"); // blogs collection
+const gpsLocationsCollection = database.collection("gpsLocations"); // gps locations collection
 
-  // Routes -----------------------------------------
-  app.use("/api/passenger", passengerRoutes(passengerCollection));
-  app.use("/api/blogs", blogRoutes(blogsCollection));
-  app.use("/api/location", locationRoutes(gpsLocationsCollection));
-  app.use("/api/rides", ridesRoutes(ridesCollection));
-  app.use("/api/reviews", reviewsRoutes(reviewsCollection));
-  app.use("/api/bookings", bookingsRoutes(bookingsCollection));
-  app.use("/api/payment", paymentRoutes(paymentsCollection));
-  app.use("/api/riders", ridersRoutes(ridersCollection));
-  // ---------------------------------------------------
+// Socket.io Event Handling
+io.on("connection", (socket) => {
+  console.log(`🔌 New client connected: ${socket.id}`);
 
-  // Socket.io ----------------------------
-  io.on("connection", (socket) => {
-    console.log(`🔌 Client connected: ${socket.id}`);
-    socket.on("joinRide", (rideId) => {
-      socket.join(rideId);
+  // Driver/Passenger joins a specific ride room
+  socket.on("joinRide", (rideId) => {
+    socket.join(rideId);
+    console.log(`Client ${socket.id} joined ride room: ${rideId}`);
+  });
+
+  // Receive GPS update from driver and broadcast to ride room
+  socket.on("gpsUpdate", async (data) => {
+    const { rideId, driverId, latitude, longitude } = data;
+
+    // Broadcast to everyone in the room (including passenger)
+    io.to(rideId).emit("receiveGpsUpdate", {
+      driverId,
+      latitude,
+      longitude,
+      timestamp: new Date(),
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`🔌 Client disconnected: ${socket.id}`);
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "onWay Backend running " });
+});
+
+// Get Users
+app.get("/api/passenger", async (req, res) => {
+  try {
+    const users = await passengerCollection.find({}).toArray();
+    res.json({ success: true, count: users.length, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get User
+app.get("/api/passenger/find", async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
+    }
+    const user = await passengerCollection.findOne({ email: email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Post User
+app.post("/api/passenger", async (req, res) => {
+  try {
+    const { name, email, phone, password, role, image, authProvider } = req.body;
+
+    if (!email || !name || (!password && !authProvider)) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    const existingUser = await passengerCollection.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
+    }
+
+    let newUser = {
+      name,
+      email,
+      phone,
+      image: image || "",
+      role: role || "passenger",
+      authProvider: authProvider || "credentials",
+      createdAt: new Date(),
+      lastLogin: new Date(),
+    };
+
+    if (password) {
+      newUser.password = await bcrypt.hash(password, 10);
+    }
+
+    const result = await passengerCollection.insertOne(newUser);
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: { id: result.insertedId, name, email },
     });
     socket.on("gpsUpdate", (data) => {
       const { rideId, driverId, latitude, longitude } = data;
@@ -103,4 +182,11 @@ async function startServer() {
   });
 }
 
-startServer();
+process.on("SIGINT", async () => {
+  console.log("\n⏳ Closing MongoDB connection...");
+  await client.close();
+  console.log("✅ MongoDB connection closed");
+  process.exit(0);
+});
+
+module.exports = server;

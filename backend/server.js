@@ -13,6 +13,10 @@ const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
 const supportRoutes = require("./routes/support");
+const bookingsRoutes = require("./routes/bookings");
+
+const paymentRoutes = require("./routes/payment");
+const ridersRoutes = require("./routes/riders");
 // ---------------------------------------
 
 // ---------------------------------------
@@ -27,7 +31,6 @@ const client = new MongoClient(uri, {
 
 // ---------------------------------------
 
-// ---------------------------------------
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -36,9 +39,8 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 const PORT = process.env.PORT || 5000;
-// --------------------------------------
 
-// --------------------------------------
+
 async function connectDB() {
   try {
     await client.connect();
@@ -49,7 +51,6 @@ async function connectDB() {
     process.exit(1);
   }
 }
-// --------------------------------------
 
 // --------------------------------------
 async function startServer() {
@@ -64,6 +65,9 @@ async function startServer() {
   const reviewsCollection = database.collection("reviews");
   const knowledgeCollection = database.collection("knowledge");
   await knowledgeCollection.createIndex({ question: "text", answer: "text" });
+  const bookingsCollection = database.collection("bookings");
+  const paymentsCollection = database.collection("payments");
+  const ridersCollection = database.collection("riders");
   //------------------------------------------------------
 
   // Routes -----------------------------------------
@@ -73,6 +77,9 @@ async function startServer() {
   app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
   app.use("/api/support", supportRoutes(knowledgeCollection));
+  app.use("/api/bookings", bookingsRoutes(bookingsCollection));
+  app.use("/api/payment", paymentRoutes(paymentsCollection));
+  app.use("/api/riders", ridersRoutes(ridersCollection));
   // ---------------------------------------------------
 
   // Socket.io ----------------------------
@@ -89,7 +96,6 @@ async function startServer() {
       console.log(`🔌 Client disconnected`);
     });
   });
-  // --------------------------------------
 
   // ----------------------------------------
   app.get("/api/health", (req, res) => {
@@ -101,7 +107,6 @@ async function startServer() {
   server.listen(PORT, () => {
     console.log(`🚀 Backend running on http://localhost:${PORT}`);
   });
-  // -----------------------------------------
 }
 
 startServer();

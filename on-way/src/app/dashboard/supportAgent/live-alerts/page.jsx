@@ -61,7 +61,7 @@ export default function LiveAlerts() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <BellRing className="text-yellow-500 w-7 h-7" />
+            <BellRing className="text-primary w-7 h-7" />
             Live Alerts Monitoring
           </h1>
           <p className="text-gray-600 mt-2">
@@ -78,7 +78,7 @@ export default function LiveAlerts() {
             color="red"
           />
           <StatCard
-            icon={<Clock className="text-yellow-600 w-6 h-6" />}
+            icon={<Clock className="text-primary w-6 h-6" />}
             title="Avg Response"
             value="2.4 min"
             color="yellow"
@@ -116,7 +116,7 @@ export default function LiveAlerts() {
                   <span className={`px-3 py-1 text-xs rounded-full font-semibold ${
                     alert.type === 'SOS'
                       ? 'bg-red-100 text-red-600'
-                      : 'bg-yellow-100 text-yellow-700'
+                      : 'bg-primary text-primary'
                   }`}>
                     {alert.type}
                   </span>
@@ -137,7 +137,7 @@ export default function LiveAlerts() {
 
               {/* Location */}
               <div className="bg-gray-100 border border-gray-200 p-4 rounded-lg mb-4 flex items-center gap-3">
-                <MapPin className="text-yellow-500 w-5 h-5" />
+                <MapPin className="text-primary w-5 h-5" />
                 <span className="text-gray-700">{alert.location}</span>
               </div>
 
@@ -148,12 +148,12 @@ export default function LiveAlerts() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
-                <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                <button className="bg-primary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                   <Phone className="inline w-4 h-4 mr-2" />
                   Call User
                 </button>
 
-                <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                <button className="bg-primary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                   <Phone className="inline w-4 h-4 mr-2" />
                   Call Driver
                 </button>

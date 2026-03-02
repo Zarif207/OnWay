@@ -29,7 +29,7 @@ export default function Safety() {
 
             <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-6">
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-yellow-400/20 text-zinc-900">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary/20 text-zinc-900">
                   <AlertTriangle className="h-5 w-5" />
                 </span>
                 <div>
@@ -55,7 +55,7 @@ export default function Safety() {
                 >
                   <div className="flex items-start gap-4">
                     <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-50 text-zinc-900">
-                      <Icon className="h-6 w-6 text-yellow-500" />
+                      <Icon className="h-6 w-6 text-primary" />
                     </span>
                     <div>
                       <p className="text-base font-bold text-zinc-900">

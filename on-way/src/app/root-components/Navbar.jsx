@@ -7,13 +7,17 @@ import {
   X,
   LogOut,
   User,
-  MapPin,
   Shield,
   Headphones,
   Car,
   Wallet,
   History,
   LayoutDashboard,
+  Users,
+  Map,
+  BarChart3,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import Image from "next/image";
 import logoImage from "../../../public/icon2.png";
@@ -27,13 +31,18 @@ const baseNav = [
   { label: "Earn With OnWay", href: "/earn-with-onway" },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog" },
-  { label: "Help", href: "/help" },
 ];
 
 const more = [
-  { label: "ridesharing-guidlines", href: "/ridesharing-guidlines" },
+  { label: "rideSharing-guidlines", href: "/rideSharing-guidlines" },
   { label: "Safety-Coverage", href: "/Safety-Coverage" },
   { label: "pricing", href: "/pricing" },
+];
+
+const helpItems = [
+  { label: "FAQ", href: "/help/faq" },
+  { label: "Contact Us", href: "/help/contact" },
+  { label: "Support", href: "/help/support" },
 ];
 
 const Navbar = () => {
@@ -41,6 +50,7 @@ const Navbar = () => {
   const [openMenu, setOpenMenu] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [openHelp, setOpenHelp] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
   const isDashboard = pathname.startsWith("/dashboard");
@@ -59,23 +69,87 @@ const Navbar = () => {
 
   const roleIcons = {
     passenger: [
-      { href: "/dashboard/passenger/book-ride", icon: <Car className="h-5 w-5" />, label: "Book Ride" },
-      { href: "/dashboard/passenger/ride-history", icon: <History className="h-5 w-5" />, label: "My Rides" },
-      { href: "/dashboard/passenger/active-ride", icon: <LayoutDashboard className="h-5 w-5" />, label: "Tracking" },
-      { href: "/dashboard/passenger/wallet", icon: <Wallet className="h-5 w-5" />, label: "Wallet" },
-      { href: "/dashboard/passenger/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
+      {
+        href: "/dashboard/passenger/book-ride",
+        icon: <Car className="h-5 w-5" />,
+        label: "Book Ride",
+      },
+      {
+        href: "/dashboard/passenger/ride-history",
+        icon: <History className="h-5 w-5" />,
+        label: "My Rides",
+      },
+      {
+        href: "/dashboard/passenger/active-ride",
+        icon: <LayoutDashboard className="h-5 w-5" />,
+        label: "Tracking",
+      },
+      {
+        href: "/dashboard/passenger/wallet",
+        icon: <Wallet className="h-5 w-5" />,
+        label: "Wallet",
+      },
+      {
+        href: "/dashboard/passenger/profile",
+        icon: <User className="h-5 w-5" />,
+        label: "Profile",
+      },
     ],
     rider: [
-      { href: "/dashboard/rider/requests", icon: <Car className="h-5 w-5" />, label: "Ride Requests" },
-      { href: "/dashboard/rider/trips", icon: <History className="h-5 w-5" />, label: "My Trips" },
-      { href: "/dashboard/rider/earnings", icon: <Wallet className="h-5 w-5" />, label: "Earnings" },
-      { href: "/dashboard/rider/profile", icon: <User className="h-5 w-5" />, label: "Profile" },
+      {
+        href: "/dashboard/rider/requests",
+        icon: <Car className="h-5 w-5" />,
+        label: "Ride Requests",
+      },
+      {
+        href: "/dashboard/rider/trips",
+        icon: <History className="h-5 w-5" />,
+        label: "My Trips",
+      },
+      {
+        href: "/dashboard/rider/earnings",
+        icon: <Wallet className="h-5 w-5" />,
+        label: "Earnings",
+      },
+      {
+        href: "/dashboard/rider/profile",
+        icon: <User className="h-5 w-5" />,
+        label: "Profile",
+      },
     ],
     admin: [
-      { href: "/dashboard/admin", icon: <Shield className="h-5 w-5" />, label: "Admin Panel" },
+      {
+        href: "/dashboard/admin/dashboard-overview",
+        icon: <Shield className="h-5 w-5" />,
+        label: "Dashboard Overview",
+      },
+      {
+        href: "/dashboard/admin/user-management",
+        icon: <Users className="h-5 w-5" />,
+        label: "User Management",
+      },
+      {
+        href: "/dashboard/admin/driver-management",
+        icon: <Car className="h-5 w-5" />,
+        label: "Driver Management",
+      },
+      {
+        href: "/dashboard/admin/ride-management",
+        icon: <Map className="h-5 w-5" />,
+        label: "Ride Management",
+      },
+      {
+        href: "/dashboard/admin/reports-safety",
+        icon: <BarChart3 className="h-5 w-5" />,
+        label: "Reports & Safety",
+      },
     ],
     supportAgent: [
-      { href: "/dashboard/supportAgent", icon: <Headphones className="h-5 w-5" />, label: "Support Panel" },
+      {
+        href: "/dashboard/supportAgent",
+        icon: <Headphones className="h-5 w-5" />,
+        label: "Support Panel",
+      },
     ],
   };
 
@@ -96,6 +170,7 @@ const Navbar = () => {
       if (e.key === "Escape") {
         setIsOpen(false);
         setOpenMenu(false);
+        setOpenHelp(false);
       }
     };
 
@@ -111,13 +186,23 @@ const Navbar = () => {
   // Helper function to check if route is active
   const isActive = (path) => pathname === path;
 
+  // Outside click theke dropdown close korte
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".help-dropdown")) setOpenHelp(false);
+      if (!e.target.closest(".more-dropdown")) setOpenMenu(false);
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   return (
     <nav
-      className={`sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur transition-transform duration-300 ${isVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
+      className={`sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur transition-transform duration-300 ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-
         {/* Logo */}
         <Link href="/" className="flex items-center text-2xl font-extrabold">
           <Image src={logoImage} alt="OnWay" width={120} height={94} />
@@ -129,8 +214,11 @@ const Navbar = () => {
             <Link
               key={item.href}
               href={item.href}
-              className={`transition hover:text-zinc-950 ${isActive(item.href) ? "text-zinc-950 font-bold border-b-2 border-zinc-950" : "text-zinc-600"
-                }`}
+              className={`transition hover:text-zinc-950 ${
+                isActive(item.href)
+                  ? "text-zinc-950 font-bold border-b-2 border-zinc-950"
+                  : "text-zinc-600"
+              }`}
             >
               {item.label}
             </Link>
@@ -139,31 +227,69 @@ const Navbar = () => {
           {session && !isDashboard && (
             <Link
               href={dashboardHref}
-              className={`transition hover:text-zinc-950 ${pathname.includes("/dashboard") ? "text-zinc-950 font-bold" : "text-zinc-600"
-                }`}
+              className={`transition hover:text-zinc-950 ${
+                pathname.includes("/dashboard")
+                  ? "text-zinc-950 font-bold"
+                  : "text-zinc-600"
+              }`}
             >
               Dashboard
             </Link>
           )}
 
-          {/* More Dropdown */}
-          <div className="relative">
+          {/* Help Dropdown */}
+          <div className="relative help-dropdown">
             <button
-              className="inline-flex items-center gap-2 transition hover:text-zinc-950"
-              onClick={() => setOpenMenu((v) => !v)}
+              onClick={() => {
+                setOpenHelp((v) => !v);
+                setOpenMenu(false);
+              }}
               type="button"
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
             >
-              More <ChevronDown className="h-4 w-4" />
+              Help <ChevronDown size={16} className={`transition-transform ${openHelp ? "rotate-180" : ""}`} />
+            </button>
+
+            {openHelp && (
+              <div className="absolute top-full mt-2 bg-white shadow-lg rounded-md w-48 z-50 border border-gray-100">
+                {helpItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpenHelp(false)}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* More Dropdown */}
+          <div className="relative more-dropdown">
+            <button
+              onClick={() => {
+                setOpenMenu((v) => !v);
+                setOpenHelp(false);
+              }}
+              type="button"
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+            >
+              More <ChevronDown size={16} className={`transition-transform ${openMenu ? "rotate-180" : ""}`} />
             </button>
 
             {openMenu && (
-              <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-zinc-200 bg-white p-2 shadow-lg">
+              <div className="absolute top-full mt-2 bg-white shadow-lg rounded-md w-48 z-50 border border-gray-100">
                 {more.map((m) => (
                   <Link
-                    key={m.label}
+                    key={m.href}
                     href={m.href}
-                    className={`block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-zinc-50 hover:text-zinc-950 ${isActive(m.href) ? "bg-zinc-100 text-zinc-950" : "text-zinc-700"
-                      }`}
+                    className={`block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-zinc-50 hover:text-zinc-950 ${
+                      isActive(m.href)
+                        ? "bg-zinc-100 text-zinc-950"
+                        : "text-zinc-700"
+                    }`}
                     onClick={() => setOpenMenu(false)}
                   >
                     {m.label}
@@ -182,8 +308,11 @@ const Navbar = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative group transition ${isActive(item.href) ? "text-black" : "text-zinc-500 hover:text-black"
-                    }`}
+                  className={`relative group transition ${
+                    isActive(item.href)
+                      ? "text-black"
+                      : "text-zinc-500 hover:text-black"
+                  }`}
                 >
                   {item.icon}
                   {isActive(item.href) && (
@@ -201,7 +330,9 @@ const Navbar = () => {
             </>
           ) : session ? (
             <>
-              <MapPin className="h-5 w-5 text-zinc-700" />
+              <Link href="/dashboard/passenger">
+                <User size={20} className="text-gray-700 hover:text-primary" />
+              </Link>
               <button
                 onClick={() => handleSignOut()}
                 className="text-sm font-semibold text-zinc-700 hover:text-black"
@@ -211,30 +342,29 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <MapPin className="h-5 w-5 text-zinc-700" />
               <Link
                 href="/login"
-                className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-primary"
               >
-                Log In
+                <LogIn size={16} /> Log In
               </Link>
               <Link
                 href="/register"
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+                className="flex items-center gap-1 text-sm font-medium bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90"
               >
-                Sign Up
+                <UserPlus size={16} /> Sign Up
               </Link>
             </>
           )}
         </div>
 
-        {/* Mobile Button */}
+        {/* Mobile Menu Button */}
         <button
-          className="md:hidden rounded-xl border border-zinc-200 bg-white p-2 text-zinc-900"
           onClick={() => setIsOpen((v) => !v)}
           type="button"
+          className="md:hidden text-gray-700"
         >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
@@ -251,6 +381,83 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
+
+          {session && (
+            <Link
+              href={dashboardHref}
+              onClick={() => setIsOpen(false)}
+              className={`block text-lg font-medium ${pathname.includes("/dashboard") ? "text-black font-bold" : "text-zinc-600"}`}
+            >
+              Dashboard
+            </Link>
+          )}
+
+          {/* Mobile Help */}
+          <div>
+            <button
+              onClick={() => setOpenHelp((v) => !v)}
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 w-full"
+            >
+              Help <ChevronDown size={16} className={`transition-transform ${openHelp ? "rotate-180" : ""}`} />
+            </button>
+            {openHelp && (
+              <div className="ml-3 mt-2 flex flex-col gap-2">
+                {helpItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => { setOpenHelp(false); setIsOpen(false); }}
+                    className="text-sm text-gray-600 hover:text-primary"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile More */}
+          <div>
+            <button
+              onClick={() => setOpenMenu((v) => !v)}
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 w-full"
+            >
+              More <ChevronDown size={16} className={`transition-transform ${openMenu ? "rotate-180" : ""}`} />
+            </button>
+            {openMenu && (
+              <div className="ml-3 mt-2 flex flex-col gap-2">
+                {more.map((m) => (
+                  <Link
+                    key={m.href}
+                    href={m.href}
+                    onClick={() => { setOpenMenu(false); setIsOpen(false); }}
+                    className="text-sm text-gray-600 hover:text-primary"
+                  >
+                    {m.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Auth */}
+          {session ? (
+            <button
+              onClick={() => signOut()}
+              className="text-sm font-semibold text-red-500 text-left"
+            >
+              Logout
+            </button>
+          ) : (
+            <div className="flex gap-3">
+              <Link href="/login" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-700">
+                Log In
+              </Link>
+              <Link href="/register" onClick={() => setIsOpen(false)} className="text-sm font-medium text-primary">
+                Sign Up
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>

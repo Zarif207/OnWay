@@ -5,18 +5,18 @@ import Link from "next/link";
 
 export default function PassengerLanding() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F4F6F9] via-[#EEF1F6] to-[#E9EDF3] px-6 py-14">
+    <div className="min-h-screen bg-linear-to-br from-[#F4F6F9] via-[#EEF1F6] to-[#E9EDF3] px-6 py-14">
       <div className="max-w-7xl mx-auto space-y-16">
 
         {/* ================= HERO SECTION ================= */}
         <div className="relative bg-white/60 backdrop-blur-xl rounded-[40px] p-14 border border-white/40
                         shadow-[0_25px_60px_rgba(0,0,0,0.08)] overflow-hidden">
 
-          <div className="absolute -top-20 -right-20 w-72 h-72 bg-[#FFF200]/30 rounded-full blur-3xl" />
+          <div className="absolute -top-20 -right-20 w-72 h-72 bg-[#2FCA71]/30 rounded-full blur-3xl" />
           <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-200/30 rounded-full blur-3xl" />
 
           <div className="relative z-10 max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-semibold text-[#111827] leading-tight">
+            <h1 className="text-4xl md:text-5xl font-semibold text-[#2FCA71] leading-tight">
               Welcome Back 👋
             </h1>
 
@@ -27,7 +27,7 @@ export default function PassengerLanding() {
 
             <Link
               href="/dashboard/passenger/book-ride"
-              className="inline-block mt-8 px-8 py-4 bg-[#111827] text-white rounded-2xl
+              className="inline-block mt-8 px-8 py-4 bg-[#2FCA71] text-white rounded-2xl
                          shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               Book a Ride
@@ -100,12 +100,12 @@ function FeatureCard({ icon, title, desc, href }) {
                  hover:-translate-y-2
                  transition-all duration-300"
     >
-      <div className="w-14 h-14 bg-[#FFF200] rounded-2xl flex items-center justify-center
-                      text-[#111827] shadow-md mb-8">
+      <div className="w-14 h-14 bg-[#2FCA71] rounded-2xl flex items-center justify-center
+                      text-[#001820] shadow-md mb-8">
         {icon}
       </div>
 
-      <h3 className="text-xl font-semibold text-[#111827]">
+      <h3 className="text-xl font-semibold text-[#2FCA71]">
         {title}
       </h3>
 

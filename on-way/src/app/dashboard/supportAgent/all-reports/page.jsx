@@ -17,7 +17,7 @@ export default function Reports() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <BarChart3 className="text-yellow-500 w-7 h-7" />
+            <BarChart3 className="text-primary w-7 h-7" />
             Safety & Performance Reports
           </h1>
           <p className="text-gray-600 mt-2">
@@ -36,7 +36,7 @@ export default function Reports() {
           <StatCard
             title="Avg Response Time"
             value="2.3 min"
-            icon={<Clock className="text-yellow-500 w-6 h-6" />}
+            icon={<Clock className="text-primary w-6 h-6" />}
             color="yellow"
           />
           <StatCard
@@ -61,7 +61,7 @@ export default function Reports() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <MiniCard title="Critical" value="4" badge="bg-red-100 text-red-600" />
-            <MiniCard title="Medium" value="5" badge="bg-yellow-100 text-yellow-700" />
+            <MiniCard title="Medium" value="5" badge="bg-primary text-primary" />
             <MiniCard title="Low" value="3" badge="bg-blue-100 text-blue-600" />
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function Reports() {
         {/* Agent Performance Table */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-10">
           <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-yellow-500" />
+            <TrendingUp className="w-5 h-5 text-primary" />
             Agent Performance
           </h2>
 
@@ -100,7 +100,7 @@ export default function Reports() {
                   <td className="py-4 font-medium">Agent Mark</td>
                   <td>10</td>
                   <td>3.4 min</td>
-                  <td className="text-yellow-600 font-medium">82%</td>
+                  <td className="text-primary font-medium">82%</td>
                 </tr>
               </tbody>
             </table>

@@ -11,7 +11,7 @@ export default function GlobalError({ error, reset }) {
           </p>
           <button
             onClick={() => reset()}
-            className="px-6 py-2 bg-yellow-400 text-black rounded-lg font-semibold hover:bg-yellow-500 transition-colors"
+            className="px-6 py-2 bg-primary text-black rounded-lg font-semibold hover:bg-primary transition-colors"
           >
             Try again
           </button>

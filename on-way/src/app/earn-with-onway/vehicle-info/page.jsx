@@ -3,15 +3,15 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
 import { useEarnRegistration } from "@/context/EarnRegistrationContext";
 import EarnInfo from "@/components/EarnInfo/EarnInfo";
+import { Check } from "lucide-react";
 
 export default function VehicleInfoPage() {
   const router = useRouter();
   const { formData, updateFormData } = useEarnRegistration();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
   const {
     register,
@@ -32,208 +32,197 @@ export default function VehicleInfoPage() {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    setErrorMsg("");
-    
-    // Merge final data
     const finalData = { ...formData, ...data };
     updateFormData(data);
 
-    try {
-      const response = await fetch("/api/earn-registration", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(finalData),
-      });
+    await fetch("/api/earn-registration", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(finalData),
+    });
 
-      if (response.ok) {
-        setSuccess(true);
-        // Normally you might redirect to a success page
-        // router.push("/earn-with-onway/success");
-      } else {
-        const errData = await response.json();
-        setErrorMsg(errData.error || "Failed to submit registration");
-      }
-    } catch (error) {
-      console.error("Submission error:", error);
-      setErrorMsg("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    router.push("/");
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-[#f8f9fa] pt-32 pb-16 flex items-center justify-center px-4 font-sans">
-        <div className="bg-white p-12 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] text-center max-w-lg border border-gray-100">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registration Successful!</h2>
-          <p className="text-gray-500 mb-8">
-            Thank you for registering with OnWay. Our team will review your application and contact you shortly.
-          </p>
-          <button 
-            onClick={() => router.push("/")}
-            className="bg-[#e43232] text-white px-8 py-3 rounded hover:bg-[#c92828] transition-colors font-medium"
-          >
-            Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-16 font-sans">
-      <div className="max-w-[1100px] mx-auto px-4 md:px-8 flex flex-col gap-12">
-        
-        {/* Top Section: Form */}
-        <div className="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 overflow-hidden">
-          
-          <div className="bg-gray-50 border-b border-gray-100 px-8 py-5">
-            <h2 className="text-xl font-bold text-gray-900">02 Vehicle Information</h2>
+    <div className="min-h-screen bg-[#f8f9fa] relative overflow-hidden font-sans pb-24">
+
+      {/* Background Blobs (same as PersonalInfo) */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ duration: 2 }}
+        className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#31ca71]/20 rounded-full blur-[120px] pointer-events-none z-0 transform translate-x-1/3 -translate-y-1/4"
+      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.3 }}
+        transition={{ duration: 2, delay: 0.5 }}
+        className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-400/10 rounded-full blur-[120px] pointer-events-none z-0 transform -translate-x-1/3 translate-y-1/3"
+      />
+
+      <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-32 relative z-10">
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+
+          {/* LEFT COLUMN — Stepper */}
+          <div className="lg:col-span-4 lg:sticky lg:top-32 flex flex-col gap-10">
+
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <h1 className="text-4xl font-extrabold text-[#001820] mb-8">
+                Become an <br />
+                <span className="text-[#31ca71]">OnWay Partner</span>
+              </h1>
+
+              <div className="flex flex-col gap-6 mb-12">
+
+                {/* Step 1 Completed */}
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-full bg-[#31ca71] flex items-center justify-center shadow-[0_0_20px_rgba(49,202,113,0.4)]">
+                    <Check className="w-6 h-6 text-[#001820]" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#001820]">Personal Info</h4>
+                    <p className="text-sm text-[#31ca71] font-medium">Completed</p>
+                  </div>
+                </div>
+
+                <div className="w-[2px] h-8 bg-[#31ca71]/40 ml-6 -my-2 rounded-full"></div>
+
+                {/* Step 2 Active */}
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-full bg-[#31ca71] text-[#001820] flex items-center justify-center shadow-[0_0_20px_rgba(49,202,113,0.4)]">
+                    <span className="font-bold text-lg">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#001820]">Vehicle Details</h4>
+                    <p className="text-sm text-gray-500">In Progress</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="hidden lg:block bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-white/80 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+            >
+              <EarnInfo />
+            </motion.div>
           </div>
-          
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 flex flex-col gap-6 max-w-3xl">
-            
-            {errorMsg && (
-              <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
-                {errorMsg}
-              </div>
-            )}
 
-            {/* Row: Brand & Model */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Select Brand <span className="text-red-500">*</span>
-                </label>
-                <select 
-                  {...register("brand", { required: "Brand is required" })}
-                  className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Select The Brand</option>
-                  <option value="Yamaha">Yamaha</option>
-                  <option value="Honda">Honda</option>
-                  <option value="Suzuki">Suzuki</option>
-                  <option value="Bajaj">Bajaj</option>
-                  <option value="Toyota">Toyota (Car)</option>
-                </select>
+          {/* RIGHT COLUMN — Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="lg:col-span-8"
+          >
+            <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-[0_30px_60px_-15px_rgba(49,202,113,0.1)] p-8 md:p-12 border border-white/60 relative overflow-hidden">
+
+              <div className="mb-10">
+                <h2 className="text-3xl font-extrabold text-[#001820] mb-2">
+                  Vehicle Information
+                </h2>
+                <p className="text-gray-500">
+                  Enter your vehicle details carefully for verification.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Select Model <span className="text-red-500">*</span>
-                </label>
-                <select 
-                  {...register("model", { required: "Model is required" })}
-                  className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white ${errors.model ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Select Your Vehicle Model</option>
-                  <option value="R15">R15</option>
-                  <option value="CBR">CBR</option>
-                  <option value="Gixxer">Gixxer</option>
-                  <option value="Pulsar">Pulsar</option>
-                  <option value="Axio">Axio</option>
-                </select>
-              </div>
-            </div>
+              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
 
-            {/* Registration Number */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Registration Number <span className="text-red-500">*</span>
-              </label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <select 
-                  {...register("registrationRegion")}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white"
-                >
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Chittagong">Chittagong</option>
-                </select>
-                <select 
-                  {...register("registrationCategory")}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white"
-                >
-                  <option value="Metric">Metric</option>
-                  <option value="Ha">Ha</option>
-                  <option value="La">La</option>
-                </select>
-                <input 
-                  type="text" 
-                  placeholder="Digits"
-                  {...register("registrationDigits", { required: "Registration Digits required" })}
-                  className={`flex-1 border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${errors.registrationDigits ? 'border-red-500' : 'border-gray-300'}`}
-                />
-              </div>
-            </div>
+                {/* Vehicle Basics */}
+                <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-gray-100 shadow-inner">
 
-            {/* Year */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Year <span className="text-red-500">*</span>
-              </label>
-              <select 
-                {...register("year", { required: "Year is required" })}
-                className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white ${errors.year ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                <option value="">Select Year</option>
-                {Array.from({ length: 25 }, (_, i) => new Date().getFullYear() - i).map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </div>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
+                    Vehicle Profile
+                  </h3>
 
-            {/* Tax Token Number */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Tax Token Number <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                placeholder="Add your Token Number"
-                {...register("taxTokenNumber", { required: "Tax Token is required" })}
-                className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${errors.taxTokenNumber ? 'border-red-500' : 'border-gray-300'}`}
-              />
-            </div>
+                  <div className="grid md:grid-cols-2 gap-6 mb-6">
+                    <input
+                      placeholder="Brand"
+                      {...register("brand", { required: true })}
+                      className={`rounded-xl px-4 py-3.5 bg-white border shadow-sm focus:ring-2 focus:ring-[#31ca71]/40 ${errors.brand ? "border-red-400" : "border-gray-200"
+                        }`}
+                    />
+                    <input
+                      placeholder="Model"
+                      {...register("model", { required: true })}
+                      className={`rounded-xl px-4 py-3.5 bg-white border shadow-sm focus:ring-2 focus:ring-[#31ca71]/40 ${errors.model ? "border-red-400" : "border-gray-200"
+                        }`}
+                    />
+                  </div>
 
-            {/* Fitness Number */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">Fitness Number</label>
-              <input 
-                type="text" 
-                placeholder="Add your Fitness Number"
-                {...register("fitnessNumber")}
-                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
+                  <input
+                    placeholder="Registration Digits"
+                    {...register("registrationDigits", { required: true })}
+                    className={`w-full rounded-xl px-4 py-3.5 bg-white border shadow-sm focus:ring-2 focus:ring-[#31ca71]/40 ${errors.registrationDigits ? "border-red-400" : "border-gray-200"
+                      }`}
+                  />
+                </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <button 
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-[#e43232] text-white px-8 py-2.5 rounded hover:bg-[#c92828] transition-colors font-medium disabled:opacity-70 flex items-center gap-2"
-              >
-                {isSubmitting && (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                )}
-                Submit
-              </button>
-            </div>
+                {/* Documents */}
+                <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-gray-100 shadow-inner">
 
-          </form>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
+                    Documents
+                  </h3>
+
+                  <div className="grid md:grid-cols-2 gap-6 mb-6">
+                    <input
+                      placeholder="Tax Token Number"
+                      {...register("taxTokenNumber", { required: true })}
+                      className="rounded-xl px-4 py-3.5 bg-white border border-gray-200 shadow-sm focus:ring-2 focus:ring-[#31ca71]/40"
+                    />
+                    <input
+                      placeholder="Fitness Number"
+                      {...register("fitnessNumber")}
+                      className="rounded-xl px-4 py-3.5 bg-white border border-gray-200 shadow-sm focus:ring-2 focus:ring-[#31ca71]/40"
+                    />
+                  </div>
+
+                  <select
+                    {...register("year", { required: true })}
+                    className="w-full rounded-xl px-4 py-3.5 bg-white border border-gray-200 shadow-sm focus:ring-2 focus:ring-[#31ca71]/40"
+                  >
+                    <option value="">Select Year</option>
+                    {Array.from({ length: 25 }, (_, i) =>
+                      new Date().getFullYear() - i
+                    ).map((y) => (
+                      <option key={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Submit */}
+                <div className="flex justify-end pt-6">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-[#31ca71] text-[#001820] px-10 py-4 rounded-xl hover:bg-[#28ad60] hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(49,202,113,0.5)] transition-all duration-300 font-extrabold flex items-center gap-3"
+                  >
+                    {isSubmitting && (
+                      <div className="w-4 h-4 border-2 border-[#001820]/30 border-t-[#001820] rounded-full animate-spin"></div>
+                    )}
+                    Submit Application
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </motion.div>
+
+          {/* Mobile EarnInfo */}
+          <div className="lg:hidden block mt-8 col-span-1">
+            <EarnInfo />
+          </div>
+
         </div>
-
-        {/* Bottom Section: Information Block */}
-        <div className="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-8 border border-gray-100 mb-12">
-          <EarnInfo />
-        </div>
-
       </div>
     </div>
   );

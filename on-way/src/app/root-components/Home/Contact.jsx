@@ -1,183 +1,169 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { CheckCircle2, Mail, MessageSquare, Phone } from "lucide-react";
-import Container from "./Container";
-import SectionHeading from "./SectionHeading";
 
-export default function Contact() {
-  const [submitted, setSubmitted] = useState(false);
-
-  const defaultValues = useMemo(
-    () => ({ name: "", email: "", topic: "General", message: "" }),
-    []
-  );
+export default function ContactRideSection() {
+  const [activeTab, setActiveTab] = useState("contact");
 
   const {
     register,
     handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm({ defaultValues, mode: "onTouched" });
+    formState: { errors },
+  } = useForm();
 
-  const onSubmit = async (values) => {
-    // Demo submission — wire this to your API later
-    await new Promise((r) => setTimeout(r, 650));
-    setSubmitted(true);
-    reset(defaultValues);
-    setTimeout(() => setSubmitted(false), 4500);
-    // eslint-disable-next-line no-console
-    console.log("OnWay contact form:", values);
+  const onSubmit = (data) => {
+    console.log("OnWay Form:", data);
   };
 
   return (
-    <section id="contact" className="bg-zinc-50 py-16 sm:py-20">
-      <Container>
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
-          <div data-aos="fade-up">
-            <SectionHeading
-              eyebrow="Help & support"
-              title="Send a message"
-              description="Got questions about OnWay? Reach out — we’ll get back with the right help."
+    <section className="relative">
+      {/* ================= HERO SECTION ================= */}
+      <div className="relative bg-[#0f172a] py-28 text-white">
+        {/* Overlay (remove later when adding bg image) */}
+        <div className="absolute inset-0 bg-black/60"></div>
+
+        <div className="relative mx-auto max-w-5xl px-6 text-center">
+          <p className="mb-4 text-sm font-semibold tracking-widest text-secondary uppercase">
+            Ride Tracking
+          </p>
+
+          <h1 className="text-3xl font-bold sm:text-5xl">
+            Track Your Ride in Real-Time
+          </h1>
+
+          <p className="mt-4 text-sm text-zinc-300">
+            Enter your ride ID to see your driver’s live location and estimated
+            arrival time.
+          </p>
+
+          {/* Track Input */}
+          <div className="mx-auto mt-8 flex max-w-2xl overflow-hidden rounded-full bg-white">
+            <input
+              type="text"
+              placeholder="Enter your Ride ID"
+              className="w-full px-6 py-4 text-sm text-black outline-none"
             />
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-3xl border border-zinc-200 bg-white p-5">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <Phone className="h-4 w-4 text-yellow-500" />
-                  Helpline
-                </div>
-                <p className="mt-2 text-sm text-zinc-600">+1 (555) 010‑010</p>
-              </div>
-              <div className="rounded-3xl border border-zinc-200 bg-white p-5">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <Mail className="h-4 w-4 text-yellow-500" />
-                  Email
-                </div>
-                <p className="mt-2 text-sm text-zinc-600">support@onway.app</p>
-              </div>
-              <div className="rounded-3xl border border-zinc-200 bg-white p-5">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  <MessageSquare className="h-4 w-4 text-yellow-500" />
-                  Live chat
-                </div>
-                <p className="mt-2 text-sm text-zinc-600">In-app, 24/7</p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8"
-            data-aos="fade-up"
-            data-aos-delay="80"
-          >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-sm font-semibold text-zinc-900">
-                    Full name
-                  </label>
-                  <input
-                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
-                    placeholder="Your name"
-                    {...register("name", { required: "Name is required" })}
-                  />
-                  {errors.name ? (
-                    <p className="mt-1 text-xs font-semibold text-rose-600">
-                      {errors.name.message}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-zinc-900">
-                    Email
-                  </label>
-                  <input
-                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
-                    placeholder="you@company.com"
-                    {...register("email", {
-                      required: "Email is required",
-                      pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: "Enter a valid email",
-                      },
-                    })}
-                  />
-                  {errors.email ? (
-                    <p className="mt-1 text-xs font-semibold text-rose-600">
-                      {errors.email.message}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-zinc-900">
-                  Topic
-                </label>
-                <select
-                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
-                  {...register("topic")}
-                >
-                  <option>General</option>
-                  <option>Rides</option>
-                  <option>Food</option>
-                  <option>Parcel</option>
-                  <option>Payments</option>
-                  <option>Partnership</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-zinc-900">
-                  Message
-                </label>
-                <textarea
-                  className="mt-2 min-h-[120px] w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
-                  placeholder="How can we help?"
-                  {...register("message", {
-                    required: "Message is required",
-                    minLength: { value: 10, message: "Write a bit more detail" },
-                  })}
-                />
-                {errors.message ? (
-                  <p className="mt-1 text-xs font-semibold text-rose-600">
-                    {errors.message.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  variant="accent"
-                  className="w-full sm:w-auto"
-                  as="button"
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Sending..." : "Send message"}
-                </button>
-
-                {submitted ? (
-                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Message sent — we’ll reply soon.
-                  </div>
-                ) : (
-                  <p className="text-xs font-semibold text-zinc-500">
-                    By sending, you agree to our support terms.
-                  </p>
-                )}
-              </div>
-            </form>
+            <button className="bg-primary px-8 py-4 text-sm font-semibold text-white transition hover:bg-secondary">
+              Track Ride →
+            </button>
           </div>
         </div>
-      </Container>
+      </div>
+
+      {/* ================= CARD SECTION ================= */}
+      <div className="relative -mt-20 px-6 pb-20">
+        <div className="mx-auto max-w-6xl rounded-[40px] bg-white p-8 shadow-2xl sm:p-12">
+          {/* Tabs */}
+          <div className="mb-10 flex gap-4">
+            <button
+              onClick={() => setActiveTab("contact")}
+              className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
+                activeTab === "contact"
+                  ? "bg-primary text-white"
+                  : "bg-zinc-100 text-zinc-600"
+              }`}
+            >
+              Contact
+            </button>
+
+            <button
+              onClick={() => setActiveTab("track")}
+              className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
+                activeTab === "track"
+                  ? "bg-primary text-white"
+                  : "bg-zinc-100 text-zinc-600"
+              }`}
+            >
+              Track a Ride
+            </button>
+          </div>
+
+          {/* ================= CONTACT FORM ================= */}
+          {activeTab === "contact" && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <input
+                    placeholder="Full Name*"
+                    className="w-full rounded-full bg-zinc-100 px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    {...register("name", { required: true })}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      Name is required
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <input
+                    placeholder="Email*"
+                    className="w-full rounded-full bg-zinc-100 px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    {...register("email", { required: true })}
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      Email is required
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <input
+                placeholder="Subject"
+                className="w-full rounded-full bg-zinc-100 px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-primary"
+                {...register("subject")}
+              />
+
+              <textarea
+                placeholder="Write your message..."
+                rows={4}
+                className="w-full rounded-3xl bg-zinc-100 px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-primary"
+                {...register("message", { required: true })}
+              />
+              {errors.message && (
+                <p className="text-xs text-rose-600">
+                  Message cannot be empty
+                </p>
+              )}
+
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="submit"
+                  className="rounded-full bg-primary px-8 py-4 text-sm font-semibold text-white transition hover:bg-secondary"
+                >
+                  Send Message →
+                </button>
+
+                <p className="text-xs text-zinc-500">
+                  Our support team typically replies within 24 hours.
+                </p>
+              </div>
+            </form>
+          )}
+
+          {/* ================= TRACK TAB ================= */}
+          {activeTab === "track" && (
+            <div className="space-y-6 text-center">
+              <p className="text-sm text-zinc-600">
+                Enter your Ride ID below to track your driver live.
+              </p>
+
+              <div className="mx-auto flex max-w-xl overflow-hidden rounded-full bg-zinc-100">
+                <input
+                  type="text"
+                  placeholder="Enter Ride ID"
+                  className="w-full bg-transparent px-6 py-4 text-sm outline-none"
+                />
+                <button className="bg-primary px-8 py-4 text-sm font-semibold text-white transition hover:bg-secondary">
+                  Track Now →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
-
-
-

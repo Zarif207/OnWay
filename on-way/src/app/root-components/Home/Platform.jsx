@@ -7,7 +7,7 @@ import SectionHeading from "./SectionHeading";
 import { services } from "./homeData";
 
 export default function Platform() {
-  const initial = services[0]?.key ?? "ride";
+  const initial = services[0]?.key ?? "Bike";
   const [active, setActive] = useState(initial);
 
   const current = useMemo(
@@ -51,7 +51,7 @@ export default function Platform() {
                   >
                     <ActiveIcon
                       className={`h-4 w-4 ${
-                        isActive ? "text-yellow-300" : "text-zinc-700"
+                        isActive ? "text-primary" : "text-zinc-700"
                       }`}
                     />
                   </span>
@@ -137,7 +137,7 @@ export default function Platform() {
                     key={t}
                     className="flex items-center gap-3 rounded-2xl bg-zinc-50 p-4"
                   >
-                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-yellow-400/20 text-zinc-900">
+                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/20 text-zinc-900">
                       <CheckCircle2 className="h-5 w-5" />
                     </span>
                     <p className="text-sm font-semibold text-zinc-800">{t}</p>

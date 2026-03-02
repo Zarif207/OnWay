@@ -11,10 +11,7 @@ import {
 
 export default function SupportAgentDashboard() {
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900">
-      
-      {/* Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <div className="space-y-10 sm:space-y-14">
         
         {/* Header */}
         <div className="mb-10 sm:mb-14">
@@ -59,7 +56,6 @@ export default function SupportAgentDashboard() {
             href="/dashboard/supportAgent/ride-monitoring"
           />
 
-        </div>
       </div>
     </div>
   );

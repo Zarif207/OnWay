@@ -1,6 +1,5 @@
 import HowItWorks from "./components/Home/HowItWorks";
 import HomeLatestReviews from "./components/Home/LatestReviews";
-import Testimonials from "./components/Home/Testimonials";
 import ScrollProgress from "./components/ScrollProgress";
 import Contact from "./root-components/Home/Contact";
 import Earn from "./root-components/Home/Earn";
@@ -23,9 +22,8 @@ export default function Home() {
         <Safety />
         <HowItWorks />
         <Earn />
-        <Testimonials />
-        <Contact />
         <HomeLatestReviews />
+        <Contact />
       </main>
     </ScrollProgress>
   );

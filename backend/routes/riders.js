@@ -44,38 +44,6 @@ module.exports = function (ridersCollection) {
     }
   });
 
-  // 🔹 Login Rider
-  router.post("/login", async (req, res) => {
-    try {
-      const { email, password } = req.body;
-
-      const rider = await ridersCollection.findOne({ email });
-      if (!rider) {
-        return res.status(400).json({ message: "Invalid email or password" });
-      }
-
-      const isMatch = await bcrypt.compare(password, rider.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid email or password" });
-      }
-
-      res.json({
-        message: "Login successful",
-        rider: {
-          _id: rider._id,
-          name: rider.name,
-          email: rider.email,
-          phone: rider.phone,
-          vehicleType: rider.vehicleType,
-          isOnline: rider.isOnline,
-          isApproved: rider.isApproved,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-
   // 🔹 Get All Riders
   router.get("/", async (req, res) => {
     try {

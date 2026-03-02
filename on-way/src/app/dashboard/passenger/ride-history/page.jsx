@@ -8,38 +8,14 @@ import {
   Navigation2,
   Download,
   AlertCircle,
-  Search,
-  Star,
+  Search, 
+  Star, 
   X,
   MapPin
 } from "lucide-react";
 import OnWayLoading from "@/app/components/Loading/page";
 import AddReviewForm from "../addReviewForm/addReviewForm"; // Review form component
 
-<<<<<<< HEAD
-/* ---------------------------------------------------------------- */
-/* Simple Card Component (No external import needed) */
-/* ---------------------------------------------------------------- */
-function Card({ children }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
-      {children}
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------- */
-/* Simple Button Component */
-/* ---------------------------------------------------------------- */
-function Button({ children, variant = "primary", onClick }) {
-  const base =
-    "px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center";
-
-  const styles = {
-    primary: "bg-[#2FCA71] text-[#001820] hover:opacity-90",
-    outline: "border border-gray-300 text-gray-700 hover:bg-gray-100",
-    danger: "bg-red-600 text-white hover:bg-red-700",
-=======
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -72,7 +48,6 @@ export default function RideHistoryPage() {
     } finally {
       setTimeout(() => setLoading(false), 1500); 
     }
->>>>>>> 989df663e1e80388f32cd6defbc06d734ec57c1c
   };
 
   // --- SINGLE RIDE INVOICE GENERATOR ---
@@ -157,20 +132,11 @@ export default function RideHistoryPage() {
       <div className="max-w-6xl mx-auto">
         
         {/* Header */}
-<<<<<<< HEAD
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2FCA71]">Ride History</h1>
-          <p className="text-gray-600 mt-2">
-            View past rides, download receipts, rate drivers, or dispute rides.
-          </p>
-        </div>
-=======
         <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
             <h1 className="text-4xl font-black tracking-tight text-slate-900">Ride History</h1>
             <p className="text-slate-500 mt-2 font-medium">Manage and review your past travels</p>
           </div>
->>>>>>> 989df663e1e80388f32cd6defbc06d734ec57c1c
 
           <div className="relative group">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
@@ -198,82 +164,6 @@ export default function RideHistoryPage() {
           </button>
         </div>
 
-<<<<<<< HEAD
-        {/* Ride Cards */}
-        <div className="space-y-6">
-          {filteredRides.map((ride) => (
-            <Card key={ride.id}>
-              <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
-                {/* LEFT SIDE */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <h3 className="font-semibold text-lg text-[#2FCA71]">
-                      Ride #{ride.id}
-                    </h3>
-
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${ride.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                        }`}
-                    >
-                      {ride.status}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-5 h-5 text-[#2FCA71] mt-1" />
-                      <p className="text-sm text-gray-700">
-                        {ride.pickupLocation}
-                      </p>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-5 h-5 text-green-600 mt-1" />
-                      <p className="text-sm text-gray-700">
-                        {ride.dropLocation}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        {new Date(ride.requestedAt).toISOString().split("T")[0]}
-                      </span>
-                    </div>
-
-                    <span>📍 {ride.distance} km</span>
-                    <span>💳 {ride.paymentMethod}</span>
-                  </div>
-                </div>
-
-                {/* RIGHT SIDE */}
-                <div className="lg:text-right space-y-3">
-                  <p className="text-2xl font-bold text-green-600">
-                    ${ride.fare}
-                  </p>
-
-                  {ride.driverName && (
-                    <p className="text-sm text-gray-600">
-                      Driver: {ride.driverName}
-                    </p>
-                  )}
-
-                  {ride.status === "completed" && (
-                    <div className="space-y-2">
-                      {/* Rating */}
-                      {ride.rating ? (
-                        <div className="flex items-center gap-1 lg:justify-end">
-                          {[...Array(ride.rating)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className="w-4 h-4 text-primary fill-current"
-                            />
-                          ))}
-=======
         {/* Rides Table */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
@@ -302,7 +192,6 @@ export default function RideHistoryPage() {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-orange-400" />
                           <span className="text-sm font-bold text-slate-700 truncate max-w-50">{ride.pickupLocation}</span>
->>>>>>> 989df663e1e80388f32cd6defbc06d734ec57c1c
                         </div>
                         <div className="h-4 border-l-2 border-dotted border-slate-200 ml-0.75 my-1" />
                         <div className="flex items-center gap-2">

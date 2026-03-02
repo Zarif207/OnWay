@@ -21,6 +21,7 @@ export default function PersonalInfoPage() {
       firstName: formData.firstName || "",
       lastName: formData.lastName || "",
       mobileNumber: formData.mobileNumber || "",
+      email: formData.email || "",
       gender: formData.gender || "Male",
       dateOfBirth: formData.dateOfBirth || "",
       city: formData.city || "Dhaka",
@@ -53,20 +54,18 @@ export default function PersonalInfoPage() {
       />
 
       <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-32 relative z-10">
-
         {/* 2-Column Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-
           {/* LEFT COLUMN: Stepper & Info (Sticky) */}
           <div className="lg:col-span-4 lg:sticky lg:top-32 flex flex-col gap-10">
-
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
               <h1 className="text-4xl font-extrabold text-[#001820] mb-8 leading-tight">
-                Become an <br /> <span className="text-accent">OnWay Partner</span>
+                Become an <br />{" "}
+                <span className="text-accent">OnWay Partner</span>
               </h1>
 
               {/* Progress Stepper */}
@@ -77,8 +76,12 @@ export default function PersonalInfoPage() {
                     <span className="font-bold text-lg">1</span>
                   </div>
                   <div>
-                    <h4 className="text-[16px] font-bold text-[#001820]">Personal Info</h4>
-                    <p className="text-[13px] text-gray-500 font-medium tracking-wide">In Progress</p>
+                    <h4 className="text-[16px] font-bold text-[#001820]">
+                      Personal Info
+                    </h4>
+                    <p className="text-[13px] text-gray-500 font-medium tracking-wide">
+                      In Progress
+                    </p>
                   </div>
                 </div>
 
@@ -91,8 +94,12 @@ export default function PersonalInfoPage() {
                     <span className="font-bold text-lg">2</span>
                   </div>
                   <div>
-                    <h4 className="text-[16px] font-bold text-gray-400">Vehicle Details</h4>
-                    <p className="text-[13px] text-gray-400 font-medium tracking-wide">Pending</p>
+                    <h4 className="text-[16px] font-bold text-gray-400">
+                      Vehicle Details
+                    </h4>
+                    <p className="text-[13px] text-gray-400 font-medium tracking-wide">
+                      Pending
+                    </p>
                   </div>
                 </div>
               </div>
@@ -102,7 +109,11 @@ export default function PersonalInfoPage() {
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: 0.8,
+                delay: 0.2,
+                ease: [0.16, 1, 0.3, 1],
+              }}
               className="hidden lg:block bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-white/80 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
             >
               <EarnInfo />
@@ -125,12 +136,15 @@ export default function PersonalInfoPage() {
                   Personal Information
                 </h2>
                 <p className="text-gray-500 text-[15px]">
-                  Please provide your accurate details to create your captain profile.
+                  Please provide your accurate details to create your captain
+                  profile.
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 relative z-10">
-
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-8 relative z-10"
+              >
                 {/* Contact Information Group */}
                 <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-8 border border-gray-100 shadow-inner shadow-gray-200/50">
                   <h3 className="text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
@@ -146,9 +160,14 @@ export default function PersonalInfoPage() {
                       <input
                         type="text"
                         placeholder="John"
-                        {...register("firstName", { required: "First Name is required" })}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.firstName ? "border-red-400 bg-red-50/50" : "border-gray-200"
-                          }`}
+                        {...register("firstName", {
+                          required: "First Name is required",
+                        })}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.firstName
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
                       />
                     </div>
 
@@ -171,16 +190,55 @@ export default function PersonalInfoPage() {
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r border-gray-200 pr-3">
-                        <span className="text-xl leading-none origin-center">🇧🇩</span>
-                        <span className="text-gray-500 font-medium text-[15px]">+880</span>
+                        <span className="text-xl leading-none origin-center">
+                          🇧🇩
+                        </span>
+                        <span className="text-gray-500 font-medium text-[15px]">
+                          +880
+                        </span>
                       </span>
                       <input
                         type="tel"
                         {...register("mobileNumber", { required: true })}
-                        className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.mobileNumber ? "border-red-400 bg-red-50/50" : "border-gray-200"
-                          }`}
+                        className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.mobileNumber
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
                       />
                     </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex flex-col gap-2 mt-2">
+                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                      Email <span className="text-[#31ca71]">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        type="email"
+                        placeholder="example@email.com"
+                        {...register("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                            message: "Please enter a valid email address",
+                          },
+                        })}
+                        className={`w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.email
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </div>
+
+                    {errors.email && (
+                      <span className="text-red-500 text-sm">
+                        {errors.email.message}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -212,8 +270,11 @@ export default function PersonalInfoPage() {
                       <input
                         type="date"
                         {...register("dateOfBirth", { required: true })}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${errors.dateOfBirth ? "border-red-400 bg-red-50/50" : "border-gray-200"
-                          }`}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${
+                          errors.dateOfBirth
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
                       />
                     </div>
                   </div>
@@ -258,14 +319,18 @@ export default function PersonalInfoPage() {
 
                     <div className="flex flex-col gap-2">
                       <label className="text-[13px] font-bold text-[#001820] tracking-wide">
-                        Identity Number <span className="text-[#31ca71]">*</span>
+                        Identity Number{" "}
+                        <span className="text-[#31ca71]">*</span>
                       </label>
                       <input
                         type="text"
                         placeholder="e.g. 199XXXXXXXXXX"
                         {...register("identityNumber", { required: true })}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.identityNumber ? "border-red-400 bg-red-50/50" : "border-gray-200"
-                          }`}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.identityNumber
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
                       />
                     </div>
                   </div>
@@ -291,11 +356,23 @@ export default function PersonalInfoPage() {
                   >
                     Continue to Vehicle Details
                     <span className="w-6 h-6 rounded-full bg-[#001820]/10 flex items-center justify-center group-hover:bg-[#001820]/20 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="group-hover:translate-x-0.5 transition-transform"
+                      >
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
                     </span>
                   </button>
                 </div>
-
               </form>
             </div>
           </motion.div>
@@ -304,7 +381,6 @@ export default function PersonalInfoPage() {
           <div className="lg:hidden block mt-8 col-span-1">
             <EarnInfo />
           </div>
-
         </div>
       </div>
     </div>

@@ -2,7 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { useEarnRegistration } from "@/context/EarnRegistrationContext";
 import EarnInfo from "@/components/EarnInfo/EarnInfo";
 
@@ -13,13 +15,13 @@ export default function PersonalInfoPage() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
       firstName: formData.firstName || "",
       lastName: formData.lastName || "",
       mobileNumber: formData.mobileNumber || "",
+      email: formData.email || "",
       gender: formData.gender || "Male",
       dateOfBirth: formData.dateOfBirth || "",
       city: formData.city || "Dhaka",
@@ -27,8 +29,6 @@ export default function PersonalInfoPage() {
       identityType: formData.identityType || "NID",
       identityNumber: formData.identityNumber || "",
       referralCode: formData.referralCode || "",
-      // Ignoring photo file for simple JSON state example, 
-      // in reality this would require FormData or base64
     },
   });
 
@@ -38,190 +38,349 @@ export default function PersonalInfoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-16 font-sans">
-      <div className="max-w-[1100px] mx-auto px-4 md:px-8 flex flex-col gap-12">
-        
-        {/* Top Section: Information Block */}
-        <div className="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-8 border border-gray-100">
-          <EarnInfo />
-        </div>
+    <div className="min-h-screen bg-[#f8f9fa] relative overflow-hidden font-sans pb-24">
+      {/* Deep Spatial Background Blobs */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ duration: 2 }}
+        className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#31ca71]/20 rounded-full blur-[120px] pointer-events-none z-0 transform translate-x-1/3 -translate-y-1/4"
+      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.3 }}
+        transition={{ duration: 2, delay: 0.5 }}
+        className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-400/10 rounded-full blur-[120px] pointer-events-none z-0 transform -translate-x-1/3 translate-y-1/3"
+      />
 
-        {/* Bottom Section: Form */}
-        <div className="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 overflow-hidden">
-          
-          <div className="bg-gray-50 border-b border-gray-100 px-8 py-5">
-            <h2 className="text-xl font-bold text-gray-900">01 Personal Information</h2>
-          </div>
-          
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 flex flex-col gap-6 max-w-3xl">
-            
-            {/* Row: Name */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  {...register("firstName", { required: "First Name is required" })}
-                  className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">Last Name</label>
-                <input 
-                  type="text" 
-                  {...register("lastName")}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-            </div>
+      <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-32 relative z-10">
+        {/* 2-Column Split Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+          {/* LEFT COLUMN: Stepper & Info (Sticky) */}
+          <div className="lg:col-span-4 lg:sticky lg:top-32 flex flex-col gap-10">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h1 className="text-4xl font-extrabold text-[#001820] mb-8 leading-tight">
+                Become an <br />{" "}
+                <span className="text-accent">OnWay Partner</span>
+              </h1>
 
-            {/* Mobile Number */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Mobile Number <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="tel" 
-                {...register("mobileNumber", { required: "Mobile Number is required" })}
-                className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${errors.mobileNumber ? 'border-red-500' : 'border-gray-300'}`}
-              />
-            </div>
-
-            {/* Gender Selection */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Gender <span className="text-red-500">*</span>
-              </label>
-              <select 
-                {...register("gender")}
-                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white"
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            {/* Date of Birth & City */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Date Of Birth <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="date" 
-                {...register("dateOfBirth", { required: "Date of Birth is required" })}
-                className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'}`}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">City</label>
-              <select 
-                {...register("city")}
-                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white"
-              >
-                <option value="Dhaka">Dhaka</option>
-                <option value="Chittagong">Chittagong</option>
-                <option value="Sylhet">Sylhet</option>
-                <option value="Rajshahi">Rajshahi</option>
-              </select>
-            </div>
-
-            {/* Services Checkboxes */}
-            <div className="flex flex-col gap-3 mt-2">
-              <label className="text-sm font-medium text-gray-700">Service(s) you want to provide</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" value="Bike Rider" {...register("serviceProvide")} className="w-5 h-5 accent-red-600 rounded" />
-                  <span className="text-gray-700 text-sm">Bike Rider</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" value="Food Delivery" {...register("serviceProvide")} className="w-5 h-5 accent-red-600 rounded" />
-                  <span className="text-gray-700 text-sm">Food Delivery</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" value="Tong Delivery" {...register("serviceProvide")} className="w-5 h-5 accent-red-600 rounded" />
-                  <span className="text-gray-700 text-sm">Tong Delivery</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" value="Parcel Delivery" {...register("serviceProvide")} className="w-5 h-5 accent-red-600 rounded" />
-                  <span className="text-gray-700 text-sm">Parcel Delivery</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Identity */}
-            <div className="flex flex-col gap-1.5 mt-2">
-              <label className="text-sm font-medium text-gray-700">
-                Select Your Identity <span className="text-red-500">*</span>
-              </label>
-              <select 
-                {...register("identityType")}
-                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white"
-              >
-                <option value="NID">NID</option>
-                <option value="Passport">Passport</option>
-                <option value="Driving License">Driving License</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                NID Number <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                placeholder="Enter your nid number"
-                {...register("identityNumber", { required: "Identity Number is required" })}
-                className={`w-full border rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${errors.identityNumber ? 'border-red-500' : 'border-gray-300'}`}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">Referral Code</label>
-              <input 
-                type="text" 
-                placeholder="Enter your referral code"
-                {...register("referralCode")}
-                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
-
-            {/* Photo Upload */}
-            <div className="flex flex-col gap-1.5 mt-2">
-              <label className="text-sm font-medium text-gray-700">
-                Upload your photo <span className="text-red-500">*</span>
-              </label>
-              <div className="flex flex-col sm:flex-row items-start gap-4 mt-1">
-                <div className="w-24 h-24 bg-gray-50 border border-gray-200 rounded flex items-center justify-center flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+              {/* Progress Stepper */}
+              <div className="flex flex-col gap-6 mb-12">
+                {/* Step 1: Active */}
+                <div className="flex items-center gap-5 group">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-[#31ca71] text-[#001820] shadow-[0_0_20px_rgba(49,202,113,0.4)] transition-all">
+                    <span className="font-bold text-lg">1</span>
+                  </div>
+                  <div>
+                    <h4 className="text-[16px] font-bold text-[#001820]">
+                      Personal Info
+                    </h4>
+                    <p className="text-[13px] text-gray-500 font-medium tracking-wide">
+                      In Progress
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <input type="file" className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 cursor-pointer border border-gray-300 rounded-md" />
-                  <div className="mt-2 text-xs text-gray-500 flex flex-col gap-1">
-                    <p>*Please upload a clear image of your full face from front</p>
-                    <p>*Full face should be visible</p>
-                    <p>*Image size cannot exceed 1MB</p>
+
+                {/* Connector Line */}
+                <div className="w-[2px] h-8 bg-gray-200 ml-6 -my-2 rounded-full"></div>
+
+                {/* Step 2: Pending */}
+                <div className="flex items-center gap-5">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
+                    <span className="font-bold text-lg">2</span>
+                  </div>
+                  <div>
+                    <h4 className="text-[16px] font-bold text-gray-400">
+                      Vehicle Details
+                    </h4>
+                    <p className="text-[13px] text-gray-400 font-medium tracking-wide">
+                      Pending
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <button 
-                type="submit"
-                className="bg-[#e43232] text-white px-8 py-2.5 rounded hover:bg-[#c92828] transition-colors font-medium"
+            {/* Earn Info Block */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.8,
+                delay: 0.2,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="hidden lg:block bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-white/80 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+            >
+              <EarnInfo />
+            </motion.div>
+          </div>
+
+          {/* RIGHT COLUMN: Registration Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-8 w-full"
+          >
+            <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-[0_30px_60px_-15px_rgba(49,202,113,0.1)] p-8 md:p-12 border border-white/60 relative overflow-hidden">
+              {/* Glass edge highlight */}
+              <div className="absolute inset-0 rounded-[32px] ring-1 ring-inset ring-white pointer-events-none" />
+
+              <div className="mb-10 relative z-10">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[#001820] mb-2 tracking-tight">
+                  Personal Information
+                </h2>
+                <p className="text-gray-500 text-[15px]">
+                  Please provide your accurate details to create your captain
+                  profile.
+                </p>
+              </div>
+
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-8 relative z-10"
               >
-                Next Step
-              </button>
-            </div>
+                {/* Contact Information Group */}
+                <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-8 border border-gray-100 shadow-inner shadow-gray-200/50">
+                  <h3 className="text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                    <span className="w-6 h-[2px] bg-[#31ca71] rounded-full"></span>
+                    Contact Profile
+                  </h3>
 
-          </form>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        First Name <span className="text-[#31ca71]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="John"
+                        {...register("firstName", {
+                          required: "First Name is required",
+                        })}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.firstName
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Doe"
+                        {...register("lastName")}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                      Mobile Number <span className="text-[#31ca71]">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r border-gray-200 pr-3">
+                        <span className="text-xl leading-none origin-center">
+                          🇧🇩
+                        </span>
+                        <span className="text-gray-500 font-medium text-[15px]">
+                          +880
+                        </span>
+                      </span>
+                      <input
+                        type="tel"
+                        {...register("mobileNumber", { required: true })}
+                        className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.mobileNumber
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex flex-col gap-2 mt-2">
+                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                      Email <span className="text-[#31ca71]">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        type="email"
+                        placeholder="example@email.com"
+                        {...register("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                            message: "Please enter a valid email address",
+                          },
+                        })}
+                        className={`w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.email
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </div>
+
+                    {errors.email && (
+                      <span className="text-red-500 text-sm">
+                        {errors.email.message}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Personal Information Group */}
+                <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-8 border border-gray-100 shadow-inner shadow-gray-200/50">
+                  <h3 className="text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                    <span className="w-6 h-[2px] bg-[#31ca71] rounded-full"></span>
+                    Demographics
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Gender
+                      </label>
+                      <select
+                        {...register("gender")}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
+                      >
+                        <option>Male</option>
+                        <option>Female</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Date Of Birth <span className="text-[#31ca71]">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        {...register("dateOfBirth", { required: true })}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${
+                          errors.dateOfBirth
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                      Operation City <span className="text-[#31ca71]">*</span>
+                    </label>
+                    <select
+                      {...register("city")}
+                      className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
+                    >
+                      <option>Dhaka</option>
+                      <option>Chittagong</option>
+                      <option>Sylhet</option>
+                      <option>Rajshahi</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Identity Verification Group */}
+                <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-8 border border-gray-100 shadow-inner shadow-gray-200/50">
+                  <h3 className="text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                    <span className="w-6 h-[2px] bg-[#31ca71] rounded-full"></span>
+                    Verification
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Identity Type <span className="text-[#31ca71]">*</span>
+                      </label>
+                      <select
+                        {...register("identityType")}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
+                      >
+                        <option>NID (National ID)</option>
+                        <option>Passport</option>
+                        <option>Driving License</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Identity Number{" "}
+                        <span className="text-[#31ca71]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 199XXXXXXXXXX"
+                        {...register("identityNumber", { required: true })}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
+                          errors.identityNumber
+                            ? "border-red-400 bg-red-50/50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                      Referral Code (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter code if you have one"
+                      {...register("referralCode")}
+                      className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Action */}
+                <div className="pt-6 mt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="w-full md:w-auto bg-[#31ca71] text-[#001820] px-10 py-4 rounded-xl hover:bg-[#28ad60] hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(49,202,113,0.5)] transition-all duration-300 font-extrabold text-[15px] flex items-center justify-center gap-3 group"
+                  >
+                    Continue to Vehicle Details
+                    <span className="w-6 h-6 rounded-full bg-[#001820]/10 flex items-center justify-center group-hover:bg-[#001820]/20 transition-colors">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="group-hover:translate-x-0.5 transition-transform"
+                      >
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+
+          {/* Render EarnInfo below form on Mobile */}
+          <div className="lg:hidden block mt-8 col-span-1">
+            <EarnInfo />
+          </div>
         </div>
       </div>
     </div>

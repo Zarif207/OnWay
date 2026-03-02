@@ -13,6 +13,8 @@ const VerifyEmail = () => {
     const inputRefs = useRef([]);
     const router = useRouter();
 
+    console.log(tempUser);
+
     const { registerUser } = useUsers();
 
     useEffect(() => {
@@ -56,7 +58,8 @@ const VerifyEmail = () => {
                     name: tempUser.name,
                     email: tempUser.email,
                     phone: tempUser.phone,
-                    password: tempUser.password
+                    password: tempUser.password,
+                    role: "passenger"
                 };
 
                 const result = await registerUser(userData);

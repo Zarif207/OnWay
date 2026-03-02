@@ -11,7 +11,7 @@ export default function HelpPage() {
     { name: "Booking Rides", icon: "/ride.png", color: "bg-purple-100", type: "image" },
     { name: "Payments", icon: "💳", color: "bg-blue-100", type: "emoji" },
     { name: "Safety", icon: "🛡️", color: "bg-green-100", type: "emoji" },
-    { name: "Driver Info", icon: "👨‍✈️", color: "bg-yellow-100", type: "emoji" },
+    { name: "Driver Info", icon: "👨‍✈️", color: "bg-primary", type: "emoji" },
     { name: "Account", icon: "👤", color: "bg-indigo-100", type: "emoji" },
   ];
 
@@ -71,9 +71,9 @@ export default function HelpPage() {
             <input
               type="text"
               placeholder="Search for help..."
-              className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+              className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-yellow-400 text-black px-6 py-2 rounded-full hover:bg-yellow-500 transition font-medium">
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-black px-6 py-2 rounded-full hover:bg-primary transition font-medium">
               Search
             </button>
           </div>
@@ -132,7 +132,7 @@ export default function HelpPage() {
                   <h3 className="text-lg font-semibold text-gray-900">
                     {faq.question}
                   </h3>
-                  <p className="text-sm text-yellow-600 mt-1">{faq.category}</p>
+                  <p className="text-sm text-primary mt-1">{faq.category}</p>
                 </div>
                 <span className="text-2xl text-gray-400">
                   {openFaq === index ? "−" : "+"}

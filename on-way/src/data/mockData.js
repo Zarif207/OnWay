@@ -1,0 +1,38 @@
+export const mockUsers = [
+  {
+    id: "USR001",
+    name: "John Doe",
+    email: "john@example.com",
+    phone: "+1 234 567 890",
+    totalRides: 24,
+    rating: 4.8,
+    status: "Active",
+  },
+  {
+    id: "USR002",
+    name: "Sarah Khan",
+    email: "sarah@example.com",
+    phone: "+1 987 654 321",
+    totalRides: 12,
+    rating: 4.5,
+    status: "Inactive",
+  },
+  {
+    id: "USR003",
+    name: "Michael Smith",
+    email: "michael@example.com",
+    phone: "+1 555 222 111",
+    totalRides: 45,
+    rating: 4.9,
+    status: "Active",
+  },
+  {
+    id: "USR004",
+    name: "Emily Johnson",
+    email: "emily@example.com",
+    phone: "+1 444 333 222",
+    totalRides: 7,
+    rating: 4.2,
+    status: "Suspended",
+  },
+];

@@ -1,66 +1,100 @@
-import React from 'react';
+import React from "react";
 
-const Testimonials = () => {
-    const reviews = [
-        {
-            id: 1,
-            name: "Alex Johnson",
-            role: "Daily Commuter",
-            text: "Onway has completely changed how I travel to work. No more waiting for hours; the drivers are always punctual and professional.",
-            image: "https://i.pravatar.cc/150?u=alex"
-        },
-        {
-            id: 2,
-            name: "Sarah Williams",
-            role: "Frequent Traveler",
-            text: "The safety features and live tracking give me peace of mind when traveling late at night. Highly recommended for everyone!",
-            image: "https://i.pravatar.cc/150?u=sarah"
-        }
-    ];
+const Riders = () => {
+  const riders = [
+    {
+      id: 1,
+      name: "Daniel Carter",
+      role: "Top Rated Driver",
+      image: "https://i.guim.co.uk/img/media/ac9bb8cc6b8dad151a8d0a74ef2f272271013b7f/234_638_5244_3146/master/5244.jpg?width=1200&quality=85&auto=format&fit=max&s=3aeb009050b2b7ac85f1103af4025a79",
+      review:
+        "Driving with OnWay has given me the flexibility I was looking for. I can choose my own hours and earn consistently without feeling pressured. The app is smooth, and payments are always on time.",
+    },
+    {
+      id: 2,
+      name: "Emily Roberts",
+      role: "Premium Ride Specialist",
+      image: "https://explorerdubailtd.com/uganda/wp-content/uploads/sites/22/2025/08/professional-african-american-truck-driver-in-casu-scaled.jpg",
+      review:
+        "What I appreciate most about OnWay is the transparent pricing system. I always know how much I’ll earn before accepting a ride, and there are no hidden deductions. It feels fair and professional.",
+    },
+    {
+      id: 3,
+      name: "Sofia Martinez",
+      role: "5★ Rider Favorite",
+      image: "https://img.freepik.com/free-photo/man-car-driving_23-2148889981.jpg?semt=ais_rp_progressive&w=740&q=80",
+      review:
+        "OnWay really prioritizes rider safety. The emergency support and real-time tracking features make me feel secure on every trip. Plus, the support team responds quickly whenever I need help.",
+    },
+    {
+      id: 4,
+      name: "Michael Brown",
+      role: "City Ride Expert",
+      image: "https://cdn.prod.website-files.com/595d6b420002832258c527cb/602edff72af06859a9cf846a_driver-behavior-professional-truck-driver-driving-truck-vehicle-1000.jpg",
+      review:
+        "Being part of OnWay feels like joining a community. The passengers are respectful, the ratings system is balanced, and the platform values its riders. It’s more than just a driving job.",
+    },
+  ];
 
-    return (
+  return (
+    <section className="bg-[#f4f4f4] py-24">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Small Top Label */}
+        <div className="flex items-center justify-center gap-4 text-secondary text-sm font-semibold uppercase tracking-widest mb-6">
+          <span className="w-12 h-[2px] bg-secondary"></span>
+          Our Top Riders
+          <span className="w-12 h-[2px] bg-secondary"></span>
+        </div>
 
-        <section className="py-20 bg-accent">
-            <div className="max-w-7xl mx-auto px-6">
-                <div className="text-center mb-16">
+        {/* Main Heading */}
+        <h2 className="text-center text-4xl sm:text-5xl font-extrabold text-primary leading-tight mb-20">
+          Meet Our Professional <br /> OnWay Riders
+        </h2>
 
-                    <h2 className="text-4xl font-extrabold text-primary tracking-tight">
-                        What Our Riders Say
-                    </h2>
+        {/* Cards */}
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+          {riders.map((rider) => (
+            <div
+              key={rider.id}
+              className="text-center transition duration-300 hover:-translate-y-2"
+            >
+              {/* Image Container */}
+              <div className="relative overflow-hidden rounded-tl-[30px] rounded-tr-[80px] rounded-bl-[30px] rounded-br-[30px] shadow-md">
+                <img
+                  src={rider.image}
+                  alt={rider.name}
+                  className="w-full h-[420px] object-cover transition duration-500 hover:scale-105"
+                />
 
-                    <div className="w-24 h-1 bg-secondary mx-auto mt-4 rounded-full"></div>
+                {/* Orange Circle Icon */}
+                <div className="absolute bottom-4 right-4 w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-white text-lg shadow-lg">
+                  ↗
                 </div>
+              </div>
 
-                <div className="grid lg:grid-cols-2 gap-8">
-                    {reviews.map((item) => (
-                        <div
-                            key={item.id}
-                            className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left transition-all duration-300 hover:shadow-lg"
-                        >
-                            <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-20 h-20 rounded-full object-cover ring-4 ring-secondary/30 border-2 border-secondary"
-                            />
-                            <div className="flex-1">
-                                <span className="text-4xl text-secondary leading-none select-none">“</span>
-                                <p className="text-lg text-primary/80 italic mb-6 leading-relaxed -mt-4">
-                                    {item.text}
-                                </p>
-                                <div>
-                                    <h4 className="font-bold text-xl text-primary">{item.name}</h4>
+              {/* Name */}
+              <h4 className="mt-6 text-xl font-bold text-primary">
+                {rider.name}
+              </h4>
 
-                                    <p className="text-secondary-content bg-secondary/10 inline-block px-3 py-1 rounded-md font-bold text-xs uppercase tracking-widest mt-1">
-                                        {item.role}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+              {/* Role */}
+              <p className="text-secondary text-xs font-semibold uppercase tracking-widest mt-1">
+                {rider.role}
+              </p>
+
+              {/* Divider */}
+              <div className="w-10 h-[2px] bg-secondary mx-auto my-4 rounded-full"></div>
+
+              {/* Review */}
+              <p className="text-zinc-600 text-sm leading-relaxed px-4 italic">
+                “{rider.review}”
+              </p>
             </div>
-        </section>
-    );
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
 
-export default Testimonials;
+export default Riders;

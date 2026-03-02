@@ -33,7 +33,7 @@ const HowItWorks = () => {
             How OnWay Works
           </h2>
           <div className="w-24 h-1 bg-secondary mx-auto mb-6"></div> {/* Ekta yellow divider line */}
-          <p className="text-primary/80 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-800 max-w-2xl mx-auto text-lg">
             Getting around your city has never been this easy. Follow these simple steps.
           </p>
         </div>

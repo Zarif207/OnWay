@@ -6,6 +6,8 @@ import {
   Menu,
   X,
   LogOut,
+  LogIn,
+  UserPlus,
   User,
   Shield,
   Headphones,

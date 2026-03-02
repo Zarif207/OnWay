@@ -55,7 +55,7 @@ module.exports = (passengerCollection) => {
                 role: role || "passenger",
                 authProvider: authProvider || "credentials",
                 createdAt: new Date(),
-                lastLogin: new Date(),
+                latLogsin: new Date(),
             };
 
             if (password) {

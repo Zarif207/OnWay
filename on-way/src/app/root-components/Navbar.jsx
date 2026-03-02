@@ -352,7 +352,6 @@ const Navbar = () => {
                 href="/register"
                 className="flex items-center gap-1 text-sm font-medium bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90"
               >
-                <UserPlus size={16} /> Sign Up
               </Link>
             </>
           )}

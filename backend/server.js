@@ -111,4 +111,13 @@ async function startServer() {
   });
 }
 
-startServer();
+process.on("SIGINT", async () => {
+  console.log("\n⏳ Closing MongoDB connection...");
+  await client.close();
+  console.log("✅ MongoDB connection closed");
+  process.exit(0);
+});
+
+module.exports = server;
+
+startServer()

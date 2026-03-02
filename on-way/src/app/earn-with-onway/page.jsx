@@ -25,6 +25,7 @@ import DriverAnimation from "../components/DriverAnimation/DriverAnimation";
 export default function EarnWithOnWayPage() {
   const router = useRouter();
   const { formData, updateFormData } = useEarnRegistration();
+  console.log('data:', formData);
 
   const [activeCategory, setActiveCategory] = useState(null); // "car" | "bike" | "ambulance" | null
   const [selectedModel, setSelectedModel] = useState("");
@@ -138,7 +139,7 @@ export default function EarnWithOnWayPage() {
 
     updateFormData({
       ...data,
-      selectedModel, // optional but recommended
+      selectedModel, 
     });
 
     router.push("/earn-with-onway/personal-info");

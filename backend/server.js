@@ -15,6 +15,7 @@ const reviewsRoutes = require("./routes/reviews");
 const bookingsRoutes = require("./routes/bookings");
 
 const paymentRoutes = require("./routes/payment");
+const ridersRoutes = require("./routes/riders");
 // ---------------------------------------
 
 // ---------------------------------------
@@ -61,6 +62,7 @@ async function startServer() {
   const reviewsCollection = database.collection("reviews");
   const bookingsCollection = database.collection("bookings");
   const paymentsCollection = database.collection("payments");
+  const ridersCollection = database.collection("riders");
   //------------------------------------------------------
 
   // Routes -----------------------------------------
@@ -71,6 +73,7 @@ async function startServer() {
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
   app.use("/api/bookings", bookingsRoutes(bookingsCollection));
   app.use("/api/payment", paymentRoutes(paymentsCollection));
+  app.use("/api/riders", ridersRoutes(ridersCollection));
   // ---------------------------------------------------
 
   // Socket.io ----------------------------

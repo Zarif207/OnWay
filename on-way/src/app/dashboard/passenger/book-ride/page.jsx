@@ -288,7 +288,6 @@ export default function PassengerBookRide() {
             {/* Confirm */}
             <button className="w-full bg-[#2FCA71] text-black font-semibold py-4 rounded-xl hover:opacity-90 transition">
               Confirm Booking
-               {/* - ${estimatedFare} */}
             </button>
 
           </div>

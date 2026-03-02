@@ -5,8 +5,7 @@ import Link from "next/link";
 
 export default function PassengerLanding() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#F4F6F9] via-[#EEF1F6] to-[#E9EDF3] px-6 py-14">
-      <div className="max-w-7xl mx-auto space-y-16">
+    <div className="space-y-16">
 
         {/* ================= HERO SECTION ================= */}
         <div className="relative bg-white/60 backdrop-blur-xl rounded-[40px] p-14 border border-white/40
@@ -83,7 +82,6 @@ export default function PassengerLanding() {
         </div>
 
       </div>
-    </div>
   );
 }
 

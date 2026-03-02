@@ -1,65 +1,115 @@
-import React from 'react';
-import { MapPin, MousePointerClick, ShieldCheck } from 'lucide-react';
+"use client";
 
-const HowItWorks = () => {
-  const steps = [
-    {
-      id: 1,
-      title: "Book in Seconds",
-      description: "Enter your pickup and destination to find the nearest available ride.",
-      icon: <MapPin className="w-12 h-12 text-secondary" /> // Secondary Yellow bebohar kora hoyeche
-    },
-    {
-      id: 2,
-      title: "Choose Your Ride",
-      description: "Select from a variety of vehicles that fit your style and budget.",
-      icon: <MousePointerClick className="w-12 h-12 text-secondary" />
-    },
-    {
-      id: 3,
-      title: "Arrive Safely",
-      description: "Track your driver in real-time and enjoy a comfortable journey to your destination.",
-      icon: <ShieldCheck className="w-12 h-12 text-secondary" />
-    }
-  ];
+import { motion } from "framer-motion";
+import { Plane } from "lucide-react";
+import Image from "next/image";
 
+import step1Img from "../../../../public/passenger.jpg";
+import step2Img from "../../../../public/car.jpg";
+import step3Img from "../../../../public/location-mark.jpg";
+
+const steps = [
+  {
+    id: "01",
+    title: "Book in Seconds",
+    description:
+      "Enter your pickup and destination to find the nearest available ride.",
+    image: step1Img,
+  },
+  {
+    id: "02",
+    title: "Choose Your Ride",
+    description:
+      "Select from a variety of vehicles that fit your style and budget.",
+    image: step2Img,
+  },
+  {
+    id: "03",
+    title: "Arrive Safely",
+    description:
+      "Track your driver in real-time and enjoy a comfortable journey.",
+    image: step3Img,
+  },
+];
+
+export default function HowItWorks() {
   return (
-    // Background-e accent color bebohar kora hoyeche
-    <section className="py-20 bg-accent">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          {/* Text-e Primary color bebohar kora hoyeche */}
-          <h2 className="text-4xl font-extrabold text-primary mb-4 tracking-tight uppercase">
-            How OnWay Works
-          </h2>
-          <div className="w-24 h-1 bg-secondary mx-auto mb-6"></div> {/* Ekta yellow divider line */}
-          <p className="text-gray-800 max-w-2xl mx-auto text-lg">
-            Getting around your city has never been this easy. Follow these simple steps.
-          </p>
-        </div>
+    <section className="bg-[#f2f3f5] py-28 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 text-center">
+        {/* Top Label */}
+        <p className="text-sm font-semibold tracking-widest text-[#2FCA71] uppercase flex items-center justify-center gap-2 mb-6">
+          <Plane className="w-4 h-4" />
+          WORKING PROCESS
+        </p>
 
-        <div className="grid md:grid-cols-3 gap-12">
-          {steps.map((step) => (
-            <div 
-              key={step.id} 
-              className="group text-center p-8 rounded-2xl bg-white border border-transparent hover:border-secondary transition-all duration-300 shadow-sm hover:shadow-xl"
-            >
-              <div className="flex justify-center mb-6 transform group-hover:scale-110 transition-transform">
-                {/* Icon er pichone primary background */}
-                <div className="p-4 bg-primary rounded-full shadow-lg">
-                   {step.icon}
+        {/* Main Heading */}
+        <h2 className="text-4xl md:text-5xl font-bold text-[#303841] leading-tight mb-20">
+          Logistics Solutions to Help <br />
+          Businesses
+        </h2>
+
+        {/* Timeline Line */}
+        <div className="relative mb-24 hidden md:block">
+          <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-gray-300"></div>
+
+          <div className="flex justify-between relative z-10">
+            {steps.map((step, i) => (
+              <div key={i} className="flex flex-col items-center w-full">
+                <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold shadow-sm">
+                  {step.id}
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-primary mb-3">{step.title}</h3>
-              <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+            ))}
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="grid md:grid-cols-3 gap-16">
+          {steps.map((step, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
+              viewport={{ once: true }}
+              className="relative text-center"
+            >
+              {/* Circle Image */}
+              <div className="mx-auto relative w-[300px] h-[300px] rounded-full bg-white p-3 shadow-xl">
+                {/* Outer Dark Border */}
+                <div className="absolute inset-0 rounded-full" />
+
+                {/* Image Wrapper */}
+                <div className="relative w-full h-full rounded-full overflow-hidden">
+                  <Image
+                    src={step.image}
+                    alt={step.title}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Faded Arrow Decoration */}
+              {index !== 2 && (
+                <div className="hidden md:block absolute right-[-60px] top-1/2 -translate-y-1/2 text-accent text-6xl font-bold">
+                  »
+                </div>
+              )}
+
+              {/* Title */}
+              <h3 className="mt-8 text-xl font-semibold text-[#303841]">
+                {step.title}
+              </h3>
+
+              {/* Description */}
+              <p className="mt-3 text-gray-600 text-sm leading-relaxed max-w-xs mx-auto">
                 {step.description}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
     </section>
   );
-};
-
-export default HowItWorks;
+}

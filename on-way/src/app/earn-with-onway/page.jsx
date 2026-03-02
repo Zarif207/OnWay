@@ -25,6 +25,7 @@ import DriverAnimation from "../components/DriverAnimation/DriverAnimation";
 export default function EarnWithOnWayPage() {
   const router = useRouter();
   const { formData, updateFormData } = useEarnRegistration();
+  console.log("data:", formData);
 
   const [activeCategory, setActiveCategory] = useState(null); // "car" | "bike" | "ambulance" | null
   const [selectedModel, setSelectedModel] = useState("");
@@ -43,6 +44,7 @@ export default function EarnWithOnWayPage() {
       firstName: formData.firstName || "",
       lastName: formData.lastName || "",
       mobileNumber: formData.mobileNumber || "",
+      email: formData.email || "",
       district: formData.district || "Dhaka",
       city: formData.city || "",
     },
@@ -138,7 +140,7 @@ export default function EarnWithOnWayPage() {
 
     updateFormData({
       ...data,
-      selectedModel, // optional but recommended
+      selectedModel,
     });
 
     router.push("/earn-with-onway/personal-info");
@@ -306,6 +308,28 @@ after:blur-2xl after:opacity-20 after:-z-10"
                 </div>
               </div>
 
+              {/* Email */}
+              <div className="flex flex-col gap-2 relative z-10">
+                <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
+                  Email <span className="text-[#2FCA71]">*</span>
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="example@email.com"
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Please enter a valid email address",
+                      },
+                    })}
+                    className="w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                  />
+                </div>
+              </div>
+
               {/* Location */}
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 relative z-10">
                 <div className="flex flex-col gap-2">
@@ -356,11 +380,10 @@ after:blur-2xl after:opacity-20 after:-z-10"
                   type="submit"
                   disabled={!selectedModel}
                   className={`w-full px-8 py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 group transition-all duration-300
-    ${
-      selectedModel
-        ? "bg-[var(--color-primary)] text-[var(--color-secondary)] hover:bg-[#26b861] hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_rgba(47,202,113,0.5)]"
-        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-    }`}
+    ${selectedModel
+                      ? "bg-[var(--color-primary)] text-[var(--color-secondary)] hover:bg-[#26b861] hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_rgba(47,202,113,0.5)]"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   Next Step
                   <svg
@@ -447,9 +470,8 @@ after:blur-2xl after:opacity-20 after:-z-10"
                               {category.label}
                             </h4>
                             <ChevronDown
-                              className={`h-4 w-4 text-gray-500 transition-transform duration-300 ${
-                                isSelectedCategory ? "rotate-180" : ""
-                              }`}
+                              className={`h-4 w-4 text-gray-500 transition-transform duration-300 ${isSelectedCategory ? "rotate-180" : ""
+                                }`}
                             />
                           </div>
                           <p className="mt-2 text-xs text-gray-500">
@@ -509,9 +531,8 @@ after:blur-2xl after:opacity-20 after:-z-10"
                               </div>
                             </div>
                             <ChevronDown
-                              className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${
-                                activeCategory ? "rotate-180" : ""
-                              }`}
+                              className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${activeCategory ? "rotate-180" : ""
+                                }`}
                             />
                           </button>
 
@@ -540,11 +561,10 @@ after:blur-2xl after:opacity-20 after:-z-10"
                                           model.value,
                                         )
                                       }
-                                      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
-                                        isSelected
-                                          ? "border-[var(--color-primary)] bg-[#E8FFF4] text-[var(--color-secondary)] shadow-[0_12px_30px_-18px_rgba(47,202,113,0.7)]"
-                                          : "border-gray-200 bg-white/80 hover:border-[var(--color-primary)]/80 hover:bg-[#E8FFF4]/60"
-                                      }`}
+                                      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-medium transition-all duration-200 ${isSelected
+                                        ? "border-[var(--color-primary)] bg-[#E8FFF4] text-[var(--color-secondary)] shadow-[0_12px_30px_-18px_rgba(47,202,113,0.7)]"
+                                        : "border-gray-200 bg-white/80 hover:border-[var(--color-primary)]/80 hover:bg-[#E8FFF4]/60"
+                                        }`}
                                     >
                                       <div className="flex items-center gap-3">
                                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50">

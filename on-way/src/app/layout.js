@@ -6,11 +6,12 @@ import Footer from "./root-components/Footer";
 import AuthProvider from "./AuthProvider/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import { usePathname } from "next/navigation";
+import ChatSupport from "./components/ChatBot/ChatSupport";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 
-  const hideNavbarFooter = pathname === "/login" || pathname === "/register";
+  const hideNavbarFooter = pathname === "/login" || pathname === "/register" || pathname.startsWith("/dashboard");
 
   return (
     <html lang="en" data-theme="onwaytheme">
@@ -23,7 +24,10 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           {!hideNavbarFooter && <Navbar />}
 
-          <main>{children}</main>
+          <main>
+            {children}
+            <ChatSupport />
+          </main>
 
           <Toaster position="top-center" reverseOrder={false} />
 

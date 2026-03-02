@@ -8,8 +8,8 @@ import {
   Navigation2,
   Download,
   AlertCircle,
-  Search,
-  Star,
+  Search, 
+  Star, 
   X,
   MapPin
 } from "lucide-react";

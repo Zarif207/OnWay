@@ -25,7 +25,7 @@ import DriverAnimation from "../components/DriverAnimation/DriverAnimation";
 export default function EarnWithOnWayPage() {
   const router = useRouter();
   const { formData, updateFormData } = useEarnRegistration();
-  console.log('data:', formData);
+  console.log("data:", formData);
 
   const [activeCategory, setActiveCategory] = useState(null); // "car" | "bike" | "ambulance" | null
   const [selectedModel, setSelectedModel] = useState("");
@@ -44,6 +44,7 @@ export default function EarnWithOnWayPage() {
       firstName: formData.firstName || "",
       lastName: formData.lastName || "",
       mobileNumber: formData.mobileNumber || "",
+      email: formData.email || "",
       district: formData.district || "Dhaka",
       city: formData.city || "",
     },
@@ -303,6 +304,28 @@ after:blur-2xl after:opacity-20 after:-z-10"
                       },
                     })}
                     className="w-full rounded-xl pl-16 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="flex flex-col gap-2 relative z-10">
+                <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
+                  Email <span className="text-[#2FCA71]">*</span>
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="example@email.com"
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Please enter a valid email address",
+                      },
+                    })}
+                    className="w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
                   />
                 </div>
               </div>

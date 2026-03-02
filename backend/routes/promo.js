@@ -43,7 +43,7 @@ module.exports = (promoCollection) => {
                 expiryDate: new Date(expiryDate),
                 usageLimit: usageLimit ? Number(usageLimit) : 100,
                 usedCount: 0,
-                active: true,
+                active: new Date(expiryDate) > new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -66,6 +66,18 @@ module.exports = (promoCollection) => {
 
     router.get("/", async (req, res) => {
         try {
+            const now = new Date();
+
+            await promoCollection.updateMany(
+                {
+                    active: true,
+                    expiryDate: { $lt: now }
+                },
+                {
+                    $set: { active: false, updatedAt: now }
+                }
+            );
+
             const promos = await promoCollection
                 .find({})
                 .sort({ createdAt: -1 })
@@ -83,7 +95,6 @@ module.exports = (promoCollection) => {
             });
         }
     });
-
 
     router.post("/apply", async (req, res) => {
         try {
@@ -104,11 +115,16 @@ module.exports = (promoCollection) => {
             if (!promo) {
                 return res.status(404).json({
                     success: false,
-                    message: "Invalid promo code",
+                    message: "Invalid or inactive promo code",
                 });
             }
 
             if (new Date() > new Date(promo.expiryDate)) {
+
+                await promoCollection.updateOne(
+                    { _id: promo._id },
+                    { $set: { active: false, updatedAt: new Date() } }
+                );
                 return res.status(400).json({
                     success: false,
                     message: "Promo expired",
@@ -130,7 +146,6 @@ module.exports = (promoCollection) => {
             }
 
             let discount = 0;
-
             if (promo.discountType === "percentage") {
                 discount = (rideAmount * promo.discountValue) / 100;
                 if (promo.maxDiscount) {
@@ -155,7 +170,7 @@ module.exports = (promoCollection) => {
         }
     });
 
-
+    // 4. UPDATE PROMO
     router.put("/:id", async (req, res) => {
         try {
             const { id } = req.params;
@@ -191,6 +206,7 @@ module.exports = (promoCollection) => {
         }
     });
 
+    // 5. DELETE PROMO
     router.delete("/:id", async (req, res) => {
         try {
             if (!ObjectId.isValid(req.params.id)) {
@@ -216,12 +232,23 @@ module.exports = (promoCollection) => {
         }
     });
 
-
+    // 6. TOGGLE STATUS
     router.patch("/:id/toggle", async (req, res) => {
         try {
             const promo = await promoCollection.findOne({
                 _id: new ObjectId(req.params.id),
             });
+
+            if (!promo) {
+                return res.status(404).json({ success: false, message: "Promo not found" });
+            }
+
+            if (!promo.active && new Date(promo.expiryDate) < new Date()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Cannot activate an expired promo. Please update expiry date first."
+                });
+            }
 
             await promoCollection.updateOne(
                 { _id: new ObjectId(req.params.id) },

@@ -12,6 +12,7 @@ const blogRoutes = require("./routes/blog");
 const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
+const supportRoutes = require("./routes/support");
 const bookingsRoutes = require("./routes/bookings");
 
 const paymentRoutes = require("./routes/payment");
@@ -23,10 +24,12 @@ const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
-    strict: true,
+    strict: false,
     deprecationErrors: true,
   },
 });
+
+// ---------------------------------------
 
 const app = express();
 const server = http.createServer(app);
@@ -60,6 +63,8 @@ async function startServer() {
   const gpsLocationsCollection = database.collection("gpsLocations");
   const ridesCollection = database.collection("rides");
   const reviewsCollection = database.collection("reviews");
+  const knowledgeCollection = database.collection("knowledge");
+  await knowledgeCollection.createIndex({ question: "text", answer: "text" });
   const bookingsCollection = database.collection("bookings");
   const paymentsCollection = database.collection("payments");
   const ridersCollection = database.collection("riders");
@@ -71,6 +76,7 @@ async function startServer() {
   app.use("/api/location", locationRoutes(gpsLocationsCollection));
   app.use("/api/rides", ridesRoutes(ridesCollection));
   app.use("/api/reviews", reviewsRoutes(reviewsCollection));
+  app.use("/api/support", supportRoutes(knowledgeCollection));
   app.use("/api/bookings", bookingsRoutes(bookingsCollection));
   app.use("/api/payment", paymentRoutes(paymentsCollection));
   app.use("/api/riders", ridersRoutes(ridersCollection));
@@ -103,4 +109,11 @@ async function startServer() {
   });
 }
 
-startServer();
+process.on("SIGINT", async () => {
+  console.log("\n⏳ Closing MongoDB connection...");
+  await client.close();
+  console.log("✅ MongoDB connection closed");
+  process.exit(0);
+});
+
+module.exports = server;

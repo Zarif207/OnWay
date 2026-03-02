@@ -16,10 +16,10 @@ import {
   History,
   LayoutDashboard,
   Users,
-  Map,
   BarChart3,
-  LogIn,
-  UserPlus,
+  Map,
+ 
+
 } from "lucide-react";
 import Image from "next/image";
 import logoImage from "../../../public/icon2.png";

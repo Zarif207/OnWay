@@ -76,7 +76,7 @@ const RideManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-accent)] px-6 py-8">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] px-6 py-8">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}

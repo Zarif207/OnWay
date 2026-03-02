@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 
-  const hideNavbarFooter = pathname === "/login" || pathname === "/register";
+  const hideNavbarFooter = pathname === "/login" || pathname === "/register" || pathname.startsWith("/dashboard");
 
   return (
     <html lang="en" data-theme="onwaytheme">

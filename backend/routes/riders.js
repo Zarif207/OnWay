@@ -8,9 +8,22 @@ module.exports = function (ridersCollection) {
   // 🔹 Create Rider (Register)
   router.post("/", async (req, res) => {
     try {
-      const { name, email, phone, password, vehicleType, licenseNumber } = req.body;
+      const {
+        firstName,
+        lastName,
+        email,
+        phone,
+        address,
+        gender,
+        dateOfBirth,
+        identity,
+        licenseNumber,
+        vehicle,
+        operationCities,
+        image
+      } = req.body;
 
-      if (!name || !email || !phone || !password) {
+      if (!firstName || !email || !phone) {
         return res.status(400).json({ message: "All required fields must be provided" });
       }
 
@@ -19,15 +32,24 @@ module.exports = function (ridersCollection) {
         return res.status(400).json({ message: "Rider already exists" });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // Requirement: The payload doesn't have a password, so we hash a default one.
+      const defaultPassword = "onway_rider_pass";
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
       const rider = {
-        name,
+        name: `${firstName} ${lastName}`.trim(),
         email,
         phone,
         password: hashedPassword,
-        vehicleType: vehicleType || null,
+        address: address || {},
+        gender: gender || null,
+        dateOfBirth: dateOfBirth || null,
+        identity: identity || {},
         licenseNumber: licenseNumber || null,
+        vehicle: vehicle || {},
+        operationCities: operationCities || [],
+        image: image || null,
+        role: "rider",
         isOnline: false,
         isApproved: false,
         createdAt: new Date(),

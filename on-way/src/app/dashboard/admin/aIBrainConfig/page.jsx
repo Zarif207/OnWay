@@ -44,7 +44,7 @@ const AIBrainConfig = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#fcfdfe] p-4 lg:p-12 font-sans text-slate-900">
+        <div className="min-h-screen  font-sans text-slate-900">
             <div className="max-w-6xl mx-auto">
                 {/* Modern Navigation Header */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
@@ -105,7 +105,7 @@ const AIBrainConfig = () => {
                     {/* Right: Info/Sidebar Column */}
                     <div className="lg:col-span-4 space-y-6">
                         {/* Status Card */}
-                        <div className="bg-indigo-600 rounded-4xl p-8 text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                        <div className="bg-secondary rounded-4xl p-8 text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
                             <div className="relative z-10">
                                 <h3 className="text-xl font-bold mb-2">Live Status</h3>
                                 <div className="flex items-center gap-2 bg-indigo-500/30 w-fit px-3 py-1 rounded-full border border-indigo-400/30">

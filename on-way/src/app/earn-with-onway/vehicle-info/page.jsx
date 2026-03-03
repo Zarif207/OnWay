@@ -7,11 +7,13 @@ import { motion } from "framer-motion";
 import { useEarnRegistration } from "@/context/EarnRegistrationContext";
 import EarnInfo from "@/components/EarnInfo/EarnInfo";
 import { Check } from "lucide-react";
+import useRiders from "@/hooks/useRiders";
 
 export default function VehicleInfoPage() {
   const router = useRouter();
   const { formData, updateFormData } = useEarnRegistration();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { registerRider } = useRiders();
 
   const {
     register,
@@ -27,21 +29,60 @@ export default function VehicleInfoPage() {
       year: formData.year || "",
       taxTokenNumber: formData.taxTokenNumber || "",
       fitnessNumber: formData.fitnessNumber || "",
+      licenseNumber: formData.licenseNumber || "",
     },
   });
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    const finalData = { ...formData, ...data };
+    const updatedForm = { ...formData, ...data };
     updateFormData(data);
 
-    await fetch("/api/earn-registration", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(finalData),
-    });
+    // Map existing structure to requested payload
+    const payload = {
+      firstName: updatedForm.firstName,
+      lastName: updatedForm.lastName,
+      email: updatedForm.email,
+      phone: `+880${updatedForm.mobileNumber}`,
+      role: "rider",
 
-    router.push("/");
+      address: {
+        district: updatedForm.district,
+        city: updatedForm.city,
+      },
+
+      gender: updatedForm.gender,
+      dateOfBirth: updatedForm.dateOfBirth,
+
+      identity: {
+        type: updatedForm.identityType,
+        number: updatedForm.identityNumber,
+      },
+
+      licenseNumber: data.licenseNumber,
+
+      vehicle: {
+        category: updatedForm.activeCategory,
+        type: updatedForm.selectedModel,
+        number: data.registrationDigits,
+        model: data.model,
+      },
+
+      operationCities: updatedForm.cities,
+
+      image: "", // Placeholder: update with uploadedImageUrl after upload logic implementation
+    };
+
+    console.log("Submitting Payload:", payload);
+
+    try {
+      await registerRider(payload);
+      router.push("/");
+    } catch (error) {
+      console.error("Submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -161,7 +202,14 @@ export default function VehicleInfoPage() {
                   <input
                     placeholder="Registration Digits"
                     {...register("registrationDigits", { required: true })}
-                    className={`w-full rounded-xl px-4 py-3.5 bg-white border shadow-sm focus:ring-2 focus:ring-[#31ca71]/40 ${errors.registrationDigits ? "border-red-400" : "border-gray-200"
+                    className={`w-full rounded-xl px-4 py-3.5 bg-white border shadow-sm focus:ring-2 focus:ring-[#31ca71]/40 mb-6 ${errors.registrationDigits ? "border-red-400" : "border-gray-200"
+                      }`}
+                  />
+
+                  <input
+                    placeholder="Driving License Number"
+                    {...register("licenseNumber", { required: "License Number is required" })}
+                    className={`w-full rounded-xl px-4 py-3.5 bg-white border shadow-sm focus:ring-2 focus:ring-[#31ca71]/40 ${errors.licenseNumber ? "border-red-400" : "border-gray-200"
                       }`}
                   />
                 </div>

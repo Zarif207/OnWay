@@ -15,6 +15,8 @@ export default function PersonalInfoPage() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -29,8 +31,83 @@ export default function PersonalInfoPage() {
       identityType: formData.identityType || "NID",
       identityNumber: formData.identityNumber || "",
       referralCode: formData.referralCode || "",
+      district: formData.district || "Dhaka",
+      cities: formData.cities || [],
     },
   });
+
+  const districtCityMap = {
+    Dhaka: [
+      "Dhanmondi",
+      "Gulshan",
+      "Banani",
+      "Uttara",
+      "Mirpur",
+      "Mohammadpur",
+      "Badda",
+      "Rampura",
+      "Tejgaon",
+      "Old Dhaka",
+      "Keraniganj",
+      "Savar",
+      "Demra",
+      "Khilgaon",
+      "Motijheel",
+      "Shahbagh",
+      "Pallabi",
+      "Cantonment",
+    ],
+
+    Chittagong: [
+      "Chattogram City",
+      "Pahartali",
+      "Kotwali",
+      "Panchlaish",
+      "Halishahar",
+      "Patenga",
+      "Agrabad",
+      "Chandgaon",
+      "Sitakunda",
+      "Fatikchhari",
+      "Raozan",
+      "Boalkhali",
+      "Anwara",
+      "Mirsharai",
+      "Lohagara",
+    ],
+
+    Sylhet: [
+      "Sylhet City",
+      "Beanibazar",
+      "Golapganj",
+      "Balaganj",
+      "Osmaninagar",
+      "Companiganj",
+      "Zakiganj",
+      "Kanaighat",
+      "Bishwanath",
+      "Dakshin Surma",
+      "Jaintiapur",
+      "Fenchuganj",
+    ],
+  };
+
+  const riderImage = watch("riderImage");
+  const selectedDistrict = watch("district");
+  const selectedCities = watch("cities") || [];
+
+  const toggleCity = (city) => {
+    let updated = [...selectedCities];
+
+    if (updated.includes(city)) {
+      updated = updated.filter((c) => c !== city);
+    } else {
+      if (updated.length >= 4) return; // stop if already 4
+      updated.push(city);
+    }
+
+    setValue("cities", updated, { shouldValidate: true });
+  };
 
   const onSubmit = (data) => {
     updateFormData(data);
@@ -159,15 +236,14 @@ export default function PersonalInfoPage() {
                       </label>
                       <input
                         type="text"
-                        placeholder="John"
+                        placeholder="rider first name"
                         {...register("firstName", {
                           required: "First Name is required",
                         })}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
-                          errors.firstName
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.firstName
                             ? "border-red-400 bg-red-50/50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                       />
                     </div>
 
@@ -177,7 +253,7 @@ export default function PersonalInfoPage() {
                       </label>
                       <input
                         type="text"
-                        placeholder="Doe"
+                        placeholder="rider last name"
                         {...register("lastName")}
                         className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
                       />
@@ -200,11 +276,10 @@ export default function PersonalInfoPage() {
                       <input
                         type="tel"
                         {...register("mobileNumber", { required: true })}
-                        className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
-                          errors.mobileNumber
+                        className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.mobileNumber
                             ? "border-red-400 bg-red-50/50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                       />
                     </div>
                   </div>
@@ -226,11 +301,10 @@ export default function PersonalInfoPage() {
                             message: "Please enter a valid email address",
                           },
                         })}
-                        className={`w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
-                          errors.email
+                        className={`w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.email
                             ? "border-red-400 bg-red-50/50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                       />
                     </div>
 
@@ -239,6 +313,124 @@ export default function PersonalInfoPage() {
                         {errors.email.message}
                       </span>
                     )}
+                  </div>
+
+                  {/* Rider Image Upload */}
+                  <div className="flex flex-col gap-3 mt-6">
+                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                      Rider Image <span className="text-[#31ca71]">*</span>
+                    </label>
+
+                    <div className="flex items-center gap-5">
+                      {/* Image Preview Box */}
+                      <label className="relative cursor-pointer group">
+                        <div className="w-28 h-28 rounded-2xl bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center overflow-hidden transition-all group-hover:border-[#31ca71] group-hover:bg-[#f0fdf6]">
+                          {riderImage?.length > 0 ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={URL.createObjectURL(riderImage[0])}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-gray-400 text-xs text-center px-3">
+                              Click to Upload
+                            </span>
+                          )}
+
+                          {/* Camera Overlay */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-all"></div>
+                        </div>
+
+                        {/* Hidden File Input */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          {...register("riderImage", {
+                            required: "Rider image is required",
+                          })}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* File Info */}
+                      <div className="flex flex-col gap-2">
+                        {riderImage?.length > 0 ? (
+                          <>
+                            <span className="text-sm text-gray-600">
+                              {riderImage[0].name}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                document.querySelector(
+                                  'input[type="file"]',
+                                ).value = "";
+                              }}
+                              className="text-xs text-red-500 hover:underline text-left"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-sm text-gray-400">
+                            JPG, PNG (Max 5MB)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {errors.riderImage && (
+                      <span className="text-red-500 text-sm">
+                        {errors.riderImage.message}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Emergency Contact (Optional) */}
+                  <div className="bg-white rounded-2xl p-6 mt-8 border border-gray-200 shadow-sm">
+                    <h3 className="text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                      <span className="w-6 h-[2px] bg-[#31ca71] rounded-full"></span>
+                      Emergency Contact (Optional)
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Emergency Name */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                          Contact Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Emergency contact name"
+                          {...register("emergencyName")}
+                          className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
+                        />
+                      </div>
+
+                      {/* Emergency Phone */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                          Contact Mobile Number
+                        </label>
+
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r border-gray-200 pr-3">
+                            <span className="text-xl leading-none">🇧🇩</span>
+                            <span className="text-gray-500 font-medium text-[15px]">
+                              +880
+                            </span>
+                          </span>
+
+                          <input
+                            type="tel"
+                            {...register("emergencyMobile")}
+                            className="w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -270,28 +462,100 @@ export default function PersonalInfoPage() {
                       <input
                         type="date"
                         {...register("dateOfBirth", { required: true })}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${
-                          errors.dateOfBirth
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${errors.dateOfBirth
                             ? "border-red-400 bg-red-50/50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                       />
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[13px] font-bold text-[#001820] tracking-wide">
-                      Operation City <span className="text-[#31ca71]">*</span>
-                    </label>
-                    <select
-                      {...register("city")}
-                      className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
-                    >
-                      <option>Dhaka</option>
-                      <option>Chittagong</option>
-                      <option>Sylhet</option>
-                      <option>Rajshahi</option>
-                    </select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* District (Pre-selected / Auto Load) */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        District <span className="text-[#31ca71]">*</span>
+                      </label>
+
+                      <select
+                        {...register("district", {
+                          required: "District is required",
+                        })}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
+                      >
+                        <option value="">Select District</option>
+                        {Object.keys(districtCityMap).map((district) => (
+                          <option key={district} value={district}>
+                            {district}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Operation Cities (Max 4) */}
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[14px] font-semibold text-[#001820] tracking-wide">
+                          Operation Cities{" "}
+                          <span className="text-[#31ca71]">*</span>
+                        </label>
+
+                        <span className="text-xs font-medium bg-[#31ca71]/10 text-[#31ca71] px-3 py-1 rounded-full">
+                          {selectedCities.length}/4 Selected
+                        </span>
+                      </div>
+
+                      {!selectedDistrict ? (
+                        <div className="text-sm text-gray-400 italic">
+                          Please select a district first
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-3">
+                          {districtCityMap[selectedDistrict]?.map((city) => {
+                            const isSelected = selectedCities.includes(city);
+                            const isDisabled =
+                              selectedCities.length >= 4 && !isSelected;
+
+                            return (
+                              <div
+                                key={city}
+                                onClick={() => !isDisabled && toggleCity(city)}
+                                className={`
+              relative px-5 py-3 rounded-full text-sm font-medium
+              transition-all duration-300 ease-in-out
+              border backdrop-blur-sm
+              ${isSelected
+                                    ? "bg-[#31ca71] text-white border-[#31ca71] shadow-lg shadow-[#31ca71]/30 scale-105"
+                                    : "bg-white text-gray-700 border-gray-200 hover:border-[#31ca71] hover:shadow-md"
+                                  }
+              ${isDisabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+            `}
+                              >
+                                {city}
+
+                                {isSelected && (
+                                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-white text-[#31ca71] rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                                    ✓
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {selectedCities.length >= 4 && (
+                        <div className="text-xs text-gray-500 animate-pulse">
+                          Maximum of 4 cities allowed
+                        </div>
+                      )}
+
+                      {errors.cities && (
+                        <span className="text-red-500 text-sm">
+                          {errors.cities.message}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -326,11 +590,10 @@ export default function PersonalInfoPage() {
                         type="text"
                         placeholder="e.g. 199XXXXXXXXXX"
                         {...register("identityNumber", { required: true })}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
-                          errors.identityNumber
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.identityNumber
                             ? "border-red-400 bg-red-50/50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                       />
                     </div>
                   </div>

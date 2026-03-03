@@ -9,10 +9,14 @@ export function EarnRegistrationProvider({ children }) {
   const [formData, setFormData] = useState({
     // Step 1: Landing Page
     vehicleType: "Bike",
+    activeCategory: "bike", // NEW: to store "car" | "bike" | "ambulance"
+    selectedModel: "",      // NEW: to store specific model like "Sedan", "Motorcycle"
     firstName: "",
     lastName: "",
     mobileNumber: "",
-    city: "Dhaka",
+    email: "",              // Added to sync with form
+    district: "Dhaka",
+    city: "",               // Added to sync with form
 
     // Step 2: Personal Info
     gender: "Male",
@@ -21,17 +25,19 @@ export function EarnRegistrationProvider({ children }) {
     identityType: "NID",
     identityNumber: "",
     referralCode: "",
-    photo: null,
+    riderImage: null,       // Renamed from photo to match field name in personal-info/page.jsx
+    cities: [],             // Added to store operation cities
 
     // Step 3: Vehicle Info
     brand: "",
-    model: "",
+    model: "",              // vehicleModel in payload
     registrationRegion: "Dhaka",
     registrationCategory: "Metric",
-    registrationDigits: "",
+    registrationDigits: "", // vehicleNumber in payload
     year: "",
     taxTokenNumber: "",
     fitnessNumber: "",
+    licenseNumber: "",      // NEW: required in payload
   });
 
   const updateFormData = (newData) => {

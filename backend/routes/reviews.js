@@ -14,6 +14,7 @@ module.exports = (reviewsCollection) => {
 
             res.json({
                 success: true,
+                count: reviews.length,
                 data: reviews,
             });
         } catch (error) {
@@ -25,7 +26,7 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  GET LAST 10 REVIEWS
+    // GET LAST 10 REVIEWS
     router.get("/latest", async (req, res) => {
         try {
             const reviews = await reviewsCollection
@@ -72,7 +73,7 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  GET DRIVER RATING STATS
+    // GET DRIVER RATING STATS
     router.get("/driver/:driverId/rating", async (req, res) => {
         try {
             const { driverId } = req.params;
@@ -100,7 +101,7 @@ module.exports = (reviewsCollection) => {
 
             res.json({
                 success: true,
-                averageRating: Number(stats[0].averageRating.toFixed(1)),
+                averageRating: Number((stats[0].averageRating || 0).toFixed(1)),
                 totalReviews: stats[0].totalReviews,
             });
         } catch (error) {
@@ -112,12 +113,28 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  CREATE REVIEW
+    // CREATE REVIEW (UPDATED)
     router.post("/", async (req, res) => {
         try {
-            const { rideId, driverId, passengerId, rating, review } = req.body;
+            const {
+                rideId,
+                driverId,
+                passengerId,
+                passengerName,
+                passengerImage,
+                rating,
+                review,
+            } = req.body;
 
-            if (!rideId || !driverId || !passengerId || rating === undefined) {
+            // Validation
+            if (
+                !rideId ||
+                !driverId ||
+                !passengerId ||
+                !passengerName ||
+                !passengerImage ||
+                rating === undefined
+            ) {
                 return res.status(400).json({
                     success: false,
                     message: "Missing required fields",
@@ -133,10 +150,24 @@ module.exports = (reviewsCollection) => {
                 });
             }
 
+            const existingReview = await reviewsCollection.findOne({
+                rideId,
+                passengerId,
+            });
+
+            if (existingReview) {
+                return res.status(400).json({
+                    success: false,
+                    message: "You have already reviewed this ride.",
+                });
+            }
+
             const newReview = {
                 rideId,
                 driverId,
                 passengerId,
+                passengerName,
+                passengerImage,
                 rating: numericRating,
                 review: review || "",
                 createdAt: new Date(),
@@ -158,7 +189,7 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  DELETE REVIEW
+    // DELETE REVIEW
     router.delete("/:id", async (req, res) => {
         try {
             const { id } = req.params;
@@ -166,7 +197,7 @@ module.exports = (reviewsCollection) => {
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid Review ID",
+                    message: "Invalid Review ID format",
                 });
             }
 
@@ -174,19 +205,24 @@ module.exports = (reviewsCollection) => {
                 _id: new ObjectId(id),
             });
 
+            if (result.deletedCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Review not found in database",
+                });
+            }
+
             res.json({
                 success: true,
-                message: "Review deleted",
-                deletedCount: result.deletedCount,
+                message: "Review deleted successfully",
             });
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: "Failed to delete review",
+                message: "Server error during deletion",
                 error: error.message,
             });
         }
     });
-
     return router;
 };

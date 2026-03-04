@@ -4,9 +4,6 @@ import axios from "axios";
 import { Star, Car, DollarSign, Loader2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
-import React, { useState } from "react";
-import { Star, Car, DollarSign } from "lucide-react";
-
 const Overview = ({ riderId = "driver_345678" }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [stats, setStats] = useState({

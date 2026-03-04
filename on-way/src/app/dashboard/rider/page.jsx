@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { StatCard } from '@/components/dashboard/DashboardUi';
 import { Activity, History, Wallet, User } from 'lucide-react';

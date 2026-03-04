@@ -7,6 +7,7 @@ import AuthProvider from "./AuthProvider/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import { usePathname } from "next/navigation";
 import ChatSupport from "./components/ChatBot/ChatSupport";
+import FloatingSOSButton from "@/components/FloatingSOSButton";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
           <main>
             {children}
             <ChatSupport />
+            <FloatingSOSButton />
           </main>
 
           <Toaster position="top-center" reverseOrder={false} />

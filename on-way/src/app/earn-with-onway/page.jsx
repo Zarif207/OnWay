@@ -201,7 +201,7 @@ export default function EarnWithOnWayPage() {
             >
               Start Earning with{" "}
               <span
-                className="relative inline-block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent 
+                className="relative inline-block bg-linear-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent 
 after:absolute after:-inset-1 after:bg-linear-to-r after:from-emerald-400 after:via-teal-300 after:to-cyan-400 
 after:blur-2xl after:opacity-20 after:-z-10"
               >

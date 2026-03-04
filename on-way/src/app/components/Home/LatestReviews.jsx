@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { Star, Quote, Clock, User, CheckCircle2 } from "lucide-react";
+import { Star, Quote, Clock } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCoverflow, Autoplay, Pagination } from "swiper/modules";
 
@@ -55,36 +55,20 @@ export default function HomeLatestReviews() {
     if (reviews.length === 0) return null;
 
     return (
-        <section className="bg-[#F8FAFC] py-24 sm:py-32 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-6">
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    viewport={{ once: true }}
-                    className="text-center mb-20"
-                >
-                    <span className="text-[#22c55e] text-sm font-black uppercase tracking-[0.3em] block mb-4">
-                        Community Voice
-                    </span>
-                    <h2 className="text-4xl md:text-5xl font-black text-[#0A1F3D] mb-6 tracking-tight leading-[1.1]">
-                        What Our <span className="text-[#22c55e]">Riders</span> Say
+        <section className="py-5 overflow-hidden ">
+            <div className="max-w-7xl mx-auto px-6 bg-white/50">
+
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-5 tracking-tight">
+                        What Our <span className="text-blue-600">Riders</span> Say
                     </h2>
                     <p className="text-[#0A1F3D]/60 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
                         Real experiences from real people across the city.
                         Join thousands of satisfied riders using OnWay daily.
                     </p>
-                </motion.div>
+                </div>
 
-                {/* Swiper Carousel */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1, ease: "circOut" }}
-                    viewport={{ once: true }}
-                    className="relative"
-                >
+                <div className="relative">
                     <Swiper
                         effect={"coverflow"}
                         grabCursor={true}
@@ -111,21 +95,30 @@ export default function HomeLatestReviews() {
                             <SwiperSlide key={review._id} className="max-w-[340px] md:max-w-[480px]">
                                 <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-10 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-white h-full flex flex-col relative group transition-all duration-500">
 
-                                    {/* Quote Decoration */}
-                                    <Quote className="absolute top-10 right-10 text-[#22c55e]/5 group-hover:text-[#22c55e]/10 transition-colors" size={80} strokeWidth={3} />
+                                    <Quote className="absolute top-8 right-8 text-slate-100" size={60} strokeWidth={3} />
 
                                     <div className="relative z-10 flex flex-col h-full">
-                                        {/* User Identity Section */}
-                                        <div className="flex items-center gap-5 mb-8">
-                                            <div className="w-16 h-16 rounded-2xl bg-[#0A1F3D] flex items-center justify-center text-[#22c55e] shadow-lg shadow-[#0A1F3D]/10">
-                                                <User size={28} />
+
+                                        {/* User Info */}
+                                        <div className="flex items-center gap-4 mb-6">
+
+                                            {/* Passenger Image */}
+                                            <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-blue-200">
+                                                <img
+                                                    src={review.passengerImage || "https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg"}
+                                                    alt={review.passengerName}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
+
                                             <div>
-                                                <h4 className="font-black text-[#0A1F3D] text-lg leading-none mb-2 uppercase tracking-tight">
-                                                    {review.name?.split(" ")[0] || "Verified"} Rider
+                                                {/* Passenger Name */}
+                                                <h4 className="font-bold text-slate-900 leading-none mb-1">
+                                                    {review.passengerName}
                                                 </h4>
-                                                <div className="flex items-center gap-2 text-[#0A1F3D]/40 text-xs font-bold">
-                                                    <Clock size={14} className="text-[#22c55e]" />
+
+                                                <div className="flex items-center gap-1.5 text-slate-400 text-xs">
+                                                    <Clock size={12} />
                                                     <span>{formatDate(review.createdAt)}</span>
                                                 </div>
                                             </div>
@@ -136,8 +129,12 @@ export default function HomeLatestReviews() {
                                             {[...Array(5)].map((_, i) => (
                                                 <Star
                                                     key={i}
-                                                    size={18}
-                                                    className={i < review.rating ? "fill-[#22c55e] text-[#22c55e]" : "text-gray-100"}
+                                                    size={16}
+                                                    className={
+                                                        i < review.rating
+                                                            ? "fill-amber-400 text-amber-400"
+                                                            : "text-slate-200"
+                                                    }
                                                 />
                                             ))}
                                         </div>
@@ -151,18 +148,15 @@ export default function HomeLatestReviews() {
                                             </p>
                                         </div>
 
-                                        {/* Verification Footer */}
-                                        <div className="pt-8 border-t border-gray-100 flex justify-between items-center">
-                                            <div className="flex items-center gap-2 bg-[#22c55e]/5 px-4 py-2 rounded-full border border-[#22c55e]/10">
-                                                <CheckCircle2 size={14} className="text-[#22c55e]" />
-                                                <span className="text-[11px] font-black text-[#22c55e] uppercase tracking-[0.1em]">
-                                                    Verified Ride
-                                                </span>
-                                            </div>
-                                            <span className="text-[10px] text-[#0A1F3D]/20 font-black tracking-widest uppercase">
-                                                ONWAY PRIVACY
+                                        <div className="pt-2 border-t border-slate-50 flex justify-between items-center">
+                                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-md">
+                                                Verified Ride
+                                            </span>
+                                            <span className="text-[10px] text-slate-300 font-mono italic">
+                                                OnWay
                                             </span>
                                         </div>
+
                                     </div>
                                 </div>
                             </SwiperSlide>
@@ -198,6 +192,7 @@ export default function HomeLatestReviews() {
                     border-radius: 10px !important;
                 }
             `}</style>
+
         </section>
     );
 }

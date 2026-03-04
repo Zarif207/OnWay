@@ -8,8 +8,8 @@ import {
   Navigation2,
   Download,
   AlertCircle,
-  Search, 
-  Star, 
+  Search,
+  Star,
   X,
   MapPin
 } from "lucide-react";
@@ -121,8 +121,8 @@ export default function RideHistoryPage() {
 
   const filteredRides = rides.filter(
     (ride) =>
-      ride.pickupLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ride.dropLocation.toLowerCase().includes(searchTerm.toLowerCase())
+      ride?.pickupLocation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ride?.dropLocation?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) return <OnWayLoading />;

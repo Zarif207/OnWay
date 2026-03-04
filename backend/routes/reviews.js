@@ -113,7 +113,7 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    // CREATE REVIEW (UPDATED)
+    // CREATE REVIEW (REFINED)
     router.post("/", async (req, res) => {
         try {
             const {
@@ -126,40 +126,15 @@ module.exports = (reviewsCollection) => {
                 review,
             } = req.body;
 
-            // Validation
-            if (
-                !rideId ||
-                !driverId ||
-                !passengerId ||
-                !passengerName ||
-                !passengerImage ||
-                rating === undefined
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Missing required fields",
-                });
+            // Validation -
+            if (!rideId || !driverId || !passengerId || !passengerName || rating === undefined) {
+                return res.status(400).json({ success: false, message: "Required data missing" });
             }
 
-            const numericRating = Number(rating);
-
-            if (numericRating < 1 || numericRating > 5) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Rating must be between 1 and 5",
-                });
-            }
-
-            const existingReview = await reviewsCollection.findOne({
-                rideId,
-                passengerId,
-            });
-
+            // Prevent duplicate -
+            const existingReview = await reviewsCollection.findOne({ rideId, passengerId });
             if (existingReview) {
-                return res.status(400).json({
-                    success: false,
-                    message: "You have already reviewed this ride.",
-                });
+                return res.status(400).json({ success: false, message: "You already reviewed this ride" });
             }
 
             const newReview = {
@@ -167,25 +142,16 @@ module.exports = (reviewsCollection) => {
                 driverId,
                 passengerId,
                 passengerName,
-                passengerImage,
-                rating: numericRating,
+                passengerImage: passengerImage || "https://via.placeholder.com/150",
+                rating: Number(rating),
                 review: review || "",
                 createdAt: new Date(),
             };
 
             const result = await reviewsCollection.insertOne(newReview);
-
-            res.status(201).json({
-                success: true,
-                message: "Review submitted successfully",
-                data: result.insertedId,
-            });
+            res.status(201).json({ success: true, data: result.insertedId });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: "Failed to submit review",
-                error: error.message,
-            });
+            res.status(500).json({ success: false, error: error.message });
         }
     });
 

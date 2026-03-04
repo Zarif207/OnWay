@@ -10,7 +10,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-screen bg-white overflow-hidden flex items-center pt-24 pb-16"
+      className="relative min-h-screen overflow-hidden flex items-center pt-24 pb-16"
     >
       {/* Soft Green Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(47,202,113,0.08),transparent_40%)] pointer-events-none" />

@@ -148,7 +148,7 @@ export default function EarnWithOnWayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col font-sans pb-15 overflow-hidden">
+    <div className="min-h-screen bg-primary flex flex-col font-sans pt-20 pb-15 overflow-hidden">
       {/* Header Section */}
       <div className="w-full pt-28 pb-32 flex flex-col items-center justify-center text-center px-4 sm:px-10 relative overflow-hidden">
         {/* Background ride image with subtle motion */}

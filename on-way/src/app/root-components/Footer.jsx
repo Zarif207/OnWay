@@ -1,237 +1,227 @@
 "use client";
 
+import React from "react";
 import Image from "next/image";
-import logoImage from "../../../public/icon2.png";
 import Link from "next/link";
-import { Twitter, Instagram, Facebook, Youtube, Smartphone } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  Facebook,
+  Instagram,
+  Youtube,
+  Send,
+  Linkedin,
+  Phone,
+  Clock,
+  MapPin
+} from "lucide-react";
+import logoImage from "../../../public/icon2.png";
 
+/**
+ * Footer Component (Final V2)
+ * Exactly matches the reference design layout with glassmorphism and fixed background.
+ */
 export default function Footer() {
-  // Staggered container animation for the links grid
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0, y: 30 },
     show: {
       opacity: 1,
+      y: 0,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.2
+        duration: 0.8,
+        ease: "easeOut"
       }
     }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+    show: { opacity: 1, y: 0 }
   };
 
+  const XIcon = ({ className }) => (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+
   return (
-    <footer className="bg-[#001820] text-zinc-300 overflow-hidden relative border-t-3 border-[#2FCA71] shadow-[inset_0_40px_80px_rgba(0,0,0,0.5)]">
-      {/* Background subtle glowing orb for 3D depth */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#2FCA71]/10 rounded-full blur-[120px] pointer-events-none transform -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[150px] pointer-events-none transform translate-y-1/3 -translate-x-1/4" />
+    <footer
+      className="relative w-full overflow-hidden bg-fixed bg-cover bg-center border-t border-white/5"
+      style={{ backgroundImage: "url('/footer-1.jpg')" }}
+    >
+      {/* Heavy Dark Overlays for Mockup Match */}
+      <div className="absolute inset-0 bg-[#0A1F3D]/95 z-0" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0A1F3D]/50 via-transparent to-[#050B1A] z-0" />
 
-      {/* Texture Overlay */}
-      <div className="absolute inset-0 bg-[url('https://i.ibb.co/fzFZnkkH/7263163c0bf80eb3fade3c80e145d6d1.jpg')] bg-cover bg-center opacity-5 mix-blend-overlay" />
+      <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 pb-10">
 
-      <div className="mx-auto max-w-7xl px-8 py-16 sm:px-6 lg:px-8 relative z-10">
+        {/* ================= NEWSLETTER SECTION ================= */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-10 mb-20 px-4">
+          <motion.h2
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            className="text-white text-4xl sm:text-5xl font-black tracking-tighter"
+          >
+            Subscribe Our <br /> Newsletter
+          </motion.h2>
 
-        {/* Animated Grid Container */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            className="flex w-full lg:w-[500px] h-16 bg-white/5 backdrop-blur-md rounded-full border border-white/10 p-1 pl-8"
+          >
+            <input
+              type="email"
+              placeholder="Your Email"
+              className="group w-full bg-transparent text-white placeholder:text-zinc-400 outline-none text-sm font-medium"
+            />
+            <button className="h-full px-8 bg-[#22c55e] text-white rounded-full flex items-center gap-2 font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all shadow-xl shadow-[#22c55e]/20 active:scale-95">
+              Subscribe <Send size={16} fill="currentColor" />
+            </button>
+          </motion.div>
+        </div>
+
+        {/* ================= MAIN FOOTER CONTAINER (Glassmorphism) ================= */}
         <motion.div
-          className="grid gap-12 lg:grid-cols-12"
           variants={containerVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.1 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 p-12 md:p-20 rounded-[4rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.3)]"
         >
 
-          {/* Brand & App Downloads */}
-          <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
-            <Link href="/" className="inline-block">
-              {/* 3D Hover Scale on Logo */}
-              <motion.div whileHover={{ scale: 1.05, rotateZ: -2 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Image src={logoImage} alt="OnWay" width={140} height={110} className="drop-shadow-[0_10px_15px_rgba(47,202,113,0.3)]" />
-              </motion.div>
-            </Link>
+          {/* Column 1: Branding & Description */}
+          <motion.div variants={itemVariants} className="space-y-10">
+            <div className="space-y-4">
+              <Link href="/" className="inline-block">
+                <div className="flex items-center gap-1">
+                  <Image src={logoImage} alt="OnWay" width={110} height={80} className="drop-shadow-lg" />
+                  <div className="flex flex-col -ml-3 mt-4">
+                    <span className="text-2xl font-black text-white leading-none tracking-tighter">OnWay</span>
+                    <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-[0.2em]">One Track Express</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
 
-            <p className="text-sm leading-relaxed text-zinc-400 max-w-sm">
-              OnWay is your everyday mobility super app — ride, car, CNG, and
-              secure payments in one seamless, rapid experience.
+            <p className="text-[#A0AEC0] text-sm font-medium leading-[1.8] max-w-[280px]">
+              Our dedication lies in embracing challenges and pioneering innovation within the mobility sector, delivering premium experiences.
             </p>
 
-            <div className="flex flex-wrap gap-2 text-xs font-bold tracking-wider text-zinc-200 uppercase">
-              <span className="rounded-full bg-[#2FCA71]/10 text-[#2FCA71] border border-[#2FCA71]/30 px-3 py-1 shadow-sm backdrop-blur-md">
-                Rides
-              </span>
-              <span className="rounded-full bg-[#2FCA71]/10 text-[#2FCA71] border border-[#2FCA71]/30 px-3 py-1 shadow-sm backdrop-blur-md">
-                CNG
-              </span>
-              <span className="rounded-full bg-[#2FCA71]/10 text-[#2FCA71] border border-[#2FCA71]/30 px-3 py-1 shadow-sm backdrop-blur-md">
-                Pay
-              </span>
+            <div className="flex items-center gap-3">
+              {[Facebook, XIcon, Instagram, Linkedin].map((Icon, i) => (
+                <motion.a
+                  key={i}
+                  href="#"
+                  whileHover={{ y: -5, bg: '#22c55e', borderColor: '#22c55e' }}
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all duration-300"
+                >
+                  <Icon className="w-4 h-4" />
+                </motion.a>
+              ))}
             </div>
+          </motion.div>
 
-            <div className="pt-4 flex flex-col gap-3">
-              <p className="text-sm font-semibold text-white">Get the app</p>
-              <div className="flex gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 rounded-xl bg-white/5 hover:bg-[#2FCA71] hover:text-[#001820] transition-colors border border-white/10 hover:border-[#2FCA71] px-4 py-2 text-sm text-white font-medium shadow-[0_4px_14px_0_rgba(0,0,0,0.39)] hover:shadow-[0_6px_20px_rgba(47,202,113,0.23)] backdrop-blur-sm"
-                >
-                  <Smartphone className="w-5 h-5" />
-                  App Store
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 rounded-xl bg-white/5 hover:bg-[#2FCA71] hover:text-[#001820] transition-colors border border-white/10 hover:border-[#2FCA71] px-4 py-2 text-sm text-white font-medium shadow-[0_4px_14px_0_rgba(0,0,0,0.39)] hover:shadow-[0_6px_20px_rgba(47,202,113,0.23)] backdrop-blur-sm"
-                >
-                  <Smartphone className="w-5 h-5" />
-                  Google Play
-                </motion.button>
+          {/* Column 2: Quick Links */}
+          <motion.div variants={itemVariants}>
+            <h4 className="text-white font-black text-xl mb-4 relative inline-block">
+              Quick Links
+              <span className="absolute -bottom-2 left-0 w-8 h-[3px] bg-[#22c55e] rounded-full" />
+            </h4>
+            <div className="h-[2px] w-full bg-white/5 mt-1 mb-8" />
+
+            <ul className="space-y-4">
+              {["About Us", "Our Services", "Project", "FAQ's", "Our Blog", "Contact Us"].map((link) => (
+                <li key={link}>
+                  <Link href="#" className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
+                    {link}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* Column 3: Our Services */}
+          <motion.div variants={itemVariants}>
+            <h4 className="text-white font-black text-xl mb-4 relative inline-block">
+              Our Services
+              <span className="absolute -bottom-2 left-0 w-8 h-[3px] bg-[#22c55e] rounded-full" />
+            </h4>
+            <div className="h-[2px] w-full bg-white/5 mt-1 mb-8" />
+
+            <ul className="space-y-4">
+              {[
+                "OnWay Ride Share",
+                "Premium Car Rent",
+                "OnWay CNG Rapid",
+                "Executive Travel",
+                "OnWay Pay Secure",
+                "Air Freight Tracking"
+              ].map((service) => (
+                <li key={service}>
+                  <Link href="#" className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
+                    {service}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* Column 4: Opening Hours */}
+          <motion.div variants={itemVariants} className="space-y-10">
+            <div>
+              <h4 className="text-white font-black text-xl mb-4 relative inline-block">
+                Opening Hours
+                <span className="absolute -bottom-2 left-0 w-8 h-[3px] bg-[#22c55e] rounded-full" />
+              </h4>
+              <div className="h-[2px] w-full bg-white/5 mt-1 mb-8" />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold">
+                  <span>Week Days</span>
+                  <span className="text-white/80 tracking-tighter">09.00 - 7.00</span>
+                </div>
+                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
+                  <span>Saturday</span>
+                  <span className="text-white/80 tracking-tighter">08.00 - 2.00</span>
+                </div>
+                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
+                  <span>Sunday</span>
+                  <span className="text-white/80">Day Off</span>
+                </div>
               </div>
             </div>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-white text-[#0A1F3D] py-4 rounded-full font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-[#22c55e] hover:text-white transition-all duration-300"
+            >
+              Contact Us
+            </motion.button>
           </motion.div>
 
-          {/* Links: Platform */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <h3 className="text-white font-bold mb-6 text-lg tracking-wide relative inline-block">
-              Platform
-              <span className="absolute -bottom-1 left-0 w-1/2 h-0.5 bg-[#2FCA71] rounded-full"></span>
-            </h3>
-            <ul className="space-y-4 text-sm font-medium">
-              {[
-                { name: "OnWay Ride", href: "#services" },
-                { name: "OnWay Car", href: "#services" },
-                { name: "OnWay CNG", href: "#services" },
-                { name: "OnWay Pay", href: "#services" },
-              ].map((link) => (
-                <li key={link.name}>
-                  <a href={link.href} className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
-                    <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* Links: Earn */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <h3 className="text-white font-bold mb-6 text-lg tracking-wide relative inline-block">
-              Earn
-              <span className="absolute -bottom-1 left-0 w-1/2 h-0.5 bg-[#2FCA71] rounded-full"></span>
-            </h3>
-            <ul className="space-y-4 text-sm font-medium">
-              {[
-                { name: "Become a Rider", href: "#earn" },
-                { name: "Become a Driver", href: "#earn" },
-                { name: "Become a CNG Driver", href: "#earn" },
-                { name: "Press", href: "#press" },
-              ].map((link) => (
-                <li key={link.name}>
-                  <a href={link.href} className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
-                    <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* Links: Help */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <h3 className="text-white font-bold mb-6 text-lg tracking-wide relative inline-block">
-              Help
-              <span className="absolute -bottom-1 left-0 w-1/2 h-0.5 bg-[#2FCA71] rounded-full"></span>
-            </h3>
-            <ul className="space-y-4 text-sm font-medium">
-              {[
-                { name: "Send a message", href: "#contact" },
-                { name: "Safety", href: "#safety" },
-                { name: "Download app", href: "#download" },
-              ].map((link) => (
-                <li key={link.name}>
-                  <a href={link.href} className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
-                    <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* Links: Company */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <h3 className="text-white font-bold mb-6 text-lg tracking-wide relative inline-block">
-              Company
-              <span className="absolute -bottom-1 left-0 w-1/2 h-0.5 bg-[#2FCA71] rounded-full"></span>
-            </h3>
-            <ul className="space-y-4 text-sm font-medium">
-              <li>
-                <Link href="/" className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
-                  <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
-                  About OnWay
-                </Link>
-              </li>
-              <li>
-                <a href="#press" className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
-                  <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
-                  Press
-                </a>
-              </li>
-              <li>
-                <a href="#blog" className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
-                  <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
-                  Blog
-                </a>
-              </li>
-            </ul>
-          </motion.div>
         </motion.div>
-      </div>
 
-      {/* Bottom Bar Container w/ Glassmorphism */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.8 }}
-        viewport={{ once: true }}
-        className="relative z-10 border-t border-white/10 bg-white/5 backdrop-blur-xl"
-      >
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 py-8 text-sm sm:flex-row sm:px-6 lg:px-8">
-
-          <div className="flex flex-wrap justify-center gap-6 text-zinc-400 font-medium">
-            <Link href="/terms" className="hover:text-[#2FCA71] hover:-translate-y-0.5 inline-block transition-all">
-              Terms
-            </Link>
-            <Link href="/privacy" className="hover:text-[#2FCA71] hover:-translate-y-0.5 inline-block transition-all">
-              Privacy
-            </Link>
-            <span className="text-zinc-700 hidden sm:inline">•</span>
-            <span>Region: Global</span>
+        {/* ================= COPYRIGHT ROW ================= */}
+        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 px-4 text-[#A0AEC0]/60 text-xs font-bold uppercase tracking-widest">
+          <p>Copyright © {new Date().getFullYear()} <span className="text-[#22c55e]">OnWay</span> All Rights Reserved.</p>
+          <div className="flex items-center gap-8">
+            <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <span className="text-white/10">|</span>
+            <Link href="#" className="hover:text-white transition-colors">Terms & Condition</Link>
           </div>
-
-          <p className="text-zinc-500 font-medium text-center">
-            © {new Date().getFullYear()} OnWay. All rights reserved.
-          </p>
-
-          <div className="flex items-center gap-5">
-            {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
-              <motion.a
-                key={i}
-                href="#"
-                whileHover={{ scale: 1.2, rotate: 5, y: -4, color: '#2FCA71' }}
-                whileTap={{ scale: 0.9 }}
-                className="text-zinc-400 transition-colors drop-shadow-lg"
-              >
-                <Icon className="w-5 h-5" />
-              </motion.a>
-            ))}
-          </div>
-
         </div>
-      </motion.div>
+
+      </div>
     </footer>
   );
 }

@@ -1,123 +1,212 @@
-import { Check } from 'lucide-react';
-import React from 'react';
+"use client";
 
-const Pricing = () => {
+import React from "react";
+import { motion } from "framer-motion";
+import {
+    Car,
+    ChevronRight,
+    Check,
+    X,
+    Phone,
+    ArrowRight
+} from "lucide-react";
+import Image from "next/image";
+
+/**
+ * Pricing Page Component
+ * Exactly matches the reference design layout with OnWay branding.
+ */
+export default function PricingPage() {
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                duration: 0.8,
+                ease: "easeOut"
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 30 },
+        show: { opacity: 1, y: 0 }
+    };
+
+    const pricingPlans = [
+        {
+            name: "Starter",
+            price: "$249",
+            period: "/Month",
+            highlight: false,
+            features: [
+                { text: "Priority City Rides", included: true },
+                { text: "Verified Professional Drivers", included: true },
+                { text: "Basic Ride Analytics", included: true },
+                { text: "Real-time AI Tracking", included: false },
+            ]
+        },
+        {
+            name: "Standard",
+            price: "$499",
+            period: "/Month",
+            highlight: true,
+            features: [
+                { text: "Unlimited Premium Rides", included: true },
+                { text: "Dedicated Private Driver", included: true },
+                { text: "Advanced Safety Dashboard", included: true },
+                { text: "24/7 VIP Multi-Track", included: true },
+            ]
+        },
+        {
+            name: "Premium",
+            price: "$899",
+            period: "/Month",
+            highlight: false,
+            features: [
+                { text: "Global Inter-City Mobility", included: true },
+                { text: "Corporate Fleet Access", included: true },
+                { text: "Enterprise Management Tools", included: true },
+                { text: "Unlimited Real-time Support", included: true },
+            ]
+        }
+    ];
+
     return (
-        /* Section wrapper add kora hoyeche py-20 diye jate upore-niche gap thake */
-        <section className="py-20 bg-accent/10"> 
-            <div className="container mx-auto px-4">
-                {/* Heading add korle r-o sundor dekhabe */}
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-primary">Our Pricing Plans</h2>
-                    <p className="text-gray-500 mt-2">Choose the best ride option for you</p>
-                </div>
+        <div className="min-h-screen bg-[#F8FAFC] py-24 sm:py-32">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
-                <div className="grid md:grid-cols-3 gap-8 items-center">
-                    
-                    {/* Bike Ride - Basic */}
-                    <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-secondary transition-all duration-300">
-                        <h3 className="text-xl font-bold text-primary">Bike Ride</h3>
-                        <p className="text-4xl font-black mt-4 text-primary">
-                            ৳60 <span className="text-base font-normal text-gray-500">/base fare</span>
-                        </p>
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center"
+                >
 
-                        <ul className="mt-8 space-y-4 text-gray-600">
-                            <li className="flex items-center gap-3">
-                                <div className="bg-secondary p-1 rounded-full">
-                                    <Check size={14} className="text-primary font-bold" />
-                                </div>
-                                Affordable price
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="bg-secondary p-1 rounded-full">
-                                    <Check size={14} className="text-primary font-bold" />
-                                </div>
-                                Fast pickup
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="bg-secondary p-1 rounded-full">
-                                    <Check size={14} className="text-primary font-bold" />
-                                </div>
-                                Best for short distance
-                            </li>
-                        </ul>
-
-                        <button className="w-full mt-8 bg-primary text-white py-3 rounded-xl font-bold hover:bg-secondary hover:text-primary transition-colors duration-300">
-                            Book Now
-                        </button>
-                    </div>
-
-                    {/* Standard Car - Featured/Popular */}
-                    <div className="bg-primary text-white rounded-2xl shadow-2xl p-10 md:scale-105 border-2 border-secondary relative overflow-hidden">
-                        <div className="absolute top-0 right-0 bg-secondary text-primary text-xs font-bold px-4 py-1 rounded-bl-lg uppercase">
-                            Popular
+                    {/* ================= LEFT COLUMN: CONTENT ================= */}
+                    <motion.div variants={itemVariants} className="space-y-8">
+                        <div className="flex items-center gap-2 text-[#22c55e] font-black uppercase tracking-[0.2em] text-xs">
+                            <Car size={16} fill="currentColor" />
+                            Pricing Plan
                         </div>
 
-                        <h3 className="text-2xl font-bold text-secondary">Standard Car</h3>
-                        <p className="text-4xl font-black mt-4 text-white">
-                            ৳120 <span className="text-base font-normal text-gray-300">/base fare</span>
+                        <h1 className="text-4xl md:text-6xl font-black text-[#0A1F3D] tracking-tighter leading-[1.1]">
+                            Leading premium <br /> mobility and <br /> transport agency
+                        </h1>
+
+                        <p className="text-[#A0AEC0] text-lg font-medium leading-relaxed max-w-lg">
+                            With years of experience providing solutions to large-scale enterprises throughout the globe, we offer end-to-end mobility tailored for specific markets.
                         </p>
 
-                        <ul className="mt-8 space-y-4">
-                            <li className="flex items-center gap-3 text-gray-100">
-                                <Check size={20} className="text-secondary" />
-                                Comfortable ride
-                            </li>
-                            <li className="flex items-center gap-3 text-gray-100">
-                                <Check size={20} className="text-secondary" />
-                                AC vehicle
-                            </li>
-                            <li className="flex items-center gap-3 text-gray-100">
-                                <Check size={20} className="text-secondary" />
-                                Most popular choice
-                            </li>
-                            <li className="flex items-center gap-3 text-gray-100">
-                                <Check size={20} className="text-secondary" />
-                                24/7 Availability
-                            </li>
+                        <ul className="space-y-5">
+                            {[
+                                "We will never compromise the safety of our riders",
+                                "Advanced solutions for modern urban mobility"
+                            ].map((text, i) => (
+                                <li key={i} className="flex items-center gap-3 text-[#0A1F3D] font-black text-lg">
+                                    <div className="flex -space-x-1 text-[#22c55e]">
+                                        <ChevronRight size={20} strokeWidth={3} />
+                                        <ChevronRight size={20} strokeWidth={3} />
+                                    </div>
+                                    {text}
+                                </li>
+                            ))}
                         </ul>
 
-                        <button className="w-full mt-10 bg-secondary text-primary py-4 rounded-xl font-black text-lg hover:brightness-110 transition-all">
-                            Book Now
-                        </button>
+                        <div className="flex items-center gap-5 pt-4">
+                            <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#22c55e] shadow-xl">
+                                <Image
+                                    src="https://plus.unsplash.com/premium_photo-1683121366620-dc435057967c?auto=format&fit=crop&q=80&w=200&h=200"
+                                    alt="Support"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-zinc-400 text-sm font-bold uppercase tracking-widest">Call Us for any Inquiry</span>
+                                <span className="text-2xl font-black text-[#22c55e] tracking-tighter">148 359 505 285</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* ================= RIGHT COLUMN: PRICING CARDS ================= */}
+                    <div className="space-y-8 lg:space-y-6">
+                        {pricingPlans.map((plan, index) => (
+                            <motion.div
+                                key={index}
+                                variants={itemVariants}
+                                whileHover={{ scale: 1.02, x: 10 }}
+                                className={`relative flex flex-col md:flex-row items-center justify-between p-8 md:p-10 rounded-[2.5rem] transition-all duration-500 shadow-2xl ${plan.highlight
+                                        ? "bg-[#0A1F3D] text-white shadow-[#0A1F3D]/20 scale-105 z-10"
+                                        : "bg-white text-[#0A1F3D] shadow-zinc-200/50"
+                                    }`}
+                            >
+                                {/* Decoration for standard card */}
+                                {plan.highlight && (
+                                    <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden rounded-[2.5rem]">
+                                        <svg viewBox="0 0 400 200" className="w-full h-full object-cover">
+                                            <path d="M-50,150 C50,50 150,250 250,150 C350,50 450,250 550,150" fill="none" stroke="#22c55e" strokeWidth="1" />
+                                        </svg>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col mb-8 md:mb-0">
+                                    <span className={`text-sm font-black uppercase tracking-widest mb-2 ${plan.highlight ? "text-[#22c55e]" : "text-zinc-400"}`}>
+                                        {plan.name}
+                                    </span>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-4xl md:text-5xl font-black tracking-tighter">{plan.price}</span>
+                                        <span className={`text-sm font-bold ${plan.highlight ? "text-white/40" : "text-zinc-400"}`}>{plan.period}</span>
+                                    </div>
+
+                                    {/* Button Inside Card - Aligned to bottom-left relative to content */}
+                                    <button className={`mt-8 flex items-center gap-2 px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${plan.highlight
+                                            ? "bg-white text-[#0A1F3D] hover:bg-[#22c55e] hover:text-white"
+                                            : "bg-zinc-100 text-[#0A1F3D] hover:bg-[#22c55e] hover:text-white"
+                                        }`}>
+                                        Get Started <ArrowRight size={14} />
+                                    </button>
+                                </div>
+
+                                <div className={`hidden md:block w-px h-24 ${plan.highlight ? "bg-white/10" : "bg-zinc-100"}`} />
+
+                                <ul className="space-y-4 w-full md:w-auto md:min-w-[240px]">
+                                    {plan.features.map((feature, i) => (
+                                        <li key={i} className="flex items-center gap-4 group">
+                                            <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-sm transition-colors ${feature.included
+                                                    ? "text-[#22c55e]"
+                                                    : "text-zinc-300"
+                                                }`}>
+                                                {feature.included ? <Check size={18} strokeWidth={3} /> : <X size={18} strokeWidth={2} />}
+                                            </div>
+                                            <span className={`text-sm font-bold tracking-tight transition-colors ${feature.included
+                                                    ? (plan.highlight ? "text-white" : "text-[#0A1F3D]")
+                                                    : "text-zinc-400"
+                                                }`}>
+                                                {feature.text}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </motion.div>
+                        ))}
                     </div>
 
-                    {/* Premium Car - Premium */}
-                    <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-secondary transition-all duration-300">
-                        <h3 className="text-xl font-bold text-primary">Premium Car</h3>
-                        <p className="text-4xl font-black mt-4 text-primary">
-                            ৳250 <span className="text-base font-normal text-gray-500">/base fare</span>
-                        </p>
+                </motion.div>
 
-                        <ul className="mt-8 space-y-4 text-gray-600">
-                            <li className="flex items-center gap-3">
-                                <div className="bg-secondary p-1 rounded-full">
-                                    <Check size={14} className="text-primary font-bold" />
-                                </div>
-                                Luxury experience
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="bg-secondary p-1 rounded-full">
-                                    <Check size={14} className="text-primary font-bold" />
-                                </div>
-                                Top rated drivers
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="bg-secondary p-1 rounded-full">
-                                    <Check size={14} className="text-primary font-bold" />
-                                </div>
-                                Priority support
-                            </li>
-                        </ul>
+                {/* ================= BOTTOM DECORATION (Drone/Packages) - Placeholder ================= */}
+                <motion.div
+                    initial={{ opacity: 0, x: -50 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    className="mt-20 opacity-20 pointer-events-none hidden lg:block"
+                >
+                    <Car size={160} className="text-[#22c55e]" strokeWidth={0.5} />
+                </motion.div>
 
-                        <button className="w-full mt-8 bg-primary text-white py-3 rounded-xl font-bold hover:bg-secondary hover:text-primary transition-colors duration-300">
-                            Book Now
-                        </button>
-                    </div>
-                </div>
             </div>
-        </section>
+        </div>
     );
-};
-
-export default Pricing;
+}

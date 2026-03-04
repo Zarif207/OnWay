@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -18,7 +18,7 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
   ),
 });
 
-export default function PassengerBookRide() {
+function PassengerBookRideContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
 
@@ -47,7 +47,7 @@ export default function PassengerBookRide() {
       if (!bookingId) return;
       setLoading(true);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
         const response = await fetch(`${apiUrl}/bookings/${bookingId}`);
         const result = await response.json();
 
@@ -219,5 +219,17 @@ export default function PassengerBookRide() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PassengerBookRide() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#2FCA71]" />
+      </div>
+    }>
+      <PassengerBookRideContent />
+    </Suspense>
   );
 }

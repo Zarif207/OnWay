@@ -31,7 +31,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Car Booking List & Table */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-50">
+          <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-50">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Car-Booking List</h3>
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] shadow-sm border border-gray-50 overflow-hidden">
+          <div className="bg-white rounded-4xl shadow-sm border border-gray-50 overflow-hidden">
             <div className="p-8 border-b border-gray-50 flex justify-between items-center">
               <h3 className="text-xl font-bold text-gray-900">Rides Booking</h3>
               <select className="bg-gray-100/50 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border-none focus:ring-0 outline-none">

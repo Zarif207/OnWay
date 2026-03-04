@@ -40,6 +40,8 @@ const UserManagement = () => {
         `<input id="n-pass" type="password" class="swal2-input" placeholder="Password">` +
         `<select id="n-role" class="swal2-input">
             <option value="passenger">Passenger</option>
+            <option value="rider">Rider</option>
+            <option value="supportAgent">Support Agent</option>
             <option value="admin">Admin</option>
          </select>`,
       showCancelButton: true,
@@ -165,7 +167,9 @@ const UserManagement = () => {
         `<input id="swal-name" class="swal2-input" placeholder="Name" value="${user.name}">` +
         `<input id="swal-phone" class="swal2-input" placeholder="Phone" value="${user.phone || ''}">` +
         `<select id="swal-role" class="swal2-input">
+            <option value="rider" ${user.role === 'rider' ? 'selected' : ''}>Rider</option>
             <option value="passenger" ${user.role === 'passenger' ? 'selected' : ''}>Passenger</option>
+            <option value="supportAgent" ${user.role === 'supportAgent' ? 'selected' : ''}>Support Agent</option>
             <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
          </select>`,
       focusConfirm: false,

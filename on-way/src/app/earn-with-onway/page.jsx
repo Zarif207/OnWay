@@ -25,10 +25,10 @@ import DriverAnimation from "../components/DriverAnimation/DriverAnimation";
 export default function EarnWithOnWayPage() {
   const router = useRouter();
   const { formData, updateFormData } = useEarnRegistration();
-  console.log('data:', formData);
+  console.log("data:", formData);
 
-  const [activeCategory, setActiveCategory] = useState(null); // "car" | "bike" | "ambulance" | null
-  const [selectedModel, setSelectedModel] = useState("");
+  const [activeCategory, setActiveCategory] = useState(formData.activeCategory || null); // "car" | "bike" | "ambulance" | null
+  const [selectedModel, setSelectedModel] = useState(formData.selectedModel || "");
   const [selectedDistrict, setSelectedDistrict] = useState(
     formData.district || "Dhaka",
   );
@@ -44,6 +44,7 @@ export default function EarnWithOnWayPage() {
       firstName: formData.firstName || "",
       lastName: formData.lastName || "",
       mobileNumber: formData.mobileNumber || "",
+      email: formData.email || "",
       district: formData.district || "Dhaka",
       city: formData.city || "",
     },
@@ -139,6 +140,7 @@ export default function EarnWithOnWayPage() {
 
     updateFormData({
       ...data,
+      activeCategory,
       selectedModel,
     });
 
@@ -168,8 +170,8 @@ export default function EarnWithOnWayPage() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-black/40" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black/70" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/55 via-transparent to-black/40" />
         </motion.div>
 
         {/* Soft floating gradient blob for 3D spatial depth */}
@@ -182,7 +184,7 @@ export default function EarnWithOnWayPage() {
             repeatType: "mirror",
             ease: "easeInOut",
           }}
-          className="pointer-events-none absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-[#2FCA71]/35 rounded-full blur-[110px]"
+          className="pointer-events-none absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 w-[520px] h-130 bg-[#2FCA71]/35 rounded-full blur-[110px]"
         />
 
         {/* Curved background bottom effect (subtle geometric 3D touch) */}
@@ -199,8 +201,8 @@ export default function EarnWithOnWayPage() {
             >
               Start Earning with{" "}
               <span
-                className="relative inline-block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent 
-after:absolute after:-inset-1 after:bg-gradient-to-r after:from-emerald-400 after:via-teal-300 after:to-cyan-400 
+                className="relative inline-block bg-linear-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent 
+after:absolute after:-inset-1 after:bg-linear-to-r after:from-emerald-400 after:via-teal-300 after:to-cyan-400 
 after:blur-2xl after:opacity-20 after:-z-10"
               >
                 OnWay Rides
@@ -307,8 +309,30 @@ after:blur-2xl after:opacity-20 after:-z-10"
                 </div>
               </div>
 
+              {/* Email */}
+              <div className="flex flex-col gap-2 relative z-10">
+                <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
+                  Email <span className="text-[#2FCA71]">*</span>
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="example@email.com"
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Please enter a valid email address",
+                      },
+                    })}
+                    className="w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                  />
+                </div>
+              </div>
+
               {/* Location */}
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 relative z-10">
+              <div className="flex flex-col gap-2 relative z-10">
                 <div className="flex flex-col gap-2">
                   <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
                     District <span className="text-[#2FCA71]">*</span>
@@ -333,7 +357,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-2">
+                {/* <div className="flex flex-col gap-2">
                   <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
                     City / Area <span className="text-[#2FCA71]">*</span>
                   </label>
@@ -348,7 +372,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
               </div>
 
               {/* Submit Button */}
@@ -358,7 +382,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
                   disabled={!selectedModel}
                   className={`w-full px-8 py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 group transition-all duration-300
     ${selectedModel
-                      ? "bg-[var(--color-primary)] text-[var(--color-secondary)] hover:bg-[#26b861] hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_rgba(47,202,113,0.5)]"
+                      ? "bg-primary text-[var(--color-secondary)] hover:bg-[#26b861] hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_rgba(47,202,113,0.5)]"
                       : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
                 >

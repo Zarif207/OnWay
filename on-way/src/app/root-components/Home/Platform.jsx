@@ -69,7 +69,7 @@ export default function Platform() {
             data-aos-delay="50"
           >
             <div
-              className={`relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br ${current.accent} p-8`}
+              className={`relative overflow-hidden rounded-3xl border border-zinc-200 bg-linear-to-br ${current.accent} p-8`}
             >
               <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/30 blur-3xl" />
               <div className="relative">

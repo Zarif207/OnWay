@@ -1,14 +1,16 @@
 "use client";
 import React from "react";
 import RoleLayout from "@/components/dashboard/RoleLayout";
-import { 
-  LayoutDashboard, 
-  Car, 
-  Users, 
-  Ticket, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Car,
+  Users,
+  Ticket,
+  BarChart3,
   Settings,
-  UserCheck
+  UserCheck,
+  Brain,
+  Star
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -19,6 +21,8 @@ export default function AdminLayout({ children }) {
     { label: "User Management", path: "/dashboard/admin/user-management", icon: Users },
     { label: "Promo Codes", path: "/dashboard/admin/promo-codes", icon: Ticket },
     { label: "Reports & Safety", path: "/dashboard/admin/reports-safety", icon: BarChart3 },
+    { label: "AI Brain", path: "/dashboard/admin/aIBrainConfig", icon: Brain },
+    { label: "Reviews", path: "/dashboard/admin/reviews", icon: Star },
     { label: "Settings", path: "/dashboard/admin/settings", icon: Settings },
   ];
 

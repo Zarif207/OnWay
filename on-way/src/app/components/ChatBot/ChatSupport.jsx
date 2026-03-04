@@ -62,9 +62,9 @@ export default function ChatSupport() {
     };
 
     return (
-        <div className="fixed bottom-2 right-4 z-50 flex flex-col items-end font-sans">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
             {isOpen && (
-                <div className="mb-1 w-80 sm:w-90 bg-blue-300/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-130 ">
+                <div className="mb-1 w-80 sm:w-90 bg-blue-300/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-120 ">
 
                     {/* Header */}
                     <div className="bg-cyan-500 p-2 text-white flex items-center justify-between">

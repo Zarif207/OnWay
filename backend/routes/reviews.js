@@ -14,6 +14,7 @@ module.exports = (reviewsCollection) => {
 
             res.json({
                 success: true,
+                count: reviews.length,
                 data: reviews,
             });
         } catch (error) {
@@ -25,7 +26,7 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  GET LAST 10 REVIEWS
+    // GET LAST 10 REVIEWS
     router.get("/latest", async (req, res) => {
         try {
             const reviews = await reviewsCollection
@@ -72,7 +73,7 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  GET DRIVER RATING STATS
+    // GET DRIVER RATING STATS
     router.get("/driver/:driverId/rating", async (req, res) => {
         try {
             const { driverId } = req.params;
@@ -100,7 +101,7 @@ module.exports = (reviewsCollection) => {
 
             res.json({
                 success: true,
-                averageRating: Number(stats[0].averageRating.toFixed(1)),
+                averageRating: Number((stats[0].averageRating || 0).toFixed(1)),
                 totalReviews: stats[0].totalReviews,
             });
         } catch (error) {
@@ -112,53 +113,49 @@ module.exports = (reviewsCollection) => {
         }
     });
 
-    //  CREATE REVIEW
+    // CREATE REVIEW (REFINED)
     router.post("/", async (req, res) => {
         try {
-            const { rideId, driverId, passengerId, rating, review } = req.body;
+            const {
+                rideId,
+                driverId,
+                passengerId,
+                passengerName,
+                passengerImage,
+                rating,
+                review,
+            } = req.body;
 
-            if (!rideId || !driverId || !passengerId || rating === undefined) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Missing required fields",
-                });
+            // Validation -
+            if (!rideId || !driverId || !passengerId || !passengerName || rating === undefined) {
+                return res.status(400).json({ success: false, message: "Required data missing" });
             }
 
-            const numericRating = Number(rating);
-
-            if (numericRating < 1 || numericRating > 5) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Rating must be between 1 and 5",
-                });
+            // Prevent duplicate -
+            const existingReview = await reviewsCollection.findOne({ rideId, passengerId });
+            if (existingReview) {
+                return res.status(400).json({ success: false, message: "You already reviewed this ride" });
             }
 
             const newReview = {
                 rideId,
                 driverId,
                 passengerId,
-                rating: numericRating,
+                passengerName,
+                passengerImage: passengerImage || "https://via.placeholder.com/150",
+                rating: Number(rating),
                 review: review || "",
                 createdAt: new Date(),
             };
 
             const result = await reviewsCollection.insertOne(newReview);
-
-            res.status(201).json({
-                success: true,
-                message: "Review submitted successfully",
-                data: result.insertedId,
-            });
+            res.status(201).json({ success: true, data: result.insertedId });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: "Failed to submit review",
-                error: error.message,
-            });
+            res.status(500).json({ success: false, error: error.message });
         }
     });
 
-    //  DELETE REVIEW
+    // DELETE REVIEW
     router.delete("/:id", async (req, res) => {
         try {
             const { id } = req.params;
@@ -166,7 +163,7 @@ module.exports = (reviewsCollection) => {
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid Review ID",
+                    message: "Invalid Review ID format",
                 });
             }
 
@@ -174,19 +171,24 @@ module.exports = (reviewsCollection) => {
                 _id: new ObjectId(id),
             });
 
+            if (result.deletedCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Review not found in database",
+                });
+            }
+
             res.json({
                 success: true,
-                message: "Review deleted",
-                deletedCount: result.deletedCount,
+                message: "Review deleted successfully",
             });
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: "Failed to delete review",
+                message: "Server error during deletion",
                 error: error.message,
             });
         }
     });
-
     return router;
 };

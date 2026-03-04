@@ -96,7 +96,7 @@ export default function HomeLatestReviews() {
                                             {/* Passenger Image */}
                                             <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-blue-200">
                                                 <img
-                                                    src={review.passengerImage}
+                                                    src={review.passengerImage || "https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg"}
                                                     alt={review.passengerName}
                                                     className="w-full h-full object-cover"
                                                 />

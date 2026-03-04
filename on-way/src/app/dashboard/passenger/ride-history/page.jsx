@@ -8,8 +8,8 @@ import {
   Navigation2,
   Download,
   AlertCircle,
-  Search,
-  Star,
+  Search, 
+  Star, 
   X,
   MapPin
 } from "lucide-react";
@@ -46,7 +46,7 @@ export default function RideHistoryPage() {
     } catch (err) {
       setError("Failed to fetch ride history");
     } finally {
-      setTimeout(() => setLoading(false), 1500); 
+      setTimeout(() => setLoading(false), 1500);
     }
   };
 
@@ -98,7 +98,7 @@ export default function RideHistoryPage() {
       setDownloadingId("all");
       const doc = new jsPDF();
       doc.text("RIDE HISTORY REPORT", 14, 22);
-      
+
       const tableData = rides.map((ride) => [
         new Date(ride.createdAt).toLocaleDateString(),
         ride.pickupLocation,
@@ -130,7 +130,7 @@ export default function RideHistoryPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 md:p-12 text-slate-900">
       <div className="max-w-6xl mx-auto">
-        
+
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
@@ -207,7 +207,7 @@ export default function RideHistoryPage() {
                       <div className="flex items-center justify-end gap-3">
                         {/* Review Button */}
                         {!ride.rating ? (
-                          <button 
+                          <button
                             onClick={() => setSelectedRide(ride)}
                             className="p-2 text-yellow-500 hover:bg-yellow-50 rounded-xl transition-colors"
                             title="Rate Driver"

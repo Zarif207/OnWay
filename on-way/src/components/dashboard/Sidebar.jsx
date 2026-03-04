@@ -3,27 +3,20 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { signOut } from "next-auth/react";
 import logoImage from "../../../public/icon2.png";
-import { 
-  LayoutDashboard, 
-  Settings, 
-  LogOut, 
+import {
   ChevronRight,
-  Car,
-  Calendar,
-  Users,
-  BarChart3,
-  LifeBuoy,
-  FileText,
-  ShieldAlert,
-  Wallet,
-  History,
-  MapPin,
-  MessageSquare
+  LogOut
 } from "lucide-react";
 
 const Sidebar = ({ role, menuItems }) => {
   const pathname = usePathname();
+
+  // Logout Handler
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 flex flex-col z-50">
@@ -39,16 +32,15 @@ const Sidebar = ({ role, menuItems }) => {
         {menuItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
-          
+
           return (
             <Link
               key={item.path}
               href={item.path}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
-                isActive 
-                  ? "bg-gray-100 text-gray-900 font-semibold" 
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                ? "bg-gray-100 text-gray-900 font-semibold"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <Icon size={20} className={isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-900"} />
@@ -62,8 +54,8 @@ const Sidebar = ({ role, menuItems }) => {
 
       {/* Footer / Logout */}
       <div className="p-4 border-t border-gray-100">
-        <button 
-          onClick={() => console.log("Logout")}
+        <button
+          onClick={handleLogout}
           className="flex items-center gap-3 w-full px-4 py-3 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group"
         >
           <LogOut size={20} className="group-hover:text-red-600" />

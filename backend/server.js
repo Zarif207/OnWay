@@ -88,37 +88,52 @@ async function connectDB() {
   }
 }
 
-// ✅ Initialize collections (called on each request in serverless)
-async function getCollections() {
-  const database = await connectDB();
-  
-  return {
-    passengerCollection: database.collection("passenger"),
-    blogsCollection: database.collection("Blogs"),
-    gpsLocationsCollection: database.collection("gpsLocations"),
-    ridesCollection: database.collection("rides"),
-    reviewsCollection: database.collection("reviews"),
-    knowledgeCollection: database.collection("knowledge"),
-    bookingsCollection: database.collection("bookings"),
-    paymentsCollection: database.collection("payments"),
-    ridersCollection: database.collection("riders"),
-    promoCodeCollection: database.collection("promoCode"),
-  };
-}
+// --------------------------------------
+async function startServer() {
+  await connectDB();
+  const database = client.db("onWayDB");
 
-// ✅ Middleware to ensure DB connection and attach collections
-app.use(async (req, res, next) => {
-  try {
-    if (!req.collections) {
-      req.collections = await getCollections();
-    }
-    next();
-  } catch (error) {
-    console.error("Database connection error:", error);
-    res.status(500).json({ 
-      success: false,
-      message: "Database connection failed",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  // ------------------------------------------------
+  const passengerCollection = database.collection("passenger");
+  const blogsCollection = database.collection("Blogs");
+  const gpsLocationsCollection = database.collection("gpsLocations");
+  const ridesCollection = database.collection("rides");
+  const reviewsCollection = database.collection("reviews");
+  const knowledgeCollection = database.collection("knowledge");
+  await knowledgeCollection.createIndex({ question: "text", answer: "text" });
+  const bookingsCollection = database.collection("bookings");
+  const paymentsCollection = database.collection("payments");
+  const ridersCollection = database.collection("riders");
+  const promoCodeCollection = database.collection("promoCode");
+  const emergencyCollection = database.collection("emergency");
+  //------------------------------------------------------
+
+  // Routes -----------------------------------------
+  app.use("/api/passenger", passengerRoutes(passengerCollection));
+  app.use("/api/blogs", blogRoutes(blogsCollection));
+  app.use("/api/location", locationRoutes(gpsLocationsCollection));
+  app.use("/api/rides", ridesRoutes(ridesCollection));
+  app.use("/api/reviews", reviewsRoutes(reviewsCollection));
+  app.use("/api/support", supportRoutes(knowledgeCollection));
+  app.use("/api/bookings", bookingsRoutes(bookingsCollection));
+  app.use("/api/payment", paymentRoutes(paymentsCollection));
+  app.use("/api/riders", ridersRoutes(ridersCollection));
+  app.use("/api/promo", promoCodeRoutes(promoCodeCollection));
+  app.use("/api/emergency", emergencyRoutes(emergencyCollection));
+  // ---------------------------------------------------
+
+  // Socket.io ----------------------------
+  io.on("connection", (socket) => {
+    console.log(`🔌 Client connected: ${socket.id}`);
+    socket.on("joinRide", (rideId) => {
+      socket.join(rideId);
+    });
+    socket.on("gpsUpdate", (data) => {
+      const { rideId, driverId, latitude, longitude } = data;
+      io.to(rideId).emit("receiveGpsUpdate", { driverId, latitude, longitude, timestamp: new Date(), });
+    });
+    socket.on("disconnect", () => {
+      console.log(`🔌 Client disconnected`);
     });
   }
 });
@@ -203,12 +218,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Local development server
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, async () => {
-    await connectDB();
-    console.log(`🚀 Backend running on http://localhost:${PORT}`);
-  });
-}
-
-module.exports = app;
+startServer();
+module.exports = server;

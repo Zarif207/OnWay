@@ -1,10 +1,11 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const { ObjectId } = require("mongodb");
 
 module.exports = (passengerCollection) => {
     const router = express.Router();
 
-    // Get Users
+    // 1. Get All Users
     router.get("/", async (req, res) => {
         try {
             const users = await passengerCollection.find({}).toArray();
@@ -19,7 +20,7 @@ module.exports = (passengerCollection) => {
         }
     });
 
-    // Find User
+    // 2. Find User 
     router.get("/find", async (req, res) => {
         try {
             const email = req.query.email;
@@ -97,10 +98,18 @@ module.exports = (passengerCollection) => {
                 phone: phone || "",
                 image: image || "",
                 role: role || "passenger",
+                status: "Active",
                 authProvider: authProvider || "credentials",
                 createdAt: new Date(),
                 lastLogin: new Date(),
             };
+            if (password) newUser.password = await bcrypt.hash(password, 10);
+            const result = await passengerCollection.insertOne(newUser);
+            res.status(201).json({ success: true, data: result.insertedId });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
 
             // Hash password if provided
             if (password) {

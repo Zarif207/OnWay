@@ -35,7 +35,7 @@ export default function WalkInSupportCenters() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-black text-white py-20">
+      <div className="bg-linear-to-r from-gray-900 via-gray-800 to-black text-white py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h1 className="text-5xl font-bold mb-4">Walk-In Support Centers</h1>
           <p className="text-lg text-gray-300 mb-4">
@@ -76,7 +76,7 @@ export default function WalkInSupportCenters() {
               key={index}
               className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition"
             >
-              <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 p-6">
+              <div className="bg-linear-to-r from-yellow-400 to-yellow-500 p-6">
                 <h3 className="text-2xl font-bold text-gray-900">{center.name}</h3>
               </div>
               <div className="p-6 space-y-4">

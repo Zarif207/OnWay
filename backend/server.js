@@ -17,6 +17,7 @@ const bookingsRoutes = require("./routes/bookings");
 const paymentRoutes = require("./routes/payment");
 const ridersRoutes = require("./routes/riders");
 const promoCodeRoutes = require("./routes/promo");
+const emergencyRoutes = require("./routes/emergency");
 // ---------------------------------------
 
 // ---------------------------------------
@@ -69,6 +70,7 @@ async function startServer() {
   const paymentsCollection = database.collection("payments");
   const ridersCollection = database.collection("riders");
   const promoCodeCollection = database.collection("promoCode");
+  const emergencyCollection = database.collection("emergency");
   //------------------------------------------------------
 
   // Routes -----------------------------------------
@@ -82,6 +84,7 @@ async function startServer() {
   app.use("/api/payment", paymentRoutes(paymentsCollection));
   app.use("/api/riders", ridersRoutes(ridersCollection));
   app.use("/api/promo", promoCodeRoutes(promoCodeCollection));
+  app.use("/api/emergency", emergencyRoutes(emergencyCollection));
   // ---------------------------------------------------
 
   // Socket.io ----------------------------

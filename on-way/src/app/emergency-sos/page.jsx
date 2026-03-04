@@ -21,7 +21,8 @@ export default function EmergencySOSPage() {
           });
         },
         (error) => {
-          console.error("Location error:", error);
+          console.warn("Location access denied or unavailable");
+          // Location optional, SOS will still work without it
         }
       );
     }
@@ -34,11 +35,10 @@ export default function EmergencySOSPage() {
         <div class="text-left space-y-3">
           <p class="text-gray-700">This will:</p>
           <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-            <li>Alert emergency contacts</li>
-            <li>Notify admin & support team</li>
-            <li>Share your live location</li>
+            <li>Alert OnWay support team immediately</li>
+            <li>Share your live location with support agents</li>
             <li>Send ride details (if active)</li>
-            <li>Enable quick call to emergency services</li>
+            <li>Enable direct communication with support</li>
           </ul>
           <p class="text-red-600 font-semibold mt-4">⚠️ Only use in real emergencies</p>
         </div>
@@ -47,7 +47,7 @@ export default function EmergencySOSPage() {
       showCancelButton: true,
       confirmButtonColor: "#DC2626",
       cancelButtonColor: "#6B7280",
-      confirmButtonText: "Yes, Activate SOS",
+      confirmButtonText: "Yes, Alert Support Team",
       cancelButtonText: "Cancel",
       reverseButtons: true,
     }).then((result) => {
@@ -103,11 +103,14 @@ export default function EmergencySOSPage() {
           icon: "success",
           title: "SOS Activated!",
           html: `
-            <p class="text-green-600 font-semibold">Emergency services have been notified</p>
-            <p class="text-sm text-gray-600 mt-2">Your location is being shared</p>
+            <p class="text-green-600 font-semibold">Support team has been notified</p>
+            <p class="text-sm text-gray-600 mt-2">Your location is being shared with support agents</p>
+            <p class="text-sm text-gray-600">They will contact you shortly</p>
           `,
           confirmButtonColor: "#DC2626",
         });
+      } else {
+        throw new Error("Failed to activate SOS");
       }
     } catch (error) {
       console.error("SOS Error:", error);
@@ -116,13 +119,23 @@ export default function EmergencySOSPage() {
       Swal.fire({
         icon: "error",
         title: "Failed to activate SOS",
-        text: "Please call emergency services directly",
+        text: "Please call support directly at 01966984999",
         confirmButtonColor: "#DC2626",
       });
     }
   };
 
   const callEmergency = (number, service) => {
+    if (!sosActive) {
+      Swal.fire({
+        icon: "warning",
+        title: "SOS Not Active",
+        text: "Please activate SOS first before calling support",
+        confirmButtonColor: "#DC2626",
+      });
+      return;
+    }
+
     Swal.fire({
       title: `Call ${service}?`,
       text: `Calling ${number}`,
@@ -138,7 +151,7 @@ export default function EmergencySOSPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 py-8 px-4">
+    <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -160,8 +173,9 @@ export default function EmergencySOSPage() {
               <AlertTriangle className="w-6 h-6" />
               <h2 className="text-xl font-bold">SOS ACTIVE</h2>
             </div>
-            <p className="text-sm">Emergency services have been notified</p>
+            <p className="text-sm">Support team has been notified</p>
             <p className="text-sm">Your location is being shared</p>
+            <p className="text-sm">Support will contact you shortly</p>
           </div>
         )}
 
@@ -181,7 +195,7 @@ export default function EmergencySOSPage() {
                   <button
                     onClick={handleSOSPress}
                     disabled={isActivating}
-                    className="w-64 h-64 mx-auto bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-64 h-64 mx-auto bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="flex flex-col items-center justify-center">
                       <AlertTriangle className="w-20 h-20 mb-4" />
@@ -198,64 +212,51 @@ export default function EmergencySOSPage() {
           </div>
         )}
 
-        {/* Emergency Contacts */}
+        {/* Support Contact */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Phone className="w-5 h-5 text-red-600" />
-            Emergency Contacts
+            OnWay Support Team
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-3">
             <button
-              onClick={() => callEmergency("999", "Police")}
-              className="flex items-center gap-3 p-4 border-2 border-red-200 rounded-xl hover:bg-red-50 transition-all"
+              onClick={() => callEmergency("01966984999", "OnWay Support")}
+              disabled={!sosActive}
+              className={`w-full flex items-center gap-3 p-4 border-2 rounded-xl transition-all ${
+                sosActive
+                  ? "border-red-200 hover:bg-red-50 cursor-pointer"
+                  : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-50"
+              }`}
             >
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Phone className="w-6 h-6 text-red-600" />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                sosActive ? "bg-red-100" : "bg-gray-200"
+              }`}>
+                <Phone className={`w-6 h-6 ${sosActive ? "text-red-600" : "text-gray-400"}`} />
               </div>
-              <div className="text-left">
-                <div className="font-semibold text-gray-900">Police</div>
-                <div className="text-sm text-gray-600">999</div>
+              <div className="text-left flex-1">
+                <div className={`font-semibold ${sosActive ? "text-gray-900" : "text-gray-400"}`}>
+                  Call Support Team
+                </div>
+                <div className="text-sm text-gray-600">
+                  {sosActive ? "Available 24/7" : "Activate SOS first"}
+                </div>
+              </div>
+              <div className={`font-bold text-lg ${sosActive ? "text-red-600" : "text-gray-400"}`}>
+                01966984999
               </div>
             </button>
 
-            <button
-              onClick={() => callEmergency("999", "Ambulance")}
-              className="flex items-center gap-3 p-4 border-2 border-red-200 rounded-xl hover:bg-red-50 transition-all"
-            >
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Phone className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-gray-900">Ambulance</div>
-                <div className="text-sm text-gray-600">999</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => callEmergency("102", "Fire Service")}
-              className="flex items-center gap-3 p-4 border-2 border-red-200 rounded-xl hover:bg-red-50 transition-all"
-            >
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Phone className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-gray-900">Fire Service</div>
-                <div className="text-sm text-gray-600">102</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => callEmergency("333", "Women Helpline")}
-              className="flex items-center gap-3 p-4 border-2 border-red-200 rounded-xl hover:bg-red-50 transition-all"
-            >
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Phone className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-gray-900">Women Helpline</div>
-                <div className="text-sm text-gray-600">333</div>
-              </div>
-            </button>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Support team will:</strong>
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>Track your location in real-time</li>
+                <li>Contact you immediately</li>
+                <li>Coordinate with authorities if needed</li>
+                <li>Stay connected until you are safe</li>
+              </ul>
+            </div>
           </div>
         </div>
 

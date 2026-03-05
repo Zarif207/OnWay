@@ -89,7 +89,7 @@ export default function HomeLatestReviews() {
                             dynamicBullets: true
                         }}
                         modules={[EffectCoverflow, Autoplay, Pagination]}
-                        className="pb-20!"
+                        className="pb-20"
                     >
                         {reviews.map((review) => (
                             <SwiperSlide key={review._id} className="max-w-[340px] md:max-w-[480px]">
@@ -162,7 +162,7 @@ export default function HomeLatestReviews() {
                             </SwiperSlide>
                         ))}
                     </Swiper>
-                </motion.div>
+                </div>
             </div>
 
             {/* Premium Carousel Logic Styles */}

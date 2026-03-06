@@ -45,7 +45,7 @@ module.exports = function (ridersCollection) {
         });
       }
 
-      // Requirement: The payload doesn't have a password, so we hash a default one.
+      // The payload doesn't have a password, so we hash a default one.
       const defaultPassword = "onway_rider_pass";
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(defaultPassword, salt);

@@ -148,7 +148,7 @@ export default function EarnWithOnWayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col font-sans pb-15 overflow-hidden">
+    <div className="min-h-screen bg-primary flex flex-col font-sans pt-20 pb-15 overflow-hidden">
       {/* Header Section */}
       <div className="w-full pt-28 pb-32 flex flex-col items-center justify-center text-center px-4 sm:px-10 relative overflow-hidden">
         {/* Background ride image with subtle motion */}
@@ -201,7 +201,7 @@ export default function EarnWithOnWayPage() {
             >
               Start Earning with{" "}
               <span
-                className="relative inline-block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent 
+                className="relative inline-block bg-linear-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent 
 after:absolute after:-inset-1 after:bg-linear-to-r after:from-emerald-400 after:via-teal-300 after:to-cyan-400 
 after:blur-2xl after:opacity-20 after:-z-10"
               >

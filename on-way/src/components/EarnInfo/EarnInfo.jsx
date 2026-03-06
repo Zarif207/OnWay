@@ -39,7 +39,7 @@ export default function EarnInfo() {
         </div>
       </div>
 
-      <div className="h-px w-full bg-gradient-to-r from-gray-200 to-transparent"></div>
+      <div className="h-px w-full bg-linear-to-r from-gray-200 to-transparent"></div>
 
       {/* Easy Income Stats */}
       <div>

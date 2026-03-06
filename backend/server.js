@@ -25,18 +25,16 @@ const client = new MongoClient(uri, {
 
 const app = express();
 
-// ✅ CORS Configuration for Production
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5000',
       'https://on-way-server.vercel.app',
-      process.env.FRONTEND_URL,
-      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+      'https://onway-5g8a.onrender.com', // ✅ add this
+      process.env.FRONTEND_URL
     ].filter(Boolean);
 
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -48,6 +46,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
 };
+
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));

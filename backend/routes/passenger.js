@@ -1,170 +1,145 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const { ObjectId } = require("mongodb");
 
 module.exports = (passengerCollection) => {
     const router = express.Router();
 
-    // Get Users
+    // 1. Get All Users
     router.get("/", async (req, res) => {
         try {
             const users = await passengerCollection.find({}).toArray();
-            res.json({ success: true, data: users });
+            res.status(200).json({ success: true, data: users });
         } catch (error) {
-            console.error("Get users error:", error);
-            res.status(500).json({ 
-                success: false, 
-                message: "Failed to fetch users",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
+            res.status(500).json({ success: false, error: error.message });
         }
     });
 
-    // Find User
+    // 2. Find User (NextAuth Credentials-er jonno khub gurutto purno)
     router.get("/find", async (req, res) => {
         try {
             const email = req.query.email;
-
             if (!email) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: "Email is required" 
-                });
+                return res.status(400).json({ message: "Email is required" });
             }
 
             const user = await passengerCollection.findOne({ email });
 
+            // NextAuth (v5) Authorize function 404 pele crash kore HTML return kore
+            // Tai user na pele 200 status e null pathano safest way
             if (!user) {
-                return res.status(404).json({ 
-                    success: false,
-                    message: "User not found" 
-                });
+                return res.status(200).json(null);
             }
 
-            res.json({ success: true, data: user });
+            res.status(200).json(user);
         } catch (error) {
             console.error("Find user error:", error);
-            res.status(500).json({ 
-                success: false,
-                message: "Failed to find user",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
+            res.status(500).json({ message: "Internal Server Error" });
         }
     });
 
-    // Create User (Register)
+    // 3. Create User (Registration & Social Login Sync)
     router.post("/", async (req, res) => {
         try {
-            console.log("📝 Register request received:", {
-                body: req.body,
-                headers: req.headers,
-                method: req.method
-            });
-
             const { name, email, phone, password, role, image, authProvider } = req.body;
 
-            // Validation
-            if (!email || !name) {
-                console.log("❌ Validation failed: Missing email or name");
-                return res.status(400).json({
-                    success: false,
-                    message: "Email and name are required",
-                });
+            if (!email || !name || (!password && !authProvider)) {
+                return res.status(400).json({ message: "Missing required fields" });
             }
 
-            if (!password && !authProvider) {
-                console.log("❌ Validation failed: Missing password or authProvider");
-                return res.status(400).json({
-                    success: false,
-                    message: "Password is required for credential-based registration",
-                });
-            }
-
-            // Check existing user
             const existingUser = await passengerCollection.findOne({ email });
-
             if (existingUser) {
-                console.log("❌ User already exists:", email);
-                return res.status(400).json({
-                    success: false,
-                    message: "User already exists with this email",
-                });
+                return res.status(400).json({ message: "User already exists" });
             }
 
-            // Create new user object
             let newUser = {
                 name,
                 email,
                 phone: phone || "",
                 image: image || "",
                 role: role || "passenger",
+                status: "Active",
                 authProvider: authProvider || "credentials",
                 createdAt: new Date(),
                 lastLogin: new Date(),
             };
 
-            // Hash password if provided
+            // Password thakle hash korbe (Credentials login-er khetre)
             if (password) {
-                const salt = await bcrypt.genSalt(10);
-                newUser.password = await bcrypt.hash(password, salt);
-                console.log("✅ Password hashed successfully");
+                newUser.password = await bcrypt.hash(password, 10);
             }
 
-            // Insert user
             const result = await passengerCollection.insertOne(newUser);
-            console.log("✅ User created successfully:", result.insertedId);
-
-            res.status(201).json({
-                success: true,
-                message: "User registered successfully",
-                data: {
-                    userId: result.insertedId,
-                    email: newUser.email,
-                    name: newUser.name
-                }
-            });
+            res.status(201).json({ success: true, data: result.insertedId });
         } catch (error) {
-            console.error("❌ Register error:", error);
-            res.status(500).json({ 
-                success: false,
-                message: "Registration failed",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
+            res.status(500).json({ error: error.message });
         }
     });
 
-    // Update User
-    router.patch("/:id", async (req, res) => {
+    // 4. Update Login Time (NextAuth events-er jonno)
+    router.patch("/update-login", async (req, res) => {
+        try {
+            const { email } = req.body;
+            await passengerCollection.updateOne(
+                { email },
+                { $set: { lastLogin: new Date() } }
+            );
+            res.status(200).json({ success: true, message: "Login time updated" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 5. Update Status
+    router.patch("/status/:id", async (req, res) => {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            await passengerCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { status: status } }
+            );
+            res.status(200).json({ success: true, message: "Status updated" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 6. Update User Data
+    router.put("/update/:id", async (req, res) => {
         try {
             const { id } = req.params;
-            const updateData = req.body;
-
-            // Remove sensitive fields from update
-            delete updateData.password;
-            delete updateData._id;
-
-            const result = await passengerCollection.updateOne(
+            const { name, phone, role } = req.body;
+            await passengerCollection.updateOne(
                 { _id: new ObjectId(id) },
-                { $set: { ...updateData, updatedAt: new Date() } }
+                { $set: { name, phone, role } }
             );
-
-            if (result.matchedCount === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "User not found"
-                });
-            }
-
-            res.json({
-                success: true,
-                message: "User updated successfully"
-            });
+            res.status(200).json({ success: true, message: "User updated" });
         } catch (error) {
-            console.error("Update user error:", error);
-            res.status(500).json({
-                success: false,
-                message: "Failed to update user",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 7. Delete User
+    router.delete("/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            await passengerCollection.deleteOne({ _id: new ObjectId(id) });
+            res.status(200).json({ success: true, message: "User deleted" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 8. Bulk Delete
+    router.post("/bulk-delete", async (req, res) => {
+        try {
+            const { ids } = req.body;
+            const objectIds = ids.map(id => new ObjectId(id));
+            await passengerCollection.deleteMany({ _id: { $in: objectIds } });
+            res.status(200).json({ success: true, message: "Users deleted" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 

@@ -205,8 +205,9 @@ app.use((err, req, res, next) => {
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
   });
 }
 
-// ✅ Export for Vercel serverless
+// ✅ For Vercel serverless
 module.exports = app;

@@ -15,44 +15,65 @@ module.exports = (passengerCollection) => {
         }
     });
 
-    // 2. Find User (NextAuth Credentials-er jonno khub gurutto purno)
+    // 2. Find User by Email
     router.get("/find", async (req, res) => {
         try {
             const email = req.query.email;
+            
             if (!email) {
                 return res.status(400).json({ message: "Email is required" });
             }
 
             const user = await passengerCollection.findOne({ email });
 
-            // NextAuth (v5) Authorize function 404 pele crash kore HTML return kore
-            // Tai user na pele 200 status e null pathano safest way
+            // Return null if user not found (NextAuth expects this)
             if (!user) {
                 return res.status(200).json(null);
             }
 
+            // Return user data
             res.status(200).json(user);
         } catch (error) {
             console.error("Find user error:", error);
-            res.status(500).json({ message: "Internal Server Error" });
+            res.status(500).json({ 
+                success: false,
+                message: "Internal Server Error",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
         }
     });
 
-    // 3. Create User (Registration & Social Login Sync)
+    // 3. Create User (Registration & OAuth Sync)
     router.post("/", async (req, res) => {
         try {
             const { name, email, phone, password, role, image, authProvider } = req.body;
 
-            if (!email || !name || (!password && !authProvider)) {
-                return res.status(400).json({ message: "Missing required fields" });
+            // Validation
+            if (!email || !name) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Email and name are required" 
+                });
             }
 
+            if (!password && !authProvider) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Password is required for credential-based registration" 
+                });
+            }
+
+            // Check if user already exists
             const existingUser = await passengerCollection.findOne({ email });
             if (existingUser) {
-                return res.status(400).json({ message: "User already exists" });
+                return res.status(400).json({ 
+                    success: false,
+                    message: "User already exists with this email" 
+                });
             }
 
-            let newUser = {
+            // Create new user object
+            const newUser = {
                 name,
                 email,
                 phone: phone || "",
@@ -64,15 +85,32 @@ module.exports = (passengerCollection) => {
                 lastLogin: new Date(),
             };
 
-            // Password thakle hash korbe (Credentials login-er khetre)
+            // Hash password if provided (for credentials login)
             if (password) {
                 newUser.password = await bcrypt.hash(password, 10);
             }
 
+            // Insert user into database
             const result = await passengerCollection.insertOne(newUser);
-            res.status(201).json({ success: true, data: result.insertedId });
+            
+            console.log(`✅ User created: ${email} (${authProvider || 'credentials'})`);
+
+            res.status(201).json({ 
+                success: true, 
+                message: "User created successfully",
+                data: {
+                    userId: result.insertedId,
+                    email: newUser.email,
+                    role: newUser.role
+                }
+            });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Create user error:", error);
+            res.status(500).json({ 
+                success: false,
+                message: "Failed to create user",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
         }
     });
 

@@ -2,8 +2,23 @@
 import React from "react";
 import { Users, Car, MapPin, BarChart3, Star, Map as MapIcon } from "lucide-react";
 import { StatCard, ActivityPanel } from "@/components/dashboard/DashboardUi";
+import { useRequireRole } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
+  // ✅ Protect this page - only admins can access
+  const { user, isLoading } = useRequireRole("admin");
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   const stats = [
     { label: "Customers", value: "$50,101", icon: Users, percentage: 20, trend: "up", color: "bg-blue-600 text-blue-600" },
     { label: "Booking", value: "92 /100", icon: Car, percentage: 11, trend: "up", color: "bg-orange-600 text-orange-600" },

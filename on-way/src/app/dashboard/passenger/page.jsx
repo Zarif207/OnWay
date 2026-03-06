@@ -2,8 +2,24 @@
 
 import { Car, MapPin, Wallet, Shield, Clock, Headphones } from "lucide-react";
 import Link from "next/link";
+import { useRequireRole } from "@/hooks/useAuth";
 
 export default function PassengerLanding() {
+  // ✅ Protect this page - only passengers can access
+  const { user, isLoading } = useRequireRole("passenger");
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2FCA71] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-16">
 

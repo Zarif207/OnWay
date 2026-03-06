@@ -32,7 +32,7 @@ module.exports = function (ridersCollection) {
         return res.status(400).json({ message: "Rider already exists" });
       }
 
-      // Requirement: The payload doesn't have a password, so we hash a default one.
+      // The payload doesn't have a password, so we hash a default one.
       const defaultPassword = "onway_rider_pass";
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 

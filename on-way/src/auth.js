@@ -99,52 +99,120 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     callbacks: {
-        async signIn({ user, account }) {
-            if (account.provider === "google" || account.provider === "github") {
+        async signIn({ user, account, profile }) {
+            // ✅ Handle OAuth providers (Google, GitHub)
+            if (account?.provider === "google" || account?.provider === "github") {
                 const { name, email, image } = user;
 
                 try {
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-                    const res = await fetch(`${apiUrl}/passenger/find?email=${email}`);
+                    
+                    // Check if user exists
+                    const checkRes = await fetch(`${apiUrl}/passenger/find?email=${email}`);
+                    
+                    if (!checkRes.ok) {
+                        console.error("Error checking user existence:", checkRes.statusText);
+                        return true; // Allow login even if check fails
+                    }
 
-                    if (res.status === 404) {
-                        const saveRes = await fetch(`${apiUrl}/passenger`, {
+                    const existingUser = await checkRes.json();
+
+                    // If user doesn't exist, create new user
+                    if (!existingUser) {
+                        console.log(`Creating new user for ${email} via ${account.provider}`);
+                        
+                        const createRes = await fetch(`${apiUrl}/passenger`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
-                                name,
+                                name: name || email.split('@')[0], // Fallback to email username
                                 email,
-                                image,
-                                role: "passenger",
-                                authProvider: account.provider
+                                image: image || "",
+                                role: "passenger", // Default role
+                                authProvider: account.provider,
+                                createdAt: new Date().toISOString(),
+                                lastLogin: new Date().toISOString(),
                             }),
                         });
 
-                        if (!saveRes.ok) {
-                            console.error("Failed to save user to DB");
+                        if (!createRes.ok) {
+                            const errorData = await createRes.json().catch(() => ({}));
+                            console.error("Failed to create user:", errorData);
+                            // Still allow login even if DB save fails
+                        } else {
+                            console.log(`✅ User created successfully for ${email}`);
                         }
+                    } else {
+                        console.log(`User ${email} already exists, skipping creation`);
                     }
+                    
                     return true;
                 } catch (error) {
-                    console.error("Error during social login sync:", error);
+                    console.error("Error during OAuth user sync:", error);
+                    // Allow login to proceed even if DB sync fails
                     return true;
                 }
             }
+            
+            // ✅ Handle Credentials provider
+            // User is already validated in authorize() function
             return true;
         },
         
-        async jwt({ token, user }) {
+        async jwt({ token, user, account, trigger }) {
+            // Initial sign in - user object is available
             if (user) {
                 token.id = user.id;
-                token.role = user.role;
+                token.role = user.role || "passenger";
+                token.image = user.image;
             }
+            
+            // For OAuth providers, fetch latest data from database
+            if (account?.provider === "google" || account?.provider === "github") {
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
+                    
+                    if (res.ok) {
+                        const userData = await res.json();
+                        if (userData) {
+                            token.id = userData._id || userData.id;
+                            token.role = userData.role || "passenger";
+                            token.image = userData.image || token.picture;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data in JWT callback:", error);
+                    // Keep existing token data if fetch fails
+                }
+            }
+            
+            // Handle session updates (when user data changes)
+            if (trigger === "update") {
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
+                    
+                    if (res.ok) {
+                        const userData = await res.json();
+                        if (userData) {
+                            token.role = userData.role || token.role;
+                            token.image = userData.image || token.image;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error updating token:", error);
+                }
+            }
+            
             return token;
         },
 
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id;
-                session.user.role = token.role;
+                session.user.role = token.role || "passenger";
+                session.user.image = token.image || session.user.image;
             }
             return session;
         },

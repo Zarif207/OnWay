@@ -8,6 +8,11 @@ module.exports = function (ridersCollection) {
   // 🔹 Create Rider (Register)
   router.post("/", async (req, res) => {
     try {
+      console.log("📝 Rider registration request received:", {
+        body: req.body,
+        method: req.method
+      });
+
       const {
         firstName,
         lastName,
@@ -24,17 +29,26 @@ module.exports = function (ridersCollection) {
       } = req.body;
 
       if (!firstName || !email || !phone) {
-        return res.status(400).json({ message: "All required fields must be provided" });
+        console.log("❌ Validation failed: Missing required fields");
+        return res.status(400).json({ 
+          success: false,
+          message: "First name, email, and phone are required" 
+        });
       }
 
       const existing = await ridersCollection.findOne({ email });
       if (existing) {
-        return res.status(400).json({ message: "Rider already exists" });
+        console.log("❌ Rider already exists:", email);
+        return res.status(400).json({ 
+          success: false,
+          message: "Rider already exists with this email" 
+        });
       }
 
       // The payload doesn't have a password, so we hash a default one.
       const defaultPassword = "onway_rider_pass";
-      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
       const rider = {
         name: `${firstName} ${lastName}`.trim(),
@@ -56,13 +70,24 @@ module.exports = function (ridersCollection) {
       };
 
       const result = await ridersCollection.insertOne(rider);
+      console.log("✅ Rider created successfully:", result.insertedId);
 
       res.status(201).json({
-        message: "Rider created successfully",
-        riderId: result.insertedId,
+        success: true,
+        message: "Rider registered successfully",
+        data: {
+          riderId: result.insertedId,
+          email: rider.email,
+          name: rider.name
+        }
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("❌ Rider registration error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Rider registration failed",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -70,9 +95,17 @@ module.exports = function (ridersCollection) {
   router.get("/", async (req, res) => {
     try {
       const riders = await ridersCollection.find().toArray();
-      res.json(riders);
+      res.json({ 
+        success: true, 
+        data: riders 
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("Get riders error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to fetch riders",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -84,12 +117,23 @@ module.exports = function (ridersCollection) {
       });
 
       if (!rider) {
-        return res.status(404).json({ message: "Rider not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "Rider not found" 
+        });
       }
 
-      res.json(rider);
+      res.json({ 
+        success: true, 
+        data: rider 
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("Get rider error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to fetch rider",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -97,28 +141,62 @@ module.exports = function (ridersCollection) {
   router.patch("/:id", async (req, res) => {
     try {
       const updateData = req.body;
+      
+      // Remove sensitive fields
+      delete updateData.password;
+      delete updateData._id;
 
       const result = await ridersCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
-        { $set: updateData }
+        { $set: { ...updateData, updatedAt: new Date() } }
       );
 
-      res.json({ message: "Rider updated", result });
+      if (result.matchedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Rider not found"
+        });
+      }
+
+      res.json({ 
+        success: true,
+        message: "Rider updated successfully" 
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("Update rider error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to update rider",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
   // 🔹 Delete Rider
   router.delete("/:id", async (req, res) => {
     try {
-      await ridersCollection.deleteOne({
+      const result = await ridersCollection.deleteOne({
         _id: new ObjectId(req.params.id),
       });
 
-      res.json({ message: "Rider deleted successfully" });
+      if (result.deletedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Rider not found"
+        });
+      }
+
+      res.json({ 
+        success: true,
+        message: "Rider deleted successfully" 
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("Delete rider error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to delete rider",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 

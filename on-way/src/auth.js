@@ -10,6 +10,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         Google({
             clientId: process.env.AUTH_GOOGLE_ID,
             clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code"
+                }
+            }
         }),
         GitHub({
             clientId: process.env.AUTH_GITHUB_ID,
@@ -17,38 +24,70 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
         Credentials({
             name: "Credentials",
+            credentials: {
+                email: { label: "Email", type: "email" },
+                password: { label: "Password", type: "password" }
+            },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) return null;
-
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${credentials.email}`);
-                const user = await res.json();
-
-                if (!user || !user.password) {
-                    throw new Error("User not found!");
+                if (!credentials?.email || !credentials?.password) {
+                    throw new Error("Email and password required");
                 }
 
-                const isMatch = await bcrypt.compare(credentials.password, user.password);
-                if (!isMatch) {
-                    throw new Error("Invalid password!");
-                }
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${credentials.email}`);
+                    
+                    if (!res.ok) {
+                        throw new Error("User not found");
+                    }
 
-                return {
-                    id: user._id || user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role || "passenger"
-                };
+                    const user = await res.json();
+
+                    // Handle both response formats
+                    const userData = user.data || user;
+
+                    if (!userData || !userData.password) {
+                        throw new Error("Invalid credentials");
+                    }
+
+                    const isMatch = await bcrypt.compare(credentials.password, userData.password);
+                    
+                    if (!isMatch) {
+                        throw new Error("Invalid password");
+                    }
+
+                    return {
+                        id: userData._id || userData.id,
+                        name: userData.name,
+                        email: userData.email,
+                        role: userData.role || "passenger"
+                    };
+                } catch (error) {
+                    console.error("Auth error:", error);
+                    throw new Error(error.message || "Authentication failed");
+                }
             },
         }),
     ],
 
-    session: { strategy: "jwt" },
-    pages: { signIn: "/login" },
+    session: { 
+        strategy: "jwt",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+    },
+    
+    pages: { 
+        signIn: "/login",
+        error: "/login", // Redirect to login on error
+    },
+
+    // ✅ CRITICAL: Add trustHost for Vercel deployment
+    trustHost: true,
 
     events: {
         async signIn({ user }) {
             try {
-                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/update-login`, {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                await fetch(`${apiUrl}/passenger/update-login`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: user.email }),
@@ -65,10 +104,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const { name, email, image } = user;
 
                 try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${email}`);
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${email}`);
 
                     if (res.status === 404) {
-                        const saveRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger`, {
+                        const saveRes = await fetch(`${apiUrl}/passenger`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -92,6 +132,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return true;
         },
+        
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
@@ -108,4 +149,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return session;
         },
     },
+
+    // ✅ Enable debug logging in development
+    debug: process.env.NODE_ENV === 'development',
 });

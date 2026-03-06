@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Swal from "sweetalert2";
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 export default function PaymentPage() {
   const [paymentData, setPaymentData] = useState({
@@ -23,10 +24,30 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
 
   const paymentMethods = [
-    { id: "card", name: "Card", icon: "💳", color: "from-blue-500 to-blue-600" },
-    { id: "bkash", name: "bKash", icon: "📱", color: "from-pink-500 to-pink-600" },
-    { id: "nagad", name: "Nagad", icon: "💰", color: "from-orange-500 to-orange-600" },
-    { id: "cash", name: "Cash", icon: "💵", color: "from-green-500 to-green-600" },
+    {
+      id: "card",
+      name: "Card",
+      icon: "💳",
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      id: "bkash",
+      name: "bKash",
+      icon: "📱",
+      color: "from-pink-500 to-pink-600",
+    },
+    {
+      id: "nagad",
+      name: "Nagad",
+      icon: "💰",
+      color: "from-orange-500 to-orange-600",
+    },
+    {
+      id: "cash",
+      name: "Cash",
+      icon: "💵",
+      color: "from-green-500 to-green-600",
+    },
   ];
 
   const handleChange = (e) => {
@@ -42,7 +63,10 @@ export default function PaymentPage() {
 
     // Card number formatting
     if (name === "cardNumber") {
-      value = value.replace(/\s/g, "").replace(/(\d{4})/g, "$1 ").trim();
+      value = value
+        .replace(/\s/g, "")
+        .replace(/(\d{4})/g, "$1 ")
+        .trim();
       if (value.length > 19) return;
     }
 
@@ -69,7 +93,7 @@ export default function PaymentPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:4000/api/payment/initiate", {
+      const response = await fetch(`${apiUrl}/payment/initiate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -143,7 +167,6 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Payment</h1>
@@ -151,7 +174,6 @@ export default function PaymentPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          
           {/* Left Side - Payment Methods & Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Payment Methods */}

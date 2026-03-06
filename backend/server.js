@@ -33,6 +33,7 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:5000',
       'https://on-way-server.vercel.app',
+      'https://onway-5g8a.onrender.com',
       process.env.FRONTEND_URL,
       process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
     ].filter(Boolean);

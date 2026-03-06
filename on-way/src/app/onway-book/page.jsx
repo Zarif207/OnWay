@@ -20,15 +20,15 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
 export default function BookRidePage() {
   const [pickupQuery, setPickupQuery] = useState("");
   const [dropoffQuery, setDropoffQuery] = useState("");
-  
+
   const [pickupLocation, setPickupLocation] = useState(null);
   const [dropoffLocation, setDropoffLocation] = useState(null);
-  
+
   // Real Route Data State
   const [routeGeometry, setRouteGeometry] = useState([]);
   const [distance, setDistance] = useState(0);     // In KM
   const [duration, setDuration] = useState(0);     // In Minutes
-  
+
   const [rideType, setRideType] = useState("standard");
   const [fare, setFare] = useState(0);
 
@@ -39,7 +39,7 @@ export default function BookRidePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const router =useRouter()
+  const router = useRouter()
 
   // Track which input the user is focusing on to know where to put the map click coordinate
   const [activeInput, setActiveInput] = useState("pickup");
@@ -172,10 +172,10 @@ export default function BookRidePage() {
         const { latitude, longitude } = position.coords;
         try {
           const addressName = await reverseGeocode(latitude, longitude);
-          const name = addressName && addressName !== `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
-            ? addressName 
+          const name = addressName && addressName !== `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            ? addressName
             : "Current Location";
-          
+
           const newLocationObj = {
             lat: latitude,
             lon: longitude,
@@ -213,7 +213,7 @@ export default function BookRidePage() {
   const handleMapClick = async (coords) => {
     setError("");
     const addressName = await reverseGeocode(coords.lat, coords.lon);
-    
+
     const newLocationObj = {
       lat: coords.lat,
       lon: coords.lon,
@@ -287,17 +287,17 @@ export default function BookRidePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 pt-38 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
-        
+
         {/* LEFT SIDE: Form Section */}
         <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit">
-          
+
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
             <p className="text-gray-500 text-sm">Real-time navigation & dynamic pricing.</p>
           </div>
-          
+
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
@@ -382,11 +382,10 @@ export default function BookRidePage() {
                 <button
                   key={key}
                   onClick={() => setRideType(key)}
-                  className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${
-                    rideType === key
+                  className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${rideType === key
                       ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
                       : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
-                  }`}
+                    }`}
                 >
                   <span className="text-2xl mb-1">{data.icon}</span>
                   <span className={`font-semibold capitalize ${rideType === key ? "text-gray-900" : "text-gray-700"}`}>{data.name}</span>
@@ -398,24 +397,24 @@ export default function BookRidePage() {
 
           {/* Pricing & Route Summary */}
           {isRouting ? (
-             <div className="bg-gray-50 p-6 rounded-2xl mt-2 border border-gray-200 flex flex-col items-center justify-center text-center">
-                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-                <span className="text-gray-600 font-medium">Calculating best route...</span>
-             </div>
+            <div className="bg-gray-50 p-6 rounded-2xl mt-2 border border-gray-200 flex flex-col items-center justify-center text-center">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <span className="text-gray-600 font-medium">Calculating best route...</span>
+            </div>
           ) : routeGeometry && routeGeometry.length > 0 ? (
             <div className="bg-gray-900 text-white p-6 rounded-2xl mt-2 shadow-lg relative overflow-hidden">
-               <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
-              
-               <div className="flex gap-4 mb-4 relative z-10 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                  <div className="flex-1 flex flex-col items-center justify-center border-r border-white/20">
-                     <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Time</span>
-                     <span className="font-bold text-lg">{duration} <span className="text-sm font-normal">min</span></span>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center justify-center">
-                     <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Distance</span>
-                     <span className="font-bold text-lg">{distance} <span className="text-sm font-normal">km</span></span>
-                  </div>
-               </div>
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
+
+              <div className="flex gap-4 mb-4 relative z-10 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                <div className="flex-1 flex flex-col items-center justify-center border-r border-white/20">
+                  <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Time</span>
+                  <span className="font-bold text-lg">{duration} <span className="text-sm font-normal">min</span></span>
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Distance</span>
+                  <span className="font-bold text-lg">{distance} <span className="text-sm font-normal">km</span></span>
+                </div>
+              </div>
 
               <div className="flex justify-between items-end relative z-10 pt-2 border-t border-white/10">
                 <span className="text-gray-300 font-medium">Estimated Fare</span>
@@ -439,9 +438,9 @@ export default function BookRidePage() {
 
         {/* RIGHT SIDE: Map View */}
         <div className="w-full flex-1 h-[500px] lg:h-auto min-h-[600px] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-200 relative z-0 cursor-crosshair">
-          <RideMap 
-            pickup={pickupLocation} 
-            dropoff={dropoffLocation} 
+          <RideMap
+            pickup={pickupLocation}
+            dropoff={dropoffLocation}
             routeGeometry={routeGeometry}
             durationMin={duration}
             onMapClick={handleMapClick}

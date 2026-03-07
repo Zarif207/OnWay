@@ -9,6 +9,7 @@ const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
 const supportRoutes = require("./routes/support");
+const supportAgentRoutes = require("./routes/supportAgent");
 const bookingsRoutes = require("./routes/bookings");
 const paymentRoutes = require("./routes/payment");
 const ridersRoutes = require("./routes/riders");
@@ -140,6 +141,10 @@ app.use("/api/reviews", (req, res, next) => {
 
 app.use("/api/support", (req, res, next) => {
   supportRoutes(req.collections.knowledgeCollection)(req, res, next);
+});
+
+app.use("/api/support-agent", (req, res, next) => {
+  supportAgentRoutes(req.collections)(req, res, next);
 });
 
 app.use("/api/bookings", (req, res, next) => {

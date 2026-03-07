@@ -169,7 +169,7 @@ export default function Footer() {
             </h3>
             <ul className="space-y-4 text-sm font-medium">
               <li>
-                <Link href="/" className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
+                <Link href="/about" className="group inline-flex items-center text-zinc-400 hover:text-[#2FCA71] transition-all">
                   <span className="w-0 h-0.5 bg-[#2FCA71] mr-0 transition-all duration-300 group-hover:w-2 group-hover:mr-2"></span>
                   About OnWay
                 </Link>
@@ -186,6 +186,7 @@ export default function Footer() {
                   Blog
                 </a>
               </li>
+
             </ul>
           </motion.div>
         </motion.div>
@@ -207,6 +208,12 @@ export default function Footer() {
             </Link>
             <Link href="/privacy" className="hover:text-[#2FCA71] hover:-translate-y-0.5 inline-block transition-all">
               Privacy
+            </Link>
+            <Link href="/security" className="hover:text-[#2FCA71] hover:-translate-y-0.5 inline-block transition-all">
+              Security
+            </Link>
+            <Link href="/card-agreement" className="hover:text-[#2FCA71] hover:-translate-y-0.5 inline-block transition-all">
+              Card Agreement
             </Link>
             <span className="text-zinc-700 hidden sm:inline">•</span>
             <span>Region: Global</span>

@@ -23,6 +23,8 @@ import {
   Tag
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
+
+
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 
@@ -81,22 +83,22 @@ const Navbar = () => {
       >
         <div
           className={`w-full max-w-7xl flex items-center justify-between px-6 py-2.5 rounded-2xl border transition-all duration-300 ${isScrolled
-              ? "bg-white/70 dark:bg-black/70 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-2xl"
-              : "bg-transparent border-transparent"
+            ? "bg-white/70 dark:bg-black/70 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-2xl"
+            : "bg-transparent border-transparent"
             }`}
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="flex items-center gap-3 group">
-  <div className="relative w-25 h-25 flex-shrink-0">
-    <Image
-      src={logoImage}
-      alt="OnWay Logo"
-      fill
-      className="object-contain"
-      priority
-    />
-  </div>
-</Link>
+            <div className="relative w-25 h-25 flex-shrink-0">
+              <Image
+                src={logoImage}
+                alt="OnWay Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
           <div className="hidden lg:flex items-center gap-1">
@@ -105,8 +107,8 @@ const Navbar = () => {
                 key={item.href}
                 href={item.href}
                 className={`relative px-4 py-2 text-sm font-bold tracking-tight transition-colors duration-300 rounded-lg hover:bg-[#22c55e]/5 ${isActive(item.href)
-                    ? "text-[#22c55e]"
-                    : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
+                  ? "text-[#22c55e]"
+                  : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
                   }`}
               >
                 {item.label}
@@ -124,8 +126,8 @@ const Navbar = () => {
               <Link
                 href={dashboardHref}
                 className={`relative px-4 py-2 text-sm font-bold tracking-tight transition-colors duration-300 rounded-lg hover:bg-[#22c55e]/5 ${pathname.startsWith("/dashboard")
-                    ? "text-[#22c55e]"
-                    : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
+                  ? "text-[#22c55e]"
+                  : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
                   }`}
               >
                 Dashboard
@@ -274,8 +276,8 @@ const Navbar = () => {
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all ${isActive(item.href)
-                          ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
-                          : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
+                        ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
+                        : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
                         }`}
                     >
                       <item.icon size={22} />
@@ -294,8 +296,8 @@ const Navbar = () => {
                       href={dashboardHref}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all ${pathname.startsWith("/dashboard")
-                          ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
-                          : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
+                        ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
+                        : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
                         }`}
                     >
                       <LayoutDashboard size={22} />

@@ -15,11 +15,17 @@ module.exports = (ridesCollection) => {
             };
 
             const result = await ridesCollection.insertOne(rideData);
+            const insertedRide = { _id: result.insertedId, ...rideData };
+
+            // 🔹 Real-time broadcast to drivers
+            if (req.io) {
+                req.io.to("drivers").emit("new_ride_request", insertedRide);
+            }
 
             res.status(201).json({
                 success: true,
                 message: "Ride created successfully",
-                data: result.insertedId,
+                data: insertedRide,
             });
         } catch (error) {
             res.status(500).json({

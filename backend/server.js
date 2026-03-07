@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const passengerRoutes = require("./routes/passenger");
 const blogRoutes = require("./routes/blog");
@@ -55,6 +57,51 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:3000", "https://on-way-server.vercel.app", process.env.FRONTEND_URL].filter(Boolean),
+    methods: ["GET", "POST"]
+  }
+});
+
+// ✅ Socket.io Logic
+io.on("connection", (socket) => {
+  console.log("🔌 User connected:", socket.id);
+
+  socket.on("join", (room) => {
+    socket.join(room);
+    console.log(`👤 User joined room: ${room}`);
+
+    // Automatically join drivers room if it's a driver/rider channel
+    if (room.startsWith("driver_") || room.startsWith("rider_")) {
+      socket.join("drivers");
+      console.log(`🚛 User ${socket.id} joined global drivers room`);
+    }
+  });
+
+  socket.on("toggle-status", async (data) => {
+    // This will be handled by the client emitting, and we broadcast
+    io.emit("status-updated", data);
+
+    // If going online as a driver, ensure they are in the drivers room
+    if (data.isOnline) {
+      socket.join("drivers");
+    } else {
+      socket.leave("drivers");
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔌 User disconnected");
+  });
+});
+
+// Middleware to attach io to req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 let cachedDb = null;
 let isConnecting = false;
@@ -78,7 +125,7 @@ async function connectDB() {
     await client.connect();
     await client.db("admin").command({ ping: 1 });
     console.log("✅ MongoDB connected");
-    
+
     cachedDb = client.db("onWayDB");
     isConnecting = false;
     return cachedDb;
@@ -104,14 +151,15 @@ app.use(async (req, res, next) => {
       paymentsCollection: database.collection("payments"),
       ridersCollection: database.collection("riders"),
       promoCodeCollection: database.collection("promoCode"),
-      emergencyCollection: database.collection("emergency")
+      emergencyCollection: database.collection("emergency"),
+      withdrawalsCollection: database.collection("withdrawals")
     };
     next();
   } catch (error) {
     console.error("Database connection error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Database connection failed" 
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed"
     });
   }
 });
@@ -150,7 +198,11 @@ app.use("/api/payment", (req, res, next) => {
 });
 
 app.use("/api/riders", (req, res, next) => {
-  ridersRoutes(req.collections.ridersCollection)(req, res, next);
+  ridersRoutes(req.collections)(req, res, next);
+});
+
+app.use("/api/driver", (req, res, next) => {
+  ridersRoutes(req.collections)(req, res, next);
 });
 
 app.use("/api/promo", (req, res, next) => {
@@ -163,7 +215,7 @@ app.use("/api/emergency", (req, res, next) => {
 
 // ✅ Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ 
+  res.json({
     status: "onWay Backend running",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
@@ -182,7 +234,7 @@ app.get("/api/test", (req, res) => {
 
 // ✅ 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.path,
@@ -202,7 +254,7 @@ app.use((err, req, res, next) => {
 
 // ✅ Start server for local development
 if (require.main === module) {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
   });

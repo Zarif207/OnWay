@@ -60,9 +60,9 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="relative group">
                 <div className="absolute inset-0 bg-blue-50/50 rounded-3xl -rotate-2 group-hover:rotate-0 transition-transform duration-500" />
-                <img 
-                  src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800" 
-                  alt="Car" 
+                <img
+                  src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800"
+                  alt="Car"
                   className="relative z-10 w-full h-auto rounded-3xl shadow-lg group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm">
@@ -70,11 +70,11 @@ const AdminDashboard = () => {
                   <p className="text-xs font-bold text-gray-900">Porsche 911 GT3</p>
                 </div>
               </div>
-              
+
               <div className="bg-gray-50/50 rounded-3xl p-6 h-full overflow-hidden relative">
                 <div className="absolute inset-0 opacity-20 hover:opacity-100 transition-opacity">
-                   {/* Simplified Map Replacement */}
-                   <div className="w-full h-full bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s+ff4444(72.57,23.02)/72.57,23.02,12/400x300?access_token=pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJleGFtcGxlIn0=')] bg-cover bg-center" />
+                  {/* Simplified Map Replacement */}
+                  <div className="w-full h-full bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s+ff4444(72.57,23.02)/72.57,23.02,12/400x300?access_token=pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJleGFtcGxlIn0=')] bg-cover bg-center" />
                 </div>
                 <div className="relative z-10 flex flex-col justify-between h-full">
                   <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm self-start px-3 py-1.5 rounded-full border border-white/50 shadow-sm">
@@ -120,10 +120,9 @@ const AdminDashboard = () => {
                       <td className="px-8 py-4 text-xs font-medium text-gray-500">{ride.location}</td>
                       <td className="px-8 py-4 text-xs font-bold text-gray-900">{ride.booking}</td>
                       <td className="px-8 py-4">
-                        <div className={`w-2 h-2 rounded-full mx-auto ${
-                          ride.status === 'Completed' ? 'bg-green-500' : 
+                        <div className={`w-2 h-2 rounded-full mx-auto ${ride.status === 'Completed' ? 'bg-green-500' :
                           ride.status === 'Ongoing' ? 'bg-blue-500' : 'bg-orange-500'
-                        }`} />
+                          }`} />
                       </td>
                       <td className="px-8 py-4 text-center text-xs font-bold text-gray-400">{ride.rating}</td>
                     </tr>

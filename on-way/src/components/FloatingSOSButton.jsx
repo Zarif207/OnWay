@@ -20,15 +20,14 @@ export default function FloatingSOSButton() {
   };
 
   return (
-    <div className="fixed bottom-24 right-6 z-50">
+    <div className="fixed bottom-24 right-6 z-46">
       <button
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative w-10 h-10 bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 animate-pulse hover:animate-none"
+        className="group relative w-10 h-10 bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95"
         aria-label="Emergency SOS"
       >
-        <div className="absolute inset-0 rounded-2xl bg-red-600 opacity-50 animate-ping"></div>
         <div className="relative flex items-center justify-center">
           <AlertTriangle className="w-6 h-6" />
         </div>

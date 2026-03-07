@@ -37,7 +37,7 @@ const SecurityPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header Section */}
-      <header className="bg-[#001820] py-20 px-6 text-center">
+      <header className="bg-secondary py-20 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate__animated animate__fadeInDown">
           Security at <span className="text-[#259461]">OnWay</span>
         </h1>

@@ -9,73 +9,68 @@ module.exports = (passengerCollection) => {
     router.get("/", async (req, res) => {
         try {
             const users = await passengerCollection.find({}).toArray();
-            res.json({ success: true, data: users });
+            res.status(200).json({ success: true, data: users });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: "Failed to fetch users"
-            });
+            res.status(500).json({ success: false, error: error.message });
         }
     });
 
-    // 2. Find User
+    // 2. Find User by Email
     router.get("/find", async (req, res) => {
         try {
             const email = req.query.email;
-
+            
             if (!email) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Email is required"
-                });
+                return res.status(400).json({ message: "Email is required" });
             }
 
             const user = await passengerCollection.findOne({ email });
 
+            // Return null if user not found (NextAuth expects this)
             if (!user) {
-                return res.status(404).json({
-                    success: false,
-                    message: "User not found"
-                });
+                return res.status(200).json(null);
             }
 
-            res.json({ success: true, data: user });
+            // Return user data
+            res.status(200).json(user);
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: "Failed to find user"
+                message: "Internal Server Error",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
             });
         }
     });
 
-    // 3. Register User
+    // 3. Create User (Registration & OAuth Sync)
     router.post("/", async (req, res) => {
         try {
             const { name, email, phone, password, role, image, authProvider } = req.body;
 
             if (!email || !name) {
-                return res.status(400).json({
+                return res.status(400).json({ 
                     success: false,
-                    message: "Email and name are required",
+                    message: "Email and name are required" 
                 });
             }
 
             if (!password && !authProvider) {
-                return res.status(400).json({
+                return res.status(400).json({ 
                     success: false,
-                    message: "Password is required",
+                    message: "Password is required for credential-based registration" 
                 });
             }
 
+            // Check if user already exists
             const existingUser = await passengerCollection.findOne({ email });
-
             if (existingUser) {
-                return res.status(400).json({
+                return res.status(400).json({ 
                     success: false,
-                    message: "User already exists",
+                    message: "User already exists with this email" 
                 });
             }
 
+            // Create new user object
             const newUser = {
                 name,
                 email,
@@ -88,62 +83,100 @@ module.exports = (passengerCollection) => {
                 lastLogin: new Date(),
             };
 
+            // Hash password if provided (for credentials login)
             if (password) {
                 newUser.password = await bcrypt.hash(password, 10);
             }
 
+            // Insert user into database
             const result = await passengerCollection.insertOne(newUser);
+            
+            console.log(`✅ User created: ${email} (${authProvider || 'credentials'})`);
 
-            res.status(201).json({
-                success: true,
-                message: "User registered successfully",
+            res.status(201).json({ 
+                success: true, 
+                message: "User created successfully",
                 data: {
                     userId: result.insertedId,
                     email: newUser.email,
-                    name: newUser.name
+                    role: newUser.role
                 }
             });
 
         } catch (error) {
-            console.error("Register error:", error);
-            res.status(500).json({
+            console.error("Create user error:", error);
+            res.status(500).json({ 
                 success: false,
-                message: "Registration failed"
+                message: "Failed to create user",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
             });
         }
     });
 
-    // 4. Update User
-    router.patch("/:id", async (req, res) => {
+    // 4. Update Login Time (NextAuth events-er jonno)
+    router.patch("/update-login", async (req, res) => {
+        try {
+            const { email } = req.body;
+            await passengerCollection.updateOne(
+                { email },
+                { $set: { lastLogin: new Date() } }
+            );
+            res.status(200).json({ success: true, message: "Login time updated" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 5. Update Status
+    router.patch("/status/:id", async (req, res) => {
+        const { id } = req.params;
+        const { status } = req.body;
+        try {
+            await passengerCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { status: status } }
+            );
+            res.status(200).json({ success: true, message: "Status updated" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 6. Update User Data
+    router.put("/update/:id", async (req, res) => {
         try {
             const { id } = req.params;
-            const updateData = req.body;
-
-            delete updateData.password;
-            delete updateData._id;
-
-            const result = await passengerCollection.updateOne(
+            const { name, phone, role } = req.body;
+            await passengerCollection.updateOne(
                 { _id: new ObjectId(id) },
-                { $set: { ...updateData, updatedAt: new Date() } }
+                { $set: { name, phone, role } }
             );
-
-            if (result.matchedCount === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "User not found"
-                });
-            }
-
-            res.json({
-                success: true,
-                message: "User updated successfully"
-            });
-
+            res.status(200).json({ success: true, message: "User updated" });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: "Failed to update user"
-            });
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 7. Delete User
+    router.delete("/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            await passengerCollection.deleteOne({ _id: new ObjectId(id) });
+            res.status(200).json({ success: true, message: "User deleted" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 8. Bulk Delete
+    router.post("/bulk-delete", async (req, res) => {
+        try {
+            const { ids } = req.body;
+            const objectIds = ids.map(id => new ObjectId(id));
+            await passengerCollection.deleteMany({ _id: { $in: objectIds } });
+            res.status(200).json({ success: true, message: "Users deleted" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 

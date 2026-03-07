@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 export default function FloatingSOSButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -14,6 +15,9 @@ export default function FloatingSOSButton() {
   if (!session) {
     return null;
   }
+
+  // Check if we're on emergency-sos page
+  const isOnSOSPage = pathname === "/emergency-sos";
 
   const handleClick = () => {
     router.push("/emergency-sos");
@@ -25,9 +29,14 @@ export default function FloatingSOSButton() {
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative w-10 h-10 bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95"
+        className={`group relative w-10 h-10 bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 ${
+          isOnSOSPage ? "animate-pulse" : ""
+        }`}
         aria-label="Emergency SOS"
       >
+        {isOnSOSPage && (
+          <div className="absolute inset-0 rounded-2xl bg-red-600 opacity-50 animate-ping"></div>
+        )}
         <div className="relative flex items-center justify-center">
           <AlertTriangle className="w-6 h-6" />
         </div>

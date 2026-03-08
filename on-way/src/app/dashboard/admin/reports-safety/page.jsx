@@ -1,5 +1,7 @@
-import React from "react";
+"use client"
+import React, { useState } from "react";
 import { Download, AlertTriangle, FileText } from "lucide-react";
+import OnWayLoading from "@/app/components/Loading/page";
 
 const ReportSafety = () => {
   const sosCases = [

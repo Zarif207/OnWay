@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, Calendar, Ticket, X, AlertCircle, Clock } from "l
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import OnWayLoading from "@/app/components/Loading/page";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL}/promo`;
 
@@ -103,7 +104,11 @@ export default function PromoCodes() {
       }
     }
   };
-
+ if (loading) {
+    return (
+      <OnWayLoading></OnWayLoading>   
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 ">
       <div className="max-w-7xl mx-auto">

@@ -10,10 +10,12 @@ const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
 const supportRoutes = require("./routes/support");
+const supportAgentRoutes = require("./routes/supportAgent");
 const bookingsRoutes = require("./routes/bookings");
 const paymentRoutes = require("./routes/payment");
 const ridersRoutes = require("./routes/riders");
 const promoCodeRoutes = require("./routes/promo");
+const emergencyRoutes = require("./routes/emergency");
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -32,10 +34,10 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5000',
-      'https://backend-hazel-theta-50.vercel.app',
       'https://on-way-server.vercel.app',
-      'https://on-way-three.vercel.app',
-      'https://on-way-neon.vercel.app',
+      'https://onway-5g8a.onrender.com',
+      process.env.FRONTEND_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
     ].filter(Boolean);
 
     // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -90,42 +92,34 @@ async function connectDB() {
   }
 }
 
-// ✅ Initialize collections (called on each request in serverless)
-async function getCollections() {
-  const database = await connectDB();
-
-  return {
-    passengerCollection: database.collection("passenger"),
-    blogsCollection: database.collection("Blogs"),
-    gpsLocationsCollection: database.collection("gpsLocations"),
-    ridesCollection: database.collection("rides"),
-    reviewsCollection: database.collection("reviews"),
-    knowledgeCollection: database.collection("knowledge"),
-    bookingsCollection: database.collection("bookings"),
-    paymentsCollection: database.collection("payments"),
-    ridersCollection: database.collection("riders"),
-    promoCodeCollection: database.collection("promoCode"),
-  };
-}
-
-// ✅ Middleware to ensure DB connection and attach collections
+// ✅ Middleware to attach database collections to request
 app.use(async (req, res, next) => {
   try {
-    if (!req.collections) {
-      req.collections = await getCollections();
-    }
+    const database = await connectDB();
+    req.collections = {
+      passengerCollection: database.collection("passenger"),
+      blogsCollection: database.collection("Blogs"),
+      gpsLocationsCollection: database.collection("gpsLocations"),
+      ridesCollection: database.collection("rides"),
+      reviewsCollection: database.collection("reviews"),
+      knowledgeCollection: database.collection("knowledge"),
+      bookingsCollection: database.collection("bookings"),
+      paymentsCollection: database.collection("payments"),
+      ridersCollection: database.collection("riders"),
+      promoCodeCollection: database.collection("promoCode"),
+      emergencyCollection: database.collection("emergency")
+    };
     next();
   } catch (error) {
     console.error("Database connection error:", error);
     res.status(500).json({
       success: false,
-      message: "Database connection failed",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Database connection failed"
     });
   }
 });
 
-// ✅ Register routes OUTSIDE of connectDB (critical for Vercel)
+// ✅ Register routes
 app.use("/api/passenger", (req, res, next) => {
   passengerRoutes(req.collections.passengerCollection)(req, res, next);
 });
@@ -150,6 +144,10 @@ app.use("/api/support", (req, res, next) => {
   supportRoutes(req.collections.knowledgeCollection)(req, res, next);
 });
 
+app.use("/api/support-agent", (req, res, next) => {
+  supportAgentRoutes(req.collections)(req, res, next);
+});
+
 app.use("/api/bookings", (req, res, next) => {
   bookingsRoutes(req.collections.bookingsCollection)(req, res, next);
 });
@@ -164,6 +162,10 @@ app.use("/api/riders", (req, res, next) => {
 
 app.use("/api/promo", (req, res, next) => {
   promoCodeRoutes(req.collections.promoCodeCollection)(req, res, next);
+});
+
+app.use("/api/emergency", (req, res, next) => {
+  emergencyRoutes(req.collections.emergencyCollection)(req, res, next);
 });
 
 // ✅ Health check endpoint
@@ -205,12 +207,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Local development server
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, async () => {
-    await connectDB();
-    console.log(`🚀 Backend running on http://localhost:${PORT}`);
+// ✅ Start server for local development
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
   });
 }
 
+// ✅ For Vercel serverless
 module.exports = app;

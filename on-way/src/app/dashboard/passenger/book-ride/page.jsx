@@ -18,7 +18,6 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
   ),
 });
 
-// মূল লজিক এই কম্পোনেন্টে থাকবে
 function PassengerBookRideContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
@@ -48,7 +47,7 @@ function PassengerBookRideContent() {
       if (!bookingId) return;
       setLoading(true);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
         const response = await fetch(`${apiUrl}/bookings/${bookingId}`);
         const result = await response.json();
 
@@ -218,8 +217,8 @@ function PassengerBookRideContent() {
 export default function PassengerBookRide() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-green-600" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#2FCA71]" />
       </div>
     }>
       <PassengerBookRideContent />

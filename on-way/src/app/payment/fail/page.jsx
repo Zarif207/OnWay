@@ -1,8 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 function PaymentFailContent() {
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transaction");
@@ -64,8 +64,8 @@ function PaymentFailContent() {
 export default function PaymentFail() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-red-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <PaymentFailContent />

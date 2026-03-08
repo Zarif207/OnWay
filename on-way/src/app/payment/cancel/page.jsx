@@ -1,8 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 function PaymentCancelContent() {
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transaction");
@@ -64,8 +64,8 @@ function PaymentCancelContent() {
 export default function PaymentCancel() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-yellow-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <PaymentCancelContent />

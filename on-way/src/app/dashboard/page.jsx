@@ -14,8 +14,24 @@ export default function DashboardPage() {
         return;
       }
 
-      const role = user?.role || "passenger";
-      router.replace(`/dashboard/${role}`);
+      // Force fetch latest user data from database
+      const checkRole = async () => {
+        if (user?.email) {
+          try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${user.email}`);
+            const userData = await res.json();
+            const role = userData?.role || "passenger";
+            console.log("User role from DB:", role); // Debug log
+            router.replace(`/dashboard/${role}`);
+          } catch (error) {
+            console.error("Error fetching user role:", error);
+            const role = user?.role || "passenger";
+            router.replace(`/dashboard/${role}`);
+          }
+        }
+      };
+
+      checkRole();
     }
   }, [user, isLoading, status, router]);
 

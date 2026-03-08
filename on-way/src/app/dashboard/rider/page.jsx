@@ -1,8 +1,26 @@
 "use client";
+
+import React from 'react';
 import { StatCard } from '@/components/dashboard/DashboardUi';
 import { Activity, History, Wallet, User } from 'lucide-react';
+import { useRequireRole } from '@/hooks/useAuth';
 
 const RiderDashboard = () => {
+  // ✅ Protect this page - only riders can access
+  const { user, isLoading } = useRequireRole("rider");
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const stats = [
     { label: "Active Ride", value: "Toyota Camry", icon: Activity, percentage: 100, trend: "up", color: "bg-blue-600 text-blue-600" },
     { label: "Today's Earnings", value: "$120.50", icon: Wallet, percentage: 15, trend: "up", color: "bg-green-600 text-green-600" },

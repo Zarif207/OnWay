@@ -59,7 +59,7 @@ export default function BlogPage() {
     <ScrollProgress>
       <div className="min-h-screen bg-white">
         {/* Hero Section */}
-        <div className="bg-linear-to-r from-gray-900 via-gray-800 to-black text-white py-20">
+        <div className="bg-linear-to-r from-gray-900 via-gray-800 to-black text-white py-35">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold mb-4">OnWay Insights</h1>
             <p className="text-lg text-gray-300 mb-8">

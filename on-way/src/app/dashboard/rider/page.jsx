@@ -1,4 +1,4 @@
-import React from 'react';
+"use client";
 import { StatCard } from '@/components/dashboard/DashboardUi';
 import { Activity, History, Wallet, User } from 'lucide-react';
 
@@ -17,8 +17,8 @@ const RiderDashboard = () => {
           <StatCard key={i} {...stat} />
         ))}
       </div>
-      
-      <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-50">
+
+      <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-50">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Welcome back, Driver!</h3>
         <p className="text-gray-500">You are currently online. Stay safe on the road.</p>
       </div>

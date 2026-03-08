@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -18,7 +18,8 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
   ),
 });
 
-export default function PassengerBookRide() {
+// মূল লজিক এই কম্পোনেন্টে থাকবে
+function PassengerBookRideContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
 
@@ -74,9 +75,7 @@ export default function PassengerBookRide() {
     setIsApplying(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-
       const currentFare = fare > 0 ? fare : (vehicleTypes.find(v => v.id === selectedVehicle).base + distance * 1.2);
-
       const response = await axios.post(`${apiUrl}/promo/apply`, {
         code: promoCode,
         rideAmount: currentFare
@@ -113,16 +112,12 @@ export default function PassengerBookRide() {
   return (
     <div className="min-h-screen bg-[#F4F5F7] p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-black">Book a Ride</h1>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* LEFT SIDE */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Map Section (Keep as it was) */}
             <div className="bg-white p-6 rounded-xl border border-gray-200">
               <h3 className="text-xl font-semibold mb-6">Where to?</h3>
               <div className="space-y-4 mb-6">
@@ -152,7 +147,6 @@ export default function PassengerBookRide() {
               </div>
             </div>
 
-            {/* UPDATED PROMO SECTION */}
             <div className="bg-white border border-gray-200 shadow-sm p-6 rounded-xl">
               <h3 className="text-xl font-semibold mb-6">Promo Code</h3>
               <div className="flex gap-2">
@@ -192,7 +186,6 @@ export default function PassengerBookRide() {
             </button>
           </div>
 
-          {/* RIGHT SIDE - SUMMARY */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white border border-gray-200 shadow-sm p-6 rounded-xl">
               <h3 className="text-xl font-semibold mb-4">Ride Summary</h3>
@@ -219,5 +212,17 @@ export default function PassengerBookRide() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PassengerBookRide() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-green-600" />
+      </div>
+    }>
+      <PassengerBookRideContent />
+    </Suspense>
   );
 }

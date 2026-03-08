@@ -1,4 +1,3 @@
-
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -20,24 +19,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${credentials.email}`);
-                const user = await res.json();
+                try {
+                    // NEXT_PUBLIC_API_URL jodi local-e thake kintu Vercel-e API_URL thake
+                    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
-                if (!user || !user.password) {
-                    throw new Error("User not found!");
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${credentials.email}`, {
+                        cache: 'no-store'
+                    });
+
+                    // 404 ba onno error check
+                    if (!res.ok) {
+                        console.error("Backend response error:", res.status);
+                        return null;
+                    }
+
+                    const user = await res.json();
+
+                    // Jodi user na thake ba password na thake (Social login user)
+                    if (!user || !user.password) {
+                        return null;
+                    }
+
+                    const isMatch = await bcrypt.compare(credentials.password, user.password);
+                    if (!isMatch) return null;
+
+                    return {
+                        id: user._id?.toString() || user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role || "passenger"
+                    };
+                } catch (error) {
+                    console.error("Auth Exception:", error);
+                    return null;
                 }
-
-                const isMatch = await bcrypt.compare(credentials.password, user.password);
-                if (!isMatch) {
-                    throw new Error("Invalid password!");
-                }
-
-                return {
-                    id: user._id || user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role || "passenger"
-                };
             },
         }),
     ],
@@ -48,7 +63,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     events: {
         async signIn({ user }) {
             try {
-                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/update-login`, {
+                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+                await fetch(`${apiUrl}/passenger/update-login`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: user.email }),
@@ -63,12 +79,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async signIn({ user, account }) {
             if (account.provider === "google" || account.provider === "github") {
                 const { name, email, image } = user;
+                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
                 try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${email}`);
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${email}`);
 
                     if (res.status === 404) {
-                        const saveRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger`, {
+                        const saveRes = await fetch(`${apiUrl}/passenger`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -80,13 +97,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             }),
                         });
 
-                        if (!saveRes.ok) {
-                            console.error("Failed to save user to DB");
-                        }
+                        if (!saveRes.ok) console.error("Failed to save social user");
                     }
                     return true;
                 } catch (error) {
-                    console.error("Error during social login sync:", error);
+                    console.error("Social login sync error:", error);
                     return true;
                 }
             }
@@ -99,7 +114,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return token;
         },
-
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id;
@@ -109,3 +123,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
     },
 });
+

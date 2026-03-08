@@ -8,7 +8,7 @@ module.exports = (collections) => {
     // 1. Get all complaints
     router.get("/complaints", async (req, res) => {
         try {
-            // You can create a complaints collection or filter from rides
+            
             const complaints = [
                 { id: 1, user: "John Doe", type: "Driver Behavior", status: "Pending", date: "2024-03-08", priority: "High" },
                 { id: 2, user: "Jane Smith", type: "Payment Issue", status: "In Progress", date: "2024-03-07", priority: "Medium" },
@@ -54,7 +54,7 @@ module.exports = (collections) => {
     // 4. Get all refund requests
     router.get("/refunds", async (req, res) => {
         try {
-            // You can create a refunds collection
+            
             const refunds = [
                 { id: 1, user: "Emma Davis", amount: "$25.50", reason: "Cancelled Ride", status: "Pending", date: "2024-03-08" },
                 { id: 2, user: "James Wilson", amount: "$18.00", reason: "Overcharged", status: "Approved", date: "2024-03-07" },
@@ -123,7 +123,7 @@ module.exports = (collections) => {
     // 8. Get chat support messages
     router.get("/chat-messages", async (req, res) => {
         try {
-            // You can create a messages collection
+            
             const messages = [
                 { id: 1, user: "Alice Cooper", message: "I need help with my payment", time: "Just now", unread: 2 },
                 { id: 2, user: "Bob Martin", message: "Where is my driver?", time: "5 mins ago", unread: 1 },

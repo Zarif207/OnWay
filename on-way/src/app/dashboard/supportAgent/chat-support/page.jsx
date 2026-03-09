@@ -1,210 +1,259 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Search, User, Clock } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import {
+    MessageSquare,
+    Send,
+    Search,
+    Phone,
+    MoreVertical,
+    Paperclip,
+    CheckCheck,
+    Loader2,
+} from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 
 export default function ChatSupportPage({ agentUser }) {
-    const [sessions, setSessions] = useState([]); 
-    const [searchQuery, setSearchQuery] = useState(""); // Search logic
+    const [sessions, setSessions] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const [selectedChat, setSelectedChat] = useState(null);
     const [input, setInput] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
+
     const scrollRef = useRef(null);
+    const fileInputRef = useRef(null);
 
-    const { messages, sendMessage, typing, sendTyping, stopTyping, loading } = 
-        useChat(selectedChat ? selectedChat.roomId : null, "support");
+    // ---------------- Hook ----------------
+    const {
+        messages,
+        sendMessage,
+        typingUser,
+        sendTyping,
+        stopTyping,
+        socket,
+        markAsRead,
+        fetchMessages,
+    } = useChat(
+        selectedChat?.roomId,
+        "support",
+        agentUser?._id,
+        "OnWay Support",
+        "support"
+    );
 
-    // Active sessions fetch kora
+    // ---------------- Fetch Sessions ----------------
     const fetchSessions = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL}/api/chat/active-sessions`);
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_SOCKET_URL}/api/support/sessions`
+            );
             const data = await res.json();
             setSessions(data);
         } catch (err) {
-            console.error("Fetch error:", err);
+            console.error("Session fetch error:", err);
         }
     };
 
+    // ---------------- Select Chat ----------------
+    const handleSelectChat = (session) => {
+        setSelectedChat({
+            roomId: session._id,
+            name: session.senderName,
+            passengerId: session.passengerId,
+        });
+        fetchMessages(session._id);
+        setTimeout(() => markAsRead(), 100);
+    };
+
+    // ---------------- Socket Listeners ----------------
     useEffect(() => {
         fetchSessions();
-        const interval = setInterval(fetchSessions, 15000); // 15 sec refresh
-        return () => clearInterval(interval);
-    }, []);
+        if (!socket) return;
 
+        // Receive messages in real-time
+        const handleReceive = (msg) => {
+            fetchSessions();
+            if (selectedChat?.roomId === msg.roomId) {
+                fetchMessages(selectedChat.roomId);
+                markAsRead();
+            }
+        };
+
+        socket.on("receiveMessage", handleReceive);
+        socket.on("supportSessionUpdated", fetchSessions);
+
+        return () => {
+            socket.off("receiveMessage", handleReceive);
+            socket.off("supportSessionUpdated");
+        };
+    }, [socket, selectedChat?.roomId]);
+
+    // ---------------- Auto Scroll ----------------
     useEffect(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }, [messages, typing]);
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({
+                top: scrollRef.current.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }, [messages, typingUser]);
 
-    // ✅ Search Filter Logic
-    const filteredSessions = sessions.filter(s => 
-        s._id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // ---------------- File Upload ----------------
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploading(true);
 
-    const handleSend = () => {
-        if (input.trim() && selectedChat) {
-            sendMessage(agentUser?._id, "OnWay Support", "support", input);
-            setInput("");
-            stopTyping();
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET);
+
+        try {
+            const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                { method: "POST", body: formData }
+            );
+            const data = await res.json();
+            if (data.secure_url) handleSend("", data.secure_url, "image");
+        } catch (err) {
+            console.error("Upload failed", err);
+            alert("Image upload failed");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
-    return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="mb-6 flex justify-between items-end">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-                        <MessageSquare className="text-green-500" size={32} />
-                        Support Dashboard
-                    </h1>
-                    <p className="text-gray-500 text-sm mt-1">Real-time assistance for OnWay users</p>
-                </div>
-                <div className="text-right text-[10px] text-gray-400 font-mono">
-                    Agent ID: {agentUser?._id || "N/A"}
-                </div>
-            </div>
+    // ---------------- Send Message ----------------
+    // Agent side
+    const handleSend = (text = input, fileUrl = null, type = "text") => {
+        if (!selectedChat) return;
+        sendMessage(text, fileUrl, type);
+        setInput("");
+        stopTyping();
+    };
 
-            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex h-[750px]">
-                
-                {/* --- Left: Chat List --- */}
-                <div className="w-80 border-r border-gray-50 flex flex-col bg-gray-50/30">
-                    <div className="p-5 bg-white border-b border-gray-100">
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-3 text-gray-400 group-focus-within:text-green-500 transition-colors" size={18} />
+    // ---------------- Search Filter ----------------
+    const filteredSessions = useMemo(() => {
+        return sessions.filter(
+            (s) =>
+                s.senderName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.passengerId?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [sessions, searchQuery]);
+
+    return (
+        <div className="flex h-screen bg-[#F8F9FD] p-4 lg:p-8">
+            <div className="max-w-400 w-full mx-auto bg-white rounded-4xl shadow flex overflow-hidden">
+
+                {/* ================= SIDEBAR ================= */}
+                <div className="w-80 lg:w-100 border-r flex flex-col">
+                    <div className="p-8">
+                        <h2 className="text-2xl font-bold mb-6">OnWay Support</h2>
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input
                                 type="text"
-                                value={searchQuery}
+                                placeholder="Search conversation..."
+                                className="w-full pl-12 pr-4 py-3 rounded-xl border"
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by ID..."
-                                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-green-500/20 text-sm transition-all shadow-inner"
                             />
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        {filteredSessions.length === 0 ? (
-                            <div className="p-10 text-center opacity-40">
-                                <Search size={40} className="mx-auto mb-2" />
-                                <p className="text-xs">No sessions found</p>
-                            </div>
-                        ) : (
-                            filteredSessions.map((session) => (
-                                <div
-                                    key={session._id}
-                                    onClick={() => setSelectedChat({ roomId: session._id })}
-                                    className={`p-4 mx-2 my-1 rounded-2xl cursor-pointer transition-all duration-200 flex items-center gap-3 ${
-                                        selectedChat?.roomId === session._id 
-                                        ? "bg-green-500 text-white shadow-lg shadow-green-500/30" 
-                                        : "hover:bg-white hover:shadow-md text-gray-700"
-                                    }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-sm ${
-                                        selectedChat?.roomId === session._id ? "bg-white/20 text-white" : "bg-green-100 text-green-700"
-                                    }`}>
-                                        {session._id.slice(-1).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-center mb-0.5">
-                                            <p className="text-xs font-bold truncate">...{session._id.slice(-8)}</p>
-                                            <span className={`text-[9px] ${selectedChat?.roomId === session._id ? "text-green-50" : "text-gray-400"}`}>
-                                                {new Date(session.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                        <p className={`text-[11px] truncate opacity-80 ${selectedChat?.roomId === session._id ? "text-white" : "text-gray-500"}`}>
-                                            {session.lastMessage}
-                                        </p>
-                                    </div>
+                    <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+                        {filteredSessions.map((session) => (
+                            <div
+                                key={session._id}
+                                onClick={() => handleSelectChat(session)}
+                                className={`p-4 rounded-xl cursor-pointer flex gap-4
+${selectedChat?.roomId === session._id ? "bg-gray-100" : "hover:bg-gray-50"}`}
+                            >
+                                <div className="w-12 h-12 rounded-lg bg-green-600 text-white flex items-center justify-center font-bold">
+                                    {session.senderName?.charAt(0)}
                                 </div>
-                            ))
-                        )}
+                                <div className="flex-1">
+                                    <h4 className="font-semibold">{session.senderName || "Passenger"}</h4>
+                                    <p className="text-xs text-gray-500 truncate">{session.lastMessage || "Start conversation"}</p>
+                                </div>
+                                {session.unreadCount > 0 && (
+                                    <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">
+                                        {session.unreadCount}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* --- Right: Chat Window --- */}
-                <div className="flex-1 flex flex-col bg-white">
+                {/* ================= CHAT WINDOW ================= */}
+                <div className="flex-1 flex flex-col">
                     {selectedChat ? (
                         <>
-                            {/* Window Header */}
-                            <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center bg-white/80 backdrop-blur-md">
-                                <div className="flex items-center gap-4">
-                                    <div className="relative">
-                                        <div className="w-12 h-12 bg-gradient-to-tr from-green-500 to-emerald-400 rounded-2xl flex items-center justify-center text-white font-black shadow-lg">
-                                            P
-                                        </div>
-                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-800 tracking-tight">{selectedChat.roomId}</h3>
-                                        <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest">Active Connection</p>
-                                    </div>
+                            {/* HEADER */}
+                            <div className="px-8 py-5 border-b flex justify-between items-center">
+                                <div>
+                                    <h3 className="font-bold text-lg">{selectedChat.name}</h3>
+                                    <p className="text-xs text-green-500">Active</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button className="p-2 hover:bg-gray-100 rounded"><Phone size={20} /></button>
+                                    <button className="p-2 hover:bg-gray-100 rounded"><MoreVertical size={20} /></button>
                                 </div>
                             </div>
 
-                            {/* Chat History Area */}
-                            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-[#fcfdfe] space-y-6 custom-scrollbar">
-                                {loading && (
-                                    <div className="flex justify-center py-10 opacity-30">
-                                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-green-500 border-t-transparent"></div>
-                                    </div>
-                                )}
-                                
+                            {/* MESSAGES */}
+                            <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6">
                                 {messages.map((m, i) => (
-                                    <div key={i} className={`flex ${m.senderRole === 'support' ? "justify-end" : "justify-start"}`}>
-                                        <div className={`max-w-[70%] group ${m.senderRole === 'support' ? "items-end text-right" : "items-start"}`}>
-                                            <div className={`px-4 py-3 rounded-2xl text-[13px] shadow-sm relative ${
-                                                m.senderRole === 'support' 
-                                                    ? "bg-green-600 text-white rounded-tr-none" 
-                                                    : "bg-white text-gray-700 border border-gray-100 rounded-tl-none"
-                                            }`}>
-                                                <p className="leading-relaxed">{m.message}</p>
-                                                <span className={`text-[9px] mt-2 block opacity-50 ${m.senderRole === 'support' ? "text-white" : "text-gray-400"}`}>
-                                                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
+                                    <div key={i} className={`flex ${m.senderRole === "support" ? "justify-end" : "justify-start"}`}>
+                                        <div className={`max-w-[70%] p-4 rounded-xl ${m.senderRole === "support" ? "bg-green-600 text-white" : "bg-gray-100"}`}>
+                                            {m.messageType === "image" ? (
+                                                <img src={m.fileUrl} className="rounded-lg max-h-60" />
+                                            ) : (
+                                                <p>{m.message}</p>
+                                            )}
+                                            <div className="text-[10px] mt-1 flex items-center gap-1 justify-end">
+                                                <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                                {m.senderRole === "support" && (
+                                                    <CheckCheck size={14} className={m.isRead ? "text-green-200" : "text-white/60"} />
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
 
-                                {typing && (
-                                    <div className="flex items-center gap-2 text-[10px] text-green-500 font-bold italic ml-2 bg-green-50 w-fit px-3 py-1 rounded-full animate-pulse">
-                                        Passenger is typing...
+                                {typingUser && (
+                                    <div className="text-xs text-gray-400 flex items-center gap-2">
+                                        <Loader2 size={14} className="animate-spin" /> User typing...
                                     </div>
                                 )}
                             </div>
 
-                            {/* Footer Input Area */}
-                            <div className="p-5 bg-white border-t border-gray-50">
-                                <div className="flex gap-3 items-center bg-gray-100/50 p-2 rounded-2xl focus-within:bg-white focus-within:ring-2 focus-within:ring-green-500/20 transition-all">
+                            {/* INPUT */}
+                            <div className="p-6 border-t">
+                                <div className="flex gap-3">
+                                    <button onClick={() => fileInputRef.current.click()} className="p-3 bg-gray-100 rounded-lg">
+                                        {isUploading ? <Loader2 className="animate-spin" /> : <Paperclip />}
+                                    </button>
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
                                     <input
-                                        type="text"
                                         value={input}
-                                        onKeyDown={(e) => e.key === 'Enter' ? handleSend() : sendTyping()}
-                                        onBlur={() => stopTyping()}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        placeholder="Type a professional response..."
-                                        className="flex-1 bg-transparent px-4 py-2 outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                                        onChange={(e) => { setInput(e.target.value); sendTyping(); }}
+                                        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                                        onBlur={stopTyping}
+                                        placeholder="Write message..."
+                                        className="flex-1 border rounded-lg px-4"
                                     />
-                                    <button 
-                                        onClick={handleSend}
-                                        disabled={!input.trim()}
-                                        className={`p-3 rounded-xl transition-all duration-300 ${
-                                            input.trim() 
-                                            ? "bg-green-600 text-white shadow-lg shadow-green-600/40 hover:scale-105" 
-                                            : "bg-gray-200 text-gray-400 grayscale"
-                                        }`}
-                                    >
-                                        <Send size={18} strokeWidth={2.5} />
+                                    <button onClick={() => handleSend()} className="bg-green-600 text-white px-5 rounded-lg">
+                                        <Send size={18} />
                                     </button>
                                 </div>
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-300 p-10 bg-gray-50/20">
-                            <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-xl mb-6 animate-bounce duration-[3s]">
-                                <MessageSquare size={48} className="text-gray-100" />
-                            </div>
-                            <h3 className="text-gray-600 font-black text-xl">Select a Ticket</h3>
-                            <p className="text-gray-400 text-sm max-w-[200px] text-center mt-2 font-medium">
-                                Choose a passenger conversation to begin providing support.
-                            </p>
+                        <div className="flex-1 flex flex-col items-center justify-center">
+                            <MessageSquare size={40} className="text-gray-300" />
+                            <h3 className="mt-4 font-semibold">Support Dashboard</h3>
+                            <p className="text-gray-400 text-sm">Select a conversation</p>
                         </div>
                     )}
                 </div>
@@ -212,124 +261,3 @@ export default function ChatSupportPage({ agentUser }) {
         </div>
     );
 }
-
-
-// "use client";
-// import React, { useState } from "react";
-// import { MessageSquare, Send, User, Clock } from "lucide-react";
-
-// export default function ChatSupportPage() {
-//   const [chats, setChats] = useState([
-//     { id: 1, user: "Alice Cooper", message: "I need help with my payment", time: "Just now", unread: 2 },
-//     { id: 2, user: "Bob Martin", message: "Where is my driver?", time: "5 mins ago", unread: 1 },
-//     { id: 3, user: "Carol White", message: "Thank you for your help!", time: "10 mins ago", unread: 0 },
-//   ]);
-
-//   const [selectedChat, setSelectedChat] = useState(null);
-//   const [message, setMessage] = useState("");
-
-//   return (
-//     <div className="p-6">
-//       <div className="mb-6">
-//         <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-//           <MessageSquare className="text-green-500" />
-//           Chat Support
-//         </h1>
-//         <p className="text-gray-600 mt-2">Provide real-time support to users</p>
-//       </div>
-
-//       <div className="bg-white rounded-lg shadow-md overflow-hidden" style={{ height: "600px" }}>
-//         <div className="flex h-full">
-//           {/* Chat List */}
-//           <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-//             <div className="p-4 bg-gray-50 border-b">
-//               <input
-//                 type="text"
-//                 placeholder="Search conversations..."
-//                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-//               />
-//             </div>
-//             <div className="divide-y divide-gray-200">
-//               {chats.map((chat) => (
-//                 <div
-//                   key={chat.id}
-//                   onClick={() => setSelectedChat(chat)}
-//                   className={`p-4 cursor-pointer hover:bg-gray-50 ${
-//                     selectedChat?.id === chat.id ? "bg-green-50" : ""
-//                   }`}
-//                 >
-//                   <div className="flex items-start justify-between mb-1">
-//                     <div className="flex items-center gap-2">
-//                       <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
-//                         {chat.user.charAt(0)}
-//                       </div>
-//                       <div>
-//                         <h4 className="font-semibold text-gray-800">{chat.user}</h4>
-//                         <p className="text-sm text-gray-600 truncate">{chat.message}</p>
-//                       </div>
-//                     </div>
-//                     {chat.unread > 0 && (
-//                       <span className="bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-//                         {chat.unread}
-//                       </span>
-//                     )}
-//                   </div>
-//                   <p className="text-xs text-gray-500">{chat.time}</p>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-
-//           {/* Chat Window */}
-//           <div className="flex-1 flex flex-col">
-//             {selectedChat ? (
-//               <>
-//                 <div className="p-4 bg-gray-50 border-b flex items-center gap-3">
-//                   <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
-//                     {selectedChat.user.charAt(0)}
-//                   </div>
-//                   <div>
-//                     <h3 className="font-semibold text-gray-800">{selectedChat.user}</h3>
-//                     <p className="text-sm text-green-600">Online</p>
-//                   </div>
-//                 </div>
-//                 <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-//                   <div className="space-y-4">
-//                     <div className="flex justify-start">
-//                       <div className="bg-white p-3 rounded-lg shadow max-w-xs">
-//                         <p className="text-sm text-gray-800">{selectedChat.message}</p>
-//                         <p className="text-xs text-gray-500 mt-1">{selectedChat.time}</p>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 </div>
-//                 <div className="p-4 bg-white border-t">
-//                   <div className="flex gap-2">
-//                     <input
-//                       type="text"
-//                       value={message}
-//                       onChange={(e) => setMessage(e.target.value)}
-//                       placeholder="Type your message..."
-//                       className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-//                     />
-//                     <button className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2">
-//                       <Send size={18} />
-//                       Send
-//                     </button>
-//                   </div>
-//                 </div>
-//               </>
-//             ) : (
-//               <div className="flex-1 flex items-center justify-center text-gray-500">
-//                 <div className="text-center">
-//                   <MessageSquare size={64} className="mx-auto mb-4 text-gray-300" />
-//                   <p>Select a conversation to start chatting</p>
-//                 </div>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }

@@ -13,11 +13,11 @@ import {
 export default function SupportLayout({ children }) {
   const menuItems = [
     { label: "Dashboard", path: "/dashboard/supportAgent", icon: LayoutDashboard },
-    { label: "All Reports", path: "/dashboard/supportAgent/all-reports", icon: FileText },
-    { label: "Case Management", path: "/dashboard/supportAgent/case-management", icon: LifeBuoy },
-    { label: "Live Alerts", path: "/dashboard/supportAgent/live-alerts", icon: Bell },
-    { label: "Ride Monitoring", path: "/dashboard/supportAgent/ride-monitoring", icon: ShieldAlert },
-    { label: "Tickets", path: "/dashboard/supportAgent/tickets", icon: MessageSquare },
+    { label: "Complaints", path: "/dashboard/supportAgent/complaints", icon: FileText },
+    { label: "Live SOS", path: "/dashboard/supportAgent/live-sos", icon: ShieldAlert },
+    { label: "Chat Support", path: "/dashboard/supportAgent/chat-support", icon: MessageSquare },
+    { label: "Refunds", path: "/dashboard/supportAgent/refunds", icon: Bell },
+    { label: "Verification", path: "/dashboard/supportAgent/verification", icon: LifeBuoy },
   ];
 
   return (

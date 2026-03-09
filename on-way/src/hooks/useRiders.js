@@ -8,8 +8,9 @@ const useRiders = () => {
             const response = await axios.post(`${apiUrl}/riders`, payload);
             return response.data;
         } catch (error) {
-            console.error("Error registering rider:", error);
-            throw error;
+            const serverMessage = error.response?.data?.message || "Rider registration failed.";
+            console.error("Error registering rider:", serverMessage);
+            return { success: false, message: serverMessage };
         }
     };
     const getRiderProfile = async (id) => {

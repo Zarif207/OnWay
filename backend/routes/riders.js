@@ -95,20 +95,28 @@ module.exports = function (collections) {
         image
       } = req.body;
 
-      console.log("Incoming Rider Data:", req.body);
+      console.log("--- New Registration Request ---");
+      console.log("Headers:", req.headers["content-type"]);
+      console.log("Incoming Rider Data:", JSON.stringify(req.body, null, 2));
 
-      if (!firstName || !email || !phone) {
+      const requiredFields = ["firstName", "email", "phone"];
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+
+      if (missingFields.length > 0) {
+        console.warn(`Registration failed: Missing fields - ${missingFields.join(", ")}`);
         return res.status(400).json({
           success: false,
-          message: "First name, email, and phone are required"
+          message: `Required fields missing: ${missingFields.join(", ")}`,
+          missingFields
         });
       }
 
       const existing = await ridersCollection.findOne({ email });
       if (existing) {
+        console.warn(`Registration failed: Email ${email} already exists`);
         return res.status(400).json({
           success: false,
-          message: "Rider already exists with this email"
+          message: "A rider account already exists with this email address."
         });
       }
 

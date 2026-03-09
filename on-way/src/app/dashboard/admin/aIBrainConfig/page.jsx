@@ -7,6 +7,7 @@ import {
     Save, Loader2, Sparkles, ShieldCheck,
     Info, Database, Zap, LayoutDashboard
 } from 'lucide-react';
+import OnWayLoading from '@/app/components/Loading/page';
 
 const AIBrainConfig = () => {
     const [content, setContent] = useState('');
@@ -42,7 +43,6 @@ const AIBrainConfig = () => {
             setIsSaving(false);
         }
     };
-
     return (
         <div className="min-h-screen  font-sans text-slate-900">
             <div className="max-w-6xl mx-auto">

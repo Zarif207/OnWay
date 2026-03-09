@@ -5,6 +5,7 @@ import { Search, Eye, Loader2, Trash2, Ban, CheckCircle, UserPlus, X } from 'luc
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Button } from '@/app/root-components/Button';
+import OnWayLoading from '@/app/components/Loading/page';
 
 const DriverManagement = () => {
   const [drivers, setDrivers] = useState([]);
@@ -181,6 +182,11 @@ const DriverManagement = () => {
   const toggleSelect = (id) => {
     setSelectedDrivers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
+   if (loading) {
+      return (
+        <OnWayLoading></OnWayLoading>   
+      );
+    }
 
   return (
     <div className="min-h-screen p-2">

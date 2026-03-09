@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 
 export default function VehicleInfoPage() {
   const router = useRouter();
-  const { formData, updateFormData } = useEarnRegistration();
+  const { formData, updateFormData, clearRegistrationData } = useEarnRegistration();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [licenseFile, setLicenseFile] = useState(null);
   const [regFile, setRegFile] = useState(null);
@@ -66,8 +66,8 @@ export default function VehicleInfoPage() {
         dateOfBirth: updatedForm.dateOfBirth || "",
 
         emergencyContact: {
-          name: updatedForm.emergencyContactName || "",
-          phone: updatedForm.emergencyContactPhone || ""
+          name: updatedForm.emergencyName || "", // Re-mapped to match context
+          phone: `+880${updatedForm.emergencyMobile || ""}` // Re-mapped to match context
         },
 
         identity: {
@@ -98,13 +98,19 @@ export default function VehicleInfoPage() {
       };
 
       console.log("Submitting Payload:", payload);
+      const result = await registerRider(payload);
 
-      await registerRider(payload);
-      toast.success("Application submitted successfully.");
-      router.push("/");
+      if (result.success) {
+        toast.success("Application submitted successfully.");
+        // Successfully registered, clear local storage/context state
+        clearRegistrationData();
+        router.push("/");
+      } else {
+        toast.error(result.message || "Failed to submit application.");
+      }
     } catch (error) {
       console.error("Submission error:", error);
-      toast.error("Failed to submit application. Please try again.");
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

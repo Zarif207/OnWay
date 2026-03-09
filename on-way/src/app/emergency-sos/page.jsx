@@ -29,6 +29,16 @@ export default function EmergencySOSPage() {
   }, []);
 
   const handleSOSPress = () => {
+    // Add animated backdrop element
+    const backdropDiv = document.createElement('div');
+    backdropDiv.className = 'sos-animated-backdrop';
+    backdropDiv.innerHTML = `
+      <div class="sos-ripple"></div>
+      <div class="sos-ripple" style="animation-delay: 0.5s"></div>
+      <div class="sos-ripple" style="animation-delay: 1s"></div>
+    `;
+    document.body.appendChild(backdropDiv);
+
     Swal.fire({
       title: "Activate Emergency SOS?",
       html: `
@@ -50,6 +60,10 @@ export default function EmergencySOSPage() {
       confirmButtonText: "Yes, Alert Support Team",
       cancelButtonText: "Cancel",
       reverseButtons: true,
+      didClose: () => {
+        // Remove animated backdrop when modal closes
+        backdropDiv.remove();
+      }
     }).then((result) => {
       if (result.isConfirmed) {
         activateSOS();
@@ -99,6 +113,16 @@ export default function EmergencySOSPage() {
         setSosActive(true);
         setIsActivating(false);
         
+        // Add animated backdrop for success modal
+        const successBackdrop = document.createElement('div');
+        successBackdrop.className = 'sos-animated-backdrop';
+        successBackdrop.innerHTML = `
+          <div class="sos-ripple"></div>
+          <div class="sos-ripple" style="animation-delay: 0.5s"></div>
+          <div class="sos-ripple" style="animation-delay: 1s"></div>
+        `;
+        document.body.appendChild(successBackdrop);
+        
         Swal.fire({
           icon: "success",
           title: "SOS Activated!",
@@ -108,6 +132,9 @@ export default function EmergencySOSPage() {
             <p class="text-sm text-gray-600">They will contact you shortly</p>
           `,
           confirmButtonColor: "#DC2626",
+          didClose: () => {
+            successBackdrop.remove();
+          }
         });
       } else {
         throw new Error("Failed to activate SOS");
@@ -119,7 +146,7 @@ export default function EmergencySOSPage() {
       Swal.fire({
         icon: "error",
         title: "Failed to activate SOS",
-        text: "Please call support directly at 01966984999",
+        text: "Please call support directly at 007",
         confirmButtonColor: "#DC2626",
       });
     }
@@ -151,8 +178,8 @@ export default function EmergencySOSPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 py-8 px-4 ">
+      <div className="max-w-2xl mx-auto mt-20">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-4">
@@ -220,7 +247,7 @@ export default function EmergencySOSPage() {
           </h2>
           <div className="space-y-3">
             <button
-              onClick={() => callEmergency("01966984999", "OnWay Support")}
+              onClick={() => callEmergency("007", "OnWay Support")}
               disabled={!sosActive}
               className={`w-full flex items-center gap-3 p-4 border-2 rounded-xl transition-all ${
                 sosActive
@@ -242,7 +269,7 @@ export default function EmergencySOSPage() {
                 </div>
               </div>
               <div className={`font-bold text-lg ${sosActive ? "text-red-600" : "text-gray-400"}`}>
-                01966984999
+                007
               </div>
             </button>
 

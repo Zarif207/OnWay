@@ -180,5 +180,161 @@ module.exports = (passengerCollection) => {
         }
     });
 
+    // 9. Get User by ID (for profile)
+    router.get("/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Invalid user ID" 
+                });
+            }
+
+            const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
+
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
+            }
+
+            // Remove password from response
+            delete user.password;
+
+            res.status(200).json({ 
+                success: true, 
+                data: user 
+            });
+        } catch (error) {
+            console.error("Get user by ID error:", error);
+            res.status(500).json({ 
+                success: false,
+                message: "Failed to fetch user",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+
+    // 10. Update Profile
+    router.patch("/profile/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { name, phone, image } = req.body;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Invalid user ID" 
+                });
+            }
+
+            const updateData = {
+                updatedAt: new Date()
+            };
+
+            if (name) updateData.name = name;
+            if (phone !== undefined) updateData.phone = phone;
+            if (image !== undefined) updateData.image = image;
+
+            const result = await passengerCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updateData }
+            );
+
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
+            }
+
+            res.status(200).json({ 
+                success: true, 
+                message: "Profile updated successfully" 
+            });
+        } catch (error) {
+            console.error("Update profile error:", error);
+            res.status(500).json({ 
+                success: false,
+                message: "Failed to update profile",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+
+    // 11. Change Password
+    router.patch("/change-password/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { currentPassword, newPassword } = req.body;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Invalid user ID" 
+                });
+            }
+
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Current password and new password are required" 
+                });
+            }
+
+            // Get user
+            const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
+
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
+            }
+
+            // Check if user has password (OAuth users don't)
+            if (!user.password) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Cannot change password for OAuth users" 
+                });
+            }
+
+            // Verify current password
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+            if (!isMatch) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: "Current password is incorrect" 
+                });
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Update password
+            await passengerCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { password: hashedPassword, updatedAt: new Date() } }
+            );
+
+            res.status(200).json({ 
+                success: true, 
+                message: "Password changed successfully" 
+            });
+        } catch (error) {
+            console.error("Change password error:", error);
+            res.status(500).json({ 
+                success: false,
+                message: "Failed to change password",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+
     return router;
 };

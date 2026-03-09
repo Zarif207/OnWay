@@ -95,6 +95,22 @@ module.exports = (passengerCollection) => {
             
             console.log(`✅ User created: ${email} (${authProvider || 'credentials'})`);
 
+            // 🔔 Send notification to admins (only for new passenger registrations, not OAuth sync)
+            if (!authProvider || authProvider === "credentials") {
+                try {
+                    const notificationHelper = require("../utils/notificationHelper");
+                    await notificationHelper.notifyUserRegistration(req.collections, {
+                        _id: result.insertedId,
+                        name: newUser.name,
+                        email: newUser.email,
+                        role: newUser.role,
+                    });
+                } catch (notifError) {
+                    console.error("Notification error:", notifError);
+                    // Don't fail the registration if notification fails
+                }
+            }
+
             res.status(201).json({ 
                 success: true, 
                 message: "User created successfully",

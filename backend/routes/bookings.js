@@ -61,6 +61,27 @@ module.exports = (bookingsCollection) => {
 
             const result = await bookingsCollection.insertOne(bookingData);
 
+            // 🔔 Send notification to admins about new booking
+            try {
+                const notificationHelper = require("../utils/notificationHelper");
+                
+                // Get all collections from request
+                const collections = {
+                    notificationsCollection: req.collections?.notificationsCollection,
+                    passengerCollection: req.collections?.passengerCollection,
+                };
+
+                if (collections.notificationsCollection && collections.passengerCollection) {
+                    await notificationHelper.notifyBookingCreated(collections, {
+                        _id: result.insertedId,
+                        ...bookingData,
+                    });
+                }
+            } catch (notifError) {
+                console.error("Notification error:", notifError);
+                // Don't fail the booking if notification fails
+            }
+
             res.status(201).json({
                 success: true,
                 booking: {

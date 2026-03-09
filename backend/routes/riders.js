@@ -72,6 +72,30 @@ module.exports = function (ridersCollection) {
       const result = await ridersCollection.insertOne(rider);
       console.log("✅ Rider created successfully:", result.insertedId);
 
+      // 🔔 Send notification to admins about new rider registration
+      try {
+        const notificationHelper = require("../utils/notificationHelper");
+        
+        // Get all collections from request
+        const collections = {
+          notificationsCollection: req.collections?.notificationsCollection,
+          passengerCollection: req.collections?.passengerCollection,
+        };
+
+        if (collections.notificationsCollection && collections.passengerCollection) {
+          await notificationHelper.notifyRiderRegistration(collections, {
+            _id: result.insertedId,
+            name: rider.name,
+            email: rider.email,
+            phone: rider.phone,
+            isApproved: rider.isApproved,
+          });
+        }
+      } catch (notifError) {
+        console.error("Notification error:", notifError);
+        // Don't fail the registration if notification fails
+      }
+
       res.status(201).json({
         success: true,
         message: "Rider registered successfully",

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FileText, Search, Filter, Eye, CheckCircle, XCircle, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, Search, Eye, CheckCircle, RefreshCw, ChevronLeft, ChevronRight, MapPin, Phone, Mail, MessageSquare } from "lucide-react";
 
 export default function ComplaintsPage() {
   const [complaints, setComplaints] = useState([]);
@@ -9,6 +9,8 @@ export default function ComplaintsPage() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterPriority, setFilterPriority] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
   const complaintsPerPage = 10;
 
   // Fetch complaints from backend
@@ -73,10 +75,20 @@ export default function ComplaintsPage() {
       
       if (response.ok) {
         fetchComplaints();
+        if (selectedComplaint && selectedComplaint._id === complaintId) {
+          setShowDetails(false);
+          setSelectedComplaint(null);
+        }
       }
     } catch (error) {
       console.error("Error updating complaint:", error);
     }
+  };
+
+  // View complaint details
+  const viewComplaintDetails = (complaint) => {
+    setSelectedComplaint(complaint);
+    setShowDetails(true);
   };
 
   if (loading) {
@@ -92,6 +104,136 @@ export default function ComplaintsPage() {
 
   return (
     <div className="p-6">
+      {/* Details Modal */}
+      {showDetails && selectedComplaint && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Complaint Details</h2>
+              <button 
+                onClick={() => setShowDetails(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 text-sm rounded-full ${
+                  selectedComplaint.status === "Resolved" ? "bg-green-100 text-green-700" :
+                  selectedComplaint.status === "In Progress" ? "bg-yellow-100 text-yellow-700" :
+                  "bg-red-100 text-red-700"
+                }`}>
+                  {selectedComplaint.status}
+                </span>
+                <span className={`px-3 py-1 text-sm rounded-full ${
+                  selectedComplaint.priority === "High" ? "bg-red-100 text-red-700" :
+                  selectedComplaint.priority === "Medium" ? "bg-yellow-100 text-yellow-700" :
+                  "bg-blue-100 text-blue-700"
+                }`}>
+                  {selectedComplaint.priority} Priority
+                </span>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText size={18} className="text-gray-600" />
+                  <span className="font-semibold">ID:</span>
+                  <span>{selectedComplaint.id}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">User:</span>
+                  <span>{selectedComplaint.user}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Type:</span>
+                  <span>{selectedComplaint.type}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Date:</span>
+                  <span>{selectedComplaint.date}</span>
+                </div>
+              </div>
+
+              {selectedComplaint.description && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-start gap-2 mb-2">
+                    <MessageSquare size={18} className="text-gray-600 mt-1" />
+                    <span className="font-semibold">Description:</span>
+                  </div>
+                  <p className="text-gray-700 ml-6">{selectedComplaint.description}</p>
+                </div>
+              )}
+
+              {selectedComplaint.location && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-start gap-2 mb-2">
+                    <MapPin size={18} className="text-gray-600 mt-1" />
+                    <span className="font-semibold">Location:</span>
+                  </div>
+                  <p className="text-gray-700 ml-6">
+                    {selectedComplaint.location.address || 
+                     `Lat: ${selectedComplaint.location.latitude}, Lng: ${selectedComplaint.location.longitude}`}
+                  </p>
+                </div>
+              )}
+
+              {selectedComplaint.phone && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <Phone size={18} className="text-gray-600" />
+                    <span className="font-semibold">Phone:</span>
+                    <a href={`tel:${selectedComplaint.phone}`} className="text-[#2FCA71] hover:underline">
+                      {selectedComplaint.phone}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {selectedComplaint.email && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <Mail size={18} className="text-gray-600" />
+                    <span className="font-semibold">Email:</span>
+                    <a href={`mailto:${selectedComplaint.email}`} className="text-[#2FCA71] hover:underline">
+                      {selectedComplaint.email}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                {selectedComplaint.status === "Pending" && (
+                  <button 
+                    onClick={() => updateComplaintStatus(selectedComplaint._id, "In Progress")}
+                    className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-xl hover:shadow-lg transition-all"
+                  >
+                    Mark as In Progress
+                  </button>
+                )}
+                {selectedComplaint.status !== "Resolved" && (
+                  <button 
+                    onClick={() => updateComplaintStatus(selectedComplaint._id, "Resolved")}
+                    className="flex-1 px-4 py-3 bg-[#2FCA71] text-white rounded-xl hover:shadow-lg transition-all"
+                  >
+                    Mark as Resolved
+                  </button>
+                )}
+                {selectedComplaint.phone && (
+                  <a 
+                    href={`tel:${selectedComplaint.phone}`}
+                    className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl hover:shadow-lg transition-all text-center"
+                  >
+                    Call User
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#2FCA71] flex items-center gap-2">
@@ -220,6 +362,7 @@ export default function ComplaintsPage() {
                     <td className="px-4 py-3 text-sm text-gray-900">{complaint.date}</td>
                     <td className="px-4 py-3 flex gap-2">
                       <button 
+                        onClick={() => viewComplaintDetails(complaint)}
                         className="text-blue-600 hover:text-blue-800"
                         title="View Details"
                       >

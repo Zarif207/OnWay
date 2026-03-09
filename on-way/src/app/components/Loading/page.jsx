@@ -23,7 +23,7 @@ export default function OnWayLoading() {
   return (
     <div
       data-theme="onwaytheme"
-      className="flex items-center justify-center min-h-screen bg-secondary"
+      className="flex items-center justify-center min-h-screen bg-transparent"
     >
       <div className="text-center w-80">
 

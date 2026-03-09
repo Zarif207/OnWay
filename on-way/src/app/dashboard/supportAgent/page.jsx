@@ -19,7 +19,7 @@ export default function SupportAgentDashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2FCA71] mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -30,46 +30,60 @@ export default function SupportAgentDashboard() {
     <div className="space-y-10 sm:space-y-14">
         
         {/* Header */}
-        <div className="mb-10 sm:mb-14">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-            Support Agent <span className="text-orange-500">Dashboard</span>
-          </h1>
+        <div className="relative bg-white/60 backdrop-blur-xl rounded-[40px] p-14 border border-white/40
+                        shadow-[0_25px_60px_rgba(0,0,0,0.08)] overflow-hidden">
 
-          <p className="text-gray-600 max-w-2xl text-sm sm:text-base">
-            Monitor reports, manage cases, track ride activity, and respond
-            to alerts efficiently from one place.
-          </p>
+          <div className="absolute -top-20 -right-20 w-72 h-72 bg-[#2FCA71]/30 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-200/30 rounded-full blur-3xl" />
+
+          <div className="relative z-10 max-w-2xl">
+            <h1 className="text-4xl md:text-5xl font-semibold text-[#2FCA71] leading-tight">
+              Support Agent Dashboard 👋
+            </h1>
+
+            <p className="text-gray-600 mt-6 text-lg leading-relaxed">
+              Monitor reports, manage cases, track ride activity, and respond
+              to alerts efficiently from one place.
+            </p>
+          </div>
         </div>
 
         {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
 
           <DashboardCard
             icon={FileText}
-            title="All Reports"
-            desc="View and analyze submitted reports."
-            href="/dashboard/supportAgent/all-reports"
-          />
-
-          <DashboardCard
-            icon={Briefcase}
-            title="Case Management"
-            desc="Handle and resolve assigned cases."
-            href="/dashboard/supportAgent/case-management"
-          />
-
-          <DashboardCard
-            icon={Bell}
-            title="Live Alerts"
-            desc="Monitor real-time system alerts."
-            href="/dashboard/supportAgent/live-alerts"
+            title="Complaints"
+            desc="Handle and resolve user complaints."
+            href="/dashboard/supportAgent/complaints"
           />
 
           <DashboardCard
             icon={Activity}
-            title="Ride Monitoring"
-            desc="Track ongoing rides and activities."
-            href="/dashboard/supportAgent/ride-monitoring"
+            title="Live SOS"
+            desc="Monitor emergency alerts in real-time."
+            href="/dashboard/supportAgent/live-sos"
+          />
+
+          <DashboardCard
+            icon={Bell}
+            title="Chat Support"
+            desc="Provide real-time support to users."
+            href="/dashboard/supportAgent/chat-support"
+          />
+
+          <DashboardCard
+            icon={Briefcase}
+            title="Refunds"
+            desc="Process and manage refund requests."
+            href="/dashboard/supportAgent/refunds"
+          />
+
+          <DashboardCard
+            icon={Activity}
+            title="Verification"
+            desc="Review and verify user documents."
+            href="/dashboard/supportAgent/verification"
           />
 
       </div>
@@ -81,34 +95,23 @@ function DashboardCard({ icon: Icon, title, desc, href }) {
   return (
     <Link
       href={href}
-      className="
-        group
-        bg-white
-        border border-gray-200
-        rounded-2xl
-        p-6
-        shadow-sm
-        transition-all
-        duration-300
-        hover:shadow-lg
-        hover:border-orange-400
-      "
+      className="group relative bg-white/70 backdrop-blur-xl rounded-[32px] p-10
+                 border border-white/40
+                 shadow-[0_20px_50px_rgba(0,0,0,0.06)]
+                 hover:shadow-[0_30px_70px_rgba(0,0,0,0.12)]
+                 hover:-translate-y-2
+                 transition-all duration-300"
     >
-      <div className="flex items-center justify-between mb-5">
-        
-        {/* Icon */}
-        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-orange-500" />
-        </div>
-
-        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors duration-300" />
+      <div className="w-14 h-14 bg-[#2FCA71] rounded-2xl flex items-center justify-center
+                      text-white shadow-md mb-8">
+        <Icon className="w-7 h-7" />
       </div>
 
-      <h2 className="text-lg sm:text-xl font-semibold mb-2 group-hover:text-orange-500 transition-colors duration-300">
+      <h3 className="text-xl font-semibold text-[#2FCA71]">
         {title}
-      </h2>
+      </h3>
 
-      <p className="text-gray-600 text-sm sm:text-base">
+      <p className="text-gray-600 mt-4 leading-relaxed">
         {desc}
       </p>
     </Link>

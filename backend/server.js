@@ -9,11 +9,15 @@ const locationRoutes = require("./routes/location");
 const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
 const supportRoutes = require("./routes/support");
+const supportAgentRoutes = require("./routes/supportAgent");
 const bookingsRoutes = require("./routes/bookings");
 const paymentRoutes = require("./routes/payment");
 const ridersRoutes = require("./routes/riders");
 const promoCodeRoutes = require("./routes/promo");
 const emergencyRoutes = require("./routes/emergency");
+const dashboardRoutes = require("./routes/dashboard");
+const settingsRoutes = require("./routes/settings");
+const notificationsRoutes = require("./routes/notifications");
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -105,7 +109,9 @@ app.use(async (req, res, next) => {
       paymentsCollection: database.collection("payments"),
       ridersCollection: database.collection("riders"),
       promoCodeCollection: database.collection("promoCode"),
-      emergencyCollection: database.collection("emergency")
+      emergencyCollection: database.collection("emergency"),
+      settingsCollection: database.collection("settings"),
+      notificationsCollection: database.collection("notifications")
     };
     next();
   } catch (error) {
@@ -142,6 +148,10 @@ app.use("/api/support", (req, res, next) => {
   supportRoutes(req.collections.knowledgeCollection)(req, res, next);
 });
 
+app.use("/api/support-agent", (req, res, next) => {
+  supportAgentRoutes(req.collections)(req, res, next);
+});
+
 app.use("/api/bookings", (req, res, next) => {
   bookingsRoutes(req.collections.bookingsCollection)(req, res, next);
 });
@@ -160,6 +170,18 @@ app.use("/api/promo", (req, res, next) => {
 
 app.use("/api/emergency", (req, res, next) => {
   emergencyRoutes(req.collections.emergencyCollection)(req, res, next);
+});
+
+app.use("/api/dashboard", (req, res, next) => {
+  dashboardRoutes(req.collections)(req, res, next);
+});
+
+app.use("/api/settings", (req, res, next) => {
+  settingsRoutes(req.collections.settingsCollection)(req, res, next);
+});
+
+app.use("/api/notifications", (req, res, next) => {
+  notificationsRoutes(req.collections.notificationsCollection)(req, res, next);
 });
 
 // ✅ Health check endpoint

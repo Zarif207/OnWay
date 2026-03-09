@@ -5,6 +5,7 @@ import { Search, MoreVertical, Eye, Ban, Loader2, Trash2, CheckCircle, Edit3, Us
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Button } from '@/app/root-components/Button';
+import OnWayLoading from '@/app/components/Loading/page';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -210,7 +211,12 @@ const UserManagement = () => {
       default: return 'bg-gray-100 text-gray-600';
     }
   };
-
+ if (loading) {
+    return (
+      <OnWayLoading></OnWayLoading>
+      
+    );
+  }
   return (
     <div className="min-h-screen p-2">
       <div className="max-w-7xl mx-auto">

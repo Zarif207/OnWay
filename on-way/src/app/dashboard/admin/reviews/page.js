@@ -14,6 +14,7 @@ import {
 import Swal from "sweetalert2";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import OnWayLoading from "@/app/components/Loading/page";
 
 export default function ReviewManagement() {
     const [reviews, setReviews] = useState([]);
@@ -86,7 +87,11 @@ export default function ReviewManagement() {
             `${r.review} ${r.passengerName} ${r.driverId}`.toLowerCase().includes(search.toLowerCase())
         );
     }, [reviews, search]);
-
+ if (loading) {
+    return (
+      <OnWayLoading></OnWayLoading>   
+    );
+  }
     return (
         <div className="min-h-screen p-2">
             <Toaster position="top-center" reverseOrder={false} />

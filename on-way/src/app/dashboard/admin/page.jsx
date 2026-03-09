@@ -1,146 +1,444 @@
 "use client";
-import React from "react";
-import { Users, Car, MapPin, BarChart3, Star, Map as MapIcon } from "lucide-react";
-import { StatCard, ActivityPanel } from "@/components/dashboard/DashboardUi";
-import { useRequireRole } from "@/hooks/useAuth";
 
-const AdminDashboard = () => {
-  // ✅ Protect this page - only admins can access
-  const { user, isLoading } = useRequireRole("admin");
+import { useState, useEffect } from "react";
+import {
+  Car,
+  DollarSign,
+  AlertTriangle,
+  TrendingUp,
+  Users,
+  MapPin,
+  Star,
+  Clock,
+  Activity,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Calendar,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
+import axios from "axios";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+} from "recharts";
+import OnWayLoading from "@/app/components/Loading/page";
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+export default function DashboardOverview() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/dashboard/stats`;
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(API_URL);
+        if (response.data.success) {
+          setStats(response.data.data);
+        }
+      } catch (err) {
+        console.error("Dashboard stats error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+    <OnWayLoading></OnWayLoading>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-600">Failed to load dashboard</p>
+          <p className="text-sm text-gray-500 mt-2">{error}</p>
         </div>
       </div>
     );
   }
-  const stats = [
-    { label: "Customers", value: "$50,101", icon: Users, percentage: 20, trend: "up", color: "bg-blue-600 text-blue-600" },
-    { label: "Booking", value: "92 /100", icon: Car, percentage: 11, trend: "up", color: "bg-orange-600 text-orange-600" },
-    { label: "Trips", value: "1540 /1800", icon: MapPin, percentage: 11, trend: "up", color: "bg-green-600 text-green-600" },
-    { label: "Car owners", value: "20", icon: Star, percentage: 23, trend: "up", color: "bg-yellow-600 text-yellow-600" },
-  ];
 
-  const recentRides = [
-    { id: "01", car: "G48C", driver: "Alex", location: "Mumbai", booking: "$450", status: "Completed", rating: 4.8 },
-    { id: "02", car: "E32S", driver: "Pia", location: "Mumbai", booking: "$521", status: "Ongoing", rating: 4.2 },
-    { id: "03", car: "O95X", driver: "Ryan", location: "Ahmedabad", booking: "$210", status: "Completed", rating: 4.5 },
-    { id: "04", car: "Z22L", driver: "Nohan", location: "Mumbai", booking: "$332", status: "Pending", rating: 4.0 },
-    { id: "05", car: "B18K", driver: "Sam", location: "Pune", booking: "$580", status: "Completed", rating: 4.7 },
-  ];
+  const { overview, today, week, month, growth, charts, recent } = stats;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Top Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <StatCard key={i} {...stat} />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Car Booking List & Table */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-50">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Car-Booking List</h3>
-                <p className="text-xs text-gray-400 font-medium">Today and yesterday lists 186/32770</p>
-              </div>
-              <button className="text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">
-                Location
-              </button>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Dashboard <span className="text-[#2FCA71]">Overview</span>
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Real-time monitoring of your ride-sharing platform
+              </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-blue-50/50 rounded-3xl -rotate-2 group-hover:rotate-0 transition-transform duration-500" />
-                <img 
-                  src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800" 
-                  alt="Car" 
-                  className="relative z-10 w-full h-auto rounded-3xl shadow-lg group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">Active Now</span>
-                  <p className="text-xs font-bold text-gray-900">Porsche 911 GT3</p>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50/50 rounded-3xl p-6 h-full overflow-hidden relative">
-                <div className="absolute inset-0 opacity-20 hover:opacity-100 transition-opacity">
-                   {/* Simplified Map Replacement */}
-                   <div className="w-full h-full bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s+ff4444(72.57,23.02)/72.57,23.02,12/400x300?access_token=pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJleGFtcGxlIn0=')] bg-cover bg-center" />
-                </div>
-                <div className="relative z-10 flex flex-col justify-between h-full">
-                  <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm self-start px-3 py-1.5 rounded-full border border-white/50 shadow-sm">
-                    <MapPin size={12} className="text-blue-600" />
-                    <span className="text-[10px] font-bold text-gray-900 tracking-tight">Mumbai, Maharashtra</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-4xl shadow-sm border border-gray-50 overflow-hidden">
-            <div className="p-8 border-b border-gray-50 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-gray-900">Rides Booking</h3>
-              <select className="bg-gray-100/50 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border-none focus:ring-0 outline-none">
-                <option>Calendar</option>
-              </select>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50/50">
-                    <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">No.</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Car No.</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Driver</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Location</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Booking</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rating</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentRides.map((ride, i) => (
-                    <tr key={i} className="hover:bg-gray-50/30 transition-colors group">
-                      <td className="px-8 py-4 text-xs font-bold text-gray-400">{ride.id}</td>
-                      <td className="px-8 py-4 text-xs font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercaseTracking-tight">{ride.car}</td>
-                      <td className="px-8 py-4 flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
-                          <img src={`https://i.pravatar.cc/150?u=${ride.driver}`} className="w-full h-full object-cover" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-900">{ride.driver}</span>
-                      </td>
-                      <td className="px-8 py-4 text-xs font-medium text-gray-500">{ride.location}</td>
-                      <td className="px-8 py-4 text-xs font-bold text-gray-900">{ride.booking}</td>
-                      <td className="px-8 py-4">
-                        <div className={`w-2 h-2 rounded-full mx-auto ${
-                          ride.status === 'Completed' ? 'bg-green-500' : 
-                          ride.status === 'Ongoing' ? 'bg-blue-500' : 'bg-orange-500'
-                        }`} />
-                      </td>
-                      <td className="px-8 py-4 text-center text-xs font-bold text-gray-400">{ride.rating}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm">
+              <Activity className="w-5 h-5 text-[#2FCA71] animate-pulse" />
+              <span className="text-sm font-medium text-gray-700">Live</span>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Actives */}
-        <div className="lg:col-span-1 h-full">
-          <ActivityPanel />
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <MetricCard
+            title="Total Users"
+            value={overview.totalUsers}
+            icon={Users}
+            color="bg-blue-500"
+            trend={growth.userGrowth}
+            subtitle={`${today.bookings} rides today`}
+          />
+          <MetricCard
+            title="Active Drivers"
+            value={overview.totalDrivers}
+            icon={Car}
+            color="bg-[#2FCA71]"
+            subtitle={`${overview.ongoingBookings} ongoing`}
+          />
+          <MetricCard
+            title="Total Revenue"
+            value={`$${overview.totalRevenue.toFixed(2)}`}
+            icon={DollarSign}
+            color="bg-green-500"
+            trend={growth.bookingGrowth}
+            subtitle={`$${today.revenue.toFixed(2)} today`}
+          />
+          <MetricCard
+            title="SOS Alerts"
+            value={overview.emergencyCount}
+            icon={AlertTriangle}
+            color="bg-red-500"
+            danger
+            subtitle={`${today.emergency} today`}
+          />
+        </div>
+
+        {/* Secondary Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <SmallStatCard
+            title="Total Rides"
+            value={overview.totalBookings}
+            icon={MapPin}
+          />
+          <SmallStatCard
+            title="Completed"
+            value={overview.completedBookings}
+            icon={CheckCircle}
+            color="text-green-600"
+          />
+          <SmallStatCard
+            title="Avg Rating"
+            value={overview.avgRating.toFixed(1)}
+            icon={Star}
+            color="text-yellow-500"
+          />
+          <SmallStatCard
+            title="Reviews"
+            value={overview.totalReviews}
+            icon={Star}
+          />
+        </div>
+
+        {/* Charts Row 1 */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Revenue Trend */}
+          <ChartCard title="Revenue Trend (Last 7 Days)">
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={charts.dailyBookings}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2FCA71" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#2FCA71" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" stroke="#888" />
+                <YAxis stroke="#888" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#2FCA71"
+                  fillOpacity={1}
+                  fill="url(#colorRevenue)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {/* Ride Status Distribution */}
+          <ChartCard title="Ride Status Distribution">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={charts.statusDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {charts.statusDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Peak Hours */}
+          <ChartCard title="Today's Hourly Activity">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={charts.hourlyBookings}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="hour" stroke="#888" />
+                <YAxis stroke="#888" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  fill="#2FCA71"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {/* Weekly Bookings */}
+          <ChartCard title="Weekly Bookings Trend">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={charts.dailyBookings}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" stroke="#888" />
+                <YAxis stroke="#888" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#2FCA71"
+                  strokeWidth={3}
+                  dot={{ fill: "#2FCA71", r: 5 }}
+                  activeDot={{ r: 7 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Recent Bookings */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#2FCA71]" />
+              Recent Bookings
+            </h3>
+            <div className="space-y-3">
+              {recent.bookings.slice(0, 5).map((booking, index) => (
+                <div
+                  key={booking._id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#2FCA71] bg-opacity-10 rounded-full flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-[#2FCA71]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-gray-900">
+                        {booking.pickupLocation?.address?.substring(0, 30) ||
+                          "N/A"}
+                        ...
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(booking.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-[#2FCA71]">
+                      ${booking.price?.toFixed(2) || "0.00"}
+                    </p>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        booking.bookingStatus === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : booking.bookingStatus === "ongoing"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {booking.bookingStatus}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[#2FCA71]" />
+              Quick Stats
+            </h3>
+            <div className="space-y-4">
+              <QuickStat
+                label="Today's Bookings"
+                value={today.bookings}
+                icon={Calendar}
+              />
+              <QuickStat
+                label="This Week"
+                value={week.bookings}
+                icon={Activity}
+              />
+              <QuickStat
+                label="This Month"
+                value={month.bookings}
+                icon={TrendingUp}
+              />
+              <QuickStat
+                label="Pending Rides"
+                value={overview.pendingBookings}
+                icon={Clock}
+                color="text-yellow-600"
+              />
+              <QuickStat
+                label="Cancelled"
+                value={overview.cancelledBookings}
+                icon={XCircle}
+                color="text-red-600"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default AdminDashboard;
+// Metric Card Component
+function MetricCard({ title, value, icon: Icon, color, trend, subtitle, danger }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
+        {trend !== undefined && (
+          <div
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              trend >= 0
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {trend >= 0 ? (
+              <ArrowUpRight className="w-3 h-3" />
+            ) : (
+              <ArrowDownRight className="w-3 h-3" />
+            )}
+            {Math.abs(trend)}%
+          </div>
+        )}
+      </div>
+      <p className="text-gray-600 text-sm mb-1">{title}</p>
+      <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+      {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+    </div>
+  );
+}
+
+// Small Stat Card
+function SmallStatCard({ title, value, icon: Icon, color = "text-gray-600" }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
+      <div className="flex items-center gap-3">
+        <Icon className={`w-5 h-5 ${color}`} />
+        <div>
+          <p className="text-xs text-gray-500">{title}</p>
+          <p className="text-xl font-bold text-gray-900">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Chart Card
+function ChartCard({ title, children }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+      <h3 className="text-lg font-semibold mb-6 text-gray-900">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+// Quick Stat
+function QuickStat({ label, value, icon: Icon, color = "text-gray-600" }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Icon className={`w-4 h-4 ${color}`} />
+        <span className="text-sm text-gray-600">{label}</span>
+      </div>
+      <span className="text-lg font-bold text-gray-900">{value}</span>
+    </div>
+  );
+}

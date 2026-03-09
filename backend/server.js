@@ -108,6 +108,7 @@ app.use(async (req, res, next) => {
       bookingsCollection: database.collection("bookings"),
       paymentsCollection: database.collection("payments"),
       ridersCollection: database.collection("riders"),
+      complaintsCollection: database.collection("complaints"),
       promoCodeCollection: database.collection("promoCode"),
       emergencyCollection: database.collection("emergency"),
       settingsCollection: database.collection("settings"),

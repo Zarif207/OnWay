@@ -1,101 +1,121 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import io from "socket.io-client";
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
 
-const socket = io(SOCKET_URL, {
-  autoConnect: false,
-  reconnection: true,
-});
+let socket;
 
 export const useChat = (roomId, chatType, userId, userName, role) => {
   const [messages, setMessages] = useState([]);
   const [typingUser, setTypingUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [onlineStatus, setOnlineStatus] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // ======================
-  // FETCH MESSAGES
-  // ======================
+  const typingTimeout = useRef(null);
 
-  const fetchMessages = useCallback(async (rId = roomId) => {
-    if (!rId) return;
-
-    try {
-      setLoading(true);
-
-      const res = await fetch(`${SOCKET_URL}/api/chat/history/${rId}`);
-      const data = await res.json();
-
-      setMessages(data || []);
-    } catch (err) {
-      console.error("History fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [roomId]);
-
-  // ======================
-  // SOCKET CONNECT
-  // ======================
+  // ================= SOCKET INIT =================
 
   useEffect(() => {
-    if (!userId) return;
-
-    if (!socket.connected) {
-      socket.connect();
+    if (!socket) {
+      socket = io(SOCKET_URL, {
+        autoConnect: true,
+        reconnection: true,
+        transports: ["websocket"],
+      });
     }
+
+    return () => { };
+  }, []);
+
+  // ================= FETCH HISTORY =================
+
+  const fetchMessages = useCallback(
+    async (currentRoomId = roomId) => {
+      if (!currentRoomId || !userId) return;
+
+      try {
+        setLoading(true);
+
+        const res = await fetch(
+          `${SOCKET_URL}/api/chat/history/${currentRoomId}?userId=${userId}`
+        );
+
+        if (!res.ok) throw new Error("History fetch failed");
+
+        const data = await res.json();
+
+        setMessages(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("History error:", err);
+        setMessages([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [roomId, userId]
+  );
+
+  // ================= JOIN ROOM =================
+
+  useEffect(() => {
+    if (!socket || !roomId || !userId) return;
 
     socket.emit("registerUser", { userId });
 
-  }, [userId]);
-
-  // ======================
-  // ROOM JOIN
-  // ======================
-
-  useEffect(() => {
-    if (!roomId || !userId) return;
-
-    socket.emit("joinRoom", { roomId, userId, role });
+    socket.emit("joinRoom", {
+      roomId,
+      userId,
+      role,
+    });
 
     fetchMessages(roomId);
 
     return () => {
-      socket.emit("leaveRoom", { roomId });
+      socket.emit("leaveRoom", { roomId, userId });
     };
-
   }, [roomId, userId, role, fetchMessages]);
 
-  // ======================
-  // SOCKET LISTENERS
-  // ======================
+  // ================= SOCKET EVENTS =================
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!socket || !roomId) return;
 
     const handleReceiveMessage = (msg) => {
-      if (msg.roomId === roomId) {
-        setMessages((prev) => [...prev, msg]);
+      if (msg.roomId !== roomId) return;
 
-        if (msg.senderId !== userId) {
-          markAsRead();
-        }
+      setMessages((prev) => {
+        const exists = prev.some((m) => m._id === msg._id);
+        if (exists) return prev;
+        return [...prev, msg];
+      });
+    };
+
+    const handleTyping = ({ roomId: typingRoom, userName }) => {
+      if (typingRoom !== roomId) return;
+
+      setTypingUser(userName);
+
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+      }
+
+      typingTimeout.current = setTimeout(() => {
+        setTypingUser(null);
+      }, 3000);
+    };
+
+    const handleStopTyping = ({ roomId: typingRoom }) => {
+      if (typingRoom === roomId) {
+        setTypingUser(null);
       }
     };
 
-    const handleTyping = ({ userName: typingName }) => {
-      setTypingUser(typingName);
-    };
+    const handleSeen = ({ roomId: seenRoom }) => {
+      if (seenRoom !== roomId) return;
 
-    const handleStopTyping = () => {
-      setTypingUser(null);
-    };
-
-    const handleSeen = ({ userId: seenBy }) => {
       setMessages((prev) =>
         prev.map((msg) =>
           msg.senderId === userId ? { ...msg, isRead: true } : msg
@@ -123,73 +143,87 @@ export const useChat = (roomId, chatType, userId, userName, role) => {
       socket.off("messagesSeen", handleSeen);
       socket.off("userStatus", handleUserStatus);
     };
-
   }, [roomId, userId]);
 
-  // ======================
-  // SEND MESSAGE
-  // ======================
+  // ================= SEND MESSAGE =================
 
   const sendMessage = useCallback(
     async (text, fileUrl = null, messageType = "text") => {
-
-      if (!text?.trim() && !fileUrl) return;
+      if ((!text || !text.trim()) && !fileUrl) return;
 
       const payload = {
         roomId,
         senderId: userId,
         senderName: userName,
         senderRole: role,
-        message: text,
+        message: text || "",
         messageType,
         fileUrl,
         chatType,
+
+        passengerId:
+          role === "passenger"
+            ? userId
+            : roomId?.includes("support_")
+              ? roomId.replace("support_", "")
+              : null,
+
+        riderId: role === "rider" ? userId : null,
       };
 
       try {
         const res = await fetch(`${SOCKET_URL}/api/chat/send`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
+        if (!res.ok) throw new Error("Send failed");
+
         const savedMessage = await res.json();
 
-        setMessages((prev) => [...prev, savedMessage]);
-
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id === savedMessage._id);
+          if (exists) return prev;
+          return [...prev, savedMessage];
+        });
       } catch (err) {
-        console.error("Message send failed:", err);
+        console.error("Send message error:", err);
       }
     },
     [roomId, userId, userName, role, chatType]
   );
 
-  // ======================
-  // TYPING
-  // ======================
+  // ================= TYPING =================
 
   const sendTyping = () => {
-    if (roomId) {
-      socket.emit("typing", { roomId, userId, userName });
-    }
+    if (!socket || !roomId) return;
+
+    socket.emit("typing", {
+      roomId,
+      userId,
+      userName,
+    });
   };
 
   const stopTyping = () => {
-    if (roomId) {
-      socket.emit("stopTyping", { roomId });
-    }
+    if (!socket || !roomId) return;
+
+    socket.emit("stopTyping", {
+      roomId,
+      userId,
+    });
   };
 
-  // ======================
-  // READ STATUS
-  // ======================
+  // ================= READ =================
 
   const markAsRead = () => {
-    if (roomId) {
-      socket.emit("markAsRead", { roomId, userId });
-    }
+    if (!socket || !roomId) return;
+
+    socket.emit("markAsRead", {
+      roomId,
+      userId,
+    });
   };
 
   return {
@@ -205,4 +239,3 @@ export const useChat = (roomId, chatType, userId, userName, role) => {
     socket,
   };
 };
-

@@ -181,5 +181,62 @@ module.exports = (passengerCollection) => {
         }
     });
 
+    // // 9. Get User by ID
+    // router.get("/:id", async (req, res) => {
+    //     try {
+    //         const { id } = req.params;
+    //         const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
+
+    //         if (!user) {
+    //             return res.status(404).json({ success: false, message: "User not found" });
+    //         }
+
+    //         res.status(200).json({ success: true, data: user });
+    //     } catch (error) {
+    //         res.status(500).json({ success: false, error: error.message });
+    //     }
+    // });
+    // // GET USER BY ID
+    // router.get("/:id", async (req, res) => {
+    //     try {
+    //         const { id } = req.params;
+    //         const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
+
+    //         if (!user) {
+    //             return res.status(404).json({ success: false, message: "User not found" });
+    //         }
+
+    //         // ধরে নিই user রেকর্ডের মধ্যে ride আছে
+    //         // যদি আলাদা রাইড কালেকশন থাকে, তখন join করতে হবে
+    //         res.status(200).json({ success: true, ride: user.activeRide || null });
+
+    //     } catch (error) {
+    //         res.status(500).json({ success: false, error: error.message });
+    //     }
+    // });
+
+    // GET USER BY ID (WITH ACTIVE RIDE)
+    router.get("/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
+
+            if (!user) {
+                return res.status(404).json({ success: false, message: "User not found" });
+            }
+
+            const response = {
+                success: true,
+                data: user,
+                ride: user.activeRide || null,
+            };
+
+            res.status(200).json(response);
+
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     return router;
 };

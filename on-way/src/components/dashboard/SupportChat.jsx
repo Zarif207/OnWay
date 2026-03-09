@@ -12,7 +12,7 @@ const SupportChat = ({ passengerId, user }) => {
         stopTyping, 
         loading, 
         markAsRead 
-    } = useChat(roomId, "support", user?._id, user?.name, "passenger");
+    } = useChat(roomId, "support", user?._id, user?.name, "support");
     
     const [input, setInput] = useState("");
     const scrollRef = useRef(null);

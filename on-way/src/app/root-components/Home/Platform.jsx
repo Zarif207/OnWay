@@ -6,6 +6,8 @@ import { ArrowRight, CheckCircle2, Download } from "lucide-react";
 import Container from "./Container";
 import { services } from "./homeData";
 
+import { StaggerContainer, AnimatedHeading } from "../MotionWrappers";
+
 /**
  * Platform Component (V2 - 2026 Fintech Edition)
  * Inspired by Stripe, Linear, and Apple design systems.
@@ -23,14 +25,8 @@ export default function Platform() {
     <section id="services" className="bg-[#F8FAFC] py-24 sm:py-32 overflow-hidden">
       <Container>
         {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "circOut" }}
-          viewport={{ once: true }}
-          className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between mb-16"
-        >
-          <div className="max-w-2xl">
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between mb-16">
+          <AnimatedHeading className="max-w-2xl">
             <span className="text-[#22c55e] text-sm font-bold uppercase tracking-[0.2em] block mb-4">
               The OnWay Platform
             </span>
@@ -42,10 +38,16 @@ export default function Platform() {
               Ride, travel, and pay — OnWay brings everyday mobility services
               together with a consistent, premium experience.
             </p>
-          </div>
+          </AnimatedHeading>
 
           {/* Switcher Tabs */}
-          <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-gray-200/50 rounded-[2rem] shadow-sm overflow-x-auto scrollbar-hide">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-gray-200/50 rounded-[2rem] shadow-sm overflow-x-auto scrollbar-hide"
+          >
             {services.map((s) => {
               const Icon = s.icon;
               const isActive = s.key === active;
@@ -69,22 +71,22 @@ export default function Platform() {
                 </motion.button>
               );
             })}
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         {/* Feature Grid */}
-        <div className="grid gap-8 lg:grid-cols-12">
+        <StaggerContainer className="grid gap-8 lg:grid-cols-12">
           {/* Main Display Card */}
           <motion.div
             layout
             key={current.key}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="lg:col-span-7"
           >
             <motion.div
-              whileHover={{ scale: 1.01, y: -5 }}
+              whileHover={{ scale: 1.03, y: -4 }}
               className={`group relative h-full overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white p-10 lg:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.03)] transition-all duration-500`}
             >
               {/* Subtle Animated Gradient Background */}
@@ -150,8 +152,10 @@ export default function Platform() {
 
           {/* Why Choose Card (Fixed Content) */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            variants={{
+              hidden: { opacity: 0, y: 25 },
+              visible: { opacity: 1, y: 0 }
+            }}
             className="lg:col-span-5"
           >
             <div className="h-full rounded-[2.5rem] border border-gray-100 bg-white/60 backdrop-blur-xl p-10 lg:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.02)] flex flex-col">
@@ -192,7 +196,8 @@ export default function Platform() {
               </div>
             </div>
           </motion.div>
-        </div>
+        </StaggerContainer>
+
       </Container>
     </section>
   );

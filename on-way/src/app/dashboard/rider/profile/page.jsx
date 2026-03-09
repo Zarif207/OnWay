@@ -17,16 +17,19 @@ import {
     Clock,
     XCircle,
     Save,
-    Loader2
+    Loader2,
+    CheckCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import useRiders from "@/hooks/useRiders";
 
 export default function ProfilePage() {
     const { data: session } = useSession();
     const queryClient = useQueryClient();
     const riderId = session?.user?.id;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const { getRiderProfile, updateRiderProfile, uploadRiderImage, uploadRiderDocuments } = useRiders();
 
     // Form State
     const [formData, setFormData] = useState({
@@ -44,6 +47,10 @@ export default function ProfilePage() {
             plateNumber: "",
             color: ""
         },
+        documents: {
+            drivingLicenseFile: "",
+            vehicleRegistrationFile: ""
+        },
         image: "",
         isApproved: false
     });
@@ -55,13 +62,11 @@ export default function ProfilePage() {
         queryKey: ["riderProfile", riderId],
         queryFn: async () => {
             if (!riderId) return null;
-            const res = await axios.get(`${API_BASE_URL}/riders/${riderId}`);
-            return res.data.data;
+            const data = await getRiderProfile(riderId);
+            return data?.data; // Unpack { success: true, data: {...} }
         },
         enabled: !!riderId,
     });
-
-    // 2. Populate State
     useEffect(() => {
         if (profileData) {
             setFormData({
@@ -79,6 +84,10 @@ export default function ProfilePage() {
                     plateNumber: profileData.vehicle?.plateNumber || "",
                     color: profileData.vehicle?.color || ""
                 },
+                documents: {
+                    drivingLicenseFile: profileData.documents?.drivingLicenseFile || "",
+                    vehicleRegistrationFile: profileData.documents?.vehicleRegistrationFile || ""
+                },
                 image: profileData.image || "",
                 isApproved: profileData.isApproved || false
             });
@@ -86,11 +95,9 @@ export default function ProfilePage() {
         }
     }, [profileData]);
 
-    // 3. Mutate Profile Data
     const updateProfileMutation = useMutation({
         mutationFn: async (payload) => {
-            const res = await axios.patch(`${API_BASE_URL}/riders/${riderId}`, payload);
-            return res.data;
+            return await updateRiderProfile(riderId, payload);
         },
         onSuccess: () => {
             toast.success("Profile successfully updated.");
@@ -102,7 +109,43 @@ export default function ProfilePage() {
         }
     });
 
-    // 4. Handlers
+    const uploadImageMutation = useMutation({
+        mutationFn: async (file) => {
+            return await uploadRiderImage(file);
+        },
+        onSuccess: (url) => {
+            setFormData(prev => ({ ...prev, image: url }));
+            // Automatically save to backend
+            updateProfileMutation.mutate({ image: url });
+        },
+        onError: () => {
+            toast.error("Failed to upload avatar image.");
+        }
+    });
+
+    const uploadDocsMutation = useMutation({
+        mutationFn: async (docData) => {
+            return await uploadRiderDocuments(riderId, docData);
+        },
+        onSuccess: (data) => {
+            toast.success("Documents uploaded successfully.");
+            queryClient.invalidateQueries(["riderProfile", riderId]);
+            // Local state patch
+            if (data?.parsed) {
+                setFormData(prev => ({
+                    ...prev,
+                    documents: {
+                        ...prev.documents,
+                        ...data.parsed.documents
+                    }
+                }));
+            }
+        },
+        onError: () => {
+            toast.error("Failed to upload document files.");
+        }
+    });
+
     const handleInputChange = (e, section = null) => {
         const { name, value } = e.target;
         setHasUnsavedChanges(true);
@@ -120,6 +163,22 @@ export default function ProfilePage() {
                 ...prev,
                 [name]: value
             }));
+        }
+    };
+
+    const handleAvatarUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            uploadImageMutation.mutate(file);
+        }
+    };
+
+    const handleDocumentUpload = (e, docType) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const fd = new FormData();
+            fd.append(docType, file);
+            uploadDocsMutation.mutate(fd);
         }
     };
 
@@ -173,15 +232,24 @@ export default function ProfilePage() {
                     {/* Avatar Upload */}
                     <div className="relative group shrink-0">
                         <div className="h-28 w-28 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-xl flex items-center justify-center">
-                            {formData.image ? (
-                                <img src={formData.image} alt="Profile" className="h-full w-full object-cover" />
+                            {uploadImageMutation.isPending ? (
+                                <Loader2 size={32} className="animate-spin text-primary" />
+                            ) : formData.image ? (
+                                <img src={`${apiUrl.replace("/api", "")}${formData.image}`} alt="Profile" className="h-full w-full object-cover" crossOrigin="anonymous" />
                             ) : (
                                 <User size={48} className="text-gray-300" />
                             )}
                         </div>
-                        <button className="absolute bottom-0 right-0 h-10 w-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors border-2 border-white cursor-not-allowed" title="Avatar upload coming soon">
+                        <label className="absolute bottom-0 right-0 h-10 w-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors border-2 border-white cursor-pointer group-hover:scale-105 active:scale-95">
                             <Camera size={18} />
-                        </button>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleAvatarUpload}
+                                disabled={uploadImageMutation.isPending}
+                            />
+                        </label>
                     </div>
 
                     <div className="space-y-3 text-center md:text-left">
@@ -386,25 +454,63 @@ export default function ProfilePage() {
                         </div>
                     </section>
 
-                    {/* Document Uploads (Visual) */}
+                    {/* Document Uploads (Visual & Active) */}
                     <section className="bg-white p-8 md:p-10 rounded-[3rem] border border-gray-100 shadow-sm space-y-6">
                         <div>
                             <h3 className="text-lg font-black tracking-tight text-secondary mb-1">Upload Documents</h3>
                             <p className="text-xs font-bold text-gray-400 leading-relaxed max-w-sm">
-                                Provide required operational scanned files. Image uploading requires backend object storage wiring.
+                                Provide required operational scanned files.
                             </p>
                         </div>
 
                         <div className="space-y-4">
-                            <button className="w-full relative overflow-hidden group border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-all outline-none cursor-not-allowed">
-                                <UploadCloud className="text-gray-400 group-hover:text-primary transition-colors" size={28} />
-                                <span className="text-xs font-black uppercase tracking-widest text-gray-500 group-hover:text-primary transition-colors">Driving License</span>
-                            </button>
+                            {/* License Upload */}
+                            <label className={`w-full relative overflow-hidden group border-2 ${formData.documents?.drivingLicenseFile ? 'border-primary bg-primary/5' : 'border-dashed border-gray-200'} rounded-2xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-all outline-none cursor-pointer group`}>
+                                {uploadDocsMutation.isPending && uploadDocsMutation.variables?.has('drivingLicense') ? (
+                                    <Loader2 className="text-primary animate-spin" size={28} />
+                                ) : formData.documents?.drivingLicenseFile ? (
+                                    <CheckCircle className="text-primary" size={28} />
+                                ) : (
+                                    <UploadCloud className="text-gray-400 group-hover:text-primary transition-colors" size={28} />
+                                )}
+                                <span className={`text-xs font-black uppercase tracking-widest ${formData.documents?.drivingLicenseFile ? 'text-primary' : 'text-gray-500 group-hover:text-primary'} transition-colors`}>
+                                    {formData.documents?.drivingLicenseFile ? 'License Uploaded' : 'Driving License'}
+                                </span>
+                                {formData.documents?.drivingLicenseFile && (
+                                    <a href={`${apiUrl.replace("/api", "")}${formData.documents.drivingLicenseFile}`} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-gray-500 mt-2 hover:underline absolute top-2 right-4">View</a>
+                                )}
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => handleDocumentUpload(e, 'drivingLicense')}
+                                    disabled={uploadDocsMutation.isPending}
+                                />
+                            </label>
 
-                            <button className="w-full relative overflow-hidden group border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-all outline-none cursor-not-allowed">
-                                <UploadCloud className="text-gray-400 group-hover:text-primary transition-colors" size={28} />
-                                <span className="text-xs font-black uppercase tracking-widest text-gray-500 group-hover:text-primary transition-colors">Vehicle Registration</span>
-                            </button>
+                            {/* Registration Upload */}
+                            <label className={`w-full relative overflow-hidden group border-2 ${formData.documents?.vehicleRegistrationFile ? 'border-primary bg-primary/5' : 'border-dashed border-gray-200'} rounded-2xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-all outline-none cursor-pointer group`}>
+                                {uploadDocsMutation.isPending && uploadDocsMutation.variables?.has('vehicleRegistration') ? (
+                                    <Loader2 className="text-primary animate-spin" size={28} />
+                                ) : formData.documents?.vehicleRegistrationFile ? (
+                                    <CheckCircle className="text-primary" size={28} />
+                                ) : (
+                                    <UploadCloud className="text-gray-400 group-hover:text-primary transition-colors" size={28} />
+                                )}
+                                <span className={`text-xs font-black uppercase tracking-widest ${formData.documents?.vehicleRegistrationFile ? 'text-primary' : 'text-gray-500 group-hover:text-primary'} transition-colors`}>
+                                    {formData.documents?.vehicleRegistrationFile ? 'Registration Uploaded' : 'Vehicle Registration'}
+                                </span>
+                                {formData.documents?.vehicleRegistrationFile && (
+                                    <a href={`${apiUrl.replace("/api", "")}${formData.documents.vehicleRegistrationFile}`} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-gray-500 mt-2 hover:underline absolute top-2 right-4">View</a>
+                                )}
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => handleDocumentUpload(e, 'vehicleRegistration')}
+                                    disabled={uploadDocsMutation.isPending}
+                                />
+                            </label>
                         </div>
                     </section>
 

@@ -15,6 +15,9 @@ import {
   MapPin
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
+import AnimatedButton from "./AnimatedButton";
+
+import { AnimatedHeading, StaggerContainer } from "./MotionWrappers";
 
 /**
  * Footer Component (Final V2)
@@ -29,14 +32,14 @@ export default function Footer() {
       transition: {
         staggerChildren: 0.1,
         duration: 0.8,
-        ease: "easeOut"
+        ease: [0.16, 1, 0.3, 1] // Custom ease for premium feel
       }
     }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    show: { opacity: 1, y: 0, transition: { duration: 0.7 } }
   };
 
   const XIcon = ({ className }) => (
@@ -63,17 +66,15 @@ export default function Footer() {
 
         {/* ================= NEWSLETTER SECTION ================= */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-10 mb-20 px-4">
-          <motion.h2
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            className="text-white text-4xl sm:text-5xl font-black tracking-tighter"
-          >
+          <AnimatedHeading className="text-white text-4xl sm:text-5xl font-black tracking-tighter">
             Subscribe Our <br /> Newsletter
-          </motion.h2>
+          </AnimatedHeading>
 
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
             className="flex w-full lg:w-[500px] h-16 bg-white/5 backdrop-blur-md rounded-full border border-white/10 p-1 pl-8"
           >
             <input
@@ -81,9 +82,9 @@ export default function Footer() {
               placeholder="Your Email"
               className="group w-full bg-transparent text-white placeholder:text-zinc-400 outline-none text-sm font-medium"
             />
-            <button className="h-full px-8 bg-[#22c55e] text-white rounded-full flex items-center gap-2 font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all shadow-xl shadow-[#22c55e]/20 active:scale-95">
+            <AnimatedButton>
               Subscribe <Send size={16} fill="currentColor" />
-            </button>
+            </AnimatedButton>
           </motion.div>
         </div>
 
@@ -200,13 +201,9 @@ export default function Footer() {
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-white text-[#0A1F3D] py-4 rounded-full font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-[#22c55e] hover:text-white transition-all duration-300"
-            >
+            <AnimatedButton>
               Contact Us
-            </motion.button>
+            </AnimatedButton>
           </motion.div>
 
         </motion.div>

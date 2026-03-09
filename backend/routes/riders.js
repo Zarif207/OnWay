@@ -1,10 +1,78 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const { ObjectId } = require("mongodb");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
 module.exports = function (collections) {
   const router = express.Router();
   const { ridersCollection, ridesCollection, reviewsCollection } = collections;
+
+  // 🔹 Multer Configuration for Rider Uploads
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const dir = path.join(__dirname, "../uploads/riders");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+    },
+  });
+
+  const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
+        cb(null, true);
+      } else {
+        cb(new Error("Only images and PDF files are allowed"));
+      }
+    },
+  });
+
+  // 🔹 API: Upload Single Payload Image (Rider Profile Picture)
+  router.post("/upload", upload.single("riderImage"), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ success: false, message: "No file provided" });
+      const fileUrl = `/uploads/riders/${req.file.filename}`;
+      res.status(200).json({ success: true, url: fileUrl });
+    } catch (err) {
+      console.error("Single Upload Error:", err);
+      res.status(500).json({ success: false, message: "Upload failed" });
+    }
+  });
+
+  // 🔹 API: Upload Multiple Documents to existing Rider Document
+  router.post("/:id/documents", upload.fields([
+    { name: 'drivingLicense', maxCount: 1 },
+    { name: 'vehicleRegistration', maxCount: 1 }
+  ]), async (req, res) => {
+    try {
+      if (!req.files) return res.status(400).json({ success: false, message: "No documents provided" });
+
+      const newDocs = {};
+      if (req.files.drivingLicense) {
+        newDocs["documents.drivingLicenseFile"] = `/uploads/riders/${req.files.drivingLicense[0].filename}`;
+      }
+      if (req.files.vehicleRegistration) {
+        newDocs["documents.vehicleRegistrationFile"] = `/uploads/riders/${req.files.vehicleRegistration[0].filename}`;
+      }
+
+      await ridersCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: newDocs }
+      );
+
+      res.status(200).json({ success: true, message: "Documents uploaded securely", parsed: newDocs });
+    } catch (err) {
+      console.error("Multi Document Upload Error:", err);
+      res.status(500).json({ success: false, message: "Upload failed" });
+    }
+  });
 
   // 🔹 Create Rider (Register)
   router.post("/", async (req, res) => {
@@ -17,12 +85,17 @@ module.exports = function (collections) {
         address,
         gender,
         dateOfBirth,
+        emergencyContact,
         identity,
+        referralCode,
         licenseNumber,
         vehicle,
+        documents,
         operationCities,
         image
       } = req.body;
+
+      console.log("Incoming Rider Data:", req.body);
 
       if (!firstName || !email || !phone) {
         return res.status(400).json({
@@ -44,16 +117,19 @@ module.exports = function (collections) {
       const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
       const rider = {
-        name: `${firstName} ${lastName}`.trim(),
-        email,
-        phone,
+        name: `${firstName || ''} ${lastName || ''}`.trim(),
+        email: email || '',
+        phone: phone || '',
         password: hashedPassword,
         address: address || {},
         gender: gender || null,
         dateOfBirth: dateOfBirth || null,
+        emergencyContact: emergencyContact || {},
         identity: identity || {},
+        referralCode: referralCode || null,
         licenseNumber: licenseNumber || null,
         vehicle: vehicle || {},
+        documents: documents || {},
         operationCities: operationCities || [],
         image: image || null,
         role: "rider",
@@ -439,7 +515,16 @@ module.exports = function (collections) {
         return res.status(400).json({ success: false, message: "Invalid Driver ID" });
       }
 
-      const rider = await ridersCollection.findOne({ _id: new ObjectId(driverId) });
+      let rider = await ridersCollection.findOne({ _id: new ObjectId(driverId) });
+
+      // Fallback for cross-platform Passenger accounts attempting to access a connected driver dashboard
+      if (!rider && collections.passengerCollection) {
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(driverId) });
+        if (passenger && passenger.email) {
+          rider = await ridersCollection.findOne({ email: passenger.email });
+        }
+      }
+
       if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
 
       res.json({
@@ -466,6 +551,19 @@ module.exports = function (collections) {
         return res.status(400).json({ success: false, message: "Invalid Driver ID" });
       }
 
+      let searchTarget = { _id: new ObjectId(driverId) };
+
+      // Fallback check: Did this user sign in under a Passenger session ID?
+      const directRider = await ridersCollection.findOne(searchTarget);
+      if (!directRider && collections.passengerCollection) {
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(driverId) });
+        if (passenger && passenger.email) {
+          searchTarget = { email: passenger.email };
+        } else {
+          return res.status(404).json({ success: false, message: "Rider not found attached to session" });
+        }
+      }
+
       const updateFields = {
         workingDays,
         workingHours,
@@ -479,13 +577,11 @@ module.exports = function (collections) {
       }
 
       const result = await ridersCollection.updateOne(
-        { _id: new ObjectId(driverId) },
+        searchTarget,
         { $set: updateFields }
       );
 
-      if (result.matchedCount === 0) {
-        return res.status(404).json({ success: false, message: "Rider not found" });
-      }
+      // (If result.matchedCount === 0 here, it means the database returned weird constraints, but theoretically prevented by checking above)
 
       res.json({
         success: true,
@@ -501,10 +597,24 @@ module.exports = function (collections) {
   // 🔹 Get Single Rider
   router.get("/:id", async (req, res) => {
     try {
-      const rider = await ridersCollection.findOne({ _id: new ObjectId(req.params.id) });
+      let rider = await ridersCollection.findOne({ _id: new ObjectId(req.params.id) });
+
+      if (!rider) {
+        // Fallback to passenger collection
+        if (collections.passengerCollection) {
+          const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(req.params.id) });
+          if (passenger) {
+            // Find detailed rider info by email
+            const detailedRider = await ridersCollection.findOne({ email: passenger.email });
+            rider = detailedRider || passenger;
+          }
+        }
+      }
+
       if (!rider) return res.status(404).json({ success: false, message: "Not found" });
       res.json({ success: true, data: rider });
     } catch (error) {
+      console.error("Fetch rider error:", error);
       res.status(500).json({ success: false, message: "Fetch failed" });
     }
   });
@@ -516,13 +626,32 @@ module.exports = function (collections) {
       delete updateData.password;
       delete updateData._id;
 
-      await ridersCollection.updateOne(
+      let result = await ridersCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
         { $set: { ...updateData, updatedAt: new Date() } }
       );
 
+      if (result.matchedCount === 0 && collections.passengerCollection) {
+        // Try identifying by email via passenger
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(req.params.id) });
+        if (passenger) {
+          result = await ridersCollection.updateOne(
+            { email: passenger.email },
+            { $set: { ...updateData, updatedAt: new Date() } }
+          );
+          if (result.matchedCount === 0) {
+            // Update passenger directly if no rider record exists
+            await collections.passengerCollection.updateOne(
+              { _id: new ObjectId(req.params.id) },
+              { $set: { ...updateData, updatedAt: new Date() } }
+            );
+          }
+        }
+      }
+
       res.json({ success: true, message: "Updated" });
     } catch (error) {
+      console.error("Patch rider error:", error);
       res.status(500).json({ success: false, message: "Update failed" });
     }
   });

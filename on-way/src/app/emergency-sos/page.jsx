@@ -91,23 +91,53 @@ export default function EmergencySOSPage() {
   };
 
   const triggerSOS = async () => {
+    console.log("🚨 Triggering SOS...");
     try {
+      // Get user session data
+      const userSession = await fetch('/api/auth/session').then(res => res.json());
+      console.log("User session:", userSession);
+      const userEmail = userSession?.user?.email;
+      
+      // Fetch user details from backend
+      let userData = null;
+      if (userEmail) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+        const userRes = await fetch(`${apiUrl}/passenger/find?email=${userEmail}`);
+        userData = await userRes.json();
+        console.log("User data:", userData);
+      }
+
       // Collect all emergency data
       const emergencyData = {
+        name: userData?.name || "Anonymous User",
+        email: userData?.email || "unknown@email.com",
+        phone: userData?.phone || "N/A",
         timestamp: new Date().toISOString(),
-        location: location,
+        location: location ? {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: `${location.latitude}, ${location.longitude}` // You can use reverse geocoding API for actual address
+        } : null,
+        message: "Emergency SOS activated",
+        status: "active",
         userAgent: navigator.userAgent,
-        // Add user info, ride details from context/session
       };
 
+      console.log("Emergency data to send:", emergencyData);
+
       // Send to backend
-      const response = await fetch("http://localhost:4000/api/emergency/sos", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+      const response = await fetch(`${apiUrl}/emergency/sos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(emergencyData),
       });
+
+      console.log("SOS response status:", response.status);
+      const responseData = await response.json();
+      console.log("SOS response data:", responseData);
 
       if (response.ok) {
         setSosActive(true);
@@ -140,7 +170,7 @@ export default function EmergencySOSPage() {
         throw new Error("Failed to activate SOS");
       }
     } catch (error) {
-      console.error("SOS Error:", error);
+      console.error("❌ SOS Error:", error);
       setIsActivating(false);
       
       Swal.fire({

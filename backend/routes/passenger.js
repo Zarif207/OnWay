@@ -143,7 +143,7 @@ module.exports = (passengerCollection) => {
         }
     });
 
-    // 6. Update User Data
+    // 6. Update User Data by ID
     router.put("/update/:id", async (req, res) => {
         try {
             const { id } = req.params;
@@ -155,6 +155,34 @@ module.exports = (passengerCollection) => {
             res.status(200).json({ success: true, message: "User updated" });
         } catch (error) {
             res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 6.1 Update User Data by Email
+    router.patch("/update", async (req, res) => {
+        try {
+            const { email, name, phone } = req.body;
+            
+            if (!email) {
+                return res.status(400).json({ success: false, message: "Email is required" });
+            }
+            
+            const updateData = {};
+            if (name) updateData.name = name;
+            if (phone) updateData.phone = phone;
+            
+            const result = await passengerCollection.updateOne(
+                { email },
+                { $set: updateData }
+            );
+            
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ success: false, message: "User not found" });
+            }
+            
+            res.status(200).json({ success: true, message: "Profile updated successfully" });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
         }
     });
 

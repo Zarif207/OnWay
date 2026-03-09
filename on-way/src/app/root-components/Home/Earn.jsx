@@ -1,70 +1,159 @@
 "use client";
 
-import { ArrowRight, Bike, Car, Package, Store } from "lucide-react";
+import React, { useRef } from "react";
+import { motion, useInView } from "framer-motion";
+import { Play, Clock, Wallet, Users, Star, ArrowRight, Video } from "lucide-react";
 import Container from "./Container";
-import SectionHeading from "./SectionHeading";
+import { earnFeatures } from "./homeData";
 
-const roles = [
-  {
-    title: "Become a Rider",
-    description: "Earn flexibly with quick bike trips and transparent payouts.",
-    icon: Bike,
-  },
-  {
-    title: "Become a Driver",
-    description: "Drive with comfort-focused car trips and schedule options.",
-    icon: Car,
-  },
-];
-
+/**
+ * Earn Component (V2)
+ * High-end dual-media layout with polygon feature grid.
+ * Inspired by Logistics/Fintech world-class design patterns.
+ */
 export default function Earn() {
-  return (
-    <section id="earn" className="bg-white py-16 sm:py-20">
-      <Container>
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-          <div data-aos="fade-up">
-            <SectionHeading
-              eyebrow="Earn with OnWay"
-              title="Turn time into income"
-              description="Join OnWay as a rider or driver. Tools, support, and steady demand — designed for real people."
-            />
-          </div>
-          <div data-aos="fade-up" data-aos-delay="60">
-            <button as="link" href="#contact" variant="accent" className="flex items-center gap-2">
-              Start earning <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+  const containerRef = useRef(null);
+  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {roles.map((r) => {
-            const Icon = r.icon;
-            return (
-              <div
-                key={r.title}
-                className="group rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                data-aos="fade-up"
+  return (
+    <section id="earn" ref={containerRef} className="bg-white py-24 sm:py-32 overflow-hidden">
+      <Container>
+        <div className="grid lg:grid-cols-2 gap-16 lg:items-center">
+
+          {/* LEFT: Media Section */}
+          <div className="relative">
+            {/* Background Decoration (Cargo Box Style) */}
+            <motion.div
+              initial={{ x: -100, opacity: 0 }}
+              animate={isInView ? { x: 0, opacity: 1 } : {}}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="absolute -bottom-16 -left-12 w-56 h-56 bg-[#0A1F3D] rounded-3xl flex items-center justify-center -rotate-12 z-0 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+              <span className="text-white/10 font-black text-5xl tracking-tighter leading-none text-center">
+                ONWAY <br /> CARGO
+              </span>
+            </motion.div>
+
+            {/* Main Video Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 1, ease: "circOut" }}
+              className="relative z-10 aspect-[4/3] rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.07)] border-[12px] border-white group"
+            >
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
               >
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/20 text-zinc-900">
-                  <Icon className="h-6 w-6 text-primary" />
-                </span>
-                <p className="mt-4 text-base font-bold text-zinc-900">
-                  {r.title}
+                <source src="/onway-vid-2.mp4" type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors duration-700" />
+            </motion.div>
+
+            {/* Overlapping Vertical Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, x: 50, y: 50 }}
+              animate={isInView ? { opacity: 1, scale: 1, x: 0, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="absolute -bottom-12 -right-6 w-[48%] aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-[0_30px_70px_rgba(34,197,94,0.1)] border-8 border-white z-20 group"
+            >
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              >
+                <source src="/onway-v.mp4" type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 bg-[#22c55e]/10 mix-blend-overlay group-hover:opacity-0 transition-opacity duration-500" />
+
+              <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 hidden md:block">
+                <p className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                  <Video size={12} className="text-[#22c55e]" /> Live Network
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                  {r.description}
-                </p>
-                <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                  Learn more <ArrowRight className="h-4 w-4" />
-                </div>
               </div>
-            );
-          })}
+            </motion.div>
+
+            {/* Curved Connector SVG */}
+            <svg className="absolute top-1/2 left-[40%] w-full h-full pointer-events-none z-15 overflow-visible hidden lg:block">
+              <motion.path
+                d="M 0 0 C 120 0, 120 200, 50 200"
+                fill="none"
+                stroke="#22c55e"
+                strokeWidth="3"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={isInView ? { pathLength: 1, opacity: 0.6 } : {}}
+                transition={{ duration: 1.5, delay: 0.8 }}
+              />
+            </svg>
+          </div>
+
+          {/* RIGHT: Content Section */}
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              className="mb-12"
+            >
+              <span className="text-[#22c55e] text-sm font-black uppercase tracking-[0.2em] block mb-4">
+                Our Solutions
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black text-[#0A1F3D] leading-[1.05] mb-6">
+                Logistics service <br />
+                outsourcing’s advantages <br />
+                <span className="text-[#0A1F3D]/40 text-3xl md:text-4xl">in 2026.</span>
+              </h2>
+            </motion.div>
+
+            {/* Polygon Feature Grid */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {earnFeatures.map((f, i) => (
+                <FeatureCard key={i} feature={f} index={i} isInView={isInView} />
+              ))}
+            </div>
+          </div>
+
         </div>
       </Container>
     </section>
   );
 }
 
+function FeatureCard({ feature, index, isInView }) {
+  const Icon = feature.icon || ShieldCheck;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ delay: 0.5 + index * 0.15 }}
+      whileHover={{ scale: 1.03, y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      className="group relative p-8 bg-[#F8FAFC] overflow-hidden transition-all duration-300 shadow-sm hover:shadow-[0_25px_50px_rgba(34,197,94,0.08)] border border-transparent hover:border-[#22c55e]/10"
+      style={{
+        clipPath: "polygon(0% 0%, 88% 0%, 100% 50%, 88% 100%, 0% 100%, 5% 50%)",
+        borderRadius: "1rem"
+      }}
+    >
+      <div className="relative z-10 px-2 text-center sm:text-left">
+        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-[#22c55e] shadow-sm mb-6 group-hover:scale-110 group-hover:bg-[#22c55e] group-hover:text-white transition-all duration-300">
+          <Icon size={26} />
+        </div>
+        <h4 className="text-xl font-black text-[#0A1F3D] mb-2 uppercase tracking-tight">
+          {feature.title}
+        </h4>
+        <p className="text-[#0A1F3D]/60 text-sm font-semibold leading-relaxed">
+          {feature.desc}
+        </p>
+      </div>
 
-
+      {/* Subtle Glow Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white to-[#22c55e]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    </motion.div>
+  );
+}

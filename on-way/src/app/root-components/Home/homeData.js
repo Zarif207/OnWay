@@ -6,13 +6,33 @@ import {
   ShieldCheck,
   Sparkles,
   Wallet,
+  Route,
+  Users,
+  Clock,
+  Star,
 } from "lucide-react";
 
 export const stats = [
-  { label: "App Downloads", value: 1500000, suffix: "+" },
-  { label: "Trips Served", value: 22000000, suffix: "+" },
-  { label: "Cities Covered", value: 35, suffix: "+" },
-  { label: "Partners Empowered", value: 180000, suffix: "+" },
+  {
+    label: "Rides Completed",
+    value: "120K+",
+    icon: Route
+  },
+  {
+    label: "Driver Partners",
+    value: "50+",
+    icon: Users
+  },
+  {
+    label: "Years of Service",
+    value: "5+",
+    icon: Clock
+  },
+  {
+    label: "Happy Riders",
+    value: "50K+",
+    icon: Star
+  },
 ];
 
 export const services = [
@@ -122,5 +142,64 @@ export const blogPosts = [
     tag: "Safety",
   },
 ];
+export const transportationServices = [
+  {
+    side: "left",
+    title: "City Express",
+    desc: "Swift intra-city deliveries via bike.",
+    icon: Bike,
+  },
+  {
+    side: "left",
+    title: "Ground Logistics",
+    desc: "Massive fleet of trucks for land cargo.",
+    icon: Car, // Using Car for now, will find better or use placeholder
+  },
+  {
+    side: "left",
+    title: "Medical Wing",
+    desc: "Priority ambulance & emergency transport.",
+    icon: BriefcaseMedical,
+  },
+  {
+    side: "right",
+    title: "Air Freight",
+    desc: "International air shipping solutions.",
+    icon: Sparkles, // Placeholder for Plane
+  },
+  {
+    side: "right",
+    title: "Premium Fleet",
+    desc: "Executive luxury rides for VIPs.",
+    icon: ShieldCheck,
+  },
+  {
+    side: "right",
+    title: "Sea Logistics",
+    desc: "Bulk ocean freight and shipping.",
+    icon: Wallet, // Placeholder for Ship
+  },
+];
 
-
+export const earnFeatures = [
+  {
+    title: "Flexible Schedule",
+    desc: "Work on your own terms and choose when to drive.",
+    icon: Clock,
+  },
+  {
+    title: "Instant Payouts",
+    desc: "Get your earnings deposited directly to your wallet.",
+    icon: Wallet,
+  },
+  {
+    title: "Driver Support",
+    desc: "24/7 dedicated assistance for all our partners.",
+    icon: Users,
+  },
+  {
+    title: "Performance Bonus",
+    desc: "Earn more with weekly incentives and rewards.",
+    icon: Star,
+  },
+];

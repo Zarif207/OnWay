@@ -8,8 +8,24 @@ import {
   Activity,
   ArrowRight,
 } from 'lucide-react';
+import { useRequireRole } from '@/hooks/useAuth';
 
 export default function SupportAgentDashboard() {
+  // ✅ Protect this page - only support agents can access
+  const { user, isLoading } = useRequireRole("supportAgent");
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-10 sm:space-y-14">
         

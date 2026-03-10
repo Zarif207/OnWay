@@ -127,7 +127,7 @@ export default function ChatSupportPage() {
             <div className="max-w-[1700px] w-full mx-auto bg-white md:rounded-[2.5rem] flex overflow-hidden border border-gray-100 relative h-full">
 
                 {/* SIDEBAR */}
-                <aside className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[400px] lg:w-[450px] flex-col border-r border-gray-50 shrink-0 h-full`}>
+                <aside className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[200px] lg:w-[350px] flex-col border-r border-gray-50 shrink-0 h-full`}>
                     <div className="p-8 space-y-6">
                         <div className="flex items-center justify-between">
                             <div>

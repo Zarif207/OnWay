@@ -196,10 +196,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     if (res.ok) {
                         const userData = await res.json();
                         if (userData) {
-                            token.name = userData.name || token.name;
                             token.role = userData.role || token.role;
                             token.image = userData.image || token.image;
-                            token.phone = userData.phone || token.phone;
                         }
                     }
                 } catch (error) {

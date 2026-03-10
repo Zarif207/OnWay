@@ -19,7 +19,7 @@ module.exports = (passengerCollection) => {
     router.get("/find", async (req, res) => {
         try {
             const email = req.query.email;
-            
+
             if (!email) {
                 return res.status(400).json({ message: "Email is required" });
             }
@@ -35,7 +35,7 @@ module.exports = (passengerCollection) => {
             res.status(200).json(user);
         } catch (error) {
             console.error("Find user error:", error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Internal Server Error",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -50,25 +50,25 @@ module.exports = (passengerCollection) => {
 
             // Validation
             if (!email || !name) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Email and name are required" 
+                    message: "Email and name are required"
                 });
             }
 
             if (!password && !authProvider) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Password is required for credential-based registration" 
+                    message: "Password is required for credential-based registration"
                 });
             }
 
             // Check if user already exists
             const existingUser = await passengerCollection.findOne({ email });
             if (existingUser) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "User already exists with this email" 
+                    message: "User already exists with this email"
                 });
             }
 
@@ -92,11 +92,11 @@ module.exports = (passengerCollection) => {
 
             // Insert user into database
             const result = await passengerCollection.insertOne(newUser);
-            
+
             console.log(`✅ User created: ${email} (${authProvider || 'credentials'})`);
 
-            res.status(201).json({ 
-                success: true, 
+            res.status(201).json({
+                success: true,
                 message: "User created successfully",
                 data: {
                     userId: result.insertedId,
@@ -106,7 +106,7 @@ module.exports = (passengerCollection) => {
             });
         } catch (error) {
             console.error("Create user error:", error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Failed to create user",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -185,33 +185,33 @@ module.exports = (passengerCollection) => {
     router.get("/:id", async (req, res) => {
         try {
             const { id } = req.params;
-            
+
             if (!ObjectId.isValid(id)) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Invalid user ID" 
+                    message: "Invalid user ID"
                 });
             }
 
             const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
 
             if (!user) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: "User not found" 
+                    message: "User not found"
                 });
             }
 
             // Remove password from response
             delete user.password;
 
-            res.status(200).json({ 
-                success: true, 
-                data: user 
+            res.status(200).json({
+                success: true,
+                data: user
             });
         } catch (error) {
             console.error("Get user by ID error:", error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Failed to fetch user",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -226,9 +226,9 @@ module.exports = (passengerCollection) => {
             const { name, phone, image } = req.body;
 
             if (!ObjectId.isValid(id)) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Invalid user ID" 
+                    message: "Invalid user ID"
                 });
             }
 
@@ -246,19 +246,19 @@ module.exports = (passengerCollection) => {
             );
 
             if (result.matchedCount === 0) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: "User not found" 
+                    message: "User not found"
                 });
             }
 
-            res.status(200).json({ 
-                success: true, 
-                message: "Profile updated successfully" 
+            res.status(200).json({
+                success: true,
+                message: "Profile updated successfully"
             });
         } catch (error) {
             console.error("Update profile error:", error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Failed to update profile",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -273,16 +273,16 @@ module.exports = (passengerCollection) => {
             const { currentPassword, newPassword } = req.body;
 
             if (!ObjectId.isValid(id)) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Invalid user ID" 
+                    message: "Invalid user ID"
                 });
             }
 
             if (!currentPassword || !newPassword) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Current password and new password are required" 
+                    message: "Current password and new password are required"
                 });
             }
 
@@ -290,17 +290,17 @@ module.exports = (passengerCollection) => {
             const user = await passengerCollection.findOne({ _id: new ObjectId(id) });
 
             if (!user) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: "User not found" 
+                    message: "User not found"
                 });
             }
 
             // Check if user has password (OAuth users don't)
             if (!user.password) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Cannot change password for OAuth users" 
+                    message: "Cannot change password for OAuth users"
                 });
             }
 
@@ -308,9 +308,9 @@ module.exports = (passengerCollection) => {
             const isMatch = await bcrypt.compare(currentPassword, user.password);
 
             if (!isMatch) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Current password is incorrect" 
+                    message: "Current password is incorrect"
                 });
             }
 
@@ -323,13 +323,13 @@ module.exports = (passengerCollection) => {
                 { $set: { password: hashedPassword, updatedAt: new Date() } }
             );
 
-            res.status(200).json({ 
-                success: true, 
-                message: "Password changed successfully" 
+            res.status(200).json({
+                success: true,
+                message: "Password changed successfully"
             });
         } catch (error) {
             console.error("Change password error:", error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Failed to change password",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -340,27 +340,27 @@ module.exports = (passengerCollection) => {
     // 12. Update Profile (PUT - Comprehensive)
     router.put("/profile/update", async (req, res) => {
         try {
-            const { userId, name, phone, address, language, notifications } = req.body;
+            const { userId, name, phone, address, language, notifications, image } = req.body;
 
             // Validation
             if (!userId) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "User ID is required" 
+                    message: "User ID is required"
                 });
             }
 
             if (!ObjectId.isValid(userId)) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Invalid user ID" 
+                    message: "Invalid user ID"
                 });
             }
 
             if (!name || !name.trim()) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: "Name is required" 
+                    message: "Name is required"
                 });
             }
 
@@ -374,35 +374,39 @@ module.exports = (passengerCollection) => {
                 updatedAt: new Date()
             };
 
+            if (image) {
+                updateData.image = image;
+            }
+
             // Update user in database
-            const result = await passengerCollection.findOneAndUpdate(
+            const updatedUser = await passengerCollection.findOneAndUpdate(
                 { _id: new ObjectId(userId) },
                 { $set: updateData },
                 { returnDocument: "after" }
             );
 
-            if (!result.value) {
-                return res.status(404).json({ 
+            if (!updatedUser) {
+                return res.status(404).json({
                     success: false,
-                    message: "User not found" 
+                    message: "User not found"
                 });
             }
 
             // Remove password from response
-            const updatedUser = result.value;
-            delete updatedUser.password;
+            const finalUserData = updatedUser.value !== undefined ? updatedUser.value : updatedUser;
+            delete finalUserData.password;
 
             console.log(`✅ Profile updated for user: ${userId}`);
 
-            res.status(200).json({ 
-                success: true, 
+            res.status(200).json({
+                success: true,
                 message: "Profile updated successfully",
-                data: updatedUser
+                data: finalUserData
             });
 
         } catch (error) {
             console.error("Update profile error:", error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Failed to update profile",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined

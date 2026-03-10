@@ -13,8 +13,11 @@ import {
   Calendar,
   LogOut,
   X,
-  Check
+  Check,
+  Camera
 } from "lucide-react";
+import { useRef } from "react";
+
 import OnWayLoading from "@/app/components/Loading/page";
 
 /* ---------- UI Components ---------- */
@@ -61,6 +64,9 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const fileInputRef = useRef(null);
+
 
   // Edit form state
   const [formData, setFormData] = useState({
@@ -115,8 +121,27 @@ export default function Profile() {
       setIsEditMode(true);
       setSuccessMessage("");
       setErrorMessage("");
+      setSelectedImage(null);
     }
   };
+
+  // Handle image selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 1024 * 1024 * 2) { // 2MB limit
+        setErrorMessage("Image size must be less than 2MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   // Handle form input change
   const handleInputChange = (field, value) => {
@@ -131,7 +156,9 @@ export default function Profile() {
     setFormData(originalData);
     setIsEditMode(false);
     setErrorMessage("");
+    setSelectedImage(null);
   };
+
 
   // Save changes
   const handleSave = async () => {
@@ -159,8 +186,10 @@ export default function Profile() {
             phone: formData.phone.trim(),
             address: formData.address.trim(),
             notifications: formData.notifications,
-            language: formData.language
+            language: formData.language,
+            image: selectedImage
           })
+
         }
       );
 
@@ -171,8 +200,10 @@ export default function Profile() {
         setUser(result.data);
         setIsEditMode(false);
         setSuccessMessage(result.message || "Profile updated successfully!");
+        setSelectedImage(null);
 
         // Auto-hide success message
+
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
         setErrorMessage(result.message || "Failed to update profile");
@@ -249,19 +280,41 @@ export default function Profile() {
               {/* Avatar */}
 
               <div className="relative">
-                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary ring-offset-4">
+                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary ring-offset-4 relative group">
                   <img
                     src={
+                      selectedImage ||
                       user.image ||
                       `https://ui-avatars.com/api/?name=${user.name}&background=259461&color=fff`
                     }
                     alt="profile"
                     className="w-full h-full object-cover"
                   />
+
+                  {isEditMode && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Camera size={24} />
+                      <span className="text-[10px] font-bold mt-1">CHANGE</span>
+                    </button>
+                  )}
                 </div>
 
-                <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                {!isEditMode && (
+                  <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
+                )}
               </div>
+
 
               {/* User Info or Edit Form */}
 

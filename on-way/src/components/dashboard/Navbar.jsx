@@ -1,7 +1,10 @@
 "use client";
 import React from "react";
-import { Bell, Settings, Search as SearchIcon, Loader2 } from "lucide-react";
+import { Settings, Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Link from "next/link";
+import NotificationDropdown from "./NotificationDropdown";
+import GlobalSearch from "./GlobalSearch";
 
 const Navbar = () => {
   const { user, isLoading } = useCurrentUser();
@@ -21,25 +24,20 @@ const Navbar = () => {
         </div>
 
         <div className="relative max-w-md w-full">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <SearchIcon size={18} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search..."
-            className="block w-full pl-11 pr-4 py-2.5 bg-gray-100/50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-black/5 transition-all outline-none"
-          />
+          <GlobalSearch />
         </div>
       </div>
 
       {/* Right side: Actions & Profile */}
       <div className="flex items-center gap-4">
-        <button className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all">
-          <Bell size={20} />
-        </button>
-        <button className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all">
+
+        {/* Notification Dropdown */}
+        <NotificationDropdown />
+
+        {/* Settings Icon  */}
+        <Link href={"/dashboard/admin/settings"} className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all">
           <Settings size={20} />
-        </button>
+        </Link>
 
         <div className="h-8 w-px bg-gray-100 mx-2"></div>
 

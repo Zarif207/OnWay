@@ -450,7 +450,7 @@ export default function BookRidePage() {
           <button
             onClick={handleGetCurrentLocation}
             disabled={isLocating}
-            className="absolute bottom-6 right-6 z-[1000] bg-white p-3 rounded-xl shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-100 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group"
+            className="absolute top-[90px] left-3 z-[1000] bg-white p-3 rounded-xl shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-100 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group"
             title="Get Current Location"
           >
             {isLocating ? (

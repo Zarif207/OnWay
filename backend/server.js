@@ -3,6 +3,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const passengerRoutes = require("./routes/passenger");
 const blogRoutes = require("./routes/blog");
@@ -16,6 +18,11 @@ const paymentRoutes = require("./routes/payment");
 const ridersRoutes = require("./routes/riders");
 const promoCodeRoutes = require("./routes/promo");
 const emergencyRoutes = require("./routes/emergency");
+const dashboardRoutes = require("./routes/dashboard");
+const settingsRoutes = require("./routes/settings");
+const notificationsRoutes = require("./routes/notifications");
+const searchRoutes = require("./routes/search");
+const notificationHelper = require("./utils/notificationHelper");
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -27,6 +34,37 @@ const client = new MongoClient(uri, {
 });
 
 const app = express();
+const server = http.createServer(app);
+
+// ✅ Initialize Socket.io for backend (optional - for direct backend notifications)
+// Note: Main socket server runs separately on port 4001
+const io = new Server(server, {
+  cors: {
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:5000',
+        'http://localhost:4001',
+        'https://on-way-server.vercel.app',
+        'https://onway-5g8a.onrender.com',
+        process.env.FRONTEND_URL,
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+      ].filter(Boolean);
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all in development
+      }
+    },
+    credentials: true,
+  },
+});
+
+// Set Socket.io instance in notification helper
+notificationHelper.setSocketIO(io);
+
+console.log("✅ Socket.io initialized for backend notifications");
 
 // ✅ CORS Configuration for Production
 const corsOptions = {
@@ -106,8 +144,11 @@ app.use(async (req, res, next) => {
       bookingsCollection: database.collection("bookings"),
       paymentsCollection: database.collection("payments"),
       ridersCollection: database.collection("riders"),
+      complaintsCollection: database.collection("complaints"),
       promoCodeCollection: database.collection("promoCode"),
-      emergencyCollection: database.collection("emergency")
+      emergencyCollection: database.collection("emergency"),
+      settingsCollection: database.collection("settings"),
+      notificationsCollection: database.collection("notifications")
     };
     next();
   } catch (error) {
@@ -168,6 +209,22 @@ app.use("/api/emergency", (req, res, next) => {
   emergencyRoutes(req.collections.emergencyCollection)(req, res, next);
 });
 
+app.use("/api/dashboard", (req, res, next) => {
+  dashboardRoutes(req.collections)(req, res, next);
+});
+
+app.use("/api/settings", (req, res, next) => {
+  settingsRoutes(req.collections.settingsCollection)(req, res, next);
+});
+
+app.use("/api/notifications", (req, res, next) => {
+  notificationsRoutes(req.collections.notificationsCollection)(req, res, next);
+});
+
+app.use("/api/search", (req, res, next) => {
+  searchRoutes(req.collections)(req, res, next);
+});
+
 // ✅ Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({
@@ -209,9 +266,10 @@ app.use((err, req, res, next) => {
 
 // ✅ Start server for local development
 if (require.main === module) {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🔔 Socket.io ready for notifications`);
   });
 }
 

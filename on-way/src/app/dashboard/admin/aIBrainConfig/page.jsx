@@ -7,6 +7,7 @@ import {
     Save, Loader2, Sparkles, ShieldCheck,
     Info, Database, Zap, LayoutDashboard
 } from 'lucide-react';
+import OnWayLoading from '@/app/components/Loading/page';
 
 const AIBrainConfig = () => {
     const [content, setContent] = useState('');
@@ -53,7 +54,7 @@ const AIBrainConfig = () => {
                         <p className="text-slate-500 font-medium">Fine-tune your AI support agent's behavior and data source.</p>
                     </div>
 
-                    <button
+                         <button
                         onClick={handleUpdate}
                         disabled={isSaving || isLoading}
                         className="group relative inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white px-8 py-4 rounded-2xl font-bold transition-all hover:shadow-2xl hover:shadow-slate-200 active:scale-95 overflow-hidden"

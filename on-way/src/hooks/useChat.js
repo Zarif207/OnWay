@@ -3,228 +3,215 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import io from "socket.io-client";
 
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
 
-let socket;
+let globalSocket;
 
-export const useChat = (roomId, chatType, userId, userName, role) => {
+export const useChat = (roomId, chatType, userId, userName, role, otherUserId = null) => {
   const [messages, setMessages] = useState([]);
   const [typingUser, setTypingUser] = useState(null);
   const [onlineStatus, setOnlineStatus] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [sendError, setSendError] = useState(null);
+  const [socket, setSocket] = useState(null);
 
   const typingTimeout = useRef(null);
+  const roomIdRef = useRef(roomId);
+  const userIdRef = useRef(userId);
+  const roleRef = useRef(role);
+  const otherUserIdRef = useRef(otherUserId);
 
-  // ================= SOCKET INIT =================
-
+  // Keep refs in sync for use in stable callbacks
   useEffect(() => {
-    if (!socket) {
-      socket = io(SOCKET_URL, {
+    roomIdRef.current = roomId;
+    userIdRef.current = userId;
+    roleRef.current = role;
+    otherUserIdRef.current = otherUserId;
+  }, [roomId, userId, role, otherUserId]);
+
+  // Independent of socket connection for better reliability
+  const fetchMessages = useCallback(async (targetRoomId) => {
+    const rid = targetRoomId || roomIdRef.current;
+    const uid = userIdRef.current;
+    const r = roleRef.current;
+
+    if (!rid || !uid) {
+      console.log("[useChat] Skipping fetch - missing rid or uid:", { rid, uid });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = `${SOCKET_URL}/api/chat/history/${rid}?userId=${uid}&role=${r}`;
+      console.log("[useChat] Fetching history:", url);
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.error("[useChat] History fetch failed:", res.status);
+        setMessages([]);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("[useChat] History received:", data?.length, "messages");
+
+      if (Array.isArray(data)) {
+        setMessages(data);
+      } else {
+        console.error("[useChat] History data is not an array:", data);
+        setMessages([]);
+      }
+    } catch (err) {
+      console.error("[useChat] Fetch error:", err);
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch when room or user changes
+  useEffect(() => {
+    if (roomId && userId) {
+      setMessages([]);
+      fetchMessages(roomId);
+    }
+  }, [roomId, userId, fetchMessages]);
+
+  // ==================== 2. SOCKET INITIALIZATION ====================
+  useEffect(() => {
+    if (!globalSocket) {
+      globalSocket = io(SOCKET_URL, {
         autoConnect: true,
         reconnection: true,
         transports: ["websocket"],
       });
     }
-
-    return () => { };
+    setSocket(globalSocket);
   }, []);
 
-  // ================= FETCH HISTORY =================
+  // ====== 3. RECEIVE MESSAGE HANDLER ====================
+  const handleReceiveMessage = useCallback((msg) => {
+    // Only add if it belongs to the current room
+    if (String(msg.roomId) === String(roomIdRef.current)) {
+      setMessages((prev) => {
+        const safePrev = Array.isArray(prev) ? prev : [];
+        if (safePrev.some((m) => String(m._id) === String(msg._id))) return safePrev;
+        return [...safePrev, msg];
+      });
+    }
+  }, []);
 
-  const fetchMessages = useCallback(
-    async (currentRoomId = roomId) => {
-      if (!currentRoomId || !userId) return;
-
-      try {
-        setLoading(true);
-
-        const res = await fetch(
-          `${SOCKET_URL}/api/chat/history/${currentRoomId}?userId=${userId}`
-        );
-
-        if (!res.ok) throw new Error("History fetch failed");
-
-        const data = await res.json();
-
-        setMessages(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("History error:", err);
-        setMessages([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [roomId, userId]
-  );
-
-  // ================= JOIN ROOM =================
-
+  // ======= 4. ROOM MANAGEMENT & EVENTS ====================
   useEffect(() => {
     if (!socket || !roomId || !userId) return;
 
-    socket.emit("registerUser", { userId });
+    // Join room
+    socket.emit("registerUser", { userId, role });
+    socket.emit("joinRoom", { roomId, userId, role });
 
-    socket.emit("joinRoom", {
-      roomId,
-      userId,
-      role,
-    });
+    if (role === "support") {
+      socket.emit("joinSupport");
+    }
 
-    fetchMessages(roomId);
-
-    return () => {
-      socket.emit("leaveRoom", { roomId, userId });
-    };
-  }, [roomId, userId, role, fetchMessages]);
-
-  // ================= SOCKET EVENTS =================
-
-  useEffect(() => {
-    if (!socket || !roomId) return;
-
-    const handleReceiveMessage = (msg) => {
-      if (msg.roomId !== roomId) return;
-
-      setMessages((prev) => {
-        const exists = prev.some((m) => m._id === msg._id);
-        if (exists) return prev;
-        return [...prev, msg];
-      });
-    };
-
-    const handleTyping = ({ roomId: typingRoom, userName }) => {
-      if (typingRoom !== roomId) return;
-
-      setTypingUser(userName);
-
-      if (typingTimeout.current) {
-        clearTimeout(typingTimeout.current);
-      }
-
-      typingTimeout.current = setTimeout(() => {
-        setTypingUser(null);
-      }, 3000);
-    };
-
-    const handleStopTyping = ({ roomId: typingRoom }) => {
-      if (typingRoom === roomId) {
-        setTypingUser(null);
+    // Event Listeners
+    const handleTyping = ({ roomId: tRoom, userName: tName }) => {
+      if (tRoom === roomIdRef.current) {
+        setTypingUser(tName || "Someone");
+        if (typingTimeout.current) clearTimeout(typingTimeout.current);
+        typingTimeout.current = setTimeout(() => setTypingUser(null), 3000);
       }
     };
 
-    const handleSeen = ({ roomId: seenRoom }) => {
-      if (seenRoom !== roomId) return;
+    const handleStopTyping = ({ roomId: tRoom }) => {
+      if (tRoom === roomIdRef.current) setTypingUser(null);
+    };
 
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.senderId === userId ? { ...msg, isRead: true } : msg
-        )
-      );
+    const handleSeen = ({ roomId: sRoom }) => {
+      if (sRoom === roomIdRef.current) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.senderId === String(userIdRef.current) ? { ...m, isRead: true } : m
+          )
+        );
+      }
     };
 
     const handleUserStatus = ({ userId: uId, status }) => {
-      setOnlineStatus((prev) => ({
-        ...prev,
-        [uId]: status,
-      }));
+      setOnlineStatus((prev) => ({ ...prev, [uId]: status }));
     };
 
     socket.on("receiveMessage", handleReceiveMessage);
     socket.on("userTyping", handleTyping);
-    socket.on("userStoppedTyping", handleStopTyping);
+    socket.on("userStopTyping", handleStopTyping);
     socket.on("messagesSeen", handleSeen);
     socket.on("userStatus", handleUserStatus);
 
     return () => {
+      socket.emit("leaveRoom", { roomId, userId });
       socket.off("receiveMessage", handleReceiveMessage);
       socket.off("userTyping", handleTyping);
-      socket.off("userStoppedTyping", handleStopTyping);
+      socket.off("userStopTyping", handleStopTyping);
       socket.off("messagesSeen", handleSeen);
       socket.off("userStatus", handleUserStatus);
     };
-  }, [roomId, userId]);
+  }, [roomId, userId, role, socket, handleReceiveMessage]);
 
-  // ================= SEND MESSAGE =================
+  // ==================== 5. SEND MESSAGE ====================
+  const sendMessage = useCallback(async (text, fileUrl = null, messageType = "text") => {
+    if (!text?.trim() && !fileUrl) return;
 
-  const sendMessage = useCallback(
-    async (text, fileUrl = null, messageType = "text") => {
-      if ((!text || !text.trim()) && !fileUrl) return;
+    const currentUid = String(userIdRef.current);
+    const currentRoom = roomIdRef.current;
+    const currentOtherId = otherUserIdRef.current;
 
-      const payload = {
-        roomId,
-        senderId: userId,
-        senderName: userName,
-        senderRole: role,
-        message: text || "",
-        messageType,
-        fileUrl,
-        chatType,
+    const payload = {
+      roomId: currentRoom,
+      senderId: currentUid,
+      senderName: userName,
+      senderRole: role,
+      message: text || "",
+      messageType,
+      fileUrl,
+      chatType,
+      passengerId: chatType === "support"
+        ? (role === "support" ? (currentOtherId || currentRoom.replace("support_", "")) : currentUid)
+        : (role === "passenger" ? currentUid : currentOtherId),
+      riderId: chatType === "ride"
+        ? (role === "rider" ? currentUid : currentOtherId)
+        : null,
+    };
 
-        passengerId:
-          role === "passenger"
-            ? userId
-            : roomId?.includes("support_")
-              ? roomId.replace("support_", "")
-              : null,
+    try {
+      setSendError(null);
+      const res = await fetch(`${SOCKET_URL}/api/chat/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-        riderId: role === "rider" ? userId : null,
-      };
+      if (!res.ok) throw new Error("Failed to send message");
+      const savedMsg = await res.json();
 
-      try {
-        const res = await fetch(`${SOCKET_URL}/api/chat/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) throw new Error("Send failed");
-
-        const savedMessage = await res.json();
-
+      // Optimistic update (guarded by roomId check)
+      if (String(savedMsg.roomId) === String(roomIdRef.current)) {
         setMessages((prev) => {
-          const exists = prev.some((m) => m._id === savedMessage._id);
-          if (exists) return prev;
-          return [...prev, savedMessage];
+          const safePrev = Array.isArray(prev) ? prev : [];
+          if (safePrev.some((m) => String(m._id) === String(savedMsg._id))) return safePrev;
+          return [...safePrev, savedMsg];
         });
-      } catch (err) {
-        console.error("Send message error:", err);
       }
-    },
-    [roomId, userId, userName, role, chatType]
-  );
+    } catch (err) {
+      setSendError(err.message);
+      console.error("[useChat] Send error:", err);
+    }
+  }, [chatType, role, userName]);
 
-  // ================= TYPING =================
-
-  const sendTyping = () => {
-    if (!socket || !roomId) return;
-
-    socket.emit("typing", {
-      roomId,
-      userId,
-      userName,
-    });
-  };
-
-  const stopTyping = () => {
-    if (!socket || !roomId) return;
-
-    socket.emit("stopTyping", {
-      roomId,
-      userId,
-    });
-  };
-
-  // ================= READ =================
-
-  const markAsRead = () => {
-    if (!socket || !roomId) return;
-
-    socket.emit("markAsRead", {
-      roomId,
-      userId,
-    });
-  };
+  // ==================== 6. UTILITIES ====================
+  const sendTyping = () => socket?.emit("typing", { roomId: roomIdRef.current, userId: userIdRef.current, userName });
+  const stopTyping = () => socket?.emit("stopTyping", { roomId: roomIdRef.current, userId: userIdRef.current });
+  const markAsRead = useCallback(() => {
+    socket?.emit("markAsRead", { roomId: roomIdRef.current, userId: userIdRef.current });
+  }, [socket]);
 
   return {
     messages,
@@ -237,5 +224,7 @@ export const useChat = (roomId, chatType, userId, userName, role) => {
     onlineStatus,
     loading,
     socket,
+    sendError,
+    clearSendError: () => setSendError(null),
   };
 };

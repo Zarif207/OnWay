@@ -1,4 +1,3 @@
-
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -36,7 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 try {
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
                     const res = await fetch(`${apiUrl}/passenger/find?email=${credentials.email}`);
-                    
+
                     if (!res.ok) {
                         throw new Error("User not found");
                     }
@@ -51,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     }
 
                     const isMatch = await bcrypt.compare(credentials.password, userData.password);
-                    
+
                     if (!isMatch) {
                         throw new Error("Invalid password");
                     }
@@ -70,12 +69,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
 
-    session: { 
+    session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days
     },
-    
-    pages: { 
+
+    pages: {
         signIn: "/login",
         error: "/login", // Redirect to login on error
     },
@@ -103,13 +102,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // ✅ Handle OAuth providers (Google, GitHub)
             if (account?.provider === "google" || account?.provider === "github") {
                 const { name, email, image } = user;
+                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
                 try {
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-                    
+
                     // Check if user exists
                     const checkRes = await fetch(`${apiUrl}/passenger/find?email=${email}`);
-                    
+
                     if (!checkRes.ok) {
                         console.error("Error checking user existence:", checkRes.statusText);
                         return true; // Allow login even if check fails
@@ -120,7 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     // If user doesn't exist, create new user
                     if (!existingUser) {
                         console.log(`Creating new user for ${email} via ${account.provider}`);
-                        
+
                         const createRes = await fetch(`${apiUrl}/passenger`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -145,7 +145,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     } else {
                         console.log(`User ${email} already exists, skipping creation`);
                     }
-                    
+
                     return true;
                 } catch (error) {
                     console.error("Error during OAuth user sync:", error);
@@ -153,12 +153,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     return true;
                 }
             }
-            
+
             // ✅ Handle Credentials provider
             // User is already validated in authorize() function
             return true;
         },
-        
+
         async jwt({ token, user, account, trigger }) {
             // Initial sign in - user object is available
             if (user) {
@@ -166,13 +166,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.role = user.role || "passenger";
                 token.image = user.image;
             }
-            
+
             // For OAuth providers, fetch latest data from database
             if (account?.provider === "google" || account?.provider === "github") {
                 try {
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
                     const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
-                    
+
                     if (res.ok) {
                         const userData = await res.json();
                         if (userData) {
@@ -186,13 +186,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     // Keep existing token data if fetch fails
                 }
             }
-            
+
             // Handle session updates (when user data changes)
             if (trigger === "update") {
                 try {
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
                     const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
-                    
+
                     if (res.ok) {
                         const userData = await res.json();
                         if (userData) {
@@ -204,10 +204,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     console.error("Error updating token:", error);
                 }
             }
-            
+
             return token;
         },
-
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id;

@@ -7,7 +7,8 @@ import {
   History, 
   User, 
   Wallet,
-  Activity
+  Activity,
+  MessageSquareMore
 } from "lucide-react";
 
 export default function RiderLayout({ children }) {
@@ -16,6 +17,7 @@ export default function RiderLayout({ children }) {
     { label: "Overview", path: "/dashboard/rider/Overview", icon: Activity },
     { label: "Ride History", path: "/dashboard/rider/ride-history", icon: History },
     { label: "Earnings", path: "/dashboard/rider/earnings", icon: Wallet },
+    { label: "Inbox", path: "/dashboard/rider/inbox", icon: MessageSquareMore },
     { label: "Profile", path: "/dashboard/rider/profile", icon: User },
   ];
 

@@ -46,16 +46,21 @@ export default function RideHistoryPage() {
   };
 
   // ---------- Location Formatter ----------
-  const formatLocation = (loc) => {
-    if (!loc) return "N/A";
-    if (typeof loc === "string") return loc;
-    if (typeof loc === "object") {
-      return (
-        loc.address ||
-        `Lat: ${loc?.coordinates?.[1]}, Lng: ${loc?.coordinates?.[0]}`
-      );
+  // Format location function
+  const formatLocation = (location) => {
+    if (!location) return "";
+
+    // যদি string হয়
+    if (typeof location === "string") {
+      return location;
     }
-    return "Unknown";
+
+    // যদি object হয় (তোমার database এর মতো)
+    if (typeof location === "object") {
+      return location.name || "";
+    }
+
+    return "";
   };
 
   // ---------- Single Invoice ----------
@@ -117,16 +122,14 @@ export default function RideHistoryPage() {
   };
 
   // ---------- Filter ----------
+  // Filter rides
   const filteredRides = rides.filter((ride) => {
     const term = searchTerm.toLowerCase();
-    return (
-      formatLocation(ride.pickupLocation)
-        .toLowerCase()
-        .includes(term) ||
-      formatLocation(ride.dropLocation)
-        .toLowerCase()
-        .includes(term)
-    );
+
+    const pickup = formatLocation(ride.pickupLocation).toLowerCase();
+    const drop = formatLocation(ride.dropoffLocation).toLowerCase();
+
+    return pickup.includes(term) || drop.includes(term);
   });
 
   if (loading) return <OnWayLoading />;

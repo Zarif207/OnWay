@@ -30,10 +30,7 @@ const Overview = ({ riderId = "driver_345678" }) => {
         );
 
         const allRides = ridesRes.data.data || [];
-
-        const avgRating =
-          ratingRes.data.averageRating || 0;
-
+        const avgRating = ratingRes.data.averageRating || 0;
         const todayStr = new Date().toISOString().split("T")[0];
 
         let todayE = 0;

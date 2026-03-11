@@ -111,8 +111,8 @@ module.exports = (passengerCollection) => {
                 }
             }
 
-            res.status(201).json({ 
-                success: true, 
+            res.status(201).json({
+                success: true,
                 message: "User created successfully",
                 data: {
                     userId: result.insertedId,
@@ -178,24 +178,24 @@ module.exports = (passengerCollection) => {
     router.patch("/update", async (req, res) => {
         try {
             const { email, name, phone } = req.body;
-            
+
             if (!email) {
                 return res.status(400).json({ success: false, message: "Email is required" });
             }
-            
+
             const updateData = {};
             if (name) updateData.name = name;
             if (phone) updateData.phone = phone;
-            
+
             const result = await passengerCollection.updateOne(
                 { email },
                 { $set: updateData }
             );
-            
+
             if (result.matchedCount === 0) {
                 return res.status(404).json({ success: false, message: "User not found" });
             }
-            
+
             res.status(200).json({ success: true, message: "Profile updated successfully" });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });

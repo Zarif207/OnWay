@@ -1,119 +1,245 @@
 "use client";
-import React, { useState } from "react";
-import { MessageSquare, Send, User, Clock } from "lucide-react";
+
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import {
+    MessageSquare, Send, Paperclip, CheckCheck,
+    Loader2, Search as SearchIcon, ChevronLeft,
+    ShieldCheck, Zap, Lock, Compass
+} from "lucide-react";
+import { useChat } from "@/hooks/useChat";
+import { useRequireRole } from "@/hooks/useAuth";
+
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
 
 export default function ChatSupportPage() {
-  const [chats, setChats] = useState([
-    { id: 1, user: "Alice Cooper", message: "I need help with my payment", time: "Just now", unread: 2 },
-    { id: 2, user: "Bob Martin", message: "Where is my driver?", time: "5 mins ago", unread: 1 },
-    { id: 3, user: "Carol White", message: "Thank you for your help!", time: "10 mins ago", unread: 0 },
-  ]);
+    const { user: agentUser, isLoading: authLoading } = useRequireRole("supportAgent");
+    const [sessions, setSessions] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedChat, setSelectedChat] = useState(null);
+    const [input, setInput] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
+    const [showMobileList, setShowMobileList] = useState(true);
 
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState("");
+    const scrollRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const typingTimeout = useRef(null);
 
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-          <MessageSquare className="text-green-500" />
-          Chat Support
-        </h1>
-        <p className="text-gray-600 mt-2">Provide real-time support to users</p>
-      </div>
+    const roomId = useMemo(() => {
+        if (!selectedChat) return null;
+        return selectedChat.roomId || `support_${selectedChat.passengerId}`;
+    }, [selectedChat]);
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden" style={{ height: "600px" }}>
-        <div className="flex h-full">
-          {/* Chat List */}
-          <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-            <div className="p-4 bg-gray-50 border-b">
-              <input
-                type="text"
-                placeholder="Search conversations..."
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div className="divide-y divide-gray-200">
-              {chats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => setSelectedChat(chat)}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 ${
-                    selectedChat?.id === chat.id ? "bg-green-50" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {chat.user.charAt(0)}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">{chat.user}</h4>
-                        <p className="text-sm text-gray-600 truncate">{chat.message}</p>
-                      </div>
-                    </div>
-                    {chat.unread > 0 && (
-                      <span className="bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {chat.unread}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">{chat.time}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+    const {
+        messages, sendMessage, typingUser, sendTyping, stopTyping,
+        socket, markAsRead, onlineStatus, loading: messagesLoading,
+        sendError, clearSendError
+    } = useChat(
+        roomId, "support", agentUser?.id, agentUser?.name || "Support Agent",
+        "support", selectedChat?.passengerId
+    );
 
-          {/* Chat Window */}
-          <div className="flex-1 flex flex-col">
-            {selectedChat ? (
-              <>
-                <div className="p-4 bg-gray-50 border-b flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    {selectedChat.user.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{selectedChat.user}</h3>
-                    <p className="text-sm text-green-600">Online</p>
-                  </div>
-                </div>
-                <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-                  <div className="space-y-4">
-                    <div className="flex justify-start">
-                      <div className="bg-white p-3 rounded-lg shadow max-w-xs">
-                        <p className="text-sm text-gray-800">{selectedChat.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">{selectedChat.time}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-white border-t">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Type your message..."
-                      className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                    <button className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2">
-                      <Send size={18} />
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <MessageSquare size={64} className="mx-auto mb-4 text-gray-300" />
-                  <p>Select a conversation to start chatting</p>
-                </div>
-              </div>
-            )}
-          </div>
+    const fetchSessions = useCallback(async () => {
+        try {
+            const res = await fetch(`${SOCKET_URL}/api/support/sessions`);
+            const data = await res.json();
+            setSessions(data || []);
+        } catch (err) {
+            console.error("Session error:", err);
+        }
+    }, []);
+
+    useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleUpdate = () => fetchSessions();
+        socket.on("receiveMessage", handleUpdate);
+        socket.on("supportSessionUpdated", handleUpdate);
+        return () => {
+            socket.off("receiveMessage", handleUpdate);
+            socket.off("supportSessionUpdated", handleUpdate);
+        };
+    }, [socket, fetchSessions]);
+
+    useEffect(() => {
+        if (roomId && socket) markAsRead();
+    }, [roomId, socket, messages.length, markAsRead]);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+        }
+    }, [messages, typingUser]);
+
+    const handleSelectChat = (session) => {
+        setSelectedChat({
+            roomId: session.roomId || `support_${session.passengerId}`,
+            name: session.senderName,
+            passengerId: session.passengerId,
+        });
+        setShowMobileList(false);
+    };
+
+    const handleSend = async (text = input, fileUrl = null, type = "text") => {
+        if ((!text.trim() && !fileUrl) || !roomId) return;
+        await sendMessage(text, fileUrl, type);
+        setInput("");
+        stopTyping();
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "onway_preset");
+        try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: "POST", body: formData
+            });
+            const data = await res.json();
+            if (data.secure_url) handleSend("", data.secure_url, "image");
+        } catch (err) {
+            console.error("Upload failed", err);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const filteredSessions = useMemo(() => {
+        return sessions.filter(s =>
+            s.senderName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.passengerId?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [sessions, searchQuery]);
+
+    if (authLoading) return (
+        <div className="flex flex-col items-center justify-center h-screen bg-[#F8F9FD] text-emerald-500">
+            <Loader2 className="animate-spin mb-4" size={32} />
+            <p className="text-[10px] font-black uppercase tracking-[0.4em]">Initializing Support Matrix...</p>
         </div>
-      </div>
-    </div>
-  );
+    );
+
+
+    return (
+        <div className="flex h-screen  text-gray-700 font-sans overflow-hidden P-4">
+            <div className="max-w-[1700px] w-full mx-auto bg-white md:rounded-[2.5rem] flex overflow-hidden border border-gray-100 relative h-full">
+
+                {/* SIDEBAR */}
+                <aside className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[200px] lg:w-[350px] flex-col border-r border-gray-50 shrink-0 h-full`}>
+                    <div className="p-8 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-black text-gray-900 tracking-tighter uppercase italic">Support Agent</h1>
+                                <p className="text-emerald-600 text-[10px] font-black tracking-[0.3em] uppercase">Live Response Node</p>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text" placeholder="Search passengers..."
+                                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white border border-gray-100 rounded-[1.8rem] py-4 pl-14 pr-8 text-sm outline-none focus:border-emerald-500 shadow-sm font-bold"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-4 pb-8">
+                        {filteredSessions.length === 0 ? (
+                            <div className="p-16 text-center opacity-30">
+                                <Compass size={48} className="mx-auto mb-4" />
+                                <p className="text-[10px] font-black uppercase">No active sessions</p>
+                            </div>
+                        ) : filteredSessions.map((session) => (
+                            <button
+                                key={session._id} onClick={() => handleSelectChat(session)}
+                                className={`w-full p-5 mb-2 flex items-center gap-4 rounded-[2.2rem] transition-all relative ${roomId === (session.roomId || `support_${session.passengerId}`) ? "bg-white shadow-lg border-emerald-50" : "hover:bg-emerald-50/50"}`}
+                            >
+                                <div className="relative shrink-0">
+                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black bg-emerald-50 text-emerald-600 border-2 border-white uppercase">
+                                        {(session.senderName || "?")[0]}
+                                    </div>
+                                    {onlineStatus[session.passengerId] === "online" && <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white animate-pulse" />}
+                                </div>
+                                <div className="flex-1 text-left min-w-0">
+                                    <div className="flex justify-between items-start">
+                                        <h4 className="font-black truncate uppercase text-sm">{session.senderName || "Unknown"}</h4>
+                                        <span className="text-[10px] text-gray-400 font-bold">{session.lastMessageTime && new Date(session.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                    <p className={`text-xs truncate font-bold ${session.unreadCount > 0 ? "text-emerald-600" : "text-gray-400"}`}>{session.lastMessage || "No messages yet"}</p>
+                                </div>
+                                {session.unreadCount > 0 && <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{session.unreadCount}</span>}
+                            </button>
+                        ))}
+                    </div>
+                </aside>
+
+                {/* CHAT AREA */}
+                <main className={`${(!showMobileList || !selectedChat) ? "flex" : "hidden md:flex"} flex-1 flex-col bg-white relative h-full`}>
+                    {selectedChat ? (
+                        <>
+                            <header className="h-24 px-8 border-b border-gray-50 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => setShowMobileList(true)} className="md:hidden p-2"><ChevronLeft /></button>
+                                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center font-black text-emerald-600 border border-emerald-100 uppercase">{selectedChat.name?.[0]}</div>
+                                    <div>
+                                        <h3 className="text-xl font-black tracking-tighter text-gray-900 uppercase italic">{selectedChat.name}</h3>
+                                        <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">{onlineStatus[selectedChat.passengerId] === "online" ? "Online" : "Offline"}</span>
+                                    </div>
+                                </div>
+                            </header>
+
+                            <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-[#FAFAFF]/40 custom-scrollbar">
+                                {messagesLoading && messages.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full opacity-50"><Loader2 className="animate-spin text-emerald-500" /><p className="text-[10px] mt-2 font-bold uppercase">Syncing...</p></div>
+                                ) : messages.length > 0 ? (
+                                    messages.map((m, i) => (
+                                        <div key={m._id || i} className={`flex ${m.senderRole === "support" ? "justify-end" : "justify-start"}`}>
+                                            <div className={`max-w-[80%] p-5 rounded-[2rem] shadow-sm ${m.senderRole === "support" ? "bg-emerald-600 text-white rounded-tr-none" : "bg-white border border-gray-100 text-gray-700 rounded-tl-none"}`}>
+                                                {m.messageType === "image" ? <img src={m.fileUrl} alt="attachment" className="rounded-xl max-h-60 object-cover" /> : <p className="font-bold text-sm leading-relaxed">{m.message}</p>}
+                                                <div className="mt-2 flex items-center gap-2 justify-end opacity-60 text-[9px] font-black uppercase">
+                                                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {m.senderRole === "support" && <CheckCheck size={12} className={m.isRead ? "text-emerald-300" : "text-white/50"} />}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full opacity-20"><Lock size={40} className="mb-4" /><p className="text-xs font-black uppercase">No communication established</p></div>
+                                )}
+                                {typingUser && <div className="text-[10px] font-black text-emerald-600 animate-pulse uppercase tracking-widest">{typingUser} typing...</div>}
+                            </div>
+
+                            <footer className="p-6 border-t border-gray-50">
+                                {sendError && (
+                                    <div className="mb-3 p-3 bg-red-50 text-red-600 rounded-2xl border border-red-100 flex items-center justify-between text-xs font-bold">
+                                        <div className="flex items-center gap-2"><ShieldCheck size={16} /> Send failed</div>
+                                        <button onClick={clearSendError} className="px-3 py-1 bg-red-100 rounded-xl font-black text-[10px]">Dismiss</button>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-[2.5rem] border border-gray-100 focus-within:bg-white transition-all">
+                                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                                    <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="p-4 text-gray-400 hover:text-emerald-500">
+                                        {isUploading ? <Loader2 size={22} className="animate-spin" /> : <Paperclip size={22} />}
+                                    </button>
+                                    <input
+                                        value={input} onChange={(e) => { setInput(e.target.value); sendTyping(); }}
+                                        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                                        placeholder="Type a response..." className="flex-1 bg-transparent py-3 outline-none font-bold text-gray-800"
+                                    />
+                                    <button onClick={() => handleSend()} disabled={!input.trim() && !isUploading} className="bg-emerald-600 text-white p-4 rounded-full disabled:bg-gray-200 shadow-lg"><Send size={20} /></button>
+                                </div>
+                            </footer>
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center p-20 text-center opacity-30">
+                            <MessageSquare size={80} className="mb-6" />
+                            <h3 className="text-2xl font-black uppercase tracking-widest">Select a channel</h3>
+                        </div>
+                    )}
+                </main>
+            </div>
+        </div>
+    );
 }

@@ -1,4 +1,3 @@
-
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -103,6 +102,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // ✅ Handle OAuth providers (Google, GitHub)
             if (account?.provider === "google" || account?.provider === "github") {
                 const { name, email, image } = user;
+                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
                 try {
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -207,7 +207,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             return token;
         },
-
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id;

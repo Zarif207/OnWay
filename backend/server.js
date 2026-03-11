@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -118,7 +119,7 @@ async function connectDB() {
     await client.connect();
     await client.db("admin").command({ ping: 1 });
     console.log("✅ MongoDB connected");
-    
+
     cachedDb = client.db("onWayDB");
     isConnecting = false;
     return cachedDb;
@@ -152,9 +153,9 @@ app.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Database connection error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Database connection failed" 
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed"
     });
   }
 });
@@ -226,7 +227,7 @@ app.use("/api/search", (req, res, next) => {
 
 // ✅ Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ 
+  res.json({
     status: "onWay Backend running",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
@@ -245,7 +246,7 @@ app.get("/api/test", (req, res) => {
 
 // ✅ 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.path,

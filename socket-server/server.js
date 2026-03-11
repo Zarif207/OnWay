@@ -48,6 +48,7 @@ async function startSocketServer() {
 
       // register user
       socket.on("registerUser", ({ userId }) => {
+        if (!userId) return;
         onlineUsers.set(String(userId), socket.id);
         console.log("User registered:", userId);
       });
@@ -89,7 +90,9 @@ async function startSocketServer() {
           if (roomId.startsWith("support_")) {
             io.to("support").emit("supportSessionUpdated", { roomId });
           } else if (roomId.startsWith("ride_")) {
-            const chatDoc = await chatCollection.findOne({ roomId }, { sort: { createdAt: -1 } });
+            // const chatDoc = await chatCollection.findOne({ roomId }, { sort: { createdAt: -1 } });
+            const chatDocs = await chatCollection.find({ roomId }).sort({ createdAt: -1 }).limit(1).toArray();
+            const chatDoc = chatDocs[0];
             if (chatDoc) {
               if (chatDoc.riderId) {
                 const sId = onlineUsers.get(String(chatDoc.riderId));
@@ -103,6 +106,51 @@ async function startSocketServer() {
           }
         } catch (error) {
           console.error("markAsRead error:", error);
+        }
+      });
+
+      // call request
+      socket.on("callUser", ({ toUserId, offer, fromUserId }) => {
+        const targetSocket = onlineUsers.get(String(toUserId));
+
+        if (targetSocket) {
+          io.to(targetSocket).emit("incomingCall", {
+            fromUserId,
+            offer
+          });
+        } else {
+          console.log(`User ${toUserId} not online`);
+        }
+      });
+
+      // call answer
+      socket.on("answerCall", ({ toUserId, answer }) => {
+        const targetSocket = onlineUsers.get(String(toUserId));
+
+        if (targetSocket) {
+          io.to(targetSocket).emit("callAccepted", {
+            answer
+          });
+        }
+      });
+
+      // ice candidate
+      socket.on("iceCandidate", ({ toUserId, candidate }) => {
+        const targetSocket = onlineUsers.get(String(toUserId));
+
+        if (targetSocket) {
+          io.to(targetSocket).emit("iceCandidate", {
+            candidate
+          });
+        }
+      });
+
+      // end call
+      socket.on("endCall", ({ toUserId }) => {
+        const targetSocket = onlineUsers.get(String(toUserId));
+
+        if (targetSocket) {
+          io.to(targetSocket).emit("callEnded");
         }
       });
 

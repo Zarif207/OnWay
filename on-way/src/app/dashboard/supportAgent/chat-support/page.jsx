@@ -1,13 +1,16 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
     MessageSquare, Send, Paperclip, CheckCheck,
     Loader2, Search as SearchIcon, ChevronLeft,
-    ShieldCheck, Zap, Lock, Compass
+    ShieldCheck, Lock, Compass
 } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { useRequireRole } from "@/hooks/useAuth";
+import useWebRTCCall from "@/hooks/useCall";
+import CallModal from "@/components/dashboard/CallModal";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
 
@@ -22,7 +25,6 @@ export default function ChatSupportPage() {
 
     const scrollRef = useRef(null);
     const fileInputRef = useRef(null);
-    const typingTimeout = useRef(null);
 
     const roomId = useMemo(() => {
         if (!selectedChat) return null;
@@ -37,6 +39,8 @@ export default function ChatSupportPage() {
         roomId, "support", agentUser?.id, agentUser?.name || "Support Agent",
         "support", selectedChat?.passengerId
     );
+
+    const call = useWebRTCCall(agentUser?.id);
 
     const fetchSessions = useCallback(async () => {
         try {
@@ -121,13 +125,12 @@ export default function ChatSupportPage() {
         </div>
     );
 
-
     return (
         <div className="flex h-screen  text-gray-700 font-sans overflow-hidden P-4">
-            <div className="max-w-[1700px] w-full mx-auto bg-white md:rounded-[2.5rem] flex overflow-hidden border border-gray-100 relative h-full">
+            <div className="max-w-425 w-full mx-auto bg-white md:rounded-[2.5rem] flex overflow-hidden border border-gray-100 relative h-full">
 
                 {/* SIDEBAR */}
-                <aside className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[200px] lg:w-[350px] flex-col border-r border-gray-50 shrink-0 h-full`}>
+                <aside className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-50 lg:w-87.5 flex-col border-r border-gray-50 shrink-0 h-full`}>
                     <div className="p-8 space-y-6">
                         <div className="flex items-center justify-between">
                             <div>
@@ -188,6 +191,12 @@ export default function ChatSupportPage() {
                                         <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">{onlineStatus[selectedChat.passengerId] === "online" ? "Online" : "Offline"}</span>
                                     </div>
                                 </div>
+
+                                {/*  Call Button */}
+                                <div className="flex gap-2">
+                                    <button onClick={() => call.startCall(selectedChat.passengerId)} className="bg-emerald-600 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">📞 Video </button>
+                                    <button onClick={() => call.startCall(selectedChat.passengerId, { video: false })} className="bg-gray-500 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">🎧 Audio </button>
+                                </div>
                             </header>
 
                             <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-[#FAFAFF]/40 custom-scrollbar">
@@ -196,7 +205,7 @@ export default function ChatSupportPage() {
                                 ) : messages.length > 0 ? (
                                     messages.map((m, i) => (
                                         <div key={m._id || i} className={`flex ${m.senderRole === "support" ? "justify-end" : "justify-start"}`}>
-                                            <div className={`max-w-[80%] p-5 rounded-[2rem] shadow-sm ${m.senderRole === "support" ? "bg-emerald-600 text-white rounded-tr-none" : "bg-white border border-gray-100 text-gray-700 rounded-tl-none"}`}>
+                                            <div className={`max-w-[80%] p-5 rounded-4xl shadow-sm ${m.senderRole === "support" ? "bg-emerald-600 text-white rounded-tr-none" : "bg-white border border-gray-100 text-gray-700 rounded-tl-none"}`}>
                                                 {m.messageType === "image" ? <img src={m.fileUrl} alt="attachment" className="rounded-xl max-h-60 object-cover" /> : <p className="font-bold text-sm leading-relaxed">{m.message}</p>}
                                                 <div className="mt-2 flex items-center gap-2 justify-end opacity-60 text-[9px] font-black uppercase">
                                                     {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -240,6 +249,9 @@ export default function ChatSupportPage() {
                     )}
                 </main>
             </div>
+
+            {/*  Call Modal */}
+            <CallModal call={call} />
         </div>
     );
 }

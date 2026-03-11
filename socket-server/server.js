@@ -38,13 +38,18 @@ async function connectDB() {
 
 // Verify JWT token (simple validation - enhance for production)
 function verifyToken(token) {
+  // In development, allow any token for testing
+  if (process.env.NODE_ENV === 'development') {
+    return { valid: true };
+  }
+  
   // TODO: Implement proper JWT verification with your AUTH_SECRET
-  // For now, we'll do basic validation
   if (!token || token.length < 10) {
     return null;
   }
   
   // In production, decode JWT and verify signature
+  // const jwt = require("jsonwebtoken");
   // const decoded = jwt.verify(token, process.env.AUTH_SECRET);
   // return decoded;
   
@@ -71,6 +76,7 @@ async function startSocketServer() {
     cors: {
       origin: [
         "http://localhost:3000",
+        "http://localhost:4000",
         "http://localhost:5000",
         "https://on-way-neon.vercel.app",
         process.env.FRONTEND_URL
@@ -89,9 +95,27 @@ async function startSocketServer() {
     const userRole = socket.handshake.auth.role;
     const userId = socket.handshake.auth.userId;
 
-    console.log(`🔐 Authentication attempt - Role: ${userRole}, UserId: ${userId}`);
+    console.log(`🔐 Authentication attempt - Role: ${userRole}, UserId: ${userId}, Token: ${token ? 'Present' : 'Missing'}`);
 
-    // Verify token (implement proper JWT verification in production)
+    // In development, be more lenient
+    if (process.env.NODE_ENV === 'development') {
+      // Allow connection if userId and role are present
+      if (userId && userRole) {
+        // Check if user is admin or support agent
+        if (isAdmin(userRole)) {
+          socket.userId = userId;
+          socket.userRole = userRole;
+          socket.authenticated = true;
+          console.log(`✅ Authentication successful (DEV MODE) - ${userRole} (${userId})`);
+          return next();
+        } else {
+          console.log(`❌ Authorization failed - Role: ${userRole} is not authorized`);
+          return next(new Error("Authorization failed: Admin access required"));
+        }
+      }
+    }
+
+    // Verify token
     const verified = verifyToken(token);
     
     if (!verified) {
@@ -135,7 +159,7 @@ async function startSocketServer() {
       status: "active",
     }).catch(err => console.error("Error logging connection:", err));
 
-    // ✅ Join user-specific notification room (admin only)
+    // Join user-specific notification room (admin only)
     socket.on("joinNotifications", (userId) => {
       if (!socket.authenticated) {
         socket.emit("error", { message: "Unauthorized" });
@@ -333,7 +357,7 @@ async function startSocketServer() {
     });
   });
 
-  // ✅ Periodic cleanup of old GPS data (run every hour)
+  //  Periodic cleanup of old GPS data (run every hour)
   setInterval(async () => {
     try {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

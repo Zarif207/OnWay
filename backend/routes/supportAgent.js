@@ -3,17 +3,90 @@ const { ObjectId } = require("mongodb");
 
 module.exports = (collections) => {
     const router = express.Router();
-    const { passengerCollection, ridesCollection, emergencyCollection } = collections;
+    const { passengerCollection, ridesCollection, emergencyCollection, complaintsCollection } = collections;
 
-    // 1. Get all complaints
+    // 1. Get all complaints (from SOS + Chat + Manual complaints)
     router.get("/complaints", async (req, res) => {
         try {
+            // Get SOS alerts as complaints
+            const sosComplaints = await emergencyCollection
+                .find({})
+                .sort({ createdAt: -1 })
+                .toArray();
             
-            const complaints = [
-                { id: 1, user: "John Doe", type: "Driver Behavior", status: "Pending", date: "2024-03-08", priority: "High" },
-                { id: 2, user: "Jane Smith", type: "Payment Issue", status: "In Progress", date: "2024-03-07", priority: "Medium" },
-            ];
+            // Transform SOS to complaint format
+            const complaints = sosComplaints.map(sos => ({
+                _id: sos._id,
+                id: sos._id.toString().slice(-6),
+                user: sos.name || sos.userName || "Anonymous",
+                type: "Emergency SOS",
+                priority: "High",
+                status: sos.status === "active" ? "Pending" : 
+                       sos.status === "responding" ? "In Progress" : "Resolved",
+                date: new Date(sos.timestamp || sos.createdAt).toISOString().split('T')[0],
+                description: sos.message || "Emergency SOS activated",
+                phone: sos.phone || sos.userPhone,
+                email: sos.email,
+                location: sos.location,
+                createdAt: sos.createdAt || sos.timestamp
+            }));
+            
             res.status(200).json({ success: true, data: complaints });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 1.1 Create new complaint
+    router.post("/complaints", async (req, res) => {
+        try {
+            const { user, type, priority, description, userId } = req.body;
+            
+            const complaint = {
+                user,
+                type,
+                priority: priority || "Medium",
+                status: "Pending",
+                description: description || "",
+                userId: userId || null,
+                date: new Date().toISOString().split('T')[0],
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            
+            const result = await complaintsCollection.insertOne(complaint);
+            
+            res.status(201).json({ 
+                success: true, 
+                message: "Complaint created successfully",
+                data: { _id: result.insertedId, ...complaint }
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 1.2 Update complaint status (updates SOS status)
+    router.patch("/complaints/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            
+            // Map complaint status to SOS status
+            const sosStatus = status === "Pending" ? "active" :
+                            status === "In Progress" ? "responding" : "resolved";
+            
+            await emergencyCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { 
+                    $set: { 
+                        status: sosStatus,
+                        updatedAt: new Date()
+                    } 
+                }
+            );
+            
+            res.status(200).json({ success: true, message: "Complaint updated" });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
         }

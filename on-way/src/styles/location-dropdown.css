@@ -1,0 +1,381 @@
+/* Location Dropdown Styles - Ensures proper z-index stacking */
+
+/* Ensure dropdown appears above all other elements */
+.location-dropdown {
+  position: absolute !important;
+  z-index: 9999 !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin-top: 4px !important;
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  max-height: 240px !important;
+  overflow-y: auto !important;
+  min-width: 100% !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+}
+
+/* Enhanced Map Styling for Professional Look */
+.route-line {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
+}
+
+.route-line:hover {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+/* Car Marker Animation */
+.car-marker {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+.car-marker:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+/* Enhanced Car Marker with Smooth Animation */
+.car-marker-animated {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 3px 10px rgba(37, 99, 235, 0.3));
+  animation: carPulse 2s infinite;
+}
+
+.car-marker-animated:hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 6px 20px rgba(37, 99, 235, 0.4));
+}
+
+@keyframes carPulse {
+  0%, 100% {
+    filter: drop-shadow(0 3px 10px rgba(37, 99, 235, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 4px 15px rgba(37, 99, 235, 0.5));
+  }
+}
+
+/* Leaflet Marker Pulse Animation */
+@keyframes marker-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.leaflet-marker-icon.pulse {
+  animation: marker-pulse 2s infinite;
+}
+
+/* Enhanced Popup Styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.leaflet-popup-tip {
+  border-top-color: #ffffff !important;
+}
+
+/* Map Container Enhancements */
+.leaflet-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Zoom Control Styling */
+.leaflet-control-zoom {
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: white !important;
+  border: none !important;
+  color: #374151 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #f3f4f6 !important;
+  color: #2563eb !important;
+}
+
+/* Attribution Control */
+.leaflet-control-attribution {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(8px) !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+}
+
+/* Route Progress Indicator */
+.route-progress {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* Ensure parent containers don't clip the dropdown */
+.location-input-container {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.location-input-container.active {
+  z-index: 10000 !important;
+}
+
+/* Form container should allow overflow */
+.form-container {
+  overflow: visible !important;
+}
+
+.form-container.has-active-dropdown {
+  z-index: 10000 !important;
+  overflow: visible !important;
+}
+
+/* Dropdown items */
+.dropdown-item {
+  width: 100% !important;
+  text-align: left !important;
+  padding: 12px 16px !important;
+  transition: background-color 0.2s ease !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none !important;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+}
+
+.dropdown-item:first-child {
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
+}
+
+.dropdown-item:hover {
+  background-color: #f9fafb !important;
+}
+
+.dropdown-item.selected {
+  background-color: #eff6ff !important;
+  border-color: #dbeafe !important;
+}
+
+/* Ensure proper stacking context for the entire page */
+.page-container {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .location-dropdown {
+    left: -4px !important;
+    right: -4px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .car-marker {
+    transform: scale(0.9);
+  }
+
+  .route-progress {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* Animation for dropdown appearance */
+.location-dropdown {
+  animation: dropdownFadeIn 0.15s ease-out !important;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+/* Scrollbar styling for dropdown */
+.location-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.location-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.location-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.location-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+/* Enhanced Route Animation */
+.route-line-animated {
+  animation: routeDrawIn 2s ease-out;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+}
+
+@keyframes routeDrawIn {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Professional Map Controls */
+.leaflet-control-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.leaflet-control-zoom a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  transform: scale(1.05) !important;
+}
+
+/* Enhanced Route Progress Indicator */
+.route-progress {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 1000;
+  min-width: 140px;
+  animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Enhanced Marker Shadows */
+.leaflet-marker-shadow {
+  filter: blur(1px) !important;
+  opacity: 0.3 !important;
+}
+
+/* Professional Popup Styling */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.leaflet-popup-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  line-height: 1.4 !important;
+}
+
+/* Route Alternative Lines */
+.route-alternative {
+  opacity: 0.6;
+  stroke-dasharray: 8, 4;
+  transition: opacity 0.3s ease;
+}
+
+.route-alternative:hover {
+  opacity: 0.9;
+}
+
+/* Loading Animation for Route Calculation */
+@keyframes routeCalculating {
+  0% { stroke-dasharray: 0, 100; }
+  50% { stroke-dasharray: 50, 100; }
+  100% { stroke-dasharray: 100, 0; }
+}
+
+.route-calculating {
+  animation: routeCalculating 1.5s ease-in-out infinite;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .route-progress {
+    top: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    min-width: 120px;
+  }
+  
+  .car-marker-animated {
+    transform: scale(0.85);
+  }
+  
+  .leaflet-control-zoom {
+    transform: scale(0.9);
+  }
+}
+
+/* High DPI Display Optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .car-marker-animated {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}

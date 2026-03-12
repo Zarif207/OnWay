@@ -29,7 +29,11 @@ const LocationInput = ({
   
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
-  const debouncedInputValue = useDebounce(inputValue, 500);
+  const abortControllerRef = useRef(null);
+  const lastSearchRef = useRef('');
+  
+  // Increased debounce delay to reduce API calls
+  const debouncedInputValue = useDebounce(inputValue, 800);
 
   // Color scheme based on type
   const colorScheme = {
@@ -60,29 +64,49 @@ const LocationInput = ({
     }
   }, [value]);
 
-  // Handle debounced search
+  // Handle debounced search with improved rate limiting
   useEffect(() => {
     const searchLocations = async () => {
-      if (!debouncedInputValue || debouncedInputValue.length < 2) {
+      // Cancel previous request if exists
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      if (!debouncedInputValue || debouncedInputValue.length < 3) {
         setSuggestions([]);
         setShowSuggestions(false);
+        setError('');
         return;
       }
 
-      if (debouncedInputValue === value) {
-        return; // Don't search if it's the same as current location
+      if (debouncedInputValue === value || debouncedInputValue === lastSearchRef.current) {
+        return; // Don't search if it's the same as current location or last search
       }
 
       setIsLoading(true);
       setError('');
 
+      // Create new abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       try {
-        const results = await getLocationSuggestions(debouncedInputValue);
-        setSuggestions(results);
-        setShowSuggestions(results.length > 0);
-        setSelectedIndex(-1);
+        const results = await getLocationSuggestions(debouncedInputValue, 'BD');
+        
+        // Only update if this is still the current search
+        if (debouncedInputValue === inputValue) {
+          setSuggestions(results);
+          setShowSuggestions(results.length > 0);
+          setSelectedIndex(-1);
+          lastSearchRef.current = debouncedInputValue;
+        }
       } catch (err) {
-        setError(err.message);
+        // Handle rate limiting error specifically
+        if (err.response?.status === 429) {
+          setError('Too many requests. Please wait a moment and try again.');
+          console.warn('Rate limit hit, waiting before next request');
+        } else if (err.name !== 'AbortError' && err.name !== 'CanceledError') {
+          setError(err.message || 'Failed to search locations');
+        }
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
@@ -91,7 +115,14 @@ const LocationInput = ({
     };
 
     searchLocations();
-  }, [debouncedInputValue, value]);
+
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [debouncedInputValue, value, inputValue]);
 
   // Handle input change
   const handleInputChange = (e) => {

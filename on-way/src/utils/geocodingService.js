@@ -1,17 +1,12 @@
 import axios from "axios";
 
 /**
- * Enhanced geocoding service using OpenStreetMap Nominatim API
+ * Enhanced geocoding service using backend proxy
  * Provides accurate location search with better error handling
  */
 
-const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org";
-
-// Rate limiting to respect Nominatim usage policy
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const GEOCODING_API = `${API_BASE_URL}/geocoding`;
 
 /**
  * Geocode an address to coordinates with enhanced accuracy
@@ -24,44 +19,22 @@ export const geocodeAddress = async (query, countryCode = 'BD') => {
     throw new Error("Please enter at least 3 characters");
   }
 
-  // Rate limiting
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    await delay(MIN_REQUEST_INTERVAL - timeSinceLastRequest);
-  }
-  lastRequestTime = Date.now();
-
   try {
-    const params = {
-      q: query.trim(),
-      format: 'json',
-      limit: 5,
-      addressdetails: 1,
-      extratags: 1,
-      namedetails: 1,
-      'accept-language': 'en',
-    };
-
-    // Add country bias if provided
-    if (countryCode) {
-      params.countrycodes = countryCode.toLowerCase();
-    }
-
-    const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
-      params,
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'OnWay-RideSharing-App/1.0'
-      }
+    const response = await axios.get(`${GEOCODING_API}/search`, {
+      params: {
+        q: query.trim(),
+        countryCode: countryCode,
+        limit: 5
+      },
+      timeout: 10000
     });
 
-    if (!response.data || response.data.length === 0) {
+    if (!response.data || !response.data.success || response.data.data.length === 0) {
       throw new Error("Location not found. Try a more specific address.");
     }
 
     // Get the best result (first one is usually most relevant)
-    const result = response.data[0];
+    const result = response.data.data[0];
     
     // Validate coordinates
     const lat = parseFloat(result.lat);
@@ -74,7 +47,7 @@ export const geocodeAddress = async (query, countryCode = 'BD') => {
     return {
       lat,
       lon,
-      name: result.display_name,
+      name: result.name,
       address: result.address || {},
       type: result.type || 'unknown',
       importance: result.importance || 0,
@@ -117,30 +90,16 @@ export const reverseGeocode = async (lat, lon) => {
     throw new Error("Invalid coordinates provided");
   }
 
-  // Rate limiting
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    await delay(MIN_REQUEST_INTERVAL - timeSinceLastRequest);
-  }
-  lastRequestTime = Date.now();
-
   try {
-    const response = await axios.get(`${NOMINATIM_BASE_URL}/reverse`, {
+    const response = await axios.get(`${GEOCODING_API}/reverse`, {
       params: {
         lat: lat.toString(),
-        lon: lon.toString(),
-        format: 'json',
-        addressdetails: 1,
-        'accept-language': 'en'
+        lon: lon.toString()
       },
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'OnWay-RideSharing-App/1.0'
-      }
+      timeout: 10000
     });
 
-    if (!response.data || !response.data.display_name) {
+    if (!response.data || !response.data.success || !response.data.data) {
       return {
         lat,
         lon,
@@ -149,11 +108,12 @@ export const reverseGeocode = async (lat, lon) => {
       };
     }
 
+    const result = response.data.data;
     return {
       lat,
       lon,
-      name: response.data.display_name,
-      address: response.data.address || {}
+      name: result.name,
+      address: result.address || {}
     };
 
   } catch (error) {
@@ -179,32 +139,21 @@ export const getLocationSuggestions = async (query, countryCode = 'BD') => {
   }
 
   try {
-    const params = {
-      q: query.trim(),
-      format: 'json',
-      limit: 8,
-      addressdetails: 1,
-      'accept-language': 'en',
-    };
-
-    if (countryCode) {
-      params.countrycodes = countryCode.toLowerCase();
-    }
-
-    const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
-      params,
-      timeout: 8000,
-      headers: {
-        'User-Agent': 'OnWay-RideSharing-App/1.0'
-      }
+    const response = await axios.get(`${GEOCODING_API}/search`, {
+      params: {
+        q: query.trim(),
+        countryCode: countryCode,
+        limit: 8
+      },
+      timeout: 8000
     });
 
-    if (!response.data) return [];
+    if (!response.data || !response.data.success) return [];
 
-    return response.data.map(result => ({
+    return response.data.data.map(result => ({
       lat: parseFloat(result.lat),
       lon: parseFloat(result.lon),
-      name: result.display_name,
+      name: result.name,
       address: result.address || {},
       type: result.type || 'unknown'
     })).filter(item => !isNaN(item.lat) && !isNaN(item.lon));

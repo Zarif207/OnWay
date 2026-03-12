@@ -5,7 +5,7 @@ module.exports = function (emergencyCollection) {
   // SOS Alert - Create emergency alert
   router.post("/sos", async (req, res) => {
     try {
-      const { timestamp, location, userAgent, userId, rideId, userName, userPhone } = req.body;
+      const { timestamp, location, userAgent, userId, rideId, userName, userPhone, name, email, phone, message, status } = req.body;
 
       const emergencyAlert = {
         timestamp: timestamp || new Date().toISOString(),
@@ -13,9 +13,13 @@ module.exports = function (emergencyCollection) {
         userAgent: userAgent || null,
         userId: userId || null,
         rideId: rideId || null,
-        userName: userName || "Unknown",
-        userPhone: userPhone || null,
-        status: "active",
+        name: name || userName || "Unknown",
+        userName: name || userName || "Unknown",
+        email: email || null,
+        phone: phone || userPhone || null,
+        userPhone: phone || userPhone || null,
+        message: message || "Emergency SOS activated",
+        status: (status || "active").toLowerCase(),
         resolvedAt: null,
         resolvedBy: null,
         notes: [],
@@ -47,7 +51,7 @@ module.exports = function (emergencyCollection) {
   router.get("/alerts", async (req, res) => {
     try {
       const { status } = req.query;
-      
+
       const query = status ? { status } : {};
       const alerts = await emergencyCollection
         .find(query)

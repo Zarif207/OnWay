@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { MapPin, Navigation, User, Clock, CheckCircle2, XCircle, Search, Loader2, Bell, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { initSocket, getSocket } from "@/utils/socket";
+import { getRiderSocket } from "@/lib/socket";
 import axios from "axios";
 import toast from "react-hot-toast";
 import dynamic from "next/dynamic";
@@ -20,8 +20,9 @@ const NOTIFICATION_SOUND = "https://assets.mixkit.co/active_storage/sfx/2358/235
 
 export default function RideRequestsPage() {
     const { data: session } = useSession();
+    const riderId = session?.user?.id;
     const [requests, setRequests] = useState([]);
-    const [isOnline, setIsOnline] = useState(false);
+    const [isLoadingRides, setIsLoadingRides] = useState(false);
     const audioRef = useRef(null);
 
     // Initialize Audio
@@ -29,50 +30,109 @@ export default function RideRequestsPage() {
         audioRef.current = new Audio(NOTIFICATION_SOUND);
     }, []);
 
-    // 🔹 Socket Integration
+    // 🔹 Fetch Existing "Searching" Rides
     useEffect(() => {
-        if (!session?.user?.id) return;
+        const fetchPendingRides = async () => {
+            if (!riderId) return;
+            try {
+                setIsLoadingRides(true);
+                const res = await axios.get(`${API_BASE_URL}/bookings?status=searching`);
+                if (res.data.success) {
+                    // Map existing rides to expected format for the card
+                    const pendingRides = res.data.data.map(ride => ({
+                        bookingId: ride._id,
+                        pickupLocation: ride.pickupLocation.address,
+                        dropLocation: ride.dropoffLocation.address,
+                        pickupCoords: [ride.pickupLocation.lat, ride.pickupLocation.lng],
+                        dropCoords: [ride.dropoffLocation.lat, ride.dropoffLocation.lng],
+                        distance: ride.distance,
+                        duration: ride.duration,
+                        fare: ride.price,
+                        passengerName: "Pending Passenger", // Fetch actual names if needed
+                        expiresAt: Date.now() + 30000 // Initial 30s for already existing ones
+                    }));
+                    setRequests(pendingRides);
+                }
+            } catch (err) {
+                console.error("Fetch pending rides error:", err);
+            } finally {
+                setIsLoadingRides(false);
+            }
+        };
 
-        const socket = initSocket();
+        fetchPendingRides();
+    }, [riderId]);
 
-        // Join driver room
-        socket.emit("join", `driver_${session.user.id}`);
+    // 🔹 Socket Integration & Geolocation Tracking
+    useEffect(() => {
+        if (!riderId) return;
+
+        const socket = getRiderSocket(riderId);
+
+        // Required: Signal online and request location sync
+        socket.emit("rider:online", riderId);
 
         const handleNewRequest = (ride) => {
+            console.log("📥 [SOCKET] New ride request received:", ride);
             // Play sound
             audioRef.current?.play().catch(e => console.log("Sound play error:", e));
 
-            // Add to list with a 15s timer
+            // Add to list with a 30s timer (extended for better UX)
             setRequests(prev => [
-                { ...ride, expiresAt: Date.now() + 15000 },
+                { ...ride, expiresAt: Date.now() + 30000 },
                 ...prev
             ]);
 
-            toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-[#011421] shadow-2xl rounded-3xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 p-4 border border-green-500/20`}>
-                    <div className="flex-1 w-0 p-4">
-                        <div className="flex items-start">
-                            <div className="flex-shrink-0 pt-0.5">
-                                <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center text-white">
-                                    <Bell size={20} />
-                                </div>
-                            </div>
-                            <div className="ml-3 flex-1">
-                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">New Ride Request!</p>
-                                <p className="mt-1 text-xs font-bold text-gray-500 uppercase tracking-widest">From {ride.pickupLocation}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ));
+            toast.success("New Ride Request Available!", {
+                icon: '🚕',
+                style: { borderRadius: '15px', background: '#011421', color: '#fff' }
+            });
         };
 
-        socket.on("new_ride_request", handleNewRequest);
+        socket.on("new-ride-request", handleNewRequest);
+
+        // � Response to server's location sync request
+        socket.on("request-rider-location", () => {
+            console.log("�📍 [SOCKET] Server requested immediate location sync");
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        socket.emit("rider:update-location", {
+                            riderId,
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        });
+                    },
+                    (err) => console.log("Immediate loc sync failed:", err)
+                );
+            }
+        });
+
+        // 📍 Persistent Geolocation Tracking
+        let watchId = null;
+        if (navigator.geolocation) {
+            console.log("📍 [GEO] Starting live tracking on Ride Requests page:", riderId);
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    socket.emit("rider:update-location", {
+                        riderId,
+                        lat: latitude,
+                        lng: longitude
+                    });
+                    console.log(`📡 [SOCKET] Sent location: ${latitude}, ${longitude}`);
+                },
+                (error) => console.error("📍 [GEO] error:", error),
+                { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+            );
+        }
 
         return () => {
-            socket.off("new_ride_request", handleNewRequest);
+            socket.off("new-ride-request", handleNewRequest);
+            socket.off("request-rider-location");
+            if (watchId) navigator.geolocation.clearWatch(watchId);
         };
-    }, [session]);
+    }, [riderId]);
 
     // 🔹 Timer Management
     useEffect(() => {
@@ -82,23 +142,22 @@ export default function RideRequestsPage() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleAccept = async (rideId) => {
-        try {
-            const res = await axios.put(`${API_BASE_URL}/rides/${rideId}`, {
-                status: "accepted",
-                driverId: session.user.id,
-                driverName: session.user.name,
-                updatedAt: new Date(),
-            });
+    const handleAccept = async (bookingId) => {
+        if (!riderId) return;
+        const socket = getRiderSocket(riderId);
 
-            if (res.data.success) {
-                toast.success("Ride Accepted! Navigating...");
-                setRequests(prev => prev.filter(r => r._id !== rideId));
-                // In a real app, redirect to active ride page
-            }
-        } catch (error) {
-            toast.error("Failed to accept ride. It might be taken.");
-        }
+        console.log(`📤 Accepting ride ${bookingId}`);
+        socket.emit("ride:accept", {
+            bookingId: bookingId,
+            riderId: riderId
+        });
+
+        toast.success("Ride Accepted! Redirecting to mission...");
+
+        // Short delay for socket to process before nav
+        setTimeout(() => {
+            window.location.href = `/dashboard/rider/ongoing-ride?bookingId=${bookingId}`;
+        }, 800);
     };
 
     const handleReject = (rideId) => {
@@ -140,10 +199,10 @@ export default function RideRequestsPage() {
                     {requests.length > 0 ? (
                         requests.map((ride) => (
                             <RideRequestCard
-                                key={ride._id}
+                                key={ride.bookingId || ride._id}
                                 ride={ride}
-                                onAccept={() => handleAccept(ride._id)}
-                                onReject={() => handleReject(ride._id)}
+                                onAccept={() => handleAccept(ride.bookingId)}
+                                onReject={() => handleReject(ride.bookingId || ride._id)}
                             />
                         ))
                     ) : (
@@ -177,7 +236,7 @@ export default function RideRequestsPage() {
 }
 
 function RideRequestCard({ ride, onAccept, onReject }) {
-    const [timeLeft, setTimeLeft] = useState(15);
+    const [timeLeft, setTimeLeft] = useState(() => Math.max(0, Math.ceil((ride.expiresAt - Date.now()) / 1000)));
 
     useEffect(() => {
         const remaining = Math.max(0, Math.ceil((ride.expiresAt - Date.now()) / 1000));
@@ -193,7 +252,7 @@ function RideRequestCard({ ride, onAccept, onReject }) {
         return () => clearInterval(interval);
     }, [ride.expiresAt]);
 
-    const progress = (timeLeft / 15) * 100;
+    const progress = (timeLeft / 30) * 100;
 
     return (
         <motion.div

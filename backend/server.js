@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -20,6 +20,9 @@ const emergencyRoutes = require("./routes/emergency");
 const dashboardRoutes = require("./routes/dashboard");
 const settingsRoutes = require("./routes/settings");
 const notificationsRoutes = require("./routes/notifications");
+const searchRoutes = require("./routes/search");
+const notificationHelper = require("./utils/notificationHelper");
+const socketStore = require("./utils/socketStore");
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -31,6 +34,38 @@ const client = new MongoClient(uri, {
 });
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+
+// ✅ Initialize Socket.io for backend (optional - for direct backend notifications)
+// Note: Main socket server runs separately on port 4001
+const io = new Server(server, {
+  cors: {
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:5000',
+        'http://localhost:4001',
+        'https://on-way-server.vercel.app',
+        'https://onway-5g8a.onrender.com',
+        process.env.FRONTEND_URL,
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+      ].filter(Boolean);
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all in development
+      }
+    },
+    credentials: true,
+  },
+});
+
+// Set Socket.io instance in notification helper
+notificationHelper.setSocketIO(io);
+
+console.log("✅ Socket.io initialized for backend notifications");
 
 // ✅ CORS Configuration for Production
 const corsOptions = {
@@ -64,44 +99,217 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:3000", "https://on-way-server.vercel.app", process.env.FRONTEND_URL].filter(Boolean),
-    methods: ["GET", "POST"]
+// ✅ Socket.io Logic
+// 🔐 Authentication Middleware
+io.use((socket, next) => {
+  const { userId, role } = socket.handshake.auth;
+
+  console.log(`🔐 Socket Auth Attempt - Role: ${role}, userId: ${userId}`);
+
+  if (!userId || !role) {
+    console.log("❌ Socket Auth Failed: Missing userId or role");
+    return next(new Error("Authentication failed: Missing userId or role"));
   }
+
+  const validRoles = ["admin", "rider", "passenger"];
+  if (!validRoles.includes(role)) {
+    console.log(`❌ Socket Auth Failed: Invalid role: ${role}`);
+    return next(new Error(`Authentication failed: Invalid role ${role}`));
+  }
+
+  // Attach data to socket
+  socket.userId = userId;
+  socket.userRole = role;
+
+  next();
 });
 
-// ✅ Socket.io Logic
 io.on("connection", (socket) => {
-  console.log("🔌 User connected:", socket.id);
+  const { userId, userRole } = socket;
+  console.log(`🔌 User connected: ${socket.id} (Role: ${userRole}, Id: ${userId})`);
 
-  socket.on("join", (room) => {
-    socket.join(room);
-    console.log(`👤 User joined room: ${room}`);
+  // Helper for consistent rider store syncing
+  const syncRiderStore = async (riderId) => {
+    try {
+      const database = await connectDB();
+      const ridersCollection = database.collection("riders");
+      const rider = await ridersCollection.findOne({ _id: new ObjectId(riderId) });
 
-    // Automatically join drivers room if it's a driver/rider channel
-    if (room.startsWith("driver_") || room.startsWith("rider_")) {
-      socket.join("drivers");
-      console.log(`🚛 User ${socket.id} joined global drivers room`);
+      if (rider) {
+        socketStore.setRider(riderId, {
+          socketId: socket.id,
+          status: rider.status || "online",
+          isApproved: rider.isApproved,
+          operationCities: rider.operationCities || [],
+          vacationMode: rider.vacationMode || false,
+          lat: rider.location?.coordinates[1],
+          lng: rider.location?.coordinates[0]
+        });
+
+        const riderRoom = `rider:${riderId}`;
+        socket.join(riderRoom);
+        console.log(`� [SYNC] Rider ${riderId} synced to store and joined ${riderRoom} (Status: ${rider.status})`);
+
+        // Broadcast to passengers
+        io.emit("riders:update", socketStore.getAllRiders());
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(`❌ [SYNC] Error for rider ${riderId}:`, error);
+      return false;
     }
+  };
+
+  // PART 1 — Auto-join targeted rooms & Auto-sync
+  if (userRole === "rider") {
+    socket.join(`driver:${userId}`);
+    syncRiderStore(userId); // Auto-sync on connection
+    console.log(`🚛 Rider ${userId} joined room: driver:${userId}`);
+  } else if (userRole === "passenger") {
+    socket.join(`passenger:${userId}`);
+    console.log(`👤 Passenger ${userId} joined room: passenger:${userId}`);
+  } else if (userRole === "admin") {
+    socket.join("admin");
+  }
+
+  // PART 2 — Handle Rider Status Changes
+  socket.on("rider:online", async (riderId) => {
+    console.log(`🟢 [STATUS] Rider online signal: ${riderId}`);
+    await syncRiderStore(riderId);
+    socket.emit("request-rider-location");
   });
 
-  socket.on("toggle-status", async (data) => {
-    // This will be handled by the client emitting, and we broadcast
-    io.emit("status-updated", data);
+  socket.on("rider:offline", async (riderId) => {
+    if (!riderId) return;
+    const riderRoom = `rider:${riderId}`;
+    socket.leave(riderRoom);
+    socketStore.removeRider(riderId);
+    io.emit("riders:update", socketStore.getAllRiders());
+    console.log(`🔴 [STATUS] Rider ${riderId} removed from store`);
+  });
 
-    // If going online as a driver, ensure they are in the drivers room
-    if (data.isOnline) {
-      socket.join("drivers");
+  // Keep for backward compatibility / explicit toggles
+  socket.on("rider:set-online", async (data) => {
+    const { riderId, isOnline } = data;
+    if (!riderId) return;
+    if (isOnline) {
+      await syncRiderStore(riderId);
+      socket.emit("request-rider-location");
     } else {
-      socket.leave("drivers");
+      socket.emit("rider:offline", riderId);
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log("🔌 User disconnected");
+  // Handle Rider Location Updates
+  socket.on("rider:update-location", async (data) => {
+    try {
+      const { riderId, lat, lng } = data;
+      if (!riderId || lat === undefined || lng === undefined) return;
+
+      // Ensure rider is in store with status online
+      socketStore.setRider(riderId, {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        socketId: socket.id,
+        status: "online" // Force online if they are sending locations
+      });
+
+      io.emit("riders:update", socketStore.getAllRiders());
+
+      // Persist to DB periodically or on important moves
+      const database = await connectDB();
+      const ridersCollection = database.collection("riders");
+      await ridersCollection.updateOne(
+        { _id: new ObjectId(riderId) },
+        {
+          $set: {
+            location: {
+              type: "Point",
+              coordinates: [parseFloat(lng), parseFloat(lat)]
+            },
+            status: "online",
+            lastLocationUpdate: new Date()
+          }
+        }
+      );
+    } catch (error) {
+      console.error("❌ Error updating rider location:", error);
+    }
+  });
+
+  // Handle Passenger Request for online riders
+  socket.on("get-online-riders", () => {
+    socket.emit("online-riders", socketStore.getAllRiders());
+  });
+
+  // PART 5 — Handle Rider Acceptance
+  socket.on("ride:accept", async (data) => {
+    try {
+      const { bookingId, riderId } = data;
+      const database = await connectDB();
+      const bookingsCollection = database.collection("bookings");
+      const ridersCollection = database.collection("riders");
+
+      const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+      if (!booking || booking.bookingStatus !== "searching") {
+        return socket.emit("ride:rejected", { message: "Ride is no longer available." });
+      }
+
+      await bookingsCollection.updateOne(
+        { _id: new ObjectId(bookingId) },
+        {
+          $set: {
+            bookingStatus: "accepted",
+            riderId: new ObjectId(riderId),
+            acceptedAt: new Date()
+          }
+        }
+      );
+
+      await ridersCollection.updateOne(
+        { _id: new ObjectId(riderId) },
+        { $set: { status: "busy", currentRideId: new ObjectId(bookingId) } }
+      );
+
+      // Join ride room
+      const rideRoom = `ride:${bookingId}`;
+      socket.join(rideRoom);
+
+      const passengerRoom = `passenger:${booking.passengerId}`;
+      io.to(passengerRoom).emit("ride:accepted", {
+        bookingId,
+        riderId,
+        rideRoom,
+        driverName: "Matched Driver",
+        vehicle: "Standard Vehicle",
+        rating: 4.8
+      });
+      console.log(`✅ Rider accepted ride: ${bookingId}, joined ${rideRoom}`);
+
+    } catch (error) {
+      console.error("❌ Ride Acceptance Error:", error);
+    }
+  });
+
+  socket.on("disconnect", async () => {
+    if (socket.userRole === "rider") {
+      try {
+        console.log(`🔌 Rider ${socket.userId} disconnected`);
+        socketStore.removeRider(socket.userId);
+        io.emit("riders:update", socketStore.getAllRiders());
+
+        const database = await connectDB();
+        const ridersCollection = database.collection("riders");
+        await ridersCollection.updateOne(
+          { _id: new ObjectId(socket.userId) },
+          { $set: { status: "offline", updatedAt: new Date() } }
+        );
+        console.log(`📴 [STATUS] Rider went offline on disconnect: ${socket.userId}`);
+      } catch (error) {
+        console.error("❌ Error on rider disconnect:", error);
+      }
+    }
   });
 });
 
@@ -158,6 +366,7 @@ app.use(async (req, res, next) => {
       bookingsCollection: database.collection("bookings"),
       paymentsCollection: database.collection("payments"),
       ridersCollection: database.collection("riders"),
+      complaintsCollection: database.collection("complaints"),
       promoCodeCollection: database.collection("promoCode"),
       emergencyCollection: database.collection("emergency"),
       notificationsCollection: database.collection("notifications"),
@@ -238,6 +447,10 @@ app.use("/api/notifications", (req, res, next) => {
   notificationsRoutes(req.collections.notificationsCollection)(req, res, next);
 });
 
+app.use("/api/search", (req, res, next) => {
+  searchRoutes(req.collections)(req, res, next);
+});
+
 // ✅ Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({
@@ -273,7 +486,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
-    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    error: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 
@@ -282,6 +495,7 @@ if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🔔 Socket.io ready for notifications`);
   });
 }
 

@@ -1,28 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { getPassengerSocket } from "@/lib/passengerSocket";
+import { useRouter } from "next/navigation";
 import {
   Bell, MapPin, ChevronRight, Car,
   Wallet, TicketPercent, CheckCircle2,
   XCircle, Clock, ArrowRight, Route,
-  MoreHorizontal
+  MoreHorizontal, Loader2, User, Star
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // --- MOCK DATA ---
-const USER = {
+const USER_MOCK = {
   name: "Iftekhar",
   date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
   avatar: "https://ui-avatars.com/api/?name=Iftekhar+A&background=2FCA71&color=fff&size=128",
 };
-
-const STATS = [
-  { label: "Total Rides", value: "42", icon: Car, color: "text-blue-500", bg: "bg-blue-50" },
-  { label: "Completed", value: "38", icon: CheckCircle2, color: "text-[#2FCA71]", bg: "bg-[#2FCA71]/10" },
-  { label: "Cancelled", value: "4", icon: XCircle, color: "text-red-500", bg: "bg-red-50" },
-  { label: "Distance", value: "342 km", icon: Route, color: "text-purple-500", bg: "bg-purple-50" },
-];
 
 const SCHEDULED_RIDES = [
   { id: 1, pickup: "Navana Tower, Gulshan Ave", dropoff: "Hazrat Shahjalal Int. Airport", date: "Tomorrow, 8:00 AM", vehicle: "Premium" },
@@ -42,8 +42,72 @@ const StatusBadge = ({ status }) => {
 
 
 export default function PassengerDashboard() {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [matchedDriver, setMatchedDriver] = useState(null);
+  const [stats, setStats] = useState([]);
+  const [recentRides, setRecentRides] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  const passengerId = session?.user?.id;
+
+  const handleRequestRide = () => {
+    if (!pickup || !dropoff) {
+      toast.error("Please enter both pickup and destination");
+      return;
+    }
+    router.push(`/dashboard/passenger/book-ride?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
+  };
+
+  // 1. Socket Integration & Initial State
+  useEffect(() => {
+    if (!passengerId) return;
+
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/bookings?passengerId=${passengerId}`);
+        const rides = res.data.data;
+        const completed = rides.filter(r => r.status === 'completed').length;
+        const cancelled = rides.filter(r => r.status === 'cancelled').length;
+        const totalDist = rides.reduce((acc, r) => acc + (r.distance || 0), 0);
+
+        setStats([
+          { label: "Total Rides", value: rides.length, icon: Car, color: "text-blue-500", bg: "bg-blue-50" },
+          { label: "Completed", value: completed, icon: CheckCircle2, color: "text-[#2FCA71]", bg: "bg-[#2FCA71]/10" },
+          { label: "Cancelled", value: cancelled, icon: XCircle, color: "text-red-500", bg: "bg-red-50" },
+          { label: "Distance", value: `${totalDist.toFixed(1)} km`, icon: Route, color: "text-purple-500", bg: "bg-purple-50" },
+        ]);
+        setRecentRides(rides.slice(0, 3));
+      } catch (err) {
+        console.error("Stats fetch error:", err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+
+    const socket = getPassengerSocket(passengerId);
+
+    // Handle searching state from redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("searching") === "true") {
+      setIsSearching(true);
+    }
+
+    socket.on("ride:accepted", (booking) => {
+      setIsSearching(false);
+      setMatchedDriver(booking);
+      toast.success("Driver Found! Proceeding to pickup.");
+    });
+
+    return () => {
+      socket.off("ride:accepted");
+    };
+  }, [passengerId]);
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 space-y-6 md:space-y-8">
@@ -51,12 +115,12 @@ export default function PassengerDashboard() {
       {/* ===================== SECTION 1: WELCOME HEADER ===================== */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-6">
         <div className="flex items-center gap-4">
-          <img src={USER.avatar} alt="Profile" className="w-16 h-16 rounded-full border-2 border-white shadow-sm" />
+          <img src={USER_MOCK.avatar} alt="Profile" className="w-16 h-16 rounded-full border-2 border-white shadow-sm" />
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-              Good afternoon, {USER.name} <span className="inline-block animate-wave origin-bottom-right">👋</span>
+              Good afternoon, {session?.user?.name || USER_MOCK.name} <span className="inline-block animate-wave origin-bottom-right">👋</span>
             </h1>
-            <p className="text-gray-500 text-sm md:text-base font-medium">{USER.date}</p>
+            <p className="text-gray-500 text-sm md:text-base font-medium">{USER_MOCK.date}</p>
           </div>
         </div>
         <button className="p-3 bg-gray-50 text-gray-600 hover:text-[#2FCA71] hover:bg-[#2FCA71]/10 rounded-full transition relative">
@@ -97,26 +161,32 @@ export default function PassengerDashboard() {
                 />
               </div>
 
-              <Link
-                href="/dashboard/passenger/book-ride"
+              <button
+                onClick={handleRequestRide}
                 className="mt-2 w-full bg-[#2FCA71] hover:bg-[#25A65B] text-white font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#2FCA71]/20 hover:-translate-y-0.5 active:translate-y-0"
               >
                 Book Ride <ArrowRight size={20} />
-              </Link>
+              </button>
             </div>
           </div>
 
           {/* SECTION 3: RIDE SUMMARY STATS */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {STATS.map((stat, idx) => (
-              <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition group flex flex-col items-center text-center">
-                <div className={`p-3 rounded-xl mb-3 ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
-                  <stat.icon size={24} />
+            {loadingStats ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white p-5 rounded-2xl border border-gray-200 animate-pulse h-32" />
+              ))
+            ) : (
+              stats.map((stat, idx) => (
+                <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition group flex flex-col items-center text-center">
+                  <div className={`p-3 rounded-xl mb-3 ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
+                    <stat.icon size={24} />
+                  </div>
+                  <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{stat.value}</span>
+                  <span className="text-sm font-semibold text-gray-500 mt-1">{stat.label}</span>
                 </div>
-                <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{stat.value}</span>
-                <span className="text-sm font-semibold text-gray-500 mt-1">{stat.label}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* SECTION 5: RECENT RIDE ACTIVITY */}
@@ -129,33 +199,37 @@ export default function PassengerDashboard() {
             </div>
 
             <div className="space-y-4">
-              {RECENT_RIDES.map((ride) => (
-                <div key={ride.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-gray-200 transition gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-mono font-bold text-gray-400">{ride.id}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300" />
-                      <span className="text-xs font-semibold text-gray-500 flex items-center gap-1"><Clock size={12} /> {ride.date}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-2 h-2 rounded-full bg-gray-800" />
-                        <div className="w-0.5 h-6 bg-gray-300" />
-                        <div className="w-2 h-2 rounded-sm bg-[#2FCA71]" />
+              {recentRides.length > 0 ? (
+                recentRides.map((ride) => (
+                  <div key={ride._id || ride.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-gray-200 transition gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-mono font-bold text-gray-400">#{(ride._id || ride.id).slice(-6).toUpperCase()}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span className="text-xs font-semibold text-gray-500 flex items-center gap-1"><Clock size={12} /> {new Date(ride.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <span className="font-bold text-gray-900 text-sm leading-none">{ride.pickup}</span>
-                        <span className="font-bold text-gray-900 text-sm leading-none">{ride.dropoff}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-2 h-2 rounded-full bg-gray-800" />
+                          <div className="w-0.5 h-6 bg-gray-300" />
+                          <div className="w-2 h-2 rounded-sm bg-[#2FCA71]" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <span className="font-bold text-gray-900 text-sm leading-none line-clamp-1">{ride.pickupAddress || ride.pickup}</span>
+                          <span className="font-bold text-gray-900 text-sm leading-none line-clamp-1">{ride.dropoffAddress || ride.dropoff}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6 shrink-0">
-                    <span className="font-extrabold text-gray-900 text-lg mb-0 md:mb-2 text-left md:text-right w-full md:w-auto">৳{ride.fare}</span>
-                    <StatusBadge status={ride.status} />
+                    <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6 shrink-0">
+                      <span className="font-extrabold text-gray-900 text-lg mb-0 md:mb-2 text-left md:text-right w-full md:w-auto">৳{ride.fare || ride.price}</span>
+                      <StatusBadge status={ride.status === 'completed' ? 'Completed' : ride.status === 'cancelled' ? 'Cancelled' : 'Pending'} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="py-10 text-center text-gray-400 font-medium">No recent rides found.</div>
+              )}
             </div>
           </div>
         </div>
@@ -245,6 +319,109 @@ export default function PassengerDashboard() {
         </div>
 
       </div>
+      {/* 🔍 SEARCHING OVERLAY */}
+      <AnimatePresence>
+        {isSearching && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2FCA71]/10 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl border-4 border-[#2FCA71] text-center"
+            >
+              <div className="relative w-32 h-32 mx-auto mb-8">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 border-t-4 border-r-4 border-[#2FCA71] rounded-full"
+                />
+                <div className="absolute inset-0 flex items-center justify-center text-[#2FCA71]">
+                  <Car size={48} className="animate-bounce" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 mb-2">Finding your ride</h3>
+              <p className="text-gray-500 font-medium mb-8">Connecting with nearby drivers...</p>
+              <button
+                onClick={() => setIsSearching(false)}
+                className="w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition"
+              >
+                Cancel Search
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ✅ DRIVER MATCHED OVERLAY */}
+      <AnimatePresence>
+        {matchedDriver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-white w-full max-w-md rounded-[3rem] overflow-hidden shadow-2xl border-4 border-[#2FCA71]"
+            >
+              <div className="bg-[#2FCA71] p-8 text-white text-center relative">
+                <div className="absolute top-4 right-4 bg-white/20 p-2 rounded-full cursor-pointer hover:bg-white/30 transition" onClick={() => setMatchedDriver(null)}>
+                  <XCircle size={20} />
+                </div>
+                <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4 border-4 border-white/30 overflow-hidden flex items-center justify-center text-[#2FCA71]">
+                  <User size={48} />
+                </div>
+                <h3 className="text-2xl font-black tracking-tight">Driver Found!</h3>
+                <p className="text-white/80 font-bold uppercase tracking-widest text-xs mt-1">Your ride is on the way</p>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-6">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Driver</p>
+                    <p className="text-xl font-bold text-gray-900">John Doe (Mock)</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle</p>
+                    <p className="text-xl font-bold text-gray-900">White Toyota Prius</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-amber-100 text-amber-600 p-2 rounded-xl">
+                      <Star size={20} fill="currentColor" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-black text-gray-900 leading-none">4.9</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rating</p>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">OTP Code</p>
+                    <p className="text-2xl font-black text-[#2FCA71] tracking-[0.2em]">{matchedDriver.otp || "8842"}</p>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-2">
+                  <button className="flex-1 py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition">
+                    Call Driver
+                  </button>
+                  <button className="flex-1 py-4 bg-[#2FCA71] text-white font-bold rounded-2xl hover:bg-[#25A65B] transition shadow-lg shadow-[#2FCA71]/20">
+                    Track Ride
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

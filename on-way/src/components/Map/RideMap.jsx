@@ -48,7 +48,7 @@ const MapEffect = ({ pickup, dropoff, routeGeometry }) => {
     if (routeGeometry && routeGeometry.length > 0) {
       const bounds = L.latLngBounds(routeGeometry);
       map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.5 });
-    } 
+    }
     // Otherwise fallback to point-based fitting
     else if (pickup && dropoff) {
       const bounds = L.latLngBounds([pickup.lat, pickup.lon], [dropoff.lat, dropoff.lon]);
@@ -80,12 +80,15 @@ const MapClickHandler = ({ onMapClick }) => {
 // ---------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------
-export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, onMapClick }) {
+export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, onMapClick, onlineRiders = {} }) {
   const defaultCenter = [23.8103, 90.4125]; // Dhaka, Bangladesh
-  
+
   const [carPosition, setCarPosition] = useState(null);
   const animationRef = useRef(null);
-  
+
+  // Convert object of riders to array
+  const nearbyRidersList = useMemo(() => Object.values(onlineRiders), [onlineRiders]);
+
   // -------------------------------------------------------
   // Animation Logic
   // -------------------------------------------------------
@@ -100,11 +103,11 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
     setCarPosition(routeGeometry[0]);
 
     let startTime = null;
-    
+
     // Determine animation duration. 
     // We scale it down so it's viewable (e.g., 1 min real-time = 2 seconds animation time)
     // Minimum 3 seconds long, max 15 seconds.
-    const animDurationBase = (durationMin || 5) * 1000; 
+    const animDurationBase = (durationMin || 5) * 1000;
     const clampedAnimationDuration = Math.max(3000, Math.min(animDurationBase, 15000));
 
     const animateCar = (timestamp) => {
@@ -147,7 +150,7 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
   // -------------------------------------------------------
   // Render
   // -------------------------------------------------------
-  
+
   return (
     <MapContainer
       center={defaultCenter}
@@ -160,7 +163,27 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
         url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=en"
         attribution="Map data © Google"
       />
-      
+
+      {/* Nearby Online Riders Markers */}
+      {nearbyRidersList.map((rider) => (
+        <Marker
+          key={rider.id || Math.random()}
+          position={[rider.lat, rider.lng]}
+          icon={carIcon}
+          zIndexOffset={500}
+        >
+          <Popup>
+            <div className="text-center p-1">
+              <p className="font-black text-xs text-primary uppercase tracking-tighter">Available Now</p>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-[10px] font-bold">4.8</span>
+                <span className="text-yellow-500 text-[10px]">★</span>
+              </div>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+
       {/* Pickup Marker */}
       {pickup && (
         <Marker position={[pickup.lat, pickup.lon]} icon={pickupIcon}>
@@ -183,11 +206,11 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
 
       {/* Real Driving Route Polyline */}
       {routeGeometry && routeGeometry.length > 0 && (
-        <Polyline 
-          positions={routeGeometry} 
+        <Polyline
+          positions={routeGeometry}
           color="#2FCA71" // Tailwind blue-600
-          weight={5} 
-          opacity={0.8} 
+          weight={5}
+          opacity={0.8}
         />
       )}
 

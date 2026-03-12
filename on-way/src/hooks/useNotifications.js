@@ -21,11 +21,7 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!session?.user?.id || !session?.user?.role) return;
 
-    // Only allow admin and supportAgent to connect
-    if (session.user.role !== "admin" && session.user.role !== "supportAgent") {
-      console.log("❌ Socket connection denied: User is not admin");
-      return;
-    }
+    // Socket connections now allowed for all roles via auth middleware
 
     // Create socket connection if not exists
     if (!socket) {

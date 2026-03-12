@@ -23,7 +23,7 @@ import {
     CircleDot
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getSocket } from "@/utils/socket";
+import { getRiderSocket } from "@/lib/socket";
 import toast from "react-hot-toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";

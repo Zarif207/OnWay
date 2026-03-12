@@ -30,7 +30,7 @@ import {
     Legend
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { getSocket } from "@/utils/socket";
+import { getRiderSocket } from "@/lib/socket";
 import toast from "react-hot-toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -66,7 +66,7 @@ const EarningsAnalytics = () => {
     // 3. Socket.io Real-time Balance
     useEffect(() => {
         if (!riderId) return;
-        const socket = getSocket();
+        const socket = getRiderSocket(riderId);
 
         socket.on("balance_update", (data) => {
             if (data.driverId === riderId) {

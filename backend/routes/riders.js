@@ -129,24 +129,57 @@ module.exports = function (collections) {
         email: email || '',
         phone: phone || '',
         password: hashedPassword,
-        address: address || {},
+        address: address || { district: "", city: "" },
         gender: gender || null,
         dateOfBirth: dateOfBirth || null,
-        emergencyContact: emergencyContact || {},
-        identity: identity || {},
+        emergencyContact: emergencyContact || { name: "", phone: "" },
+        identity: identity || { type: "NID", number: "" },
         referralCode: referralCode || null,
         licenseNumber: licenseNumber || null,
-        vehicle: vehicle || {},
-        documents: documents || {},
+        vehicle: vehicle || { category: "bike", type: "", number: "", model: "", registrationNumber: "" },
+        documents: documents || { drivingLicenseFile: "", vehicleRegistrationFile: "" },
         operationCities: operationCities || [],
         image: image || null,
         role: "rider",
-        isOnline: false,
         isApproved: false,
+        status: "offline",
+        currentRideId: null,
+        rating: 5.0,
+        totalTrips: 0,
+        location: {
+          type: "Point",
+          coordinates: [90.4125, 23.8103] // Default to Dhaka, Bangladesh
+        },
+        lastLocationUpdate: new Date(),
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const result = await ridersCollection.insertOne(rider);
+
+      // 🔔 Send notification to admins about new rider registration
+      try {
+        const notificationHelper = require("../utils/notificationHelper");
+
+        // Get all collections from request
+        const collections = {
+          notificationsCollection: req.collections?.notificationsCollection,
+          passengerCollection: req.collections?.passengerCollection,
+        };
+
+        if (collections.notificationsCollection && collections.passengerCollection) {
+          await notificationHelper.notifyRiderRegistration(collections, {
+            _id: result.insertedId,
+            name: rider.name,
+            email: rider.email,
+            phone: rider.phone,
+            isApproved: rider.isApproved,
+          });
+        }
+      } catch (notifError) {
+        console.error("Notification error:", notifError);
+        // Don't fail the registration if notification fails
+      }
 
       res.status(201).json({
         success: true,
@@ -222,7 +255,7 @@ module.exports = function (collections) {
       res.json({
         success: true,
         data: {
-          isOnline: driver.isOnline || false,
+          status: driver.status || "offline",
           todayEarnings: todayEarnings.toFixed(2),
           totalEarnings: totalEarnings.toFixed(2),
           totalRides: completedRides,
@@ -238,8 +271,8 @@ module.exports = function (collections) {
     }
   });
 
-  // 🔹 Toggle Status
-  router.post("/status/:id", async (req, res) => {
+  // 🔹 PATCH Toggle Online (New synchronized endpoint)
+  router.patch("/:id/online", async (req, res) => {
     try {
       const { id } = req.params;
       const { isOnline } = req.body;
@@ -248,22 +281,139 @@ module.exports = function (collections) {
         return res.status(400).json({ success: false, message: "Invalid ID" });
       }
 
-      const result = await ridersCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { isOnline, updatedAt: new Date() } }
-      );
+      let rider = await ridersCollection.findOne({ _id: new ObjectId(id) });
+      let updateCriteria = { _id: new ObjectId(id) };
 
-      // If no document was updated in riders, try passenger collection
-      if (result.matchedCount === 0) {
-        await collections.passengerCollection.updateOne(
-          { _id: new ObjectId(id) },
-          { $set: { isOnline, updatedAt: new Date() } }
-        );
+      // Fallback: Check if ID belongs to a passenger document with rider role
+      if (!rider && collections.passengerCollection) {
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(id) });
+        if (passenger && passenger.email) {
+          rider = await ridersCollection.findOne({ email: passenger.email });
+          if (rider) updateCriteria = { email: passenger.email };
+        }
       }
 
-      res.json({ success: true, isOnline });
+      if (!rider) {
+        return res.status(404).json({ success: false, message: "Rider not found" });
+      }
+
+      if (!rider.isApproved) {
+        return res.status(403).json({ success: false, message: "Rider not approved" });
+      }
+
+      if (rider.vacationMode === true) {
+        return res.status(403).json({ success: false, message: "Rider is on vacation mode" });
+      }
+
+      await ridersCollection.updateOne(
+        updateCriteria,
+        { $set: { status: isOnline ? "online" : "offline", updatedAt: new Date() } }
+      );
+
+      console.log(`✅ [DB] Status persisted for ${rider.email}: ${isOnline ? "online" : "offline"}`);
+      res.json({ success: true, isOnline, status: isOnline ? "online" : "offline" });
     } catch (error) {
-      res.status(500).json({ success: false, message: "Update failed" });
+      console.error("PATCH online error:", error);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  });
+
+  // 🔹 PATCH Toggle Status (Compatibility)
+  router.patch("/:id/online-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isOnline } = req.body;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid ID" });
+      }
+
+      let updateCriteria = { _id: new ObjectId(id) };
+      const rider = await ridersCollection.findOne(updateCriteria);
+
+      if (!rider && collections.passengerCollection) {
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(id) });
+        if (passenger && passenger.email) {
+          updateCriteria = { email: passenger.email };
+        }
+      }
+
+      await ridersCollection.updateOne(
+        updateCriteria,
+        { $set: { status: isOnline ? "online" : "offline", updatedAt: new Date() } }
+      );
+
+      res.json({ success: true, isOnline, status: isOnline ? "online" : "offline" });
+    } catch (error) {
+      res.status(500).json({ success: false });
+    }
+  });
+
+  // 🔹 PATCH Update Status (New consolidated endpoint)
+  router.patch("/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const allowed = ["online", "offline", "busy"];
+      if (!allowed.includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status" });
+      }
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid ID" });
+      }
+
+      let updateCriteria = { _id: new ObjectId(id) };
+      const rider = await ridersCollection.findOne(updateCriteria);
+
+      if (!rider && collections.passengerCollection) {
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(id) });
+        if (passenger && passenger.email) {
+          updateCriteria = { email: passenger.email };
+        }
+      }
+
+      await ridersCollection.updateOne(
+        updateCriteria,
+        {
+          $set: {
+            status,
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      res.json({ success: true, status });
+    } catch (error) {
+      console.error("PATCH status error:", error);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  });
+
+  // 🔹 Helper: Auto-Approve Rider (For dispatch testing)
+  router.patch("/:id/approve", async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!ObjectId.isValid(id)) return res.status(400).json({ success: false });
+
+      let updateCriteria = { _id: new ObjectId(id) };
+      const rider = await ridersCollection.findOne(updateCriteria);
+
+      if (!rider && collections.passengerCollection) {
+        const passenger = await collections.passengerCollection.findOne({ _id: new ObjectId(id) });
+        if (passenger && passenger.email) {
+          updateCriteria = { email: passenger.email };
+        }
+      }
+
+      await ridersCollection.updateOne(
+        updateCriteria,
+        { $set: { isApproved: true, updatedAt: new Date() } }
+      );
+      res.json({ success: true, message: "Rider approved for dispatch" });
+    } catch (err) {
+      res.status(500).json({ success: false });
     }
   });
 
@@ -541,7 +691,7 @@ module.exports = function (collections) {
           workingDays: rider.workingDays || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
           workingHours: rider.workingHours || { start: "09:00", end: "17:00" },
           vacationMode: rider.vacationMode || false,
-          isOnline: rider.isOnline || false
+          status: rider.status || "offline"
         }
       });
     } catch (error) {
@@ -581,7 +731,7 @@ module.exports = function (collections) {
 
       // Automatically take driver offline if vacation mode is enabled
       if (vacationMode) {
-        updateFields.isOnline = false;
+        updateFields.status = "offline";
       }
 
       const result = await ridersCollection.updateOne(

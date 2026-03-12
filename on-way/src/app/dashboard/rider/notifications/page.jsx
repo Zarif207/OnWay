@@ -1,65 +1,10 @@
-"use client";
+import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { getRiderSocket } from "@/lib/socket";
+import toast from "react-hot-toast";
 
-import React, { useState, useMemo, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-    Bell,
-    Car,
-    Wallet,
-    Gift,
-    ShieldAlert,
-    CheckCircle2,
-    AlertCircle,
-    Clock,
-    CheckCheck,
-    X
-} from "lucide-react";
-
-// --- Mock Data Structure ---
-// In the future, replace this initial state with a `useQuery` fetch to your backend `/api/riders/notifications`
-const INITIAL_NOTIFICATIONS = [
-    {
-        id: "notif_1",
-        type: "ride",
-        title: "New Ride Request",
-        message: "Passenger John Doe requested a ride from Central Park to Times Square.",
-        timestamp: "2 mins ago",
-        isRead: false,
-    },
-    {
-        id: "notif_2",
-        type: "payment",
-        title: "Payment Received",
-        message: "$45.50 has been credited to your wallet for Trip #9281.",
-        timestamp: "1 hour ago",
-        isRead: false,
-    },
-    {
-        id: "notif_3",
-        type: "bonus",
-        title: "Weekly Quest Completed! 🏆",
-        message: "Congratulations! You completed 50 rides this week. A $100 bonus has been applied.",
-        timestamp: "5 hours ago",
-        isRead: true,
-    },
-    {
-        id: "notif_4",
-        type: "system",
-        title: "System Maintenance",
-        message: "The OnWay app will undergo routine maintenance at 2:00 AM EST. Please anticipate brief outages.",
-        timestamp: "1 day ago",
-        isRead: true,
-    },
-    {
-        id: "notif_5",
-        type: "ride",
-        title: "Ride Cancelled",
-        message: "Passenger Sarah canceled the trip to Brooklyn Bridge.",
-        timestamp: "1 day ago",
-        isRead: true,
-    }
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const FILTER_TABS = [
     { id: "all", label: "All" },
@@ -81,10 +26,40 @@ const getNotificationStyles = (type) => {
 };
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+    const { data: session } = useSession();
+    const queryClient = useQueryClient();
+    const riderId = session?.user?.id;
     const [activeTab, setActiveTab] = useState("all");
     const [selectedNotification, setSelectedNotification] = useState(null);
     const [mounted, setMounted] = useState(false);
+
+    // 1. Fetch Notifications
+    const { data: notificationsData, isLoading } = useQuery({
+        queryKey: ["riderNotifications", riderId],
+        queryFn: async () => {
+            if (!riderId) return [];
+            const res = await axios.get(`${API_BASE_URL}/riders/notifications?driverId=${riderId}`);
+            return res.data.data;
+        },
+        enabled: !!riderId,
+    });
+
+    const notifications = notificationsData || [];
+
+    // 2. Real-time Socket Listener
+    useEffect(() => {
+        if (!riderId) return;
+        const socket = getRiderSocket(riderId);
+
+        socket.on("notification", (newNotif) => {
+            queryClient.setQueryData(["riderNotifications", riderId], (old = []) => [newNotif, ...old]);
+            toast.success("New Notification Received!");
+        });
+
+        return () => {
+            socket.off("notification");
+        };
+    }, [riderId, queryClient]);
 
     useEffect(() => {
         setMounted(true);
@@ -107,17 +82,36 @@ export default function NotificationsPage() {
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
-    // Actions
+    // 3. Mark as Read Mutation
+    const markReadMutation = useMutation({
+        mutationFn: async (id) => {
+            await axios.patch(`${API_BASE_URL}/riders/notifications/${id}/read`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(["riderNotifications", riderId]);
+        }
+    });
+
+    const markAllReadMutation = useMutation({
+        mutationFn: async () => {
+            await axios.patch(`${API_BASE_URL}/riders/notifications/read-all?driverId=${riderId}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(["riderNotifications", riderId]);
+            toast.success("All notifications marked as read.");
+        }
+    });
+
     const handleMarkAsRead = (id) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        markReadMutation.mutate(id);
     };
 
     const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        markAllReadMutation.mutate();
     };
 
     const handleOpenNotification = (notif) => {
-        handleMarkAsRead(notif.id);
+        if (!notif.isRead) handleMarkAsRead(notif.id || notif._id);
         setSelectedNotification(notif);
     };
 

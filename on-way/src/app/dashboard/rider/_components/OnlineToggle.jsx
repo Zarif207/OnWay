@@ -1,8 +1,11 @@
-"use client";
-import React from "react";
 import { motion } from "framer-motion";
+import { getRiderSocket } from "@/lib/socket";
 
-const OnlineToggle = ({ isOnline, onToggle, isLoading }) => {
+const OnlineToggle = ({ isOnline, onToggle, isLoading, riderId }) => {
+    const handleToggle = () => {
+        onToggle();
+    };
+
     return (
         <div className="flex items-center gap-5 bg-white p-2 pr-4 rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex flex-col items-end">
@@ -23,7 +26,7 @@ const OnlineToggle = ({ isOnline, onToggle, isLoading }) => {
             </div>
 
             <button
-                onClick={onToggle}
+                onClick={handleToggle}
                 disabled={isLoading}
                 className={`relative h-11 w-20 rounded-2xl p-1.5 transition-all duration-500 shadow-inner overflow-hidden ${isOnline ? "bg-green-500/10 border border-green-500/20" : "bg-[#f5f7fa] border border-gray-100"
                     }`}
@@ -52,7 +55,7 @@ const OnlineToggle = ({ isOnline, onToggle, isLoading }) => {
                     )}
                 </motion.div>
             </button>
-        </div>
+        </div >
     );
 };
 

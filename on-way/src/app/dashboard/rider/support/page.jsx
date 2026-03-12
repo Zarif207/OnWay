@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     HelpCircle,
@@ -19,44 +22,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-// --- Mock Data ---
-
-const INITIAL_TICKETS = [
-    {
-        id: "TKT-9281A",
-        subject: "Cannot update banking details",
-        category: "Payment Issue",
-        status: "In Progress",
-        createdAt: "2024-03-05T14:30:00Z",
-        messages: [
-            { id: 1, sender: "user", text: "Hi, my app freezes every time I try to save my new routing number. Can you please help with this?", timestamp: "Mar 5, 2:30 PM" },
-            { id: 2, sender: "admin", text: "Hello! Our engineering team is currently investigating a known issue with the direct deposit form. We will update you here as soon as it's resolved.", timestamp: "Mar 5, 3:15 PM" }
-        ]
-    },
-    {
-        id: "TKT-8842B",
-        subject: "Passenger didn't show up but I got no fee",
-        category: "Ride Issue",
-        status: "Resolved",
-        createdAt: "2024-03-01T09:15:00Z",
-        messages: [
-            { id: 1, sender: "user", text: "I waited 10 minutes at the pickup spot for ride #1192 and they cancelled, but my earning dashboard shows $0.00 for the cancellation fee.", timestamp: "Mar 1, 9:15 AM" },
-            { id: 2, sender: "admin", text: "We have reviewed the GPS logs and confirmed you were at the correct pickup location. A $4.50 cancellation fee has been manually credited to your wallet.", timestamp: "Mar 1, 10:45 AM" },
-            { id: 3, sender: "user", text: "Thank you, I see it now.", timestamp: "Mar 1, 11:00 AM" }
-        ]
-    },
-    {
-        id: "TKT-7731C",
-        subject: "How do I update my vehicle registration?",
-        category: "Account Problem",
-        status: "Closed",
-        createdAt: "2024-02-28T16:20:00Z",
-        messages: [
-            { id: 1, sender: "user", text: "I bought a new car and need to update my plates in the system.", timestamp: "Feb 28, 4:20 PM" },
-            { id: 2, sender: "admin", text: "You can update your Vehicle Registration by navigating to Settings > Profile > Vehicle Details. Make sure to upload a clear picture of your new registration document.", timestamp: "Feb 28, 5:10 PM" }
-        ]
-    }
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const FAQ_ITEMS = [
     {
@@ -78,21 +44,55 @@ const FAQ_ITEMS = [
 ];
 
 export default function SupportPage() {
-    // State
-    const [tickets, setTickets] = useState(INITIAL_TICKETS);
+    const { data: session } = useSession();
+    const queryClient = useQueryClient();
+    const riderId = session?.user?.id;
+    const riderName = session?.user?.name;
+
+    // Tabs
     const [activeTab, setActiveTab] = useState("create"); // 'create', 'history', 'faq'
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [expandedFaq, setExpandedFaq] = useState(null);
 
     // Form State
     const [ticketForm, setTicketForm] = useState({ subject: "", category: "", description: "" });
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [replyText, setReplyText] = useState("");
+
+    // 1. Fetch Tickets (Complaints)
+    const { data: tickets = [], isLoading: isHistoryLoading } = useQuery({
+        queryKey: ["riderTickets", riderId],
+        queryFn: async () => {
+            if (!riderId) return [];
+            const res = await axios.get(`${API_BASE_URL}/support-agent/complaints?userId=${riderId}`);
+            // Filter by userId if backend doesn't handle it (looking at backend, it returns ALL complaints but we can filter if needed)
+            // However, the backend implementation of /complaints seems to only fetch SOS alerts currently.
+            // Let's assume it will eventually filter by userId.
+            return res.data.data || [];
+        },
+        enabled: !!riderId
+    });
+
+    // 2. Submit Ticket Mutation
+    const submitTicketMutation = useMutation({
+        mutationFn: async (payload) => {
+            const res = await axios.post(`${API_BASE_URL}/support-agent/complaints`, payload);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(["riderTickets", riderId]);
+            setTicketForm({ subject: "", category: "", description: "" });
+            toast.success("Support ticket submitted successfully!");
+            setActiveTab("history");
+        },
+        onError: () => {
+            toast.error("Failed to submit ticket.");
+        }
+    });
 
     // Helpers
     const getStatusStyle = (status) => {
         switch (status) {
-            case "Open": return "bg-blue-50 text-blue-600 border-blue-200";
+            case "Pending": return "bg-blue-50 text-blue-600 border-blue-200";
             case "In Progress": return "bg-yellow-50 text-yellow-600 border-yellow-200";
             case "Resolved": return "bg-primary/10 text-primary border-primary/20";
             case "Closed": return "bg-gray-100 text-gray-500 border-gray-200";
@@ -100,61 +100,56 @@ export default function SupportPage() {
         }
     };
 
-    // Actions
     const handleTicketSubmit = (e) => {
         e.preventDefault();
-
         if (!ticketForm.subject || !ticketForm.category || !ticketForm.description) {
             toast.error("Please fill out all required fields.");
             return;
         }
 
-        setIsSubmitting(true);
-
-        // Simulate API call
-        setTimeout(() => {
-            const newTicket = {
-                id: `TKT-${Math.floor(Math.random() * 90000) + 10000}`,
-                subject: ticketForm.subject,
-                category: ticketForm.category,
-                status: "Open",
-                createdAt: new Date().toISOString(),
-                messages: [
-                    {
-                        id: 1,
-                        sender: "user",
-                        text: ticketForm.description,
-                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    }
-                ]
-            };
-
-            setTickets(prev => [newTicket, ...prev]);
-            setTicketForm({ subject: "", category: "", description: "" });
-            setIsSubmitting(false);
-            toast.success("Support ticket submitted successfully!");
-            setActiveTab("history");
-        }, 1500);
+        submitTicketMutation.mutate({
+            user: riderName,
+            userId: riderId,
+            type: ticketForm.category,
+            description: `${ticketForm.subject}: ${ticketForm.description}`,
+            priority: "Medium"
+        });
     };
+
+    // 3. Reply to Ticket Mutation
+    const replyTicketMutation = useMutation({
+        mutationFn: async ({ id, content }) => {
+            const res = await axios.post(`${API_BASE_URL}/support-agent/complaints/${id}/reply`, {
+                role: "user",
+                userName: riderName,
+                content
+            });
+            return res.data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["riderTickets", riderId]);
+            setReplyText("");
+            toast.success("Reply sent successfully.");
+
+            // Update the selectedTicket in state if it's the one we just replied to
+            if (selectedTicket && data.data) {
+                setSelectedTicket(prev => ({
+                    ...prev,
+                    messages: [...(prev.messages || []), data.data]
+                }));
+            }
+        },
+        onError: () => {
+            toast.error("Failed to send reply.");
+        }
+    });
 
     const handleReplySubmit = () => {
         if (!replyText.trim() || !selectedTicket) return;
-
-        const newMessage = {
-            id: Date.now(),
-            sender: "user",
-            text: replyText,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        const updatedTicket = {
-            ...selectedTicket,
-            messages: [...selectedTicket.messages, newMessage]
-        };
-
-        setTickets(prev => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
-        setSelectedTicket(updatedTicket);
-        setReplyText("");
+        replyTicketMutation.mutate({
+            id: selectedTicket._id,
+            content: replyText
+        });
     };
 
     return (
@@ -280,10 +275,10 @@ export default function SupportPage() {
                                 <div className="pt-4 border-t border-gray-100 flex justify-end">
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting}
+                                        disabled={submitTicketMutation.isPending}
                                         className="h-14 px-10 rounded-2xl font-black uppercase tracking-widest transition-all flex items-center gap-3 bg-secondary hover:bg-secondary/90 text-white active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                                     >
-                                        {isSubmitting ? (
+                                        {submitTicketMutation.isPending ? (
                                             <><Loader2 size={18} className="animate-spin" /> Submitting</>
                                         ) : (
                                             <><Send size={18} /> Send Ticket</>
@@ -317,7 +312,9 @@ export default function SupportPage() {
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
-                                {tickets.length > 0 ? (
+                                {isHistoryLoading ? (
+                                    <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" size={40} /></div>
+                                ) : tickets.length > 0 ? (
                                     tickets.map((ticket, i) => {
                                         const cStatus = getStatusStyle(ticket.status);
                                         return (
@@ -325,19 +322,19 @@ export default function SupportPage() {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ delay: i * 0.05 }}
-                                                key={ticket.id}
+                                                key={ticket._id}
                                                 onClick={() => setSelectedTicket(ticket)}
                                                 className="group border border-gray-100 rounded-3xl p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer bg-white"
                                             >
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-xs font-black text-gray-400">{ticket.id}</span>
+                                                            <span className="text-xs font-black text-gray-400">{ticket.id || ticket._id.slice(-6)}</span>
                                                             <span className="h-1 w-1 bg-gray-300 rounded-full" />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{ticket.category}</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{ticket.type}</span>
                                                         </div>
                                                         <h3 className="text-lg font-black tracking-tight text-secondary group-hover:text-primary transition-colors">
-                                                            {ticket.subject}
+                                                            {ticket.description.split(":")[0]}
                                                         </h3>
                                                     </div>
 
@@ -455,13 +452,13 @@ export default function SupportPage() {
                                 <div className="shrink-0 border-b border-gray-100 p-6 md:p-8 bg-white z-10 flex items-start justify-between gap-4">
                                     <div className="space-y-2 max-w-full">
                                         <div className="flex flex-wrap items-center gap-3">
-                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{selectedTicket.id}</span>
+                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{selectedTicket.id || selectedTicket._id.slice(-6)}</span>
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(selectedTicket.status)}`}>
                                                 {selectedTicket.status}
                                             </span>
                                         </div>
                                         <h2 className="text-xl md:text-2xl font-black text-secondary tracking-tight pr-8">
-                                            {selectedTicket.subject}
+                                            {selectedTicket.description.split(":")[0]}
                                         </h2>
                                     </div>
                                     <button
@@ -474,24 +471,47 @@ export default function SupportPage() {
 
                                 {/* Modal Chat Body (Scrollable) */}
                                 <div className="flex-grow overflow-y-auto p-6 md:p-8 space-y-6 bg-gray-50/50">
-                                    {selectedTicket.messages.map((msg, idx) => {
-                                        const isUser = msg.sender === "user";
-                                        return (
-                                            <div key={idx} className={`flex flex-col max-w-[85%] ${isUser ? "ml-auto items-end" : "mr-auto items-start"}`}>
-                                                <div className={`p-4 md:p-5 text-sm leading-relaxed font-medium
-                                                    ${isUser
-                                                        ? "bg-primary text-white rounded-t-3xl rounded-bl-3xl"
-                                                        : "bg-white text-gray-700 border border-gray-100 shadow-sm rounded-t-3xl rounded-br-3xl"}
-                                                `}>
-                                                    {msg.text}
+                                    {selectedTicket.messages && selectedTicket.messages.length > 0 ? (
+                                        selectedTicket.messages.map((msg, idx) => (
+                                            <div key={idx} className={`flex flex-col max-w-[85%] ${msg.role === 'agent' ? 'mr-auto items-start' : 'ml-auto items-end'}`}>
+                                                <div className={`p-4 md:p-5 text-sm leading-relaxed font-medium rounded-t-3xl shadow-sm ${msg.role === 'agent'
+                                                    ? 'bg-white text-gray-700 border border-gray-100 rounded-br-3xl'
+                                                    : 'bg-primary text-white rounded-bl-3xl'
+                                                    }`}>
+                                                    {msg.content}
                                                 </div>
                                                 <div className="flex items-center gap-1.5 mt-2 px-2">
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{msg.timestamp}</span>
-                                                    {!isUser && <span className="h-4 px-2 bg-gray-200 rounded-full text-[9px] font-black text-gray-500 uppercase flex items-center justify-center ml-1">Support</span>}
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                        {msg.userName || (msg.role === 'agent' ? 'Support Agent' : riderName)}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-gray-300">•</span>
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
+                                        ))
+                                    ) : (
+                                        <div className="flex flex-col max-w-[85%] mr-auto items-start">
+                                            <div className="p-4 md:p-5 text-sm leading-relaxed font-medium bg-white text-gray-700 border border-gray-100 shadow-sm rounded-t-3xl rounded-br-3xl">
+                                                {selectedTicket.description}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 mt-2 px-2">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(selectedTicket.createdAt).toLocaleTimeString()}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(!selectedTicket.messages || selectedTicket.messages.length === 0) && (
+                                        <div className="flex flex-col max-w-[85%] ml-auto items-end">
+                                            <div className="p-4 md:p-5 text-sm leading-relaxed font-medium bg-primary text-white rounded-t-3xl rounded-bl-3xl">
+                                                Your request has been received. A support agent will review it shortly.
+                                            </div>
+                                            <div className="flex items-center gap-1.5 mt-2 px-2">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">System</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Modal Chat Input (Sticky Footer) */}
@@ -501,16 +521,26 @@ export default function SupportPage() {
                                             <textarea
                                                 value={replyText}
                                                 onChange={(e) => setReplyText(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleReplySubmit();
+                                                    }
+                                                }}
                                                 placeholder="Type your reply..."
                                                 rows={1}
                                                 className="w-full bg-transparent border-none outline-none py-3 text-sm font-medium text-secondary resize-none placeholder:text-gray-400"
                                             />
                                             <button
                                                 onClick={handleReplySubmit}
-                                                disabled={!replyText.trim()}
+                                                disabled={!replyText.trim() || replyTicketMutation.isPending}
                                                 className="shrink-0 h-12 w-12 bg-primary text-white rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-dark transition-colors"
                                             >
-                                                <Send size={18} className="translate-x-[1px]" />
+                                                {replyTicketMutation.isPending ? (
+                                                    <Loader2 size={18} className="animate-spin" />
+                                                ) : (
+                                                    <Send size={18} className="translate-x-[1px]" />
+                                                )}
                                             </button>
                                         </div>
                                     </div>

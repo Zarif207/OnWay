@@ -38,22 +38,28 @@ async function connectDB() {
 
 // Verify JWT token (simple validation - enhance for production)
 function verifyToken(token) {
+  // In development, allow any token for testing
+  if (process.env.NODE_ENV === 'development') {
+    return { valid: true };
+  }
+
   // TODO: Implement proper JWT verification with your AUTH_SECRET
-  // For now, we'll do basic validation
   if (!token || token.length < 10) {
     return null;
   }
-  
+
   // In production, decode JWT and verify signature
+  // const jwt = require("jsonwebtoken");
   // const decoded = jwt.verify(token, process.env.AUTH_SECRET);
   // return decoded;
-  
+
   return { valid: true }; // Placeholder - implement proper JWT verification
 }
 
-// Check if user is admin
+// Check if user is admin or authorized role
 function isAdmin(userRole) {
-  return userRole === "admin" || userRole === "supportAgent";
+  const authorizedRoles = ["admin", "supportAgent", "rider", "passenger"];
+  return authorizedRoles.includes(userRole);
 }
 
 async function startSocketServer() {
@@ -71,6 +77,7 @@ async function startSocketServer() {
     cors: {
       origin: [
         "http://localhost:3000",
+        "http://localhost:4000",
         "http://localhost:5000",
         "https://on-way-neon.vercel.app",
         process.env.FRONTEND_URL
@@ -89,11 +96,29 @@ async function startSocketServer() {
     const userRole = socket.handshake.auth.role;
     const userId = socket.handshake.auth.userId;
 
-    console.log(`🔐 Authentication attempt - Role: ${userRole}, UserId: ${userId}`);
+    console.log(`🔐 Authentication attempt - Role: ${userRole}, UserId: ${userId}, Token: ${token ? 'Present' : 'Missing'}`);
 
-    // Verify token (implement proper JWT verification in production)
+    // In development, be more lenient
+    if (process.env.NODE_ENV === 'development') {
+      // Allow connection if userId and role are present
+      if (userId && userRole) {
+        // Check if user is admin or support agent
+        if (isAdmin(userRole)) {
+          socket.userId = userId;
+          socket.userRole = userRole;
+          socket.authenticated = true;
+          console.log(`✅ Authentication successful (DEV MODE) - ${userRole} (${userId})`);
+          return next();
+        } else {
+          console.log(`❌ Authorization failed - Role: ${userRole} is not authorized`);
+          return next(new Error("Authorization failed: Admin access required"));
+        }
+      }
+    }
+
+    // Verify token
     const verified = verifyToken(token);
-    
+
     if (!verified) {
       console.log(`❌ Authentication failed - Invalid token`);
       return next(new Error("Authentication failed: Invalid token"));
@@ -117,7 +142,7 @@ async function startSocketServer() {
   // Socket.io connection handling
   io.on("connection", (socket) => {
     console.log(`🔌 Admin client connected: ${socket.id} (${socket.userRole})`);
-    
+
     // Store active connection
     activeConnections.set(socket.id, {
       userId: socket.userId,
@@ -135,7 +160,7 @@ async function startSocketServer() {
       status: "active",
     }).catch(err => console.error("Error logging connection:", err));
 
-    // ✅ Join user-specific notification room (admin only)
+    // Join user-specific notification room (admin only)
     socket.on("joinNotifications", (userId) => {
       if (!socket.authenticated) {
         socket.emit("error", { message: "Unauthorized" });
@@ -144,10 +169,10 @@ async function startSocketServer() {
 
       socket.join(`user_${userId}`);
       console.log(`🔔 Admin ${socket.id} joined notifications for user: ${userId}`);
-      
-      socket.emit("joinedNotifications", { 
-        userId, 
-        message: "Successfully joined notification room" 
+
+      socket.emit("joinedNotifications", {
+        userId,
+        message: "Successfully joined notification room"
       });
     });
 
@@ -160,17 +185,17 @@ async function startSocketServer() {
 
       socket.join(`ride_${rideId}`);
       console.log(`📍 Admin ${socket.id} monitoring ride: ${rideId}`);
-      
-      socket.emit("joinedRide", { 
-        rideId, 
-        message: "Successfully joined ride monitoring" 
+
+      socket.emit("joinedRide", {
+        rideId,
+        message: "Successfully joined ride monitoring"
       });
     });
 
     // ✅ Handle GPS updates (from driver app) - Store in DB first
     socket.on("gpsUpdate", async (data) => {
       const { rideId, driverId, latitude, longitude, speed, heading } = data;
-      
+
       try {
         // ✅ Save GPS location to database FIRST
         const gpsData = {
@@ -185,7 +210,7 @@ async function startSocketServer() {
         };
 
         const result = await gpsLocationsCollection.insertOne(gpsData);
-        
+
         console.log(`📍 GPS saved to DB: Ride ${rideId}, Driver ${driverId}`);
 
         // ✅ Then broadcast to admin dashboard monitoring this ride
@@ -195,17 +220,17 @@ async function startSocketServer() {
         });
 
         // Send acknowledgment
-        socket.emit("gpsUpdateAck", { 
-          success: true, 
+        socket.emit("gpsUpdateAck", {
+          success: true,
           rideId,
-          savedId: result.insertedId 
+          savedId: result.insertedId
         });
 
       } catch (error) {
         console.error("❌ Error saving GPS location:", error);
-        socket.emit("gpsUpdateAck", { 
-          success: false, 
-          error: "Failed to save GPS data" 
+        socket.emit("gpsUpdateAck", {
+          success: false,
+          error: "Failed to save GPS data"
         });
       }
     });
@@ -218,7 +243,7 @@ async function startSocketServer() {
       }
 
       const { userId, message, type, metadata } = data;
-      
+
       try {
         // ✅ Save notification to database FIRST
         const notification = {
@@ -234,7 +259,7 @@ async function startSocketServer() {
         };
 
         const result = await notificationsCollection.insertOne(notification);
-        
+
         const savedNotification = {
           _id: result.insertedId,
           ...notification
@@ -244,18 +269,18 @@ async function startSocketServer() {
 
         // ✅ Then emit to specific user's notification room
         io.to(`user_${userId}`).emit("newNotification", savedNotification);
-        
+
         // Send acknowledgment to sender
-        socket.emit("notificationSent", { 
-          success: true, 
-          notificationId: result.insertedId 
+        socket.emit("notificationSent", {
+          success: true,
+          notificationId: result.insertedId
         });
 
       } catch (error) {
         console.error("❌ Error sending notification:", error);
-        socket.emit("notificationSent", { 
-          success: false, 
-          error: "Failed to send notification" 
+        socket.emit("notificationSent", {
+          success: false,
+          error: "Failed to send notification"
         });
       }
     });
@@ -274,15 +299,15 @@ async function startSocketServer() {
           .limit(50)
           .toArray();
 
-        socket.emit("activeRides", { 
-          success: true, 
-          rides: activeRides 
+        socket.emit("activeRides", {
+          success: true,
+          rides: activeRides
         });
       } catch (error) {
         console.error("Error fetching active rides:", error);
-        socket.emit("activeRides", { 
-          success: false, 
-          error: "Failed to fetch active rides" 
+        socket.emit("activeRides", {
+          success: false,
+          error: "Failed to fetch active rides"
         });
       }
     });
@@ -306,7 +331,7 @@ async function startSocketServer() {
     // ✅ Handle disconnection
     socket.on("disconnect", async (reason) => {
       console.log(`🔌 Admin client disconnected: ${socket.id} - Reason: ${reason}`);
-      
+
       // Remove from active connections
       activeConnections.delete(socket.id);
 
@@ -314,12 +339,12 @@ async function startSocketServer() {
       try {
         await rideSessionsCollection.updateOne(
           { socketId: socket.id, status: "active" },
-          { 
-            $set: { 
+          {
+            $set: {
               status: "disconnected",
               disconnectedAt: new Date(),
               disconnectReason: reason,
-            } 
+            }
           }
         );
       } catch (error) {
@@ -333,14 +358,14 @@ async function startSocketServer() {
     });
   });
 
-  // ✅ Periodic cleanup of old GPS data (run every hour)
+  //  Periodic cleanup of old GPS data (run every hour)
   setInterval(async () => {
     try {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const result = await gpsLocationsCollection.deleteMany({
         timestamp: { $lt: oneDayAgo }
       });
-      
+
       if (result.deletedCount > 0) {
         console.log(`🧹 Cleaned up ${result.deletedCount} old GPS records`);
       }
@@ -364,12 +389,12 @@ async function startSocketServer() {
 // Handle graceful shutdown
 process.on("SIGINT", async () => {
   console.log("\n⏳ Closing MongoDB connection...");
-  
+
   // Close all active socket connections
   if (global.io) {
     global.io.close();
   }
-  
+
   await client.close();
   console.log("✅ MongoDB connection closed");
   process.exit(0);

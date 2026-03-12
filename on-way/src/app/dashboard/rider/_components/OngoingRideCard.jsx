@@ -27,7 +27,7 @@ const OngoingRideCard = ({ ride }) => {
                                 <h2 className="text-3xl font-black text-[#011421] dark:text-white uppercase tracking-tighter">Ongoing Trip</h2>
                                 <div className="bg-blue-500/10 text-blue-600 text-[10px] font-black px-2 py-0.5 rounded-lg border border-blue-500/20">LIVE</div>
                             </div>
-                            <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Tracking ID: ONW-{ride._id.slice(-6).toUpperCase()}</p>
+                            <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Tracking ID: ONW-{ride._id?.toString().slice(-6).toUpperCase() || "PENDING"}</p>
                         </div>
                     </div>
 
@@ -36,8 +36,10 @@ const OngoingRideCard = ({ ride }) => {
                             <Clock size={20} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Elapsed Time</p>
-                            <p className="text-lg font-black text-[#011421] dark:text-white">14:23</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Start Time</p>
+                            <p className="text-lg font-black text-[#011421] dark:text-white">
+                                {ride.acceptedAt ? new Date(ride.acceptedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -51,7 +53,7 @@ const OngoingRideCard = ({ ride }) => {
                                 <div className="relative h-20 w-20">
                                     <div className="h-20 w-20 rounded-[1.5rem] bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-black overflow-hidden border-2 border-white/50 shadow-inner">
                                         <img
-                                            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200"
+                                            src={ride.passengerImage || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200"}
                                             alt="Passenger"
                                             className="h-full w-full object-cover"
                                         />
@@ -63,10 +65,14 @@ const OngoingRideCard = ({ ride }) => {
                                 <div className="flex-1">
                                     <h3 className="text-xl font-black text-[#011421] dark:text-white leading-tight">{ride.passengerName || "Shafique Rahman"}</h3>
                                     <div className="flex items-center gap-1.5 mt-1">
-                                        <div className="flex text-yellow-500 text-xs">
-                                            {[...Array(5)].map((_, i) => <span key={i}>★</span>)}
+                                        <div className="flex text-yellow-500 text-xs text-pretty">
+                                            {[...Array(5)].map((_, i) => (
+                                                <span key={i}>{i < (ride.passengerRating || 5) ? "★" : "☆"}</span>
+                                            ))}
                                         </div>
-                                        <span className="text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-widest">4.9 • 240 RIPS</span>
+                                        <span className="text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-widest text-pretty">
+                                            {ride.passengerRating || "5.0"} • Verified User
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -82,7 +88,7 @@ const OngoingRideCard = ({ ride }) => {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pickup Point</p>
-                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight">{ride.pickupLocation}</p>
+                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight text-pretty">{ride.pickupLocation?.address || ride.pickupLocation}</p>
                                 </div>
                             </div>
 
@@ -92,7 +98,7 @@ const OngoingRideCard = ({ ride }) => {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Destination</p>
-                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight">{ride.dropLocation}</p>
+                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight text-pretty">{ride.dropLocation?.address || ride.dropLocation}</p>
                                 </div>
                             </div>
                         </div>
@@ -108,19 +114,21 @@ const OngoingRideCard = ({ ride }) => {
                         </div>
                     </div>
 
-                    {/* Map/Visualization Section */}
+                    {/* Map/Visualization Section Overlay */}
                     <div className="lg:col-span-7 relative">
-                        <div className="h-full min-h-[400px] rounded-[3rem] overflow-hidden border-2 border-white/20 shadow-inner group">
-                            <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/pin-s-a+3b82f6(90.4125,23.8103),pin-s-b+6366f1(90.4195,23.8213)/90.415,23.815,13/800x600?access_token=pk.xxx')] bg-cover bg-center" />
-
-                            {/* Overlay Layers */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#011421]/60 via-transparent to-transparent" />
-                            <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-[3rem]" />
+                        <div className="h-full min-h-[400px] rounded-[3rem] overflow-hidden border-2 border-white/20 shadow-inner bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative">
+                            {/* Simple placeholder for map as we don't have dynamic map logic here yet */}
+                            <div className="text-center p-10 space-y-4">
+                                <div className="h-20 w-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto">
+                                    <MapPin size={40} className="text-blue-500 animate-bounce" />
+                                </div>
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Map Navigation View Active</p>
+                            </div>
 
                             <div className="absolute top-6 right-6">
                                 <div className="bg-white/95 dark:bg-[#011421]/95 backdrop-blur-xl px-8 py-5 rounded-[2rem] shadow-3xl border border-white/20">
                                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Estimated Fare</p>
-                                    <h4 className="text-3xl font-black text-green-500">৳{ride.fare}</h4>
+                                    <h4 className="text-3xl font-black text-green-500">৳{ride.fare || 0}</h4>
                                 </div>
                             </div>
 

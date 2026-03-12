@@ -14,11 +14,20 @@ import {
   Car,
   Calendar,
   Wallet,
-  Coins
+  Coins,
+  ChevronRight,
+  Loader2,
+  Search
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import axios from "axios";
+import { getPassengerSocket, disconnectPassengerSocket } from "@/lib/socket";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // Dynamically import Map to prevent SSR issues with leaflet
 const DynamicMap = dynamic(() => import("./_components/DynamicMap"), {
@@ -33,28 +42,75 @@ const DynamicMap = dynamic(() => import("./_components/DynamicMap"), {
   ),
 });
 
-// Mock Database for Locations to simulate search
-const LOCATION_DB = [
-  { name: "Gulshan 1, Dhaka", coords: [23.7806, 90.4161] },
-  { name: "Banani, Dhaka", coords: [23.7915, 90.4072] },
-  { name: "Dhanmondi, Dhaka", coords: [23.7461, 90.3742] },
-  { name: "Mirpur 10, Dhaka", coords: [23.8069, 90.3687] },
-  { name: "Uttara, Dhaka", coords: [23.8759, 90.3795] },
-  { name: "Motijheel, Dhaka", coords: [23.7250, 90.4187] },
-];
-
-const VEHICLE_TYPES = [
-  { id: "bike", name: "Bike", icon: Bike, time: "3 mins", multiplier: 1, capacity: 1 },
-  { id: "car", name: "Regular Car", icon: Car, time: "5 mins", multiplier: 2.5, capacity: 4 },
-  { id: "premium", name: "Premium Car", icon: CarFront, time: "8 mins", multiplier: 4, capacity: 4 },
-];
+const VEHICLE_META = {
+  bike: { icon: Bike, multiplier: 1, capacity: 1, label: "Bike" },
+  car: { icon: Car, multiplier: 2.5, capacity: 4, label: "Regular Car" },
+  premium: { icon: CarFront, multiplier: 4, capacity: 4, label: "Premium Car" }
+};
 
 export default function BookRide() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const passengerId = session?.user?.id;
+
   // State
   const [pickup, setPickup] = useState("");
   const [pickupCoords, setPickupCoords] = useState(null);
   const [dropoff, setDropoff] = useState("");
   const [dropoffCoords, setDropoffCoords] = useState(null);
+  const [nearbyRiders, setNearbyRiders] = useState({}); // riderId -> { lat, lng, ... }
+
+  // Initial geocoding if params exist
+  useEffect(() => {
+    const p = searchParams.get("pickup");
+    const d = searchParams.get("dropoff");
+
+    const geocode = async (query, setter, coordsSetter) => {
+      try {
+        const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=bd&limit=1`);
+        if (res.data.length > 0) {
+          setter(res.data[0].display_name);
+          coordsSetter([parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)]);
+        } else {
+          setter(query); // Fallback to raw text
+        }
+      } catch (err) {
+        console.error("Auto-geocoding error:", err);
+        setter(query);
+      }
+    };
+
+    if (p) geocode(p, setPickup, setPickupCoords);
+    if (d) geocode(d, setDropoff, setDropoffCoords);
+  }, [searchParams]);
+
+  // Socket Integration for live rider tracking
+  useEffect(() => {
+    if (!passengerId) return;
+
+    const socket = getPassengerSocket(passengerId);
+
+    socket.on("connect", () => {
+      console.log("🔌 [SOCKET] Passenger connected, requesting riders...");
+      socket.emit("get-online-riders");
+    });
+
+    socket.on("riders:update", (riders) => {
+      console.log("📡 [SOCKET] Received riders update:", Object.keys(riders).length, "riders online");
+      setNearbyRiders(riders);
+    });
+
+    socket.on("online-riders", (riders) => {
+      setNearbyRiders(riders);
+    });
+
+    return () => {
+      socket.off("riders:update");
+      socket.off("online-riders");
+      // Don't disconnect here as we might need it for active ride tracking later
+    };
+  }, [passengerId]);
 
   const [activeInput, setActiveInput] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -62,6 +118,7 @@ export default function BookRide() {
   const [distance, setDistance] = useState(null);
   const [duration, setDuration] = useState(null);
 
+  const [estimates, setEstimates] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [scheduleType, setScheduleType] = useState("now"); // "now" | "later"
   const [scheduleDate, setScheduleDate] = useState("");
@@ -73,18 +130,24 @@ export default function BookRide() {
   const [paymentMethod, setPaymentMethod] = useState("wallet");
 
   const [isBooking, setIsBooking] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
 
-  // Handle Location Search
-  const handleLocationSearch = (query, type) => {
+  // Handle Location Search (Nominatim API for real addresses)
+  const handleLocationSearch = async (query, type) => {
     if (type === 'pickup') setPickup(query);
     else setDropoff(query);
 
     if (query.length > 2) {
-      const filtered = LOCATION_DB.filter(loc =>
-        loc.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setSuggestions(filtered);
+      try {
+        const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=bd&limit=5`);
+        const formatted = res.data.map(item => ({
+          name: item.display_name,
+          coords: [parseFloat(item.lat), parseFloat(item.lon)]
+        }));
+        setSuggestions(formatted);
+      } catch (err) {
+        console.error("Search error:", err);
+      }
     } else {
       setSuggestions([]);
     }
@@ -92,38 +155,58 @@ export default function BookRide() {
 
   const selectLocation = (loc, type) => {
     if (type === 'pickup') {
-      setPickup(loc.name);
+      setPickup(loc.name.split(',')[0]);
       setPickupCoords(loc.coords);
     } else {
-      setDropoff(loc.name);
+      setDropoff(loc.name.split(',')[0]);
       setDropoffCoords(loc.coords);
     }
     setSuggestions([]);
     setActiveInput(null);
   };
 
-  // Mock Fare Calculation whenever locations change
+  // Fetch Fare Estimates from Backend
   useEffect(() => {
-    if (pickupCoords && dropoffCoords) {
-      // Very basic mock distance calc (Euclidean just for UI display, actual would be via routing API)
-      const latDiff = pickupCoords[0] - dropoffCoords[0];
-      const lngDiff = pickupCoords[1] - dropoffCoords[1];
-      const mockDist = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111; // rough km conversion
+    const fetchEstimates = async () => {
+      if (pickupCoords && dropoffCoords) {
+        setIsCalculating(true);
+        try {
+          // Calculate distance (Euclidean approx for display)
+          const latDiff = pickupCoords[0] - dropoffCoords[0];
+          const lngDiff = pickupCoords[1] - dropoffCoords[1];
+          const distKm = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111 * 1.2;
+          const durMin = Math.round(distKm * 4);
 
-      const distKm = Math.max(1.5, mockDist).toFixed(1);
-      const estTime = Math.max(5, Math.floor(mockDist * 4)); // rough 15km/h speed in city
+          setDistance(distKm.toFixed(1));
+          setDuration(durMin);
 
-      setDistance(distKm);
-      setDuration(estTime);
-    } else {
-      setDistance(null);
-      setDuration(null);
-    }
+          const res = await axios.post(`${API_BASE_URL}/bookings/fare-estimate`, {
+            distance: distKm,
+            duration: durMin
+          });
+
+          if (res.data.success) {
+            setEstimates(res.data.estimates);
+            setSelectedVehicle(res.data.estimates[0]); // Default to first
+          }
+        } catch (error) {
+          console.error("Fare estimate failed:", error);
+        } finally {
+          setIsCalculating(false);
+        }
+      } else {
+        setDistance(null);
+        setDuration(null);
+        setEstimates([]);
+      }
+    };
+
+    fetchEstimates();
   }, [pickupCoords, dropoffCoords]);
 
   const applyPromo = () => {
     if (promoCode.toUpperCase() === "ONWAY50") {
-      setDiscount(0.5); // 50TK off logic check later
+      setDiscount(50);
       toast.success("Promo code applied!");
     } else {
       setDiscount(0);
@@ -131,15 +214,16 @@ export default function BookRide() {
     }
   };
 
-  const calculateFare = (multiplier) => {
-    if (!distance) return 0;
-    const baseFare = 40;
-    const perKm = 15;
-    const fare = (baseFare + (parseFloat(distance) * perKm)) * multiplier;
-    return Math.floor(fare - (fare * discount));
+  const getFinalPrice = (veh) => {
+    if (!veh) return 0;
+    return Math.max(10, veh.estimatedPrice - discount);
   };
 
-  const handleBookRide = () => {
+  const handleBookRide = async () => {
+    if (!passengerId) {
+      toast.error("Please login to book a ride");
+      return;
+    }
     if (!pickupCoords || !dropoffCoords) {
       toast.error("Please select pickup and drop-off locations");
       return;
@@ -148,131 +232,135 @@ export default function BookRide() {
       toast.error("Please select a vehicle type");
       return;
     }
-    if (scheduleType === "later" && (!scheduleDate || !scheduleTime)) {
-      toast.error("Please select schedule date and time");
-      return;
-    }
 
     setIsBooking(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const payload = {
+        passengerId,
+        pickupLocation: {
+          address: pickup,
+          lat: pickupCoords[0],
+          lng: pickupCoords[1]
+        },
+        dropoffLocation: {
+          address: dropoff,
+          lat: dropoffCoords[0],
+          lng: dropoffCoords[1]
+        },
+        vehicleType: selectedVehicle.type,
+        distance: parseFloat(distance),
+        duration,
+        price: getFinalPrice(selectedVehicle),
+        paymentMethod,
+        routeGeometry: [pickupCoords, dropoffCoords],
+        bookingStatus: "searching"
+      };
+
+      const res = await axios.post(`${API_BASE_URL}/bookings`, payload);
+
+      if (res.data.success) {
+        toast.success("Ride requested! Searching for drivers...");
+        router.push(`/dashboard/passenger/active-ride?bookingId=${res.data.booking._id}`);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Booking failed");
+    } finally {
       setIsBooking(false);
-      setBookingSuccess(true);
-      toast.success("Ride booked successfully!");
-    }, 2000);
+    }
   };
 
-  if (bookingSuccess) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-white/60 backdrop-blur-xl rounded-[40px] p-8 border border-white/40 shadow-xl text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-24 h-24 bg-green-100 text-[#2FCA71] rounded-full flex items-center justify-center mb-6"
-        >
-          <CheckCircle2 size={48} />
-        </motion.div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">Ride Confirmed!</h2>
-        <p className="text-gray-600 mb-8 max-w-md">
-          Your driver is on the way. You can track their real-time location in your active rides panel.
-        </p>
-        <div className="flex gap-4">
-          <Link href="/dashboard/passenger/active-ride" className="bg-[#2FCA71] text-white px-6 py-3 rounded-full font-medium hover:bg-[#25a55b] transition">
-            Track Ride
-          </Link>
-          <button onClick={() => {
-            setBookingSuccess(false);
-            setPickup(""); setDropoff(""); setPickupCoords(null); setDropoffCoords(null);
-            setSelectedVehicle(null);
-          }} className="bg-gray-100 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition">
-            Book Another
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Map Click Handler
+  const onMapClick = async (lat, lng) => {
+    try {
+      const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const address = res.data.display_name.split(',')[0];
+      const coords = [lat, lng];
+
+      if (activeInput === 'pickup' || (!pickupCoords && activeInput !== 'dropoff')) {
+        setPickup(address);
+        setPickupCoords(coords);
+      } else {
+        setDropoff(address);
+        setDropoffCoords(coords);
+      }
+      toast.success("Location selected from map");
+    } catch (err) {
+      console.error("Reverse geocode error:", err);
+    }
+  };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 h-full pb-20">
 
-      {/* LEFT: MAP (Sticky) */}
-      <div className="w-full lg:w-1/2 h-full order-1 lg:order-2 rounded-3xl overflow-hidden relative shadow-xl border border-white/50">
-        <div className="absolute top-4 right-4 z-[1000] bg-white/90 backdrop-blur shadow p-3 rounded-xl">
-          <button
-            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-[#2FCA71]"
-            onClick={() => {
-              // Auto detect mock
-              toast.success("Location detected!");
-              selectLocation(LOCATION_DB[0], 'pickup');
-            }}
-          >
-            <Navigation size={16} />
-            Auto-detect
-          </button>
-        </div>
-        <DynamicMap pickup={pickupCoords} dropoff={dropoffCoords} />
-      </div>
-
-      {/* RIGHT: BOOKING PANEL (Scrollable) */}
-      <div className="w-full lg:w-1/2 h-full overflow-y-auto pr-2 no-scrollbar order-2 lg:order-1 flex flex-col gap-6">
+      {/* LEFT: BOOKING PANEL (Scrollable) */}
+      <div className="order-2 lg:order-1 flex flex-col gap-6 overflow-y-auto pr-2 no-scrollbar">
 
         {/* 1. LOCATIONS CARD */}
-        <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/40 shadow-sm relative">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Plan your journey</h2>
+        <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm relative overflow-visible">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-2 w-12 bg-[#2FCA71] rounded-full" />
+            <h2 className="text-xl font-black text-secondary uppercase tracking-widest">Plan Your Journey</h2>
+          </div>
 
           <div className="relative flex gap-4">
-            {/* Timeline connectors */}
-            <div className="flex flex-col items-center mt-2.5">
-              <div className="w-4 h-4 rounded-full bg-blue-100 border-4 border-blue-500 z-10" />
-              <div className="w-0.5 h-12 bg-gray-200" />
-              <div className="w-4 h-4 rounded-full bg-green-100 border-4 border-[#2FCA71] z-10" />
+            <div className="flex flex-col items-center mt-3">
+              <div className="w-5 h-5 rounded-full bg-blue-50 border-4 border-blue-500 z-10 shadow-sm" />
+              <div className="w-0.5 flex-grow bg-gradient-to-b from-blue-500 to-[#2FCA71] my-1" />
+              <div className="w-5 h-5 rounded-full bg-green-50 border-4 border-[#2FCA71] z-10 shadow-sm" />
             </div>
 
-            <div className="flex-1 flex flex-col gap-4">
-              {/* Pickup Input */}
-              <div className="relative">
+            <div className="flex-1 flex flex-col gap-5">
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                  <Search size={18} />
+                </div>
                 <input
                   type="text"
                   placeholder="Enter pickup location"
                   value={pickup}
                   onChange={(e) => handleLocationSearch(e.target.value, 'pickup')}
                   onFocus={() => setActiveInput('pickup')}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition"
+                  className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-secondary focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all"
                 />
               </div>
 
-              {/* Drop-off Input */}
-              <div className="relative">
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2FCA71] transition-colors">
+                  <MapPin size={18} />
+                </div>
                 <input
                   type="text"
                   placeholder="Where to?"
                   value={dropoff}
                   onChange={(e) => handleLocationSearch(e.target.value, 'dropoff')}
                   onFocus={() => setActiveInput('dropoff')}
-                  className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/50 focus:border-[#2FCA71] focus:bg-white transition"
+                  className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-secondary focus:outline-none focus:ring-4 focus:ring-[#2FCA71]/10 focus:border-[#2FCA71] focus:bg-white transition-all shadow-sm"
                 />
               </div>
             </div>
           </div>
 
-          {/* Suggestions Dropdown */}
           <AnimatePresence>
             {suggestions.length > 0 && activeInput && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[50]"
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className="absolute left-8 right-8 mt-2 bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden z-[100]"
               >
                 {suggestions.map((loc, idx) => (
                   <button
                     key={idx}
                     onClick={() => selectLocation(loc, activeInput)}
-                    className="flex flex-col w-full text-left px-5 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0"
+                    className="flex items-start gap-4 w-full text-left px-6 py-4 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
                   >
-                    <span className="font-medium text-gray-800 flex items-center gap-2">
-                      <MapPin size={14} className="text-gray-400" /> {loc.name}
-                    </span>
+                    <div className="mt-1 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                      <MapPin size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-secondary text-sm line-clamp-1">{loc.name.split(',')[0]}</p>
+                      <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider line-clamp-1">{loc.name}</p>
+                    </div>
                   </button>
                 ))}
               </motion.div>
@@ -280,182 +368,91 @@ export default function BookRide() {
           </AnimatePresence>
         </div>
 
-        {/* ONLY SHOW REST IF LOCATIONS ARE SET */}
-        {distance && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col gap-6"
-          >
-            {/* TRIP SUMMARY */}
-            <div className="flex items-center justify-between bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
-              <div className="flex items-center gap-2 text-blue-800">
-                <Navigation size={18} />
-                <span className="font-semibold">{distance} km</span>
-              </div>
-              <div className="w-px h-6 bg-blue-200" />
-              <div className="flex items-center gap-2 text-blue-800">
-                <Clock size={18} />
-                <span className="font-semibold">~{duration} mins</span>
-              </div>
-            </div>
-
-            {/* 2. SCHEDULING */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/40 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-4">When do you want to leave?</h3>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setScheduleType("now")}
-                  className={`flex-1 py-3 rounded-xl font-medium border transition-all ${scheduleType === "now" ? "bg-[#2FCA71]/10 border-[#2FCA71] text-[#2FCA71]" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                >
-                  Ride Now
-                </button>
-                <button
-                  onClick={() => setScheduleType("later")}
-                  className={`flex-1 py-3 items-center justify-center flex gap-2 rounded-xl font-medium border transition-all ${scheduleType === "later" ? "bg-blue-50 border-blue-500 text-blue-600" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                >
-                  <Calendar size={18} />
-                  Schedule Later
-                </button>
-              </div>
-
-              {scheduleType === "later" && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="flex gap-4 mt-4">
-                  <input
-                    type="date"
-                    min={new Date().toISOString().split('T')[0]}
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  />
-                  <input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  />
-                </motion.div>
-              )}
-            </div>
-
-            {/* 3. VEHICLE SELECTION */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/40 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-4">Available Rides</h3>
-              <div className="space-y-3">
-                {VEHICLE_TYPES.map(vehicle => {
-                  const Icon = vehicle.icon;
-                  const isSelected = selectedVehicle?.id === vehicle.id;
-                  const fare = calculateFare(vehicle.multiplier);
-
-                  return (
-                    <button
-                      key={vehicle.id}
-                      onClick={() => setSelectedVehicle(vehicle)}
-                      className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isSelected
-                        ? "border-[#2FCA71] bg-[#2FCA71]/5 ring-2 ring-[#2FCA71]/20 shadow-md transform scale-[1.01]"
-                        : "border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50"
-                        }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${isSelected ? 'bg-[#2FCA71]/20 text-[#2FCA71]' : 'bg-gray-100 text-gray-600'}`}>
-                          <Icon size={24} />
-                        </div>
-                        <div className="text-left">
-                          <h4 className="font-bold text-gray-800">{vehicle.name}</h4>
-                          <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full mt-1 inline-block">
-                            {vehicle.time} away • {vehicle.capacity} seats
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg font-bold text-gray-800">৳{fare}</span>
-                        {discount > 0 && <div className="text-xs text-[#2FCA71] font-medium mt-0.5">Discount applied</div>}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 4. EXTRAS: PROMO & PAYMENT */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/40 shadow-sm space-y-6">
-
-              {/* Promo */}
-              <div>
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                  <Ticket size={16} /> Promo Code
-                </label>
-                <div className="flex gap-2 relative">
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    placeholder="ONWAY50"
-                    className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#2FCA71uppercase]"
-                  />
-                  <button onClick={applyPromo} className="px-6 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition">
-                    Apply
-                  </button>
+        <AnimatePresence>
+          {distance && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                    <Navigation size={22} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Distance</p>
+                    <p className="text-xl font-black text-secondary tracking-tight">{distance} <span className="text-xs">KM</span></p>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                    <Clock size={22} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Est. Time</p>
+                    <p className="text-xl font-black text-secondary tracking-tight">{duration} <span className="text-xs">MINS</span></p>
+                  </div>
                 </div>
               </div>
 
-              {/* Payment Method */}
-              <div>
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
-                  <CreditCard size={16} /> Payment Method
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => setPaymentMethod('wallet')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border ${paymentMethod === 'wallet' ? 'border-[#2FCA71] bg-[#2FCA71]/10 text-[#2FCA71]' : 'bg-white border-gray-100 text-gray-600'}`}
-                  >
-                    <Wallet size={20} className="mb-1" />
-                    <span className="text-xs font-semibold">Wallet</span>
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod('cash')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border ${paymentMethod === 'cash' ? 'border-[#2FCA71] bg-[#2FCA71]/10 text-[#2FCA71]' : 'bg-white border-gray-100 text-gray-600'}`}
-                  >
-                    <Coins size={20} className="mb-1" />
-                    <span className="text-xs font-semibold">Cash</span>
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod('card')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border ${paymentMethod === 'card' ? 'border-[#2FCA71] bg-[#2FCA71]/10 text-[#2FCA71]' : 'bg-white border-gray-100 text-gray-600'}`}
-                  >
-                    <CreditCard size={20} className="mb-1" />
-                    <span className="text-xs font-semibold">Card</span>
-                  </button>
+              <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm">
+                <h3 className="text-lg font-black text-secondary uppercase tracking-widest mb-6">Available Rides</h3>
+                <div className="space-y-4">
+                  {estimates.map(vehicle => {
+                    const meta = VEHICLE_META[vehicle.type];
+                    const Icon = meta.icon;
+                    const isSelected = selectedVehicle?.type === vehicle.type;
+                    return (
+                      <button
+                        key={vehicle.type}
+                        onClick={() => setSelectedVehicle(vehicle)}
+                        className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all ${isSelected ? "border-[#2FCA71] bg-[#2FCA71]/5 ring-4 ring-[#2FCA71]/5" : "border-gray-100 bg-white hover:bg-gray-50"}`}
+                      >
+                        <div className="flex items-center gap-5">
+                          <div className={`h-16 w-16 rounded-[1.5rem] flex items-center justify-center ${isSelected ? 'bg-[#2FCA71] text-white' : 'bg-gray-50 text-gray-400'}`}>
+                            <Icon size={32} />
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-black text-secondary text-lg">{meta.label}</h4>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{meta.capacity} Seats</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-secondary tracking-tighter">৳{getFinalPrice(vehicle)}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-            </div>
+              <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm space-y-8">
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block mb-3">Promo Code</label>
+                  <div className="flex gap-3">
+                    <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="ONWAY50" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold text-secondary uppercase" />
+                    <button onClick={applyPromo} className="px-8 bg-secondary text-white rounded-2xl text-xs font-black uppercase tracking-widest">Apply</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block mb-4">Payment Method</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['wallet', 'cash', 'card'].map(pm => (
+                      <button key={pm} onClick={() => setPaymentMethod(pm)} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border transition-all ${paymentMethod === pm ? 'bg-secondary text-white' : 'bg-white text-gray-400'}`}>
+                        <span className="text-[9px] font-black uppercase tracking-widest">{pm}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-            {/* ACTION BUTTON */}
-            <button
-              onClick={handleBookRide}
-              disabled={!selectedVehicle || isBooking}
-              className={`w-full py-5 rounded-2xl text-white font-bold text-lg flex items-center justify-center gap-2 shadow-xl transition-all duration-300
-                ${(!selectedVehicle || isBooking) ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-[#2FCA71] hover:bg-[#25a55b] hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(47,202,113,0.3)]'}
-              `}
-            >
-              {isBooking ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Confirming...
-                </>
-              ) : (
-                <>
-                  {scheduleType === 'now' ? 'Confirm Booking' : 'Schedule Ride'}
-                  <ChevronRight size={20} />
-                </>
-              )}
-            </button>
+              <button onClick={handleBookRide} disabled={!selectedVehicle || isBooking} className={`w-full h-20 rounded-[2rem] text-white font-black text-lg uppercase tracking-[0.2em] flex items-center justify-center gap-4 ${(!selectedVehicle || isBooking) ? 'bg-gray-200' : 'bg-[#2FCA71]'}`}>
+                {isBooking ? <Loader2 className="animate-spin" /> : "Confirm Booking"}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-          </motion.div>
-        )}
+      <div className="order-1 lg:order-2 h-[400px] lg:h-full min-h-[400px] rounded-[3rem] overflow-hidden sticky top-0 border border-gray-100 shadow-2xl">
+        <DynamicMap pickup={pickupCoords} dropoff={dropoffCoords} nearbyRiders={Object.values(nearbyRiders)} onMapClick={onMapClick} />
       </div>
     </div>
   );

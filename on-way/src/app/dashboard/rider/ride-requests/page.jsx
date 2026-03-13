@@ -36,21 +36,27 @@ export default function RideRequestsPage() {
             if (!riderId) return;
             try {
                 setIsLoadingRides(true);
-                const res = await axios.get(`${API_BASE_URL}/bookings?status=searching`);
+                // FEATURE 1: Only show searching and recent rides
+                const res = await axios.get(`${API_BASE_URL}/bookings?status=searching&recent=true`);
                 if (res.data.success) {
                     // Map existing rides to expected format for the card
-                    const pendingRides = res.data.data.map(ride => ({
-                        bookingId: ride._id,
-                        pickupLocation: ride.pickupLocation.address,
-                        dropLocation: ride.dropoffLocation.address,
-                        pickupCoords: [ride.pickupLocation.lat, ride.pickupLocation.lng],
-                        dropCoords: [ride.dropoffLocation.lat, ride.dropoffLocation.lng],
-                        distance: ride.distance,
-                        duration: ride.duration,
-                        fare: ride.price,
-                        passengerName: "Pending Passenger", // Fetch actual names if needed
-                        expiresAt: Date.now() + 30000 // Initial 30s for already existing ones
-                    }));
+                    const pendingRides = res.data.data.map(ride => {
+                        const createdAt = new Date(ride.createdAt).getTime();
+                        return {
+                            ...ride,
+                            bookingId: ride._id,
+                            pickupLocation: ride.pickupLocation.address,
+                            dropLocation: ride.dropoffLocation.address,
+                            pickupCoords: [ride.pickupLocation.lat, ride.pickupLocation.lng],
+                            dropCoords: [ride.dropoffLocation.lat, ride.dropoffLocation.lng],
+                            distance: ride.distance,
+                            duration: ride.duration,
+                            fare: ride.price,
+                            passengerName: ride.passengerName || "Passenger",
+                            // FEATURE 2: Expires at exactly 60 seconds after creation
+                            expiresAt: createdAt + 60000
+                        };
+                    });
                     setRequests(pendingRides);
                 }
             } catch (err) {
@@ -77,9 +83,14 @@ export default function RideRequestsPage() {
             // Play sound
             audioRef.current?.play().catch(e => console.log("Sound play error:", e));
 
-            // Add to list with a 30s timer (extended for better UX)
+            // FEATURE 3: Real-time driver matching
+            const createdAt = ride.createdAt ? new Date(ride.createdAt).getTime() : Date.now();
+
             setRequests(prev => [
-                { ...ride, expiresAt: Date.now() + 30000 },
+                {
+                    ...ride,
+                    expiresAt: createdAt + 60000
+                },
                 ...prev
             ]);
 
@@ -91,73 +102,52 @@ export default function RideRequestsPage() {
 
         socket.on("new-ride-request", handleNewRequest);
 
-        // � Response to server's location sync request
-        socket.on("request-rider-location", () => {
-            console.log("�📍 [SOCKET] Server requested immediate location sync");
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        socket.emit("rider:update-location", {
-                            riderId,
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude
-                        });
-                    },
-                    (err) => console.log("Immediate loc sync failed:", err)
-                );
-            }
-        });
-
-        // 📍 Persistent Geolocation Tracking
-        let watchId = null;
-        if (navigator.geolocation) {
-            console.log("📍 [GEO] Starting live tracking on Ride Requests page:", riderId);
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    socket.emit("rider:update-location", {
-                        riderId,
-                        lat: latitude,
-                        lng: longitude
-                    });
-                    console.log(`📡 [SOCKET] Sent location: ${latitude}, ${longitude}`);
-                },
-                (error) => console.error("📍 [GEO] error:", error),
-                { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-            );
-        }
+        // 🔹 Timer Management (Feature 2 - Auto remove)
+        const interval = setInterval(() => {
+            setRequests(prev => {
+                const now = Date.now();
+                const filtered = prev.filter(req => req.expiresAt > now);
+                if (filtered.length !== prev.length) {
+                    console.log("🧹 [CLEANUP] Removed expired requests");
+                }
+                return filtered;
+            });
+        }, 1000);
 
         return () => {
             socket.off("new-ride-request", handleNewRequest);
-            socket.off("request-rider-location");
-            if (watchId) navigator.geolocation.clearWatch(watchId);
+            clearInterval(interval);
         };
     }, [riderId]);
-
-    // 🔹 Timer Management
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setRequests(prev => prev.filter(req => req.expiresAt > Date.now()));
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
 
     const handleAccept = async (bookingId) => {
         if (!riderId) return;
         const socket = getRiderSocket(riderId);
 
-        console.log(`📤 Accepting ride ${bookingId}`);
+        console.log(`📤 [PIPELINE] Accepting ride ${bookingId}`);
+
+        // FEATURE 5: Socket improvement - emit rideAccepted
+        socket.emit("rideAccepted", {
+            rideId: bookingId,
+            driverId: riderId
+        });
+
+        // Still emit the original event for server compatibility if needed
         socket.emit("ride:accept", {
             bookingId: bookingId,
             riderId: riderId
         });
 
-        toast.success("Ride Accepted! Redirecting to mission...");
+        toast.success("Ride Accepted! Initializing GPS Link...", {
+            icon: '🚀',
+            style: { borderRadius: '15px', background: '#011421', color: '#fff' }
+        });
 
         // Short delay for socket to process before nav
         setTimeout(() => {
+            // Use router.push for smoother SPA navigation
             window.location.href = `/dashboard/rider/ongoing-ride?bookingId=${bookingId}`;
-        }, 800);
+        }, 1200);
     };
 
     const handleReject = (rideId) => {
@@ -252,7 +242,7 @@ function RideRequestCard({ ride, onAccept, onReject }) {
         return () => clearInterval(interval);
     }, [ride.expiresAt]);
 
-    const progress = (timeLeft / 30) * 100;
+    const progress = (timeLeft / 60) * 100;
 
     return (
         <motion.div
@@ -260,7 +250,7 @@ function RideRequestCard({ ride, onAccept, onReject }) {
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -100 }}
-            className="group relative overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white shadow-xl hover:shadow-2xl transition-all duration-500"
+            className="group relative overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
         >
             {/* Map Preview */}
             <div className="h-56 relative rounded-[2rem] overflow-hidden m-3 border border-gray-50 shadow-inner group-hover:border-primary/20 transition-all">

@@ -4,28 +4,41 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix for default Leaflet markers in Next.js
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+import { configureLeafletIcons, darkThemeTileLayer } from "@/lib/leafletConfig";
+
+// Initialize Leaflet global configurations
+if (typeof window !== 'undefined') {
+    configureLeafletIcons();
+}
+
+const carMarkerTransition = `
+  .car-marker-transition {
+    transition: all 0.5s ease-in-out;
+  }
+`;
 
 const pickupIcon = new L.Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/1673/1673188.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconSize: [35, 35],
+    iconAnchor: [17, 35],
 });
 
 const dropoffIcon = new L.Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/5693/5693831.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Using similar pin for consistency
+    iconSize: [35, 35],
+    iconAnchor: [17, 35],
+    className: 'dropoff-marker' // Can style differently in CSS
 });
 
-const driverIcon = new L.Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3202/3202926.png',
+const driverIcon = L.divIcon({
+    className: 'car-marker-container',
+    html: `
+        <div class="car-marker-transition" style="width: 40px; height: 40px; background: #2fca71; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(47, 202, 113, 0.5); border: 2px solid white;">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42.99L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+            </svg>
+        </div>
+    `,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
 });
@@ -61,10 +74,11 @@ export default function DynamicMap({ pickup, dropoff, driver, nearbyRiders = [],
 
     return (
         <div className="w-full h-full z-0 relative">
+            <style>{carMarkerTransition}</style>
             <MapContainer center={position} zoom={13} scrollWheelZoom={true} className="w-full h-full" zoomControl={false}>
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    attribution={darkThemeTileLayer.attribution}
+                    url={darkThemeTileLayer.url}
                 />
 
                 {pickup && (

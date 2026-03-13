@@ -12,9 +12,9 @@ const ridesRoutes = require("./routes/rides");
 const reviewsRoutes = require("./routes/reviews");
 const supportRoutes = require("./routes/support");
 const supportAgentRoutes = require("./routes/supportAgent");
-const bookingsRoutes = require("./routes/bookings");
+const bookingsRoutes = require("./routes/bookingRoutes");
 const paymentRoutes = require("./routes/payment");
-const ridersRoutes = require("./routes/riders");
+const ridersRoutes = require("./routes/riderRoutes");
 const promoCodeRoutes = require("./routes/promo");
 const emergencyRoutes = require("./routes/emergency");
 const dashboardRoutes = require("./routes/dashboard");
@@ -217,9 +217,16 @@ io.on("connection", (socket) => {
 
       io.emit("riders:update", socketStore.getAllRiders());
 
-      // Persist to DB periodically or on important moves
+      // Persist to DB periodically
       const database = await connectDB();
       const ridersCollection = database.collection("riders");
+
+      const rider = await ridersCollection.findOne({ _id: new ObjectId(riderId) });
+      if (rider && rider.currentRideId) {
+        const rideRoom = `ride:${rider.currentRideId.toString()}`;
+        io.to(rideRoom).emit("driver:location:updated", { lat, lng });
+      }
+
       await ridersCollection.updateOne(
         { _id: new ObjectId(riderId) },
         {
@@ -412,7 +419,7 @@ app.use("/api/support-agent", (req, res, next) => {
 });
 
 app.use("/api/bookings", (req, res, next) => {
-  bookingsRoutes(req.collections.bookingsCollection)(req, res, next);
+  bookingsRoutes(req.collections)(req, res, next);
 });
 
 app.use("/api/payment", (req, res, next) => {

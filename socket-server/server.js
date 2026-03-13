@@ -328,6 +328,178 @@ async function startSocketServer() {
       socket.emit("connectionStats", stats);
     });
 
+    // ==========================================
+    // 🚕 RIDE MATCHING & FLOW (FEATURE 3, 5, 7, 8)
+    // ==========================================
+
+    const bookingsCollection = database.collection("bookings");
+    const ridersCollection = database.collection("riders");
+
+    // 1. DRIVER ACCEPTS RIDE (FEATURE 5 & 9)
+    socket.on("ride:accept", async (data) => {
+      const { bookingId, riderId } = data;
+      console.log(`🚕 [RIDE] Accept attempt: Booking ${bookingId} by Rider ${riderId}`);
+
+      try {
+        const { ObjectId } = require("mongodb");
+        const bookingOid = new ObjectId(bookingId);
+        const riderOid = new ObjectId(riderId);
+
+        // ATOMIC CHECK: Only accept if status is still "searching"
+        const result = await bookingsCollection.findOneAndUpdate(
+          { _id: bookingOid, bookingStatus: "searching" },
+          {
+            $set: {
+              bookingStatus: "accepted",
+              riderId: riderOid,
+              updatedAt: new Date()
+            }
+          },
+          { returnDocument: "after" }
+        );
+
+        if (!result) {
+          console.log(`❌ [RIDE] Accept failed: Ride ${bookingId} already taken or expired`);
+          socket.emit("ride:accept:error", { message: "Ride is no longer available" });
+          return;
+        }
+
+        const updatedBooking = result;
+        console.log(`✅ [RIDE] Accept success: Booking ${bookingId} accepted by ${riderId}`);
+
+        // Update rider status to busy
+        await ridersCollection.updateOne(
+          { _id: riderOid },
+          { $set: { status: "busy", currentRideId: bookingOid } }
+        );
+
+        // Fetch rider/driver details for passenger
+        const driver = await ridersCollection.findOne({ _id: riderOid });
+
+        // Join both to a common ride room
+        const rideRoom = `ride:${bookingId}`;
+        socket.join(rideRoom);
+
+        // Notify passenger (in their private room)
+        const passengerRoom = `user:${updatedBooking.passengerId}`;
+        io.to(passengerRoom).emit("ride:accepted", {
+          bookingId,
+          driver: {
+            name: driver.name,
+            photo: driver.image || "/default-avatar.png",
+            rating: driver.rating || 5.0,
+            vehicle: driver.vehicleDetails || { type: driver.vehicleType, plate: "DHK-R 1234" }
+          },
+          eta: "5-10",
+          distance: "2.5 km"
+        });
+
+        // FEATURE 5: Specifically requested event name
+        io.to(passengerRoom).emit("rideAccepted", {
+          rideId: bookingId,
+          driverId: riderId
+        });
+
+        // Acknowledge to driver
+        socket.emit("ride:accept:success", { bookingId });
+
+      } catch (error) {
+        console.error("❌ [RIDE] Accept Error:", error);
+        socket.emit("ride:accept:error", { message: "Internal server error" });
+      }
+    });
+
+    // FEATURE 5: Explicit rideAccepted listener as requested
+    socket.on("rideAccepted", (data) => {
+      console.log("📡 [SOCKET] Explicit rideAccepted received from driver:", data);
+      // This is primarily for the driver to trigger the passenger redirect via server
+      // The atomic logic is already handled in ride:accept, but we ensure the passenger 
+      // gets the specific event they are listening for.
+    });
+
+    // 2. DRIVER ARRIVED (FEATURE 7)
+    socket.on("driver:arrived", async (data) => {
+      const { bookingId } = data;
+      console.log(`🏁 [RIDE] Driver arrived at pickup: Booking ${bookingId}`);
+
+      try {
+        const { ObjectId } = require("mongodb");
+        await bookingsCollection.updateOne(
+          { _id: new ObjectId(bookingId) },
+          { $set: { bookingStatus: "arrived", updatedAt: new Date() } }
+        );
+
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+        const passengerRoom = `user:${booking.passengerId}`;
+
+        io.to(passengerRoom).emit("driver:arrived", {
+          bookingId,
+          message: "Driver has arrived at your location"
+        });
+
+        // Also emit to ride room
+        io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "arrived" });
+
+      } catch (error) {
+        console.error("❌ [RIDE] Arrived Error:", error);
+      }
+    });
+
+    // 3. START RIDE (FEATURE 8)
+    socket.on("ride:start", async (data) => {
+      const { bookingId } = data;
+      console.log(`🚕 [RIDE] Ride started: Booking ${bookingId}`);
+
+      try {
+        const { ObjectId } = require("mongodb");
+        await bookingsCollection.updateOne(
+          { _id: new ObjectId(bookingId) },
+          { $set: { bookingStatus: "started", updatedAt: new Date() } }
+        );
+
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+        io.to(`user:${booking.passengerId}`).emit("ride:started", { bookingId });
+        io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "started" });
+
+      } catch (error) {
+        console.error("❌ [RIDE] Start Error:", error);
+      }
+    });
+
+    // 4. COMPLETE RIDE
+    socket.on("ride:complete", async (data) => {
+      const { bookingId, riderId } = data;
+      console.log(`✅ [RIDE] Ride completed: Booking ${bookingId}`);
+
+      try {
+        const { ObjectId } = require("mongodb");
+        await bookingsCollection.updateOne(
+          { _id: new ObjectId(bookingId) },
+          { $set: { bookingStatus: "completed", updatedAt: new Date() } }
+        );
+
+        // Reset rider to online
+        await ridersCollection.updateOne(
+          { _id: new ObjectId(riderId) },
+          { $set: { status: "online", currentRideId: null } }
+        );
+
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+        io.to(`user:${booking.passengerId}`).emit("ride:completed", { bookingId });
+        io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "completed" });
+
+      } catch (error) {
+        console.error("❌ [RIDE] Complete Error:", error);
+      }
+    });
+
+    // 5. JOIN ROOMS (Helper)
+    socket.on("join:room", (data) => {
+      const { room } = data;
+      socket.join(room);
+      console.log(`🛋️ [SOCKET] ${socket.id} joined room: ${room}`);
+    });
+
     // ✅ Handle disconnection
     socket.on("disconnect", async (reason) => {
       console.log(`🔌 Admin client disconnected: ${socket.id} - Reason: ${reason}`);

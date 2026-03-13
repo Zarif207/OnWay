@@ -18,7 +18,7 @@ import {
     Map as MapIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRiderSocket } from "@/lib/socket";
+import { useSocket } from "@/hooks/useSocket";
 import axios from "axios";
 import toast from "react-hot-toast";
 import dynamic from "next/dynamic";
@@ -39,21 +39,36 @@ function OngoingRideContent() {
 
     const [ride, setRide] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [status, setStatus] = useState("accepted"); // accepted -> arrived -> picked_up -> completed
+    const [status, setStatus] = useState("accepted");
     const [elapsedTime, setElapsedTime] = useState(0);
+    const [otpValue, setOtpValue] = useState("");
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [driverPos, setDriverPos] = useState(null);
+
+    const { socket, emit, on, off } = useSocket('rider');
 
     // Fetch initial ride data
     useEffect(() => {
         const fetchRide = async () => {
             if (!bookingId) return;
             try {
-                const res = await axios.get(`${API_BASE_URL}/bookings/${bookingId}`);
-                setRide(res.data.data);
-                setStatus(res.data.data.status);
-                setIsLoading(false);
+                setIsLoading(true);
+                // FEATURE FIX: Using the optimized ride fetch endpoint
+                const res = await axios.get(`${API_BASE_URL}/rides/${bookingId}`);
+                if (res.data.success && res.data.ride) {
+                    const rideData = res.data.ride;
+                    setRide(rideData);
+                    setStatus(rideData.status || rideData.bookingStatus);
+                } else {
+                    toast.error("Mission data not found.");
+                }
             } catch (error) {
                 console.error("Fetch ride error:", error);
-                toast.error("Failed to load mission data.");
+                // Only show error if it's a real failure, not just initial state
+                if (error.response?.status === 404) {
+                    toast.error("Mission not found in system.");
+                }
+            } finally {
                 setIsLoading(false);
             }
         };
@@ -68,22 +83,37 @@ function OngoingRideContent() {
         return () => clearInterval(timer);
     }, []);
 
+    // Live Geolocation Tracking
+    useEffect(() => {
+        if (!riderId || status === 'completed') return;
+
+        const watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setDriverPos([latitude, longitude]);
+                emit('rider:update-location', { riderId, lat: latitude, lng: longitude });
+            },
+            (err) => console.error("GPS Watch Error:", err),
+            { enableHighAccuracy: true, distanceFilter: 10 }
+        );
+
+        return () => navigator.geolocation.clearWatch(watchId);
+    }, [riderId, status, emit]);
+
     // Socket listeners for passenger updates
     useEffect(() => {
-        if (!riderId || !bookingId) return;
-        const socket = getRiderSocket(riderId);
+        if (!bookingId || !socket) return;
 
-        socket.on("ride:cancelled", (data) => {
+        const onCancelled = (data) => {
             if (data.bookingId === bookingId) {
                 toast.error("Passenger cancelled the ride.");
                 router.push("/dashboard/rider");
             }
-        });
-
-        return () => {
-            socket.off("ride:cancelled");
         };
-    }, [riderId, bookingId, router]);
+
+        on("ride:cancelled", onCancelled);
+        return () => off("ride:cancelled", onCancelled);
+    }, [bookingId, router, on, off, socket]);
 
     const updateStatus = async (newStatus) => {
         try {
@@ -93,21 +123,41 @@ function OngoingRideContent() {
 
             if (res.data.success) {
                 setStatus(newStatus);
-                const socket = getRiderSocket(riderId);
-                socket.emit("ride:status_update", {
-                    bookingId,
-                    status: newStatus,
-                    riderId
-                });
-
-                toast.success(`Mission Update: ${newStatus.replace('_', ' ').toUpperCase()}`);
-
-                if (newStatus === "completed") {
+                if (newStatus === "arrived") {
+                    emit("driver:arrived", { bookingId });
+                    toast.success("Arrival notified to passenger.");
+                } else if (newStatus === "completed") {
+                    emit("ride:complete", { bookingId, riderId });
+                    toast.success("Mission Accomplished!");
                     setTimeout(() => router.push("/dashboard/rider"), 2000);
                 }
             }
         } catch (error) {
-            toast.error("Failed to update mission status.");
+            toast.error("Failed to update status.");
+        }
+    };
+
+    const handleVerifyOTP = async () => {
+        if (otpValue.length !== 4) {
+            return toast.error("Please enter a 4-digit OTP");
+        }
+
+        try {
+            setIsVerifying(true);
+            const res = await axios.post(`${API_BASE_URL}/bookings/verify-otp`, {
+                bookingId,
+                otp: otpValue
+            });
+
+            if (res.data.success) {
+                setStatus("picked_up");
+                toast.success("OTP Verified! Trip Started.");
+                emit("ride:start", { bookingId });
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Invalid OTP code");
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -117,11 +167,13 @@ function OngoingRideContent() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // UI RENDERING - PREVENT CRASHES
     if (isLoading) {
         return (
             <div className="h-[80vh] flex flex-col items-center justify-center space-y-6">
                 <Loader2 size={48} className="animate-spin text-blue-500" />
                 <p className="text-sm font-black text-gray-400 uppercase tracking-[0.3em]">Downloading Mission Data...</p>
+                <p className="text-xs text-gray-400 animate-pulse">Syncing with Command Center...</p>
             </div>
         );
     }
@@ -129,18 +181,24 @@ function OngoingRideContent() {
     if (!ride) {
         return (
             <div className="h-[80vh] flex flex-col items-center justify-center space-y-8 p-10 text-center">
-                <div className="h-20 w-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-500">
-                    <AlertCircle size={40} />
-                </div>
-                <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-[#011421]">Mission Lost</h2>
-                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">The requested booking could not be located in our systems.</p>
+                <motion.div
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="h-24 w-24 bg-red-50 rounded-[2rem] flex items-center justify-center text-red-500 border-2 border-red-100 shadow-xl"
+                >
+                    <AlertCircle size={48} />
+                </motion.div>
+                <div className="space-y-4">
+                    <h2 className="text-4xl font-black text-[#011421] tracking-tighter">Mission <span className="text-red-600">Lost</span></h2>
+                    <p className="text-gray-500 font-bold uppercase tracking-[0.2em] text-[10px] max-w-xs mx-auto leading-relaxed">
+                        Data packet not found. The mission may have been cancelled or assigned to another unit.
+                    </p>
                 </div>
                 <button
                     onClick={() => router.push("/dashboard/rider")}
-                    className="px-10 h-16 bg-[#011421] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all"
+                    className="px-10 h-16 bg-[#011421] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all shadow-2xl active:scale-95"
                 >
-                    Return to Base
+                    Return to Dispatch
                 </button>
             </div>
         );
@@ -230,7 +288,9 @@ function OngoingRideContent() {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pickup Point</p>
-                                    <p className="text-base font-bold text-[#011421] leading-tight">{ride.pickupLocation?.address || ride.pickupLocation}</p>
+                                    <p className="text-base font-bold text-[#011421] leading-tight">
+                                        {ride.pickupLocation?.address || ride.pickupLocation?.name || (typeof ride.pickupLocation === 'string' ? ride.pickupLocation : "Pickup Point")}
+                                    </p>
                                 </div>
                             </div>
 
@@ -240,7 +300,9 @@ function OngoingRideContent() {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Destination</p>
-                                    <p className="text-base font-bold text-[#011421] leading-tight">{ride.dropoffLocation?.address || ride.dropLocation}</p>
+                                    <p className="text-base font-bold text-[#011421] leading-tight">
+                                        {ride.dropoffLocation?.address || ride.dropoffLocation?.name || ride.dropLocation?.address || ride.dropLocation?.name || (typeof ride.dropoffLocation === 'string' ? ride.dropoffLocation : (typeof ride.dropLocation === 'string' ? ride.dropLocation : "Destination"))}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -273,12 +335,40 @@ function OngoingRideContent() {
                             )}
 
                             {status === "arrived" && (
-                                <button
-                                    onClick={() => updateStatus("picked_up")}
-                                    className="w-full h-20 bg-green-600 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl shadow-green-900/40 hover:bg-green-700 transition-all flex items-center justify-center gap-3"
-                                >
-                                    <Navigation size={24} /> Start Trip
-                                </button>
+                                <div className="space-y-4">
+                                    <div className="bg-white/10 p-4 rounded-2xl border border-white/5">
+                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 text-center">Enter 4-Digit OTP from Passenger</p>
+                                        <div className="flex justify-center gap-3">
+                                            {[0, 1, 2, 3].map((i) => (
+                                                <input
+                                                    key={i}
+                                                    type="text"
+                                                    maxLength="1"
+                                                    value={otpValue[i] || ""}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, "");
+                                                        setOtpValue(prev => {
+                                                            const arr = prev.split("");
+                                                            arr[i] = val;
+                                                            return arr.join("");
+                                                        });
+                                                        // Auto focus next
+                                                        if (val && e.target.nextSibling) e.target.nextSibling.focus();
+                                                    }}
+                                                    className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl text-center text-white font-black text-xl focus:border-blue-500 outline-none"
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleVerifyOTP}
+                                        disabled={isVerifying || otpValue.length !== 4}
+                                        className="w-full h-20 bg-green-600 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl shadow-green-900/40 hover:bg-green-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    >
+                                        {isVerifying ? <Loader2 className="animate-spin" /> : <Navigation size={24} />}
+                                        {isVerifying ? "Verifying..." : "Verify & Start Trip"}
+                                    </button>
+                                </div>
                             )}
 
                             {status === "picked_up" && (
@@ -312,6 +402,7 @@ function OngoingRideContent() {
                     <OngoingRideMap
                         pickup={ride.pickupLocation?.coords || ride.pickupCoords}
                         drop={ride.dropoffLocation?.coords || ride.dropCoords}
+                        driverPos={driverPos}
                     />
 
                     {/* Map Overlays */}

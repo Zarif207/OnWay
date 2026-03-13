@@ -20,7 +20,7 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { getPassengerSocket } from "@/lib/passengerSocket";
+import { useSocket } from "@/hooks/useSocket";
 import { useSession } from "next-auth/react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -66,62 +66,49 @@ function ActiveRideContent() {
   }, [bookingId]);
 
   // 2. Socket Synchronization
+  const { socket, on, off, emit } = useSocket('passenger');
+
   useEffect(() => {
-    if (!bookingId || !session?.user?.id) return;
+    if (!bookingId || !socket) return;
 
-    const socket = getPassengerSocket(session.user.id);
-
-    // Listen for events
     const onRideAccepted = (data) => {
-      console.log("Ride accepted event:", data);
       if (data.bookingId === bookingId) {
         setStatus("accepted");
-        // Re-fetch booking for driver details
-        axios.get(`${API_BASE_URL}/bookings/${bookingId}`).then(res => {
-          if (res.data.success) setBooking(res.data.booking);
-        });
-        toast.success("Driver found! They are on their way.");
-        // Join ride room for location updates
-        socket.emit("join:room", { room: `ride:${bookingId}` });
+        setBooking(prev => ({
+          ...prev,
+          riderId: data.riderId || data.driverId,
+          driverInfo: data.driver
+        }));
+        toast.success("Driver found!");
+        emit("join:room", { room: `ride:${bookingId}` });
       }
     };
 
     const onLocationUpdate = (data) => {
-      // console.log("Driver location update:", data);
       setDriverLocation([data.lat, data.lng]);
     };
 
-    const onRideStarted = (data) => {
-      if (data.bookingId === bookingId) {
-        setStatus("started");
-        toast.success("Ride started! Enjoy your trip.");
+    const handleStatusUpdate = (data) => {
+      if (data.bookingId === bookingId || !data.bookingId) {
+        if (data.status) setStatus(data.status);
       }
     };
 
-    const onRideCompleted = (data) => {
-      if (data.bookingId === bookingId) {
-        setStatus("completed");
-        toast.success("You have arrived!");
-      }
-    };
+    on("ride:accepted", onRideAccepted);
+    on("driver:location:updated", onLocationUpdate);
+    on("driver:arrived", (data) => data.bookingId === bookingId && setStatus("arrived"));
+    on("ride:started", (data) => data.bookingId === bookingId && setStatus("started"));
+    on("ride:completed", (data) => data.bookingId === bookingId && setStatus("completed"));
+    on("ride:status:updated", handleStatusUpdate);
 
-    socket.on("ride:accepted", onRideAccepted);
-    socket.on("driver:location:updated", onLocationUpdate);
-    socket.on("ride:started", onRideStarted);
-    socket.on("ride:completed", onRideCompleted);
-
-    // If already accepted, join ride room
-    if (status === "accepted" || status === "started") {
-      socket.emit("join:room", { room: `ride:${bookingId}` });
-    }
+    // Initial Join
+    emit("join:room", { room: `ride:${bookingId}` });
 
     return () => {
-      socket.off("ride:accepted", onRideAccepted);
-      socket.off("driver:location:updated", onLocationUpdate);
-      socket.off("ride:started", onRideStarted);
-      socket.off("ride:completed", onRideCompleted);
+      off("ride:accepted", onRideAccepted);
+      off("driver:location:updated", onLocationUpdate);
     };
-  }, [bookingId, session, status]);
+  }, [bookingId, socket, emit, on, off]);
 
   const handleSOS = async () => {
     try {
@@ -142,6 +129,21 @@ function ActiveRideContent() {
       <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
         <Loader2 className="animate-spin text-primary" size={48} />
         <p className="text-gray-500 font-bold uppercase tracking-widest">Initializing tracking...</p>
+      </div>
+    );
+  }
+
+  if (status === "expired") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-[3rem] shadow-xl border border-gray-100">
+        <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+          <XCircle size={48} />
+        </div>
+        <h2 className="text-4xl font-black text-secondary mb-4 tracking-tighter">No Drivers Found</h2>
+        <p className="text-gray-500 font-medium mb-8 max-w-md">We couldn't find a driver for your request within 60 seconds. Please try again or choose a different vehicle type.</p>
+        <button onClick={() => router.push('/dashboard/passenger/book-ride')} className="px-10 py-5 bg-[#011421] text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-colors shadow-2xl">
+          Try Again
+        </button>
       </div>
     );
   }
@@ -205,15 +207,22 @@ function ActiveRideContent() {
 
           {/* STATUS CARDS */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center gap-6">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center gap-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5">
+                <ShieldAlert size={60} />
+              </div>
               <div className="h-20 w-20 rounded-[1.8rem] bg-secondary text-white flex items-center justify-center shadow-2xl shadow-secondary/20">
-                <Clock size={32} />
+                <span className="text-2xl font-black">OTP</span>
               </div>
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Estimated Arrival</p>
-                <p className="text-3xl font-black text-secondary tracking-tighter">
-                  {status === 'searching' ? '--' : '6'} <span className="text-sm">MINS</span>
-                </p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Safety Code</p>
+                <div className="flex gap-2">
+                  {booking?.otp?.split('').map((digit, i) => (
+                    <div key={i} className="w-8 h-10 bg-gray-50 rounded-lg flex items-center justify-center font-black text-secondary border border-gray-100 italic">
+                      {digit}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center gap-6">
@@ -236,14 +245,24 @@ function ActiveRideContent() {
             <h3 className="text-lg font-black text-secondary uppercase tracking-widest mb-6">Driver Info</h3>
 
             <div className="flex items-center gap-6 mb-8">
-              <div className="h-24 w-24 rounded-[2rem] bg-gray-50 border-4 border-white shadow-xl flex items-center justify-center relative">
-                <Car size={40} className="text-gray-300" />
+              <div className="h-24 w-24 rounded-[2rem] bg-gray-50 border-4 border-white shadow-xl flex items-center justify-center relative overflow-hidden">
+                {status === 'searching' ? (
+                  <Car size={40} className="text-gray-300" />
+                ) : (
+                  <img
+                    src={booking?.driverInfo?.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${booking?.driverInfo?.name || 'Driver'}`}
+                    className="h-full w-full object-cover"
+                    alt="Driver"
+                  />
+                )}
                 <div className="absolute -bottom-2 -right-2 h-10 w-10 bg-primary text-white rounded-full flex items-center justify-center border-4 border-white font-black text-xs">
-                  4.9
+                  {booking?.driverInfo?.rating || "4.9"}
                 </div>
               </div>
               <div>
-                <h4 className="text-2xl font-black text-secondary tracking-tighter">{status === 'searching' ? 'Driver TBD' : 'Michael Johnson'}</h4>
+                <h4 className="text-2xl font-black text-secondary tracking-tighter">
+                  {status === 'searching' ? 'Driver TBD' : (booking?.driverInfo?.name || 'Driver')}
+                </h4>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#2FCA71]">Elite Partner</p>
               </div>
             </div>
@@ -251,11 +270,15 @@ function ActiveRideContent() {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-gray-50 p-4 rounded-2xl">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle</p>
-                <p className="font-bold text-secondary text-xs uppercase">{booking.vehicleType} • Toyota</p>
+                <p className="font-bold text-secondary text-xs uppercase">
+                  {booking?.driverInfo?.vehicle?.type || booking?.vehicleType || "Ride"} • {booking?.driverInfo?.vehicle?.brand || "Toyota"}
+                </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-2xl">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Plate</p>
-                <p className="font-bold text-secondary text-xs uppercase">DHK-R 5678</p>
+                <p className="font-bold text-secondary text-xs uppercase">
+                  {booking?.driverInfo?.vehicle?.plate || "DHK-R 5678"}
+                </p>
               </div>
             </div>
 

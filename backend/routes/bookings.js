@@ -8,13 +8,19 @@ module.exports = (bookingsCollection) => {
     // GET /api/bookings - Get all bookings
     router.get("/", async (req, res) => {
         try {
-            const { passengerId, status } = req.query;
+            const { passengerId, status, recent } = req.query;
             let query = {};
             if (passengerId) {
                 query.passengerId = passengerId;
             }
             if (status) {
                 query.bookingStatus = status;
+            }
+
+            // FEATURE 1: Only show rides created within the last 60 seconds if 'recent' is true
+            if (recent === "true") {
+                const sixtySecondsAgo = new Date(Date.now() - 60000);
+                query.createdAt = { $gte: sixtySecondsAgo };
             }
 
             const bookings = await bookingsCollection.find(query).sort({ createdAt: -1 }).toArray();
@@ -146,6 +152,39 @@ module.exports = (bookingsCollection) => {
             } catch (notifError) {
                 console.error("Notification error:", notifError);
             }
+
+            // ⏱️ FEATURE 2: AUTO REMOVE AFTER 60 SECONDS
+            setTimeout(async () => {
+                try {
+                    const currentBooking = await bookingsCollection.findOne({ _id: bookingId });
+
+                    if (currentBooking && currentBooking.bookingStatus === "searching") {
+                        console.log(`⏰ [EXPIRY] Ride ${bookingId} expired. No driver accepted within 60s.`);
+
+                        await bookingsCollection.updateOne(
+                            { _id: bookingId },
+                            {
+                                $set: {
+                                    bookingStatus: "expired",
+                                    updatedAt: new Date()
+                                }
+                            }
+                        );
+
+                        // Notify passenger via socket
+                        if (req.io) {
+                            const passengerRoom = `user:${passengerId}`;
+                            req.io.to(passengerRoom).emit("ride-expired", {
+                                bookingId: bookingId.toString(),
+                                message: "No drivers accepted your ride"
+                            });
+                            console.log(`🚀 [SOCKET] Emitted ride-expired to ${passengerRoom}`);
+                        }
+                    }
+                } catch (expiryError) {
+                    console.error("❌ Expiry Logic Error:", expiryError);
+                }
+            }, 60000); // 60 seconds
 
             res.status(201).json({
                 success: true,

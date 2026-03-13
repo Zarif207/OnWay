@@ -192,6 +192,11 @@ const MapEffect = ({ pickup, dropoff, routeGeometry }) => {
     // Priority 1: If we have a complete route, fit bounds to show entire route
     if (routeGeometry && routeGeometry.length > 0) {
       const bounds = L.latLngBounds(routeGeometry);
+<<<<<<< Zarif
+      map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.5 });
+    }
+    // Otherwise fallback to point-based fitting
+=======
       
       // Add padding based on route complexity
       const padding = routeGeometry.length > 10 ? [60, 60] : [40, 40];
@@ -205,6 +210,7 @@ const MapEffect = ({ pickup, dropoff, routeGeometry }) => {
       });
     } 
     // Priority 2: If both locations exist, show both markers with optimal zoom
+>>>>>>> Minhaj
     else if (pickup && dropoff) {
       const bounds = L.latLngBounds(
         [pickup.lat, pickup.lon], 
@@ -260,6 +266,9 @@ const MapClickHandler = ({ onMapClick }) => {
 // ---------------------------------------------------------
 // Main Component with Enhanced Professional Styling
 // ---------------------------------------------------------
+<<<<<<< Zarif
+export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, onMapClick, onlineRiders = {} }) {
+=======
 export default function RideMap({ 
   pickup, 
   dropoff, 
@@ -275,15 +284,23 @@ export default function RideMap({
   showRouteAlternatives = false,
   onRouteAlternativeSelect = null
 }) {
+>>>>>>> Minhaj
   const defaultCenter = [23.8103, 90.4125]; // Dhaka, Bangladesh
-  
+
   const [carPosition, setCarPosition] = useState(null);
   const [carRotation, setCarRotation] = useState(0);
   const animationRef = useRef(null);
+<<<<<<< Zarif
+
+  // Convert object of riders to array
+  const nearbyRidersList = useMemo(() => Object.values(onlineRiders), [onlineRiders]);
+
+=======
   const [animationProgress, setAnimationProgress] = useState(0);
   const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
   const [routeAlternatives, setRouteAlternatives] = useState([]);
   
+>>>>>>> Minhaj
   // -------------------------------------------------------
   // Fetch Route Alternatives (Optional Enhancement)
   // -------------------------------------------------------
@@ -325,6 +342,14 @@ export default function RideMap({
     setIsAnimationPlaying(true);
 
     let startTime = null;
+<<<<<<< Zarif
+
+    // Determine animation duration. 
+    // We scale it down so it's viewable (e.g., 1 min real-time = 2 seconds animation time)
+    // Minimum 3 seconds long, max 15 seconds.
+    const animDurationBase = (durationMin || 5) * 1000;
+    const clampedAnimationDuration = Math.max(3000, Math.min(animDurationBase, 15000));
+=======
     
     // Calculate animation duration based on actual route duration
     // Scale it down for demo purposes (1 real minute = 3 seconds animation)
@@ -345,6 +370,7 @@ export default function RideMap({
       const bearing = Math.atan2(y, x) * 180 / Math.PI;
       return (bearing + 360) % 360; // Normalize to 0-360
     };
+>>>>>>> Minhaj
 
     const animateCar = (timestamp) => {
       if (!startTime) startTime = timestamp;
@@ -404,7 +430,7 @@ export default function RideMap({
   // -------------------------------------------------------
   // Render
   // -------------------------------------------------------
-  
+
   return (
     <MapContainer
       center={defaultCenter}
@@ -417,6 +443,32 @@ export default function RideMap({
         url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=en"
         attribution="Map data © Google"
       />
+<<<<<<< Zarif
+
+      {/* Nearby Online Riders Markers */}
+      {nearbyRidersList.map((rider) => (
+        <Marker
+          key={rider.id || Math.random()}
+          position={[rider.lat, rider.lng]}
+          icon={carIcon}
+          zIndexOffset={500}
+        >
+          <Popup>
+            <div className="text-center p-1">
+              <p className="font-black text-xs text-primary uppercase tracking-tighter">Available Now</p>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-[10px] font-bold">4.8</span>
+                <span className="text-yellow-500 text-[10px]">★</span>
+              </div>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+
+      {/* Pickup Marker */}
+      {pickup && (
+        <Marker position={[pickup.lat, pickup.lon]} icon={pickupIcon}>
+=======
       
       {/* Pickup Marker - Green or Current Location Blue */}
       {pickup && pickup.lat && pickup.lon && (
@@ -425,6 +477,7 @@ export default function RideMap({
           icon={pickup.isCurrentLocation ? currentLocationIcon : pickupIcon}
           key={`pickup-${pickup.lat}-${pickup.lon}`}
         >
+>>>>>>> Minhaj
           <Popup>
             <div className="text-sm">
               <strong className={`block mb-1 font-semibold ${pickup.isCurrentLocation ? 'text-blue-600' : 'text-green-600'}`}>
@@ -472,6 +525,14 @@ export default function RideMap({
 
       {/* Enhanced Professional Route Polyline */}
       {routeGeometry && routeGeometry.length > 0 && (
+<<<<<<< Zarif
+        <Polyline
+          positions={routeGeometry}
+          color="#2FCA71" // Tailwind blue-600
+          weight={5}
+          opacity={0.8}
+        />
+=======
         <>
           {/* Route shadow for depth */}
           <Polyline 
@@ -494,6 +555,7 @@ export default function RideMap({
             className="route-line"
           />
         </>
+>>>>>>> Minhaj
       )}
 
       {/* Route Alternatives (Optional) */}

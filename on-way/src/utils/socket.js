@@ -5,19 +5,21 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000"
 
 let socket;
 
-export const initSocket = () => {
+export const initSocket = (authData = null) => {
   if (!socket) {
     socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"], // Ensure fallback
+      transports: ["websocket", "polling"],
+      auth: authData, // Pass userId and role here
+      withCredentials: true
     });
-    console.log("Socket initialized:", SOCKET_URL);
+    console.log("Socket initialized with auth:", SOCKET_URL, authData);
   }
   return socket;
 };
 
-export const getSocket = () => {
+export const getSocket = (authData = null) => {
   if (!socket) {
-    return initSocket();
+    return initSocket(authData);
   }
   return socket;
 };

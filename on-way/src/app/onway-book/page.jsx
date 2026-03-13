@@ -1,15 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { getDrivingRoute } from "@/utils/routingService";
 import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
 import { reverseGeocode } from "@/utils/geocodingService";
 import { useRouter } from "next/navigation";
+<<<<<<< Zarif
+import { getPassengerSocket, disconnectPassengerSocket } from "@/lib/passengerSocket";
+=======
 import LocationInput from "@/components/LocationInput";
 import NetworkStatus from "@/components/NetworkStatus";
 import { MapPin, Clock, Route, DollarSign, Loader2 } from "lucide-react";
 import '@/styles/location-dropdown.css';
+>>>>>>> Minhaj
 
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
@@ -42,11 +47,52 @@ export default function BookRidePage() {
   const [isRouting, setIsRouting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+<<<<<<< Zarif
+
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  // Track which input the user is focusing on to know where to put the map click coordinate
+  const [activeInput, setActiveInput] = useState("pickup");
+
+  // Tracking online riders
+  const [onlineRiders, setOnlineRiders] = useState({});
+
+  // 1. Socket Synchronization for Live Riders
+  useEffect(() => {
+    const passengerId = session?.user?.id;
+    if (!passengerId) return;
+
+    const socket = getPassengerSocket(passengerId);
+
+    // Request initial state
+    socket.emit("get-online-riders");
+
+    // Listen for updates
+    socket.on("online-riders", (riders) => {
+      console.log("🚕 [SOCKET] Received initial online riders:", riders);
+      setOnlineRiders(riders);
+    });
+
+    socket.on("riders:update", (riders) => {
+      console.log("🚕 [SOCKET] Live riders update:", riders);
+      setOnlineRiders(riders);
+    });
+
+    return () => {
+      socket.off("online-riders");
+      socket.off("riders:update");
+    };
+  }, [session?.user?.id]);
+
+  // 1. Fetch Real Route when locations change
+=======
   const [activeInput, setActiveInput] = useState("pickup");
 
   const router = useRouter();
 
   // Fetch route when both locations are available
+>>>>>>> Minhaj
   useEffect(() => {
     const fetchRoute = async () => {
       if (pickupLocation && dropoffLocation) {
@@ -207,7 +253,11 @@ export default function BookRidePage() {
     });
   };
 
+<<<<<<< Zarif
+
+=======
   // Handle booking confirmation
+>>>>>>> Minhaj
   const handleConfirmBooking = async () => {
     if (!pickupLocation || !dropoffLocation || routeGeometry.length === 0) {
       setError("Please select both pickup and drop-off locations.");
@@ -218,6 +268,8 @@ export default function BookRidePage() {
     setError("");
 
     try {
+      const passengerId = session?.user?.id || "anonymous_passenger";
+
       const bookingData = {
         pickupLocation: {
           name: pickupLocation.name,
@@ -236,11 +288,18 @@ export default function BookRidePage() {
         distance,
         duration,
         price: fare,
+<<<<<<< Zarif
+        passengerId: passengerId,
+        bookingStatus: "searching",
+=======
         rideType,
         bookingStatus: "pending",
+>>>>>>> Minhaj
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+      console.log("📤 Submitting booking request to backend...", bookingData);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
       const response = await fetch(`${apiUrl}/bookings`, {
         method: "POST",
         headers: {
@@ -252,7 +311,9 @@ export default function BookRidePage() {
       const result = await response.json();
 
       if (result.success) {
-        router.push(`/dashboard/passenger/book-ride?bookingId=${result.booking._id}`);
+        console.log("✅ Booking created successfully:", result.booking._id);
+        // Redirect to passenger dashboard with searching state
+        router.push(`/dashboard/passenger?searching=true&bookingId=${result.booking._id}`);
       } else {
         setError(result.message || "Failed to confirm booking. Please try again.");
       }
@@ -348,8 +409,8 @@ export default function BookRidePage() {
                   key={key}
                   onClick={() => setRideType(key)}
                   className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${rideType === key
-                      ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
-                      : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
+                    ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
+                    : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
                     }`}
                 >
                   <span className="text-2xl mb-1">{data.icon}</span>
@@ -426,8 +487,12 @@ export default function BookRidePage() {
             routeGeometry={routeGeometry}
             durationMin={duration}
             onMapClick={handleMapClick}
+<<<<<<< Zarif
+            onlineRiders={onlineRiders}
+=======
             showCurrentLocationButton={true}
             onCurrentLocationFound={handleCurrentLocationFound}
+>>>>>>> Minhaj
           />
 
           {/* Map Status Indicator */}

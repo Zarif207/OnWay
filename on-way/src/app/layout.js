@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "./root-components/Navbar";
 import Footer from "./root-components/Footer";
 import AuthProvider from "./AuthProvider/AuthProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
 import { Toaster } from "react-hot-toast";
 import { usePathname } from "next/navigation";
 import ChatSupport from "./components/ChatBot/ChatSupport";
@@ -22,19 +23,21 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon.png" />
       </head>
       <body>
-        <AuthProvider>
-          {!hideNavbarFooter && <Navbar />}
+        <QueryProvider>
+          <AuthProvider>
+            {!hideNavbarFooter && <Navbar />}
 
-          <main>
-            {children}
-            <ChatSupport />
-            <FloatingSOSButton />
-          </main>
+            <main>
+              {children}
+              <ChatSupport />
+              <FloatingSOSButton />
+            </main>
 
-          <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="top-center" reverseOrder={false} />
 
-          {!hideNavbarFooter && <Footer />}
-        </AuthProvider>
+            {!hideNavbarFooter && <Footer />}
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

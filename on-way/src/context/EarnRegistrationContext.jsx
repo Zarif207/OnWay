@@ -1,22 +1,22 @@
-"use client";
-
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const EarnRegistrationContext = createContext();
 
+const STORAGE_KEY = "onway_rider_registration_data";
+
 export function EarnRegistrationProvider({ children }) {
-  // Store all form data across the 3 steps
-  const [formData, setFormData] = useState({
+  // Initial state structure
+  const initialState = {
     // Step 1: Landing Page
     vehicleType: "Bike",
-    activeCategory: "bike", // NEW: to store "car" | "bike" | "ambulance"
-    selectedModel: "",      // NEW: to store specific model like "Sedan", "Motorcycle"
+    activeCategory: "bike",
+    selectedModel: "",
     firstName: "",
     lastName: "",
     mobileNumber: "",
-    email: "",              // Added to sync with form
+    email: "",
     district: "Dhaka",
-    city: "",               // Added to sync with form
+    city: "",
 
     // Step 2: Personal Info
     gender: "Male",
@@ -25,27 +25,62 @@ export function EarnRegistrationProvider({ children }) {
     identityType: "NID",
     identityNumber: "",
     referralCode: "",
-    riderImage: null,       // Renamed from photo to match field name in personal-info/page.jsx
-    cities: [],             // Added to store operation cities
+    riderImage: null,
+    cities: [],
+    emergencyName: "",   // Sync with PersonalInfoPage
+    emergencyMobile: "", // Sync with PersonalInfoPage
 
     // Step 3: Vehicle Info
     brand: "",
-    model: "",              // vehicleModel in payload
+    model: "",
     registrationRegion: "Dhaka",
     registrationCategory: "Metric",
-    registrationDigits: "", // vehicleNumber in payload
+    registrationDigits: "",
     year: "",
     taxTokenNumber: "",
     fitnessNumber: "",
-    licenseNumber: "",      // NEW: required in payload
-  });
+    licenseNumber: "",
+    registrationNumber: "",
+  };
+
+  // Store all form data across the 3 steps
+  const [formData, setFormData] = useState(initialState);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        // Don't restore files/blobs as they can't be serialized
+        setFormData(prev => ({ ...prev, ...parsed, riderImage: null }));
+      } catch (e) {
+        console.error("Failed to parse saved registration data", e);
+      }
+    }
+  }, []);
+
+  // Sync to localStorage on change
+  useEffect(() => {
+    // Don't save if it's the very initial empty state to avoid overwriting
+    if (formData.firstName || formData.email || formData.mobileNumber) {
+      const dataToSave = { ...formData };
+      delete dataToSave.riderImage; // Remove non-serializable data
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+  }, [formData]);
 
   const updateFormData = (newData) => {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
 
+  const clearRegistrationData = () => {
+    setFormData(initialState);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   return (
-    <EarnRegistrationContext.Provider value={{ formData, updateFormData, setFormData }}>
+    <EarnRegistrationContext.Provider value={{ formData, updateFormData, setFormData, clearRegistrationData }}>
       {children}
     </EarnRegistrationContext.Provider>
   );

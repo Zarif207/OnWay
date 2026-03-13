@@ -7,8 +7,11 @@ import {
   Star,
   ChevronRight,
   ReceiptText,
-  Download
+  Download,
+  HelpCircle,
+  AlertCircle
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import OnWayLoading from "@/app/components/Loading/page";
 import jsPDF from "jspdf";
@@ -20,6 +23,7 @@ export default function RideHistoryPage() {
   const [downloadingId, setDownloadingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
+  const [activeHelpId, setActiveHelpId] = useState(null);
 
   const router = useRouter();
   const API_BASE =
@@ -28,6 +32,16 @@ export default function RideHistoryPage() {
   useEffect(() => {
     fetchRides();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeHelpId && !event.target.closest(".help-dropdown-container")) {
+        setActiveHelpId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [activeHelpId]);
 
   const fetchRides = async () => {
     try {
@@ -208,10 +222,71 @@ export default function RideHistoryPage() {
                   <button
                     onClick={() => generateInvoice(ride)}
                     disabled={downloadingId === ride._id}
-                    className="p-3 bg-slate-100 rounded-xl"
+                    className="p-3 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
                   >
                     <ReceiptText className="w-5 h-5" />
                   </button>
+
+                  {/* Help Dropdown Button */}
+                  <div className="relative help-dropdown-container">
+                    <button
+                      onClick={() =>
+                        setActiveHelpId(activeHelpId === ride._id ? null : ride._id)
+                      }
+                      className={`p-3 rounded-xl transition-all duration-300 flex items-center gap-2 ${activeHelpId === ride._id
+                          ? "bg-slate-900 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      title="Help & Support"
+                    >
+                      <HelpCircle className="w-5 h-5" />
+                      <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Help</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {activeHelpId === ride._id && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                        >
+                          <div className="p-2 border-b border-slate-50 bg-slate-50/50">
+                            <p className="text-[10px] uppercase font-black text-slate-400 px-3 tracking-widest">Support Options</p>
+                          </div>
+                          <div className="py-1">
+                            <button
+                              onClick={() => {
+                                // Logic for reporting lost item
+                                console.log("Report Lost Item for ride:", ride._id);
+                                setActiveHelpId(null);
+                              }}
+                              className="w-full text-left px-4 py-3 hover:bg-amber-50 hover:text-amber-700 text-sm font-bold text-slate-700 flex items-center gap-3 transition-colors"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                                <Search className="w-4 h-4 text-amber-600" />
+                              </div>
+                              Report Lost Item
+                            </button>
+                            {/* <button 
+                              onClick={() => {
+                                // Logic for forgotten item
+                                console.log("Forgot Something for ride:", ride._id);
+                                setActiveHelpId(null);
+                              }}
+                              className="w-full text-left px-4 py-3 hover:bg-blue-50 hover:text-blue-700 text-sm font-bold text-slate-700 flex items-center gap-3 transition-colors"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <AlertCircle className="w-4 h-4 text-blue-600" />
+                              </div>
+                              Forgot Something?
+                            </button> */}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
                   {!ride.rating ? (
                     <button

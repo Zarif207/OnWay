@@ -1,4 +1,4 @@
-// pages/api/auth/[...nextauth].js
+// pages/api/auth/[...nextauth].js (Version: 1.0.1)
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
@@ -39,9 +39,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!res.ok) throw new Error("User not found");
 
           const user = await res.json();
-          const userData = user.data || user;
+          console.log("Auth debug - API response:", JSON.stringify(user));
 
-          if (!userData?.password) throw new Error("Invalid credentials");
+          if (!user) {
+            throw new Error("User not found in system");
+          }
+
+          const userData = user.data ? user.data : user;
+
+          if (!userData || typeof userData !== 'object') {
+            throw new Error("Invalid response format from server");
+          }
+
+          if (!userData.password) {
+            throw new Error("Invalid user record: Missing password");
+          }
 
           const isMatch = await bcrypt.compare(credentials.password, userData.password);
           if (!isMatch) throw new Error("Invalid password");

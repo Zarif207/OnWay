@@ -3,43 +3,51 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import axios from "axios";
 import { getDrivingRoute } from "@/utils/routingService";
 import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
+import { reverseGeocode } from "@/utils/geocodingService";
 import { useRouter } from "next/navigation";
+<<<<<<< Zarif
 import { getPassengerSocket, disconnectPassengerSocket } from "@/lib/passengerSocket";
+=======
+import LocationInput from "@/components/LocationInput";
+import NetworkStatus from "@/components/NetworkStatus";
+import { MapPin, Clock, Route, DollarSign, Loader2 } from "lucide-react";
+import '@/styles/location-dropdown.css';
+>>>>>>> Minhaj
 
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl animate-pulse">
-      <span className="text-gray-500 font-medium tracking-wide">Loading Route Map...</span>
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-500 mx-auto mb-2" />
+        <span className="text-gray-500 font-medium tracking-wide">Loading Route Map...</span>
+      </div>
     </div>
   ),
 });
 
 export default function BookRidePage() {
+  // Location states
   const [pickupQuery, setPickupQuery] = useState("");
   const [dropoffQuery, setDropoffQuery] = useState("");
-
   const [pickupLocation, setPickupLocation] = useState(null);
   const [dropoffLocation, setDropoffLocation] = useState(null);
 
-  // Real Route Data State
+  // Route and fare states
   const [routeGeometry, setRouteGeometry] = useState([]);
-  const [distance, setDistance] = useState(0);     // In KM
-  const [duration, setDuration] = useState(0);     // In Minutes
-
+  const [distance, setDistance] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [rideType, setRideType] = useState("standard");
   const [fare, setFare] = useState(0);
 
-  const [isSearchingPickup, setIsSearchingPickup] = useState(false);
-  const [isSearchingDropoff, setIsSearchingDropoff] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
+  // UI states
   const [isRouting, setIsRouting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+<<<<<<< Zarif
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -78,24 +86,58 @@ export default function BookRidePage() {
   }, [session?.user?.id]);
 
   // 1. Fetch Real Route when locations change
+=======
+  const [activeInput, setActiveInput] = useState("pickup");
+
+  const router = useRouter();
+
+  // Fetch route when both locations are available
+>>>>>>> Minhaj
   useEffect(() => {
     const fetchRoute = async () => {
       if (pickupLocation && dropoffLocation) {
         setIsRouting(true);
         setError("");
         try {
+          console.log("🔄 Calculating route...", { pickup: pickupLocation, dropoff: dropoffLocation });
           const routeData = await getDrivingRoute(pickupLocation, dropoffLocation);
           if (routeData) {
             setDistance(routeData.distanceKm);
             setDuration(routeData.durationMin);
             setRouteGeometry(routeData.geometry);
+            
+            // Show different messages for fallback vs real routes
+            if (routeData.routeInfo?.isFallback) {
+              setError("⚠️ Using estimated route (network issues detected). Distance and time are approximate.");
+            } else {
+              console.log("✅ Route calculated successfully using:", routeData.routeInfo?.endpoint);
+            }
           } else {
             setError("Could not find a driving route between these locations.");
             resetRouteState();
           }
         } catch (err) {
-          setError(err.message || "Failed to fetch route details.");
-          resetRouteState();
+          console.error("❌ Route calculation failed:", err);
+          
+          // Handle specific network errors
+          if (err.message.includes('Network Error') || err.code === 'ERR_NETWORK') {
+            setError("⚠️ Network connection issue. Using estimated route calculation.");
+            
+            // Create a fallback route manually
+            try {
+              const { createFallbackRoute } = await import('@/utils/routingService');
+              const fallbackRoute = createFallbackRoute(pickupLocation, dropoffLocation);
+              setDistance(fallbackRoute.distanceKm);
+              setDuration(fallbackRoute.durationMin);
+              setRouteGeometry(fallbackRoute.geometry);
+            } catch (fallbackErr) {
+              console.error("Failed to create fallback route:", fallbackErr);
+              resetRouteState();
+            }
+          } else {
+            setError(`Route calculation failed: ${err.message}`);
+            resetRouteState();
+          }
         } finally {
           setIsRouting(false);
         }
@@ -107,7 +149,7 @@ export default function BookRidePage() {
     fetchRoute();
   }, [pickupLocation, dropoffLocation]);
 
-  // 2. Update Fare dynamically when distance or rideType changes
+  // Update fare when distance or ride type changes
   useEffect(() => {
     setFare(calculateFare(distance, rideType));
   }, [distance, rideType]);
@@ -119,151 +161,103 @@ export default function BookRidePage() {
     setFare(0);
   };
 
-  // Geocoding helper
-  const geocodeAddress = async (query) => {
-    if (!query.trim()) return null;
-    try {
-      const response = await axios.get("https://nominatim.openstreetmap.org/search", {
-        params: {
-          q: query + ", Bangladesh",
-          format: "json",
-          limit: 1,
-        },
-      });
-      if (response.data && response.data.length > 0) {
-        return {
-          lat: parseFloat(response.data[0].lat),
-          lon: parseFloat(response.data[0].lon),
-          name: response.data[0].display_name,
-        };
-      }
-      return null;
-    } catch (err) {
-      console.error("Geocoding failed:", err);
-      return null;
-    }
+  // Handle location selection from LocationInput component
+  const handlePickupLocationSelect = (location) => {
+    setPickupLocation(location);
+    setActiveInput("dropoff");
   };
 
-  const handleSearchPickup = async () => {
-    if (!pickupQuery) return;
-    setIsSearchingPickup(true);
-    setError("");
-    const result = await geocodeAddress(pickupQuery);
-    if (result) {
-      setPickupLocation(result);
-    } else {
-      setError("Pickup location not found. Try a more general area.");
-    }
-    setIsSearchingPickup(false);
+  const handleDropoffLocationSelect = (location) => {
+    setDropoffLocation(location);
   };
 
-  const handleSearchDropoff = async () => {
-    if (!dropoffQuery) return;
-    setIsSearchingDropoff(true);
-    setError("");
-    const result = await geocodeAddress(dropoffQuery);
-    if (result) {
-      setDropoffLocation(result);
-    } else {
-      setError("Drop-off location not found. Try a more general area.");
-    }
-    setIsSearchingDropoff(false);
-  };
-
-  // Reverse Geocoding helper
-  const reverseGeocode = async (lat, lon) => {
-    try {
-      const response = await axios.get("https://nominatim.openstreetmap.org/reverse", {
-        params: {
-          lat: lat,
-          lon: lon,
-          format: "json",
-        },
-      });
-      if (response.data && response.data.display_name) {
-        return response.data.display_name;
-      }
-      return `${lat.toFixed(4)}, ${lon.toFixed(4)}`; // fallback to coords
-    } catch (err) {
-      console.error("Reverse geocoding failed:", err);
-      return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-    }
-  };
-
-  // Get Current Location
-  const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser.");
-      return;
-    }
-
-    setIsLocating(true);
-    setError("");
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const addressName = await reverseGeocode(latitude, longitude);
-          const name = addressName && addressName !== `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            ? addressName
-            : "Current Location";
-
-          const newLocationObj = {
-            lat: latitude,
-            lon: longitude,
-            name: name,
-          };
-
-          if (activeInput === "pickup") {
-            setPickupLocation(newLocationObj);
-            setPickupQuery(name);
-            setActiveInput("dropoff");
-          } else {
-            setDropoffLocation(newLocationObj);
-            setDropoffQuery(name);
-          }
-        } catch (err) {
-          setError("Failed to get address for current location.");
-        } finally {
-          setIsLocating(false);
-        }
-      },
-      (err) => {
-        console.error("Geolocation error:", err);
-        setError("Failed to get current location. Please check your permissions.");
-        setIsLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-  };
-
-  // Handle click on the map
+  // Handle map click for location selection
   const handleMapClick = async (coords) => {
     setError("");
-    const addressName = await reverseGeocode(coords.lat, coords.lon);
+    try {
+      const addressData = await reverseGeocode(coords.lat, coords.lon);
+      
+      const newLocationObj = {
+        lat: coords.lat,
+        lon: coords.lon,
+        name: addressData.name,
+        address: addressData.address || {}
+      };
 
-    const newLocationObj = {
-      lat: coords.lat,
-      lon: coords.lon,
-      name: addressName,
-    };
-
-    if (activeInput === "pickup") {
-      setPickupLocation(newLocationObj);
-      setPickupQuery(addressName);
-      setActiveInput("dropoff"); // Auto-switch focus to dropoff next
-    } else {
-      setDropoffLocation(newLocationObj);
-      setDropoffQuery(addressName);
+      if (activeInput === "pickup") {
+        setPickupLocation(newLocationObj);
+        setPickupQuery(addressData.name);
+        setActiveInput("dropoff");
+      } else {
+        setDropoffLocation(newLocationObj);
+        setDropoffQuery(addressData.name);
+      }
+    } catch (err) {
+      setError("Failed to get address for selected location.");
     }
   };
 
+  // Handle "Your Location" button clicks
+  const handlePickupYourLocation = (locationData) => {
+    setPickupLocation(locationData);
+    setActiveInput("dropoff");
+    
+    // Also trigger map update if we have a map reference
+    // The RideMap component will handle centering and marker placement
+  };
 
+  const handleDropoffYourLocation = (locationData) => {
+    setDropoffLocation(locationData);
+    
+    // The RideMap component will handle centering and marker placement
+  };
+  // Handle current location from map button
+  const handleCurrentLocationFound = (locationData) => {
+    const { lat, lng } = locationData;
+    
+    // Use the enhanced reverse geocoding
+    reverseGeocode(lat, lng).then(addressData => {
+      const newLocationObj = {
+        lat,
+        lon: lng,
+        name: addressData.name,
+        address: addressData.address || {}
+      };
+
+      if (activeInput === "pickup") {
+        setPickupLocation(newLocationObj);
+        setPickupQuery(addressData.name);
+        setActiveInput("dropoff");
+      } else {
+        setDropoffLocation(newLocationObj);
+        setDropoffQuery(addressData.name);
+      }
+    }).catch(err => {
+      console.error("Failed to get address for current location:", err);
+      // Still set the location with coordinates
+      const newLocationObj = {
+        lat,
+        lon: lng,
+        name: `Current Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        address: {}
+      };
+
+      if (activeInput === "pickup") {
+        setPickupLocation(newLocationObj);
+        setPickupQuery(newLocationObj.name);
+        setActiveInput("dropoff");
+      } else {
+        setDropoffLocation(newLocationObj);
+        setDropoffQuery(newLocationObj.name);
+      }
+    });
+  };
+
+<<<<<<< Zarif
+
+=======
+  // Handle booking confirmation
+>>>>>>> Minhaj
   const handleConfirmBooking = async () => {
     if (!pickupLocation || !dropoffLocation || routeGeometry.length === 0) {
       setError("Please select both pickup and drop-off locations.");
@@ -294,8 +288,13 @@ export default function BookRidePage() {
         distance,
         duration,
         price: fare,
+<<<<<<< Zarif
         passengerId: passengerId,
         bookingStatus: "searching",
+=======
+        rideType,
+        bookingStatus: "pending",
+>>>>>>> Minhaj
       };
 
       console.log("📤 Submitting booking request to backend...", bookingData);
@@ -327,17 +326,21 @@ export default function BookRidePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-38 pb-20 px-4 sm:px-6 lg:px-8">
+    <div className="page-container min-h-screen bg-gray-50 pt-38 pb-20 px-4 sm:px-6 lg:px-8">
+      <NetworkStatus />
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
 
-        {/* LEFT SIDE: Form Section */}
-        <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit">
+        {/* LEFT SIDE: Enhanced Form Section */}
+        <div className={`form-container w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${
+          (activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''
+        }`}>
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
-            <p className="text-gray-500 text-sm">Real-time navigation & dynamic pricing.</p>
+            <p className="text-gray-500 text-sm">Real-time navigation & dynamic pricing with accurate location mapping.</p>
           </div>
 
+          {/* Global Error Display */}
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
@@ -347,68 +350,48 @@ export default function BookRidePage() {
             </div>
           )}
 
-          {/* Locations Input */}
+          {/* Enhanced Location Inputs */}
           <div className="flex flex-col gap-5 relative">
             <div className="absolute left-[15px] top-[45px] bottom-[45px] w-[2px] bg-gray-200 z-0"></div>
 
-            {/* Pickup */}
-            <div className="flex items-start gap-4 relative z-10">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-                <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+            {/* Pickup Location Input */}
+            <div className="flex items-start gap-4 relative">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                <div className="w-3 h-3 rounded-full bg-green-600"></div>
               </div>
-              <div className="flex-1 flex flex-col gap-2">
-                <label className={`text-xs font-semibold uppercase tracking-wider transition-colors ${activeInput === 'pickup' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  Pickup Location {activeInput === "pickup" && "(Click Map)"}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="E.g., Dhanmondi, Dhaka"
-                    className={`w-full bg-gray-50 border rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${activeInput === "pickup" ? "border-blue-400 bg-blue-50/30" : "border-gray-200"}`}
-                    value={pickupQuery}
-                    onChange={(e) => setPickupQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearchPickup()}
-                    onFocus={() => setActiveInput("pickup")}
-                  />
-                  <button
-                    onClick={handleSearchPickup}
-                    disabled={isSearchingPickup || !pickupQuery}
-                    className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:hover:bg-blue-600 font-medium"
-                  >
-                    {isSearchingPickup ? "..." : "Find"}
-                  </button>
-                </div>
-              </div>
+              <LocationInput
+                label="Pickup Location"
+                placeholder="E.g., Dhanmondi, Dhaka"
+                value={pickupQuery}
+                onChange={setPickupQuery}
+                onLocationSelect={handlePickupLocationSelect}
+                type="pickup"
+                isActive={activeInput === "pickup"}
+                onFocus={() => setActiveInput("pickup")}
+                className="flex-1"
+                showYourLocationButton={true}
+                onYourLocationClick={handlePickupYourLocation}
+              />
             </div>
 
-            {/* Drop-off */}
-            <div className="flex items-start gap-4 relative z-10">
+            {/* Drop-off Location Input */}
+            <div className="flex items-start gap-4 relative">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
                 <div className="w-3 h-3 rounded-full bg-red-600"></div>
               </div>
-              <div className="flex-1 flex flex-col gap-2">
-                <label className={`text-xs font-semibold uppercase tracking-wider transition-colors ${activeInput === 'dropoff' ? 'text-red-600' : 'text-gray-500'}`}>
-                  Drop-off Location {activeInput === "dropoff" && "(Click Map)"}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="E.g., Gulshan 2, Dhaka"
-                    className={`w-full bg-gray-50 border rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all ${activeInput === "dropoff" ? "border-red-400 bg-red-50/30" : "border-gray-200"}`}
-                    value={dropoffQuery}
-                    onChange={(e) => setDropoffQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearchDropoff()}
-                    onFocus={() => setActiveInput("dropoff")}
-                  />
-                  <button
-                    onClick={handleSearchDropoff}
-                    disabled={isSearchingDropoff || !dropoffQuery}
-                    className="bg-red-600 text-white px-5 py-3 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:hover:bg-red-600 font-medium"
-                  >
-                    {isSearchingDropoff ? "..." : "Find"}
-                  </button>
-                </div>
-              </div>
+              <LocationInput
+                label="Drop-off Location"
+                placeholder="E.g., Gulshan 2, Dhaka"
+                value={dropoffQuery}
+                onChange={setDropoffQuery}
+                onLocationSelect={handleDropoffLocationSelect}
+                type="dropoff"
+                isActive={activeInput === "dropoff"}
+                onFocus={() => setActiveInput("dropoff")}
+                className="flex-1"
+                showYourLocationButton={true}
+                onYourLocationClick={handleDropoffYourLocation}
+              />
             </div>
           </div>
 
@@ -416,7 +399,10 @@ export default function BookRidePage() {
 
           {/* Ride Types */}
           <div className="flex flex-col gap-4">
-            <h3 className="font-semibold text-gray-800">Available Rides</h3>
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Available Rides
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {Object.entries(FARE_RATES).map(([key, data]) => (
                 <button
@@ -435,22 +421,25 @@ export default function BookRidePage() {
             </div>
           </div>
 
-          {/* Pricing & Route Summary */}
+          {/* Enhanced Pricing & Route Summary */}
           {isRouting ? (
             <div className="bg-gray-50 p-6 rounded-2xl mt-2 border border-gray-200 flex flex-col items-center justify-center text-center">
-              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-              <span className="text-gray-600 font-medium">Calculating best route...</span>
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+              <span className="text-gray-600 font-medium">Calculating optimal route...</span>
+              <span className="text-gray-500 text-sm mt-1">This may take a few seconds</span>
             </div>
           ) : routeGeometry && routeGeometry.length > 0 ? (
-            <div className="bg-gray-900 text-white p-6 rounded-2xl mt-2 shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 rounded-2xl mt-2 shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
 
               <div className="flex gap-4 mb-4 relative z-10 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
                 <div className="flex-1 flex flex-col items-center justify-center border-r border-white/20">
+                  <Clock className="w-4 h-4 text-gray-300 mb-1" />
                   <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Time</span>
                   <span className="font-bold text-lg">{duration} <span className="text-sm font-normal">min</span></span>
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center">
+                  <Route className="w-4 h-4 text-gray-300 mb-1" />
                   <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Distance</span>
                   <span className="font-bold text-lg">{distance} <span className="text-sm font-normal">km</span></span>
                 </div>
@@ -463,47 +452,68 @@ export default function BookRidePage() {
             </div>
           ) : (
             <div className="bg-gray-50 p-5 rounded-2xl mt-2 border border-gray-100 border-dashed flex items-center justify-center text-center px-8">
-              <span className="text-gray-400 text-sm">Select both locations to calculate distance and fare</span>
+              <div className="text-center">
+                <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <span className="text-gray-400 text-sm">Select both locations to calculate distance and fare</span>
+              </div>
             </div>
           )}
 
+          {/* Enhanced Confirm Button */}
           <button
             onClick={handleConfirmBooking}
             disabled={!routeGeometry || routeGeometry.length === 0 || isSubmitting}
-            className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:hover:bg-blue-600 shadow-[0_4px_14px_0_rgb(37,99,235,0.39)] disabled:shadow-none mt-2 active:scale-[0.98]"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:hover:from-blue-600 disabled:hover:to-blue-700 shadow-[0_4px_14px_0_rgb(37,99,235,0.39)] disabled:shadow-none mt-2 active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            {isSubmitting ? "Confirming..." : "Confirm Booking"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Confirming Booking...
+              </>
+            ) : (
+              <>
+                <MapPin className="w-5 h-5" />
+                Confirm Booking
+              </>
+            )}
           </button>
         </div>
 
-        {/* RIGHT SIDE: Map View */}
-        <div className="w-full flex-1 h-[500px] lg:h-auto min-h-[600px] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-200 relative z-0 cursor-crosshair">
+        {/* RIGHT SIDE: Enhanced Map View */}
+        <div className="w-full flex-1 h-[500px] lg:h-auto min-h-[600px] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-200 relative z-0">
           <RideMap
             pickup={pickupLocation}
             dropoff={dropoffLocation}
             routeGeometry={routeGeometry}
             durationMin={duration}
             onMapClick={handleMapClick}
+<<<<<<< Zarif
             onlineRiders={onlineRiders}
+=======
+            showCurrentLocationButton={true}
+            onCurrentLocationFound={handleCurrentLocationFound}
+>>>>>>> Minhaj
           />
 
-          {/* Current Location Button */}
-          <button
-            onClick={handleGetCurrentLocation}
-            disabled={isLocating}
-            className="absolute top-[90px] left-3 z-[1000] bg-white p-3 rounded-xl shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-100 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group"
-            title="Get Current Location"
-          >
-            {isLocating ? (
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 group-hover:text-blue-600 transition-colors">
-                <path d="M12 2v2M12 20v2M2 12h2M20 12h2"></path>
-                <circle cx="12" cy="12" r="8"></circle>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            )}
-          </button>
+          {/* Map Status Indicator */}
+          {(pickupLocation || dropoffLocation) && (
+            <div className="absolute top-3 left-3 z-[1000] bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center gap-2 text-sm">
+                {pickupLocation && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-600">Pickup</span>
+                  </div>
+                )}
+                {dropoffLocation && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span className="text-gray-600">Drop-off</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>

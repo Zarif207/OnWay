@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import OnWayLoading from "@/app/components/Loading/page";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function RideHistoryPage() {
   const [rides, setRides] = useState([]);
@@ -24,6 +25,12 @@ export default function RideHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [activeHelpId, setActiveHelpId] = useState(null);
+
+  // Lost Item states
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [selectedRide, setSelectedRide] = useState(null);
+  const [formData, setFormData] = useState({ itemName: "", description: "", phone: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const API_BASE =
@@ -69,7 +76,7 @@ export default function RideHistoryPage() {
       return location;
     }
 
-    // যদি object হয় (তোমার database এর মতো)
+
     if (typeof location === "object") {
       return location.name || "";
     }
@@ -141,10 +148,44 @@ export default function RideHistoryPage() {
     const term = searchTerm.toLowerCase();
 
     const pickup = formatLocation(ride.pickupLocation).toLowerCase();
-    const drop = formatLocation(ride.dropoffLocation).toLowerCase();
+    const drop = formatLocation(ride.dropLocation).toLowerCase(); // Fixed dropoffLocation reference
 
     return pickup.includes(term) || drop.includes(term);
   });
+
+  // ---------- Submit Lost Item ----------
+  const handleLostItemSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.itemName || !formData.description || !formData.phone) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(`${API_BASE}/lost-items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rideId: selectedRide._id,
+          ...formData
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Lost item reported successfully");
+        setShowLostModal(false);
+        setFormData({ itemName: "", description: "", phone: "" });
+      } else {
+        toast.error(data.message || "Failed to report lost item");
+      }
+    } catch (err) {
+      toast.error("Error submitting report");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) return <OnWayLoading />;
 
@@ -157,6 +198,7 @@ export default function RideHistoryPage() {
 
   return (
     <div className="min-h-screen p-2">
+      <Toaster position="top-right" />
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
@@ -234,8 +276,8 @@ export default function RideHistoryPage() {
                         setActiveHelpId(activeHelpId === ride._id ? null : ride._id)
                       }
                       className={`p-3 rounded-xl transition-all duration-300 flex items-center gap-2 ${activeHelpId === ride._id
-                          ? "bg-slate-900 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "bg-slate-900 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       title="Help & Support"
                     >
@@ -258,8 +300,8 @@ export default function RideHistoryPage() {
                           <div className="py-1">
                             <button
                               onClick={() => {
-                                // Logic for reporting lost item
-                                console.log("Report Lost Item for ride:", ride._id);
+                                setSelectedRide(ride);
+                                setShowLostModal(true);
                                 setActiveHelpId(null);
                               }}
                               className="w-full text-left px-4 py-3 hover:bg-amber-50 hover:text-amber-700 text-sm font-bold text-slate-700 flex items-center gap-3 transition-colors"
@@ -320,6 +362,116 @@ export default function RideHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* Lost Item Modal */}
+      <AnimatePresence>
+        {showLostModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative"
+            >
+              <h2 className="text-2xl font-black text-slate-900 mb-2">
+                Report Lost Item
+              </h2>
+              <p className="text-sm text-slate-500 mb-6">
+                Left something in the car? Report it here and we&apos;ll help you find it.
+              </p>
+
+              <form onSubmit={handleLostItemSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Ride ID
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={selectedRide?._id || ""}
+                    className="w-full bg-slate-100 border-none text-slate-500 rounded-xl px-4 py-3 text-sm font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Item Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Black Leather Wallet"
+                    value={formData.itemName}
+                    onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                    className="w-full border border-slate-200 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    placeholder="Provide details about the item (brand, color, where you left it)..."
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full border border-slate-200 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 rounded-xl px-4 py-3 h-28 resize-none"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g., 017XXXXXXXX"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full border border-slate-200 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 rounded-xl px-4 py-3"
+                  />
+                </div>
+                
+                {/* Optional Image Upload stub */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Upload Image <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowLostModal(false)}
+                    className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 py-3 px-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Report"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

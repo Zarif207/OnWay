@@ -22,6 +22,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const settingsRoutes = require("./routes/settings");
 const notificationsRoutes = require("./routes/notifications");
 const searchRoutes = require("./routes/search");
+const lostItemsRoutes = require("./routes/lostItems");
 const notificationHelper = require("./utils/notificationHelper");
 
 const uri = process.env.MONGODB_URI;
@@ -148,7 +149,8 @@ app.use(async (req, res, next) => {
       promoCodeCollection: database.collection("promoCode"),
       emergencyCollection: database.collection("emergency"),
       settingsCollection: database.collection("settings"),
-      notificationsCollection: database.collection("notifications")
+      notificationsCollection: database.collection("notifications"),
+      lostItemsCollection: database.collection("lostItems")
     };
     next();
   } catch (error) {
@@ -223,6 +225,10 @@ app.use("/api/notifications", (req, res, next) => {
 
 app.use("/api/search", (req, res, next) => {
   searchRoutes(req.collections)(req, res, next);
+});
+
+app.use("/api/lost-items", (req, res, next) => {
+  lostItemsRoutes(req.collections.lostItemsCollection)(req, res, next);
 });
 
 // ✅ Health check endpoint

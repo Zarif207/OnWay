@@ -12,7 +12,8 @@ import {
   Brain,
   Star,
   UserCircle,
-  Newspaper
+  Newspaper,
+  Mailbox
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -24,6 +25,7 @@ export default function AdminLayout({ children }) {
     { label: "Promo Codes", path: "/dashboard/admin/promo-codes", icon: Ticket },
     { label: "Reports & Safety", path: "/dashboard/admin/reports-safety", icon: BarChart3 },
     { label: "Blog Manager", path: "/dashboard/admin/blogManager", icon: Newspaper },
+    { label: "Newsletter", path: "/dashboard/admin/newsletter", icon: Mailbox },
     { label: "AI Brain", path: "/dashboard/admin/aIBrainConfig", icon: Brain },
     { label: "Reviews", path: "/dashboard/admin/reviews", icon: Star },
     { label: "Profile", path: "/dashboard/admin/profile", icon: UserCircle },

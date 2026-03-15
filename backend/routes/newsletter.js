@@ -1,10 +1,10 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
+const { ObjectId } = require("mongodb");
 const router = express.Router();
 
 const newsletterRoutes = (newsletterCollection) => {
 
-    // ১. ট্রান্সপোর্টার ফাংশনের ভেতরে রাখা ভালো যাতে লেটেস্ট ENV পায়
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -13,7 +13,6 @@ const newsletterRoutes = (newsletterCollection) => {
         }
     });
 
-    // ২. সাবস্ক্রাইব রুট
     router.post("/subscribe", async (req, res) => {
         try {
             const { email } = req.body;
@@ -39,7 +38,6 @@ const newsletterRoutes = (newsletterCollection) => {
                 status: "active"
             });
 
-            // ৩. ইমেইল পাঠানোর লজিক
             const mailOptions = {
                 from: `"OnWay Official" <${process.env.EMAIL_USER}>`,
                 to: email,
@@ -60,11 +58,9 @@ const newsletterRoutes = (newsletterCollection) => {
                 `
             };
 
-            // ইমেইল পাঠানোর চেষ্টা
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
                     console.error("❌ Email Sending Failed:", error);
-                    // এখানে রেসপন্স পাঠানোর দরকার নেই কারণ সাবস্ক্রিপশন অলরেডি সাকসেসফুল
                 } else {
                     console.log("✅ Welcome Email Sent: " + info.response);
                 }
@@ -91,6 +87,37 @@ const newsletterRoutes = (newsletterCollection) => {
             res.status(200).send(result);
         } catch (error) {
             res.status(500).json({ success: false, message: "Failed to fetch subscribers." });
+        }
+    });
+
+    router.delete("/delete/:id", async (req, res) => {
+        try {
+            const id = req.params.id;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ success: false, message: "Invalid ID format" });
+            }
+
+            const query = { _id: new ObjectId(id) };
+            const result = await newsletterCollection.deleteOne(query);
+
+            if (result.deletedCount === 1) {
+                res.status(200).json({
+                    success: true,
+                    message: "Subscriber deleted successfully!"
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: "Subscriber not found."
+                });
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Internal server error during deletion."
+            });
         }
     });
 

@@ -9,22 +9,45 @@ module.exports = (lostItemsCollection) => {
   // @access  Public (or semi-public depending on auth)
   router.post("/", async (req, res) => {
     try {
-      const { rideId, itemName, description, phone } = req.body;
+      const {
+        rideId,
+        passengerId,
+        riderId,
+        itemName,
+        description,
+        contactPhone,
+        phone, // fallback if frontend still sends phone
+        itemImage,
+        reportedBy
+      } = req.body;
 
-      if (!rideId || !itemName || !description || !phone) {
+      const finalContactPhone = contactPhone || phone;
+
+      if (!itemName || !description || !finalContactPhone) {
         return res.status(400).json({
           success: false,
-          message: "All fields are required (rideId, itemName, description, phone)"
+          message: "itemName, description, and contactPhone (or phone) are required"
         });
       }
 
+      // Helper function to convert id to ObjectId safely
+      const safeObjectId = (id) => {
+        return id && ObjectId.isValid(id) ? new ObjectId(id) : id || null;
+      };
+
       const newLostItem = {
-        rideId,
+        rideId: safeObjectId(rideId),
+        passengerId: safeObjectId(passengerId),
+        riderId: safeObjectId(riderId),
         itemName,
         description,
-        phone,
-        status: "pending", // Default status
-        createdAt: new Date()
+        contactPhone: finalContactPhone,
+        itemImage: itemImage || "",
+        status: "pending", // default status
+        reportedBy: reportedBy || "passenger",
+        resolvedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
       const result = await lostItemsCollection.insertOne(newLostItem);

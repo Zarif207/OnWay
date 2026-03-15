@@ -31,6 +31,8 @@ export default function RideHistoryPage() {
   const [selectedRide, setSelectedRide] = useState(null);
   const [formData, setFormData] = useState({ itemName: "", description: "", phone: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
 
   const router = useRouter();
   const API_BASE =
@@ -154,6 +156,34 @@ export default function RideHistoryPage() {
   });
 
   // ---------- Submit Lost Item ----------
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+    const uploadData = new FormData();
+    uploadData.append("file", file);
+    uploadData.append(
+      "upload_preset",
+      process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "onway_preset"
+    );
+    try {
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: "POST", body: uploadData }
+      );
+      const data = await res.json();
+      if (data.secure_url) {
+        setUploadedImageUrl(data.secure_url);
+        toast.success("Image uploaded successfully");
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      toast.error("Failed to upload image");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleLostItemSubmit = async (e) => {
     e.preventDefault();
     if (!formData.itemName || !formData.description || !formData.phone) {
@@ -168,6 +198,7 @@ export default function RideHistoryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rideId: selectedRide._id,
+          itemImage: uploadedImageUrl,
           ...formData
         }),
       });
@@ -177,6 +208,7 @@ export default function RideHistoryPage() {
         toast.success(data.message || "Lost item reported successfully");
         setShowLostModal(false);
         setFormData({ itemName: "", description: "", phone: "" });
+        setUploadedImageUrl("");
       } else {
         toast.error(data.message || "Failed to report lost item");
       }
@@ -438,30 +470,37 @@ export default function RideHistoryPage() {
                     className="w-full border border-slate-200 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 rounded-xl px-4 py-3"
                   />
                 </div>
-                
-                {/* Optional Image Upload stub */}
+
+                {/*  Image Upload */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">
-                    Upload Image <span className="text-slate-400 font-normal">(Optional)</span>
+                    Upload Image
                   </label>
                   <input
                     type="file"
                     accept="image/*"
-                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer disabled:opacity-50"
                   />
+                  {isUploading && <p className="text-xs text-blue-500 mt-1">Uploading image...</p>}
+                  {uploadedImageUrl && <p className="text-xs text-emerald-500 mt-1">Image uploaded successfully!</p>}
                 </div>
 
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setShowLostModal(false)}
+                    onClick={() => {
+                      setShowLostModal(false);
+                      setUploadedImageUrl("");
+                    }}
                     className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isUploading}
                     className="flex-1 py-3 px-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? "Submitting..." : "Submit Report"}

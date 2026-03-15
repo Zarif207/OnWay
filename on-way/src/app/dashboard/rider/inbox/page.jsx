@@ -16,14 +16,12 @@ import {
 
 import { useChat } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import useWebRTCCall from "@/hooks/useCall";
 import CallModal from "@/components/dashboard/CallModal";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
 
 export default function RiderInboxPage() {
     const { user, isLoading: userLoading } = useCurrentUser();
-    const call = useWebRTCCall(user?._id);
 
     const [chats, setChats] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -65,7 +63,14 @@ export default function RiderInboxPage() {
         onlineStatus,
         loading: messagesLoading,
         sendError,
-        clearSendError
+        clearSendError,
+        startCall,
+        acceptCall,
+        endCall,
+        incomingCall,
+        callActive,
+        localStreamRef,
+        remoteStreamRef
     } = useChat(roomId, chatType, user?._id, user?.name || "Rider", "rider", otherUserId);
 
     // Fetch chats
@@ -223,8 +228,8 @@ export default function RiderInboxPage() {
                                     </div>
                                 </div>
                                 <div className="ml-auto flex gap-2">
-                                    <button onClick={() => call.startCall(callTargetUserId)} className="bg-emerald-600 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">📹 Video </button>
-                                    <button onClick={() => call.startCall(callTargetUserId, { video: false })} className="bg-gray-500 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">🎧 Audio </button>
+                                    <button onClick={() => startCall(callTargetUserId, { video: true })} className="bg-emerald-600 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">📹 Video </button>
+                                    <button onClick={() => startCall(callTargetUserId, { video: false })} className="bg-gray-500 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">🎧 Audio </button>
                                 </div>
                             </header>
 
@@ -251,12 +256,12 @@ export default function RiderInboxPage() {
                                 {typingUser && <div className="text-[10px] font-black text-emerald-600 animate-pulse uppercase tracking-widest">{selected.type === "support" ? "Support" : "Passenger"} typing...</div>}
 
                                 {/* INCOMING CALL */}
-                                {call.incomingCall && (
+                                {incomingCall && (
                                     <div className="fixed bottom-10 right-10 bg-white shadow-2xl rounded-2xl p-6 border border-gray-100 z-50">
                                         <h3 className="font-black text-sm uppercase mb-4">Incoming Call</h3>
                                         <div className="flex gap-3">
-                                            <button onClick={call.acceptCall} className="bg-green-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Accept</button>
-                                            <button onClick={call.endCall} className="bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Reject</button>
+                                            <button onClick={acceptCall} className="bg-green-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Accept</button>
+                                            <button onClick={endCall} className="bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Reject</button>
                                         </div>
                                     </div>
                                 )}
@@ -290,7 +295,13 @@ export default function RiderInboxPage() {
             </div>
 
             {/* CALL MODAL */}
-            <CallModal call={call} />
+            <CallModal
+                callActive={callActive}
+                localStreamRef={localStreamRef}
+                remoteStreamRef={remoteStreamRef}
+                endCall={endCall}
+            />
+
         </div>
     );
 }

@@ -11,7 +11,8 @@ import {
   UserCheck,
   Brain,
   Star,
-  UserCircle
+  UserCircle,
+  Newspaper
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -22,6 +23,7 @@ export default function AdminLayout({ children }) {
     { label: "User Management", path: "/dashboard/admin/user-management", icon: Users },
     { label: "Promo Codes", path: "/dashboard/admin/promo-codes", icon: Ticket },
     { label: "Reports & Safety", path: "/dashboard/admin/reports-safety", icon: BarChart3 },
+    { label: "Blog Manager", path: "/dashboard/admin/blogManager", icon: Newspaper },
     { label: "AI Brain", path: "/dashboard/admin/aIBrainConfig", icon: Brain },
     { label: "Reviews", path: "/dashboard/admin/reviews", icon: Star },
     { label: "Profile", path: "/dashboard/admin/profile", icon: UserCircle },

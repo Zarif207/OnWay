@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { useRequireRole } from "@/hooks/useAuth";
-import useWebRTCCall from "@/hooks/useCall";
 import CallModal from "@/components/dashboard/CallModal";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
@@ -34,13 +33,19 @@ export default function ChatSupportPage() {
     const {
         messages, sendMessage, typingUser, sendTyping, stopTyping,
         socket, markAsRead, onlineStatus, loading: messagesLoading,
-        sendError, clearSendError
+        sendError, clearSendError,
+        startCall,
+        acceptCall,
+        endCall,
+        incomingCall,
+        callActive,
+        localStreamRef,
+        remoteStreamRef
     } = useChat(
         roomId, "support", agentUser?.id, agentUser?.name || "Support Agent",
         "support", selectedChat?.passengerId
     );
 
-    const call = useWebRTCCall(agentUser?.id);
 
     const fetchSessions = useCallback(async () => {
         try {
@@ -194,8 +199,8 @@ export default function ChatSupportPage() {
 
                                 {/*  Call Button */}
                                 <div className="flex gap-2">
-                                    <button onClick={() => call.startCall(selectedChat.passengerId)} className="bg-emerald-600 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">📞 Video </button>
-                                    <button onClick={() => call.startCall(selectedChat.passengerId, { video: false })} className="bg-gray-500 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">🎧 Audio </button>
+                                    <button onClick={() => startCall(selectedChat.passengerId, { video: true })} className="bg-emerald-600 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">📞 Video </button>
+                                    <button onClick={() => startCall(selectedChat.passengerId, { video: false })} className="bg-gray-500 text-white p-1 rounded-xl text-[8px] font-black uppercase tracking-wider">🎧 Audio </button>
                                 </div>
                             </header>
 
@@ -251,7 +256,12 @@ export default function ChatSupportPage() {
             </div>
 
             {/*  Call Modal */}
-            <CallModal call={call} />
+            <CallModal
+                callActive={callActive}
+                localStreamRef={localStreamRef}
+                remoteStreamRef={remoteStreamRef}
+                endCall={endCall}
+            />
         </div>
     );
 }

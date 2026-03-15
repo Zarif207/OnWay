@@ -18,6 +18,7 @@
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "mongodb": "^7.1.0",
+    "nodemailer": "^8.0.2",
     "pusher": "^5.3.2",
     "socket.io": "^4.8.3",
     "sslcommerz-lts": "^1.2.0"

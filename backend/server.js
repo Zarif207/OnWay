@@ -23,6 +23,7 @@ const settingsRoutes = require("./routes/settings");
 const notificationsRoutes = require("./routes/notifications");
 const searchRoutes = require("./routes/search");
 const kycRoutes = require("./routes/kyc");
+const newsletterRoute = require("./routes/newsletter");
 const notificationHelper = require("./utils/notificationHelper");
 
 const uri = process.env.MONGODB_URI;
@@ -150,7 +151,8 @@ app.use(async (req, res, next) => {
       emergencyCollection: database.collection("emergency"),
       settingsCollection: database.collection("settings"),
       notificationsCollection: database.collection("notifications"),
-      kycCollection: database.collection("kyc")
+      kycCollection: database.collection("kyc"),
+      newsletterCollection: database.collection("newsletter")
     };
     next();
   } catch (error) {
@@ -231,7 +233,10 @@ app.use("/api/kyc", (req, res, next) => {
   kycRoutes(req.collections.kycCollection, req.collections.ridersCollection)(req, res, next);
 });
 
-// ✅ Health check endpoint
+app.use("/api/newsletter", (req, res, next) => {
+  newsletterRoute(req.collections.newsletterCollection)(req, res, next);
+});
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "onWay Backend running",

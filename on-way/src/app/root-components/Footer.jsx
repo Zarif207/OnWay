@@ -17,6 +17,26 @@ import {
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
 
+// Quick Links Data with Routes
+const quickLinks = [
+  { label: "About Us", href: "/about" },
+  { label: "Our Services", href: "/onway-book" },
+  { label: "Project", href: "/earn-with-onway" },
+  { label: "FAQ's", href: "/faq" },
+  { label: "Our Blog", href: "/blog" },
+  { label: "Contact Us", href: "/contact" },
+];
+
+// Our Services Data with Routes
+const serviceLinks = [
+  { label: "OnWay Ride Share", href: "/onway-book" },
+  { label: "Premium Car Rent", href: "/pricing" },
+  { label: "OnWay CNG Rapid", href: "/onway-book" },
+  { label: "Executive Travel", href: "/rideSharing-guidlines" },
+  { label: "OnWay Pay Secure", href: "/Safety-Coverage" },
+  { label: "Air Freight Tracking", href: "/onway-book" },
+];
+
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
@@ -167,12 +187,8 @@ export default function Footer() {
           <motion.div variants={itemVariants} className="space-y-10">
             <div className="space-y-4">
               <Link href="/" className="inline-block">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   <Image src={logoImage} alt="OnWay" width={110} height={80} className="drop-shadow-lg" />
-                  <div className="flex flex-col -ml-3 mt-4">
-                    <span className="text-2xl font-black text-white leading-none tracking-tighter">OnWay</span>
-                    <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-[0.2em]">One Track Express</span>
-                  </div>
                 </div>
               </Link>
             </div>
@@ -201,11 +217,11 @@ export default function Footer() {
             </h4>
             <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
             <ul className="space-y-4">
-              {["About Us", "Our Services", "Project", "FAQ's", "Our Blog", "Contact Us"].map((link) => (
-                <li key={link}>
-                  <Link href="#" className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
+              {quickLinks.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
                     <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
-                    {link}
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -220,11 +236,11 @@ export default function Footer() {
             </h4>
             <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
             <ul className="space-y-4">
-              {["OnWay Ride Share", "Premium Car Rent", "OnWay CNG Rapid", "Executive Travel", "OnWay Pay Secure", "Air Freight Tracking"].map((service) => (
-                <li key={service}>
-                  <Link href="#" className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
+              {serviceLinks.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
                     <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
-                    {service}
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -246,21 +262,15 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
                   <span>Saturday</span>
-                  <span className="text-white/80 tracking-tighter">08.00 - 2.00</span>
+                  <span className="text-white/80 tracking-tighter">08.00 - 4.00</span>
                 </div>
                 <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
-                  <span>Sunday</span>
+                  <span>Friday</span>
                   <span className="text-white/80">Day Off</span>
                 </div>
               </div>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-white text-[#0A1F3D] py-4 rounded-full font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-[#22c55e] hover:text-white transition-all duration-300"
-            >
-              Contact Us
-            </motion.button>
+
           </motion.div>
         </motion.div>
 

@@ -23,6 +23,7 @@ const settingsRoutes = require("./routes/settings");
 const notificationsRoutes = require("./routes/notifications");
 const searchRoutes = require("./routes/search");
 const kycRoutes = require("./routes/kyc");
+const notice = require("./routes/notice");
 const notificationHelper = require("./utils/notificationHelper");
 const { newsletterRoute, transporter } = require("./routes/newsletter");
 
@@ -152,7 +153,8 @@ app.use(async (req, res, next) => {
       settingsCollection: database.collection("settings"),
       notificationsCollection: database.collection("notifications"),
       kycCollection: database.collection("kyc"),
-      newsletterCollection: database.collection("newsletter")
+      newsletterCollection: database.collection("newsletter"),
+      noticeCollection: database.collection("notice")
     };
     next();
   } catch (error) {
@@ -241,6 +243,10 @@ app.use("/api/kyc", (req, res, next) => {
   kycRoutes(req.collections.kycCollection, req.collections.ridersCollection)(req, res, next);
 });
 
+app.use("/api/notice", (req, res, next) => {
+  notice(req.collections.noticeCollection, req.collections.passengerCollection, transporter)(req, res, next);
+});
+
 app.use("/api/newsletter", (req, res, next) => {
   newsletterRoute(req.collections.newsletterCollection)(req, res, next);
 });
@@ -252,6 +258,7 @@ app.get("/api/health", (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
 
 // Test endpoint for debugging
 app.get("/api/test", (req, res) => {

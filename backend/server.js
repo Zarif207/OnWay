@@ -14,7 +14,15 @@ const supportRoutes = require("./routes/support");
 const supportAgentRoutes = require("./routes/supportAgent");
 const bookingsRoutes = require("./routes/bookingRoutes");
 const paymentRoutes = require("./routes/payment");
+
 const ridersRoutes = require("./routes/riders");
+
+
+// const ridersRoutes = require("./routes/riderRoutes");
+
+// const ridersRoutes = require("./routes/riders");
+const geocodingRoutes = require("./routes/geocoding");
+
 const promoCodeRoutes = require("./routes/promo");
 const emergencyRoutes = require("./routes/emergency");
 const dashboardRoutes = require("./routes/dashboard");
@@ -505,6 +513,7 @@ app.use("/api/driver", (req, res, next) => {
 app.use("/api/rider", (req, res, next) => {
   ridersRoutes(req.collections)(req, res, next);
 });
+app.use("/api/geocoding", geocodingRoutes);
 
 app.use("/api/promo", (req, res, next) => {
   promoCodeRoutes(req.collections.promoCodeCollection)(req, res, next);

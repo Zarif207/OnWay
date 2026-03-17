@@ -1,16 +1,26 @@
 "use client";
 import { useEffect, useState, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import CurrentLocationButton from "./CurrentLocationButton";
 
 // ---------------------------------------------------------
-// Icons Setup
+// Icons Setup - Custom colored markers for pickup and dropoff
 // ---------------------------------------------------------
 
 const defaultIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -19,36 +29,241 @@ const defaultIcon = new L.Icon({
 });
 L.Marker.prototype.options.icon = defaultIcon;
 
-const pickupIcon = new L.Icon({ ...defaultIcon.options });
-const dropoffIcon = new L.Icon({ ...defaultIcon.options });
+// Green marker for pickup
+const pickupIconSvg = `
+<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 9.375 12.5 28.5 12.5 28.5S25 21.875 25 12.5C25 5.596 19.404 0 12.5 0z" fill="#10B981"/>
+  <circle cx="12.5" cy="12.5" r="6" fill="white"/>
+</svg>
+`;
 
-const carIcon = new L.Icon({
-  iconUrl: "/icons/car.png",
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
-  popupAnchor: [0, -18],
+const pickupIcon = new L.Icon({
+  iconUrl: "data:image/svg+xml;base64," + btoa(pickupIconSvg),
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  shadowSize: [41, 41],
 });
 
+// Red marker for dropoff
+const dropoffIconSvg = `
+<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 9.375 12.5 28.5 12.5 28.5S25 21.875 25 12.5C25 5.596 19.404 0 12.5 0z" fill="#EF4444"/>
+  <circle cx="12.5" cy="12.5" r="6" fill="white"/>
+</svg>
+`;
+
+const dropoffIcon = new L.Icon({
+  iconUrl: "data:image/svg+xml;base64," + btoa(dropoffIconSvg),
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  shadowSize: [41, 41],
+});
+
+// Custom current location marker icon (blue dot)
+const currentLocationIcon = new L.Icon({
+  iconUrl:
+    "data:image/svg+xml;base64," +
+    btoa(`
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="3"/>
+      <circle cx="12" cy="12" r="3" fill="white"/>
+      <circle cx="12" cy="12" r="10" fill="none" stroke="#3B82F6" stroke-width="1" opacity="0.3"/>
+    </svg>
+  `),
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12],
+});
+
+// Enhanced Car Icon for smoother animation
+const carIconUrl =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(`
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#filter0_d)">
+    <rect x="4" y="8" width="24" height="16" rx="3" fill="#2563EB"/>
+    <rect x="6" y="10" width="20" height="12" rx="2" fill="#3B82F6"/>
+    <circle cx="10" cy="22" r="3" fill="#1F2937"/>
+    <circle cx="22" cy="22" r="3" fill="#1F2937"/>
+    <circle cx="10" cy="22" r="1.5" fill="#F3F4F6"/>
+    <circle cx="22" cy="22" r="1.5" fill="#F3F4F6"/>
+    <rect x="8" y="12" width="4" height="3" rx="1" fill="#60A5FA"/>
+    <rect x="20" y="12" width="4" height="3" rx="1" fill="#60A5FA"/>
+    <path d="M14 16h4v2h-4z" fill="#1E40AF"/>
+  </g>
+  <defs>
+    <filter id="filter0_d" x="0" y="4" width="32" height="28" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="2"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+</svg>
+`);
+
+// carIcon definition for marker rendering
+const carIcon = new L.Icon({
+  iconUrl: carIconUrl,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
+});
+
+// Enhanced Car Icon with proper rotation support
+const createRotatedCarIcon = (rotation = 0) => {
+  const carIconUrl =
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(`
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(${rotation}deg);">
+    <g filter="url(#filter0_d)">
+      <rect x="4" y="8" width="24" height="16" rx="3" fill="#2563EB"/>
+      <rect x="6" y="10" width="20" height="12" rx="2" fill="#3B82F6"/>
+      <circle cx="10" cy="22" r="3" fill="#1F2937"/>
+      <circle cx="22" cy="22" r="3" fill="#1F2937"/>
+      <circle cx="10" cy="22" r="1.5" fill="#F3F4F6"/>
+      <circle cx="22" cy="22" r="1.5" fill="#F3F4F6"/>
+      <rect x="8" y="12" width="4" height="3" rx="1" fill="#60A5FA"/>
+      <rect x="20" y="12" width="4" height="3" rx="1" fill="#60A5FA"/>
+      <path d="M14 16h4v2h-4z" fill="#1E40AF"/>
+    </g>
+    <defs>
+      <filter id="filter0_d" x="0" y="4" width="32" height="28" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+        <feOffset dy="4"/>
+        <feGaussianBlur stdDeviation="2"/>
+        <feComposite in2="hardAlpha" operator="out"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+      </filter>
+    </defs>
+  </svg>
+  `);
+
+  return new L.Icon({
+    iconUrl: carIconUrl,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+    className: "car-marker-animated",
+  });
+};
+
+// Route Progress Indicator Component
+const RouteProgressIndicator = ({ progress, isPlaying, durationMin }) => {
+  const progressPercentage = Math.round(progress * 100);
+  const remainingTime = Math.max(0, Math.round(durationMin * (1 - progress)));
+
+  return (
+    <div className="route-progress">
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className={`w-2 h-2 rounded-full ${isPlaying ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+        ></div>
+        <span className="text-xs font-semibold text-gray-700">
+          {isPlaying ? "En Route" : progress === 1 ? "Arrived" : "Ready"}
+        </span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+        <div
+          className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+          style={{ width: `${progressPercentage}%` }}
+        ></div>
+      </div>
+      <div className="flex justify-between text-xs text-gray-600">
+        <span>{progressPercentage}%</span>
+        <span>{remainingTime}min left</span>
+      </div>
+    </div>
+  );
+};
+
 // ---------------------------------------------------------
-// Helper: Map Bounds Control
+// Helper: Enhanced Map Bounds Control with smooth animations
 // ---------------------------------------------------------
 const MapEffect = ({ pickup, dropoff, routeGeometry }) => {
   const map = useMap();
+  const prevPickupRef = useRef(null);
+  const prevDropoffRef = useRef(null);
 
   useEffect(() => {
-    // If we have a full route, fit bounds to the route geometry
+    // Check if locations actually changed to avoid unnecessary updates
+    const pickupChanged =
+      pickup &&
+      (!prevPickupRef.current ||
+        prevPickupRef.current.lat !== pickup.lat ||
+        prevPickupRef.current.lon !== pickup.lon);
+
+    const dropoffChanged =
+      dropoff &&
+      (!prevDropoffRef.current ||
+        prevDropoffRef.current.lat !== dropoff.lat ||
+        prevDropoffRef.current.lon !== dropoff.lon);
+
+    // Update refs
+    prevPickupRef.current = pickup;
+    prevDropoffRef.current = dropoff;
+
+    // Priority 1: If we have a complete route, fit bounds to show entire route
     if (routeGeometry && routeGeometry.length > 0) {
       const bounds = L.latLngBounds(routeGeometry);
-      map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.5 });
+
+      // Add padding based on route complexity
+      const padding = routeGeometry.length > 10 ? [60, 60] : [40, 40];
+
+      map.fitBounds(bounds, {
+        padding,
+        animate: true,
+        duration: 1.5,
+        maxZoom: 16,
+        easeLinearity: 0.25, // Smooth easing
+      });
     }
-    // Otherwise fallback to point-based fitting
+    // Priority 2: If both locations exist, show both markers with optimal zoom
     else if (pickup && dropoff) {
-      const bounds = L.latLngBounds([pickup.lat, pickup.lon], [dropoff.lat, dropoff.lon]);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true, duration: 1 });
-    } else if (pickup) {
-      map.flyTo([pickup.lat, pickup.lon], 14, { animate: true, duration: 1 });
-    } else if (dropoff) {
-      map.flyTo([dropoff.lat, dropoff.lon], 14, { animate: true, duration: 1 });
+      const bounds = L.latLngBounds(
+        [pickup.lat, pickup.lon],
+        [dropoff.lat, dropoff.lon],
+      );
+
+      // Calculate distance to determine appropriate zoom
+      const distance = map.distance(
+        [pickup.lat, pickup.lon],
+        [dropoff.lat, dropoff.lon],
+      );
+      const maxZoom = distance < 1000 ? 17 : distance < 5000 ? 15 : 13;
+
+      map.fitBounds(bounds, {
+        padding: [80, 80],
+        maxZoom,
+        animate: true,
+        duration: 1.2,
+        easeLinearity: 0.25,
+      });
+    }
+    // Priority 3: Single location - center with appropriate zoom
+    else if (pickup && pickupChanged) {
+      map.flyTo([pickup.lat, pickup.lon], 15, {
+        animate: true,
+        duration: 1.2,
+        easeLinearity: 0.25,
+      });
+    } else if (dropoff && dropoffChanged) {
+      map.flyTo([dropoff.lat, dropoff.lon], 15, {
+        animate: true,
+        duration: 1.2,
+        easeLinearity: 0.25,
+      });
     }
   }, [pickup, dropoff, routeGeometry, map]);
 
@@ -70,74 +285,162 @@ const MapClickHandler = ({ onMapClick }) => {
 };
 
 // ---------------------------------------------------------
-// Main Component
+// Main Component with Enhanced Professional Styling
 // ---------------------------------------------------------
-export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, onMapClick, onlineRiders = {} }) {
+export default function RideMap({
+  pickup,
+  dropoff,
+  routeGeometry,
+  durationMin,
+  onMapClick,
+  showCurrentLocationButton = true,
+  onCurrentLocationFound = null,
+  showCarAnimation = true,
+  routeColor = "#2563EB", // Professional blue
+  routeWeight = 6,
+  routeOpacity = 0.8,
+  showRouteAlternatives = false,
+  onRouteAlternativeSelect = null,
+  onlineRiders = {}, // Default value to prevent ReferenceError
+}) {
   const defaultCenter = [23.8103, 90.4125]; // Dhaka, Bangladesh
 
   const [carPosition, setCarPosition] = useState(null);
+  const [carRotation, setCarRotation] = useState(0);
   const animationRef = useRef(null);
 
   // Convert object of riders to array
-  const nearbyRidersList = useMemo(() => Object.values(onlineRiders), [onlineRiders]);
+  const nearbyRidersList = useMemo(
+    () => Object.values(onlineRiders),
+    [onlineRiders],
+  );
+
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
+  const [routeAlternatives, setRouteAlternatives] = useState([]);
 
   // -------------------------------------------------------
-  // Animation Logic
+  // Fetch Route Alternatives (Optional Enhancement)
   // -------------------------------------------------------
   useEffect(() => {
-    if (!routeGeometry || routeGeometry.length < 2) {
+    if (!showRouteAlternatives || !pickup || !dropoff) {
+      setRouteAlternatives([]);
+      return;
+    }
+
+    const fetchAlternatives = async () => {
+      try {
+        const { getRouteAlternatives } = await import("@/utils/routingService");
+        const alternatives = await getRouteAlternatives(pickup, dropoff, 2);
+        setRouteAlternatives(alternatives.slice(1)); // Exclude primary route
+      } catch (error) {
+        console.warn("Failed to fetch route alternatives:", error);
+        setRouteAlternatives([]);
+      }
+    };
+
+    fetchAlternatives();
+  }, [pickup, dropoff, showRouteAlternatives]);
+
+  // -------------------------------------------------------
+  // Enhanced Animation Logic with Rotation and Smooth Movement
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (!routeGeometry || routeGeometry.length < 2 || !showCarAnimation) {
       setCarPosition(null);
+      setAnimationProgress(0);
+      setIsAnimationPlaying(false);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       return;
     }
 
-    // Set initial position
+    // Set initial position at pickup
     setCarPosition(routeGeometry[0]);
+    setAnimationProgress(0);
+    setIsAnimationPlaying(true);
 
     let startTime = null;
 
-    // Determine animation duration. 
-    // We scale it down so it's viewable (e.g., 1 min real-time = 2 seconds animation time)
-    // Minimum 3 seconds long, max 15 seconds.
-    const animDurationBase = (durationMin || 5) * 1000;
-    const clampedAnimationDuration = Math.max(3000, Math.min(animDurationBase, 15000));
+    // Calculate animation duration based on actual route duration
+    // Scale it down for demo purposes (1 real minute = 3 seconds animation)
+    const animDurationBase = (durationMin || 5) * 3000;
+    const clampedAnimationDuration = Math.max(
+      4000,
+      Math.min(animDurationBase, 20000),
+    );
+
+    // Function to calculate bearing between two points
+    const calculateBearing = (start, end) => {
+      const startLat = (start[0] * Math.PI) / 180;
+      const startLng = (start[1] * Math.PI) / 180;
+      const endLat = (end[0] * Math.PI) / 180;
+      const endLng = (end[1] * Math.PI) / 180;
+
+      const dLng = endLng - startLng;
+      const y = Math.sin(dLng) * Math.cos(endLat);
+      const x =
+        Math.cos(startLat) * Math.sin(endLat) -
+        Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
+
+      const bearing = (Math.atan2(y, x) * 180) / Math.PI;
+      return (bearing + 360) % 360; // Normalize to 0-360
+    };
 
     const animateCar = (timestamp) => {
       if (!startTime) startTime = timestamp;
       const progress = timestamp - startTime;
       const percentage = Math.min(progress / clampedAnimationDuration, 1);
 
-      // Interpolate position along the route geometry array
+      // Smooth easing function for more natural movement
+      const easeInOutCubic = (t) =>
+        t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+      const easedPercentage = easeInOutCubic(percentage);
+
+      // Calculate position along the route
       const totalSegments = routeGeometry.length - 1;
-      const currentFloatIndex = percentage * totalSegments;
+      const currentFloatIndex = easedPercentage * totalSegments;
       const lowerIndex = Math.floor(currentFloatIndex);
       const upperIndex = Math.min(lowerIndex + 1, totalSegments);
-
-      const weight = currentFloatIndex - lowerIndex;
+      const segmentProgress = currentFloatIndex - lowerIndex;
 
       const p1 = routeGeometry[lowerIndex];
       const p2 = routeGeometry[upperIndex];
 
       if (p1 && p2) {
-        const lat = p1[0] + (p2[0] - p1[0]) * weight;
-        const lng = p1[1] + (p2[1] - p1[1]) * weight;
-        setCarPosition([lat, lng]);
+        // Interpolate position
+        const lat = p1[0] + (p2[0] - p1[0]) * segmentProgress;
+        const lng = p1[1] + (p2[1] - p1[1]) * segmentProgress;
+        const newPosition = [lat, lng];
+
+        setCarPosition(newPosition);
+        setAnimationProgress(percentage);
+
+        // Calculate and set car rotation based on direction
+        if (lowerIndex < totalSegments) {
+          const bearing = calculateBearing(p1, p2);
+          setCarRotation(bearing);
+        }
       }
 
       if (percentage < 1) {
         animationRef.current = requestAnimationFrame(animateCar);
       } else {
-        // Animation finished, optionally loop or keep at destination
+        // Animation finished
         setCarPosition(routeGeometry[routeGeometry.length - 1]);
+        setAnimationProgress(1);
+        setIsAnimationPlaying(false);
       }
     };
 
-    animationRef.current = requestAnimationFrame(animateCar);
+    // Start animation after a short delay
+    setTimeout(() => {
+      animationRef.current = requestAnimationFrame(animateCar);
+    }, 1000);
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [routeGeometry, durationMin]);
+  }, [routeGeometry, durationMin, showCarAnimation]);
 
   // -------------------------------------------------------
   // Render
@@ -166,7 +469,9 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
         >
           <Popup>
             <div className="text-center p-1">
-              <p className="font-black text-xs text-primary uppercase tracking-tighter">Available Now</p>
+              <p className="font-black text-xs text-primary uppercase tracking-tighter">
+                Available Now
+              </p>
               <div className="flex items-center justify-center gap-1 mt-1">
                 <span className="text-[10px] font-bold">4.8</span>
                 <span className="text-yellow-500 text-[10px]">★</span>
@@ -176,45 +481,164 @@ export default function RideMap({ pickup, dropoff, routeGeometry, durationMin, o
         </Marker>
       ))}
 
-      {/* Pickup Marker */}
-      {pickup && (
-        <Marker position={[pickup.lat, pickup.lon]} icon={pickupIcon}>
+      {/* Pickup Marker - Green or Current Location Blue */}
+      {pickup && pickup.lat && pickup.lon && (
+        <Marker
+          position={[pickup.lat, pickup.lon]}
+          icon={pickup.isCurrentLocation ? currentLocationIcon : pickupIcon}
+          key={`pickup-${pickup.lat}-${pickup.lon}`}
+        >
           <Popup>
-            <strong className="text-blue-600 block mb-1">Pickup Location</strong>
-            {pickup.name}
+            <div className="text-sm">
+              <strong
+                className={`block mb-1 font-semibold ${pickup.isCurrentLocation ? "text-blue-600" : "text-green-600"}`}
+              >
+                {pickup.isCurrentLocation
+                  ? "📍 You are here"
+                  : "📍 Pickup Location"}
+              </strong>
+              <p className="text-gray-700">
+                {pickup.name || "Selected Location"}
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                {pickup.lat.toFixed(6)}, {pickup.lon.toFixed(6)}
+              </p>
+              {pickup.accuracy && (
+                <p className="text-gray-500 text-xs">
+                  Accuracy: ±{Math.round(pickup.accuracy)}m
+                </p>
+              )}
+            </div>
           </Popup>
         </Marker>
       )}
 
-      {/* Drop-off Marker */}
-      {dropoff && (
-        <Marker position={[dropoff.lat, dropoff.lon]} icon={dropoffIcon}>
+      {/* Drop-off Marker - Red or Current Location Blue */}
+      {dropoff && dropoff.lat && dropoff.lon && (
+        <Marker
+          position={[dropoff.lat, dropoff.lon]}
+          icon={dropoff.isCurrentLocation ? currentLocationIcon : dropoffIcon}
+          key={`dropoff-${dropoff.lat}-${dropoff.lon}`}
+        >
           <Popup>
-            <strong className="text-red-600 block mb-1">Drop-off Location</strong>
-            {dropoff.name}
+            <div className="text-sm">
+              <strong
+                className={`block mb-1 font-semibold ${dropoff.isCurrentLocation ? "text-blue-600" : "text-red-600"}`}
+              >
+                {dropoff.isCurrentLocation
+                  ? "📍 You are here"
+                  : "🎯 Drop-off Location"}
+              </strong>
+              <p className="text-gray-700">
+                {dropoff.name || "Selected Location"}
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                {dropoff.lat.toFixed(6)}, {dropoff.lon.toFixed(6)}
+              </p>
+              {dropoff.accuracy && (
+                <p className="text-gray-500 text-xs">
+                  Accuracy: ±{Math.round(dropoff.accuracy)}m
+                </p>
+              )}
+            </div>
           </Popup>
         </Marker>
       )}
 
-      {/* Real Driving Route Polyline */}
+      {/* Enhanced Professional Route Polyline */}
       {routeGeometry && routeGeometry.length > 0 && (
-        <Polyline
-          positions={routeGeometry}
-          color="#2FCA71" // Tailwind blue-600
-          weight={5}
-          opacity={0.8}
+        <>
+          {/* Route shadow for depth */}
+          <Polyline
+            positions={routeGeometry}
+            color="#000000"
+            weight={routeWeight + 2}
+            opacity={0.1}
+            lineCap="round"
+            lineJoin="round"
+          />
+          {/* Main route line */}
+          <Polyline
+            positions={routeGeometry}
+            color={routeGeometry.length === 2 ? "#F59E0B" : routeColor} // Amber for fallback, blue for real route
+            weight={routeWeight}
+            opacity={routeOpacity}
+            dashArray={routeGeometry.length === 2 ? "10, 10" : null} // Dashed line for fallback
+            lineCap="round"
+            lineJoin="round"
+            className="route-line"
+          />
+        </>
+      )}
+
+      {/* Route Alternatives (Optional) */}
+      {showRouteAlternatives &&
+        routeAlternatives.map((alternative, index) => (
+          <Polyline
+            key={`alternative-${index}`}
+            positions={alternative.geometry}
+            color="#9CA3AF"
+            weight={4}
+            opacity={0.6}
+            dashArray="8, 4"
+            lineCap="round"
+            lineJoin="round"
+            className="route-alternative"
+            eventHandlers={{
+              click: () =>
+                onRouteAlternativeSelect &&
+                onRouteAlternativeSelect(alternative),
+            }}
+          />
+        ))}
+
+      {/* Enhanced Animated Car Marker with Proper Rotation */}
+      {carPosition && showCarAnimation && (
+        <Marker
+          position={carPosition}
+          icon={createRotatedCarIcon(carRotation)}
+          zIndexOffset={1000}
+        >
+          <Popup>
+            <div className="text-center">
+              <strong className="text-blue-600">🚗 Vehicle en route</strong>
+              <br />
+              <small className="text-gray-500">
+                Progress: {Math.round(animationProgress * 100)}%
+              </small>
+              <br />
+              <small className="text-gray-400">
+                Heading: {Math.round(carRotation)}°
+              </small>
+            </div>
+          </Popup>
+        </Marker>
+      )}
+
+      <MapEffect
+        pickup={pickup}
+        dropoff={dropoff}
+        routeGeometry={routeGeometry}
+      />
+      <MapClickHandler onMapClick={onMapClick} />
+
+      {/* Route Progress Indicator */}
+      {showCarAnimation && routeGeometry && routeGeometry.length > 0 && (
+        <RouteProgressIndicator
+          progress={animationProgress}
+          isPlaying={isAnimationPlaying}
+          durationMin={durationMin}
         />
       )}
 
-      {/* Animated Car Marker */}
-      {carPosition && (
-        <Marker position={carPosition} icon={carIcon} zIndexOffset={1000}>
-          <Popup>Vehicle en route</Popup>
-        </Marker>
+      {/* Current Location Button */}
+      {showCurrentLocationButton && (
+        <CurrentLocationButton
+          onLocationFound={onCurrentLocationFound}
+          showAccuracyCircle={true}
+          zoomLevel={16}
+        />
       )}
-
-      <MapEffect pickup={pickup} dropoff={dropoff} routeGeometry={routeGeometry} />
-      <MapClickHandler onMapClick={onMapClick} />
     </MapContainer>
   );
 }

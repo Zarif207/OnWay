@@ -1,4 +1,18 @@
+"use client";
 import { useSession } from "next-auth/react";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+    Bell,
+    Car,
+    Wallet,
+    Gift,
+    ShieldAlert,
+    Clock,
+    CheckCheck,
+    X
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { getRiderSocket } from "@/lib/socket";

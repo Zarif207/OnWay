@@ -245,13 +245,12 @@ const EarningsAnalytics = () => {
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm"
                 >
-                    <h3 className="text-2xl font-black text-[#011421] tracking-tight mb-8">Payout Composition</h3>
                     <div className="h-[300px] w-full flex items-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={pieData}
-                                    cx="40%"
+                                    cx="50%"
                                     cy="50%"
                                     innerRadius={60}
                                     outerRadius={100}

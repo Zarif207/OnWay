@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import {
   MapPin,
@@ -49,6 +49,18 @@ const VEHICLE_META = {
 };
 
 export default function BookRide() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="animate-spin text-[#2FCA71] h-12 w-12" />
+      </div>
+    }>
+      <BookRideContent />
+    </Suspense>
+  );
+}
+
+function BookRideContent() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();

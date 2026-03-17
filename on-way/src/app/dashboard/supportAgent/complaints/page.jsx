@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FileText, Search, Eye, CheckCircle, RefreshCw, ChevronLeft, ChevronRight, MapPin, Phone, Mail, MessageSquare } from "lucide-react";
+import SupportLoading from "../SupportLoading";
 
 export default function ComplaintsPage() {
   const [complaints, setComplaints] = useState([]);
@@ -92,14 +93,7 @@ export default function ComplaintsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2FCA71] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading complaints...</p>
-        </div>
-      </div>
-    );
+    return <SupportLoading />;
   }
 
   return (

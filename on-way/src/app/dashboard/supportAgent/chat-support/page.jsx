@@ -10,6 +10,7 @@ import {
 import { useChat } from "@/hooks/useChat";
 import { useRequireRole } from "@/hooks/useAuth";
 import CallModal from "@/components/dashboard/CallModal";
+import SupportLoading from "../SupportLoading";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001";
 
@@ -123,12 +124,7 @@ export default function ChatSupportPage() {
         );
     }, [sessions, searchQuery]);
 
-    if (authLoading) return (
-        <div className="flex flex-col items-center justify-center h-screen bg-[#F8F9FD] text-emerald-500">
-            <Loader2 className="animate-spin mb-4" size={32} />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em]">Initializing Support Matrix...</p>
-        </div>
-    );
+    if (authLoading) return <SupportLoading />;
 
     return (
         <div className="flex h-screen  text-gray-700 font-sans overflow-hidden P-4">

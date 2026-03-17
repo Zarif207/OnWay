@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRequireRole } from '@/hooks/useAuth';
+import SupportLoading from "./SupportLoading";
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function SupportAgentDashboard() {
@@ -131,14 +132,7 @@ export default function SupportAgentDashboard() {
   ];
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2FCA71] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <SupportLoading />;
   }
 
   return (

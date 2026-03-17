@@ -76,18 +76,18 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 h-20 flex items-center justify-center px-4 sm:px-8 md:px-12 ${scrollDirection === "down" && !isMobileMenuOpen ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+        className={`fixed top-0 left-0 right-0 z-100 transition-all duration-500 h-20 flex items-center justify-center px-4 sm:px-8 md:px-12 ${scrollDirection === "down" && !isMobileMenuOpen ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
           }`}
       >
         <div
           className={`w-full max-w-7xl flex items-center justify-between px-6 py-2.5 rounded-2xl border transition-all duration-300 ${isScrolled
-              ? "bg-white/70 dark:bg-black/70 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-2xl"
-              : "bg-transparent border-transparent"
+            ? "bg-white/70 dark:bg-black/70 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-2xl"
+            : "bg-transparent border-transparent"
             }`}
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 flex-shrink-0">
+            <div className="relative w-10 h-10 shrink-0">
               <Image
                 src={logoImage}
                 alt="OnWay Logo"
@@ -113,15 +113,15 @@ const Navbar = () => {
                 key={item.href}
                 href={item.href}
                 className={`relative px-4 py-2 text-sm font-bold tracking-tight transition-colors duration-300 rounded-lg hover:bg-[#22c55e]/5 ${isActive(item.href)
-                    ? "text-[#22c55e]"
-                    : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
+                  ? "text-[#22c55e]"
+                  : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
                   }`}
               >
                 {item.label}
                 {isActive(item.href) && (
                   <motion.div
                     layoutId="navbarIndicator"
-                    className="absolute bottom-0 left-4 right-4 h-[2px] bg-[#22c55e] rounded-full"
+                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#22c55e] rounded-full"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -132,15 +132,15 @@ const Navbar = () => {
               <Link
                 href={dashboardHref}
                 className={`relative px-4 py-2 text-sm font-bold tracking-tight transition-colors duration-300 rounded-lg hover:bg-[#22c55e]/5 ${pathname.startsWith("/dashboard")
-                    ? "text-[#22c55e]"
-                    : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
+                  ? "text-[#22c55e]"
+                  : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
                   }`}
               >
                 Dashboard
                 {pathname.startsWith("/dashboard") && (
                   <motion.div
                     layoutId="navbarIndicator"
-                    className="absolute bottom-0 left-4 right-4 h-[2px] bg-[#22c55e] rounded-full"
+                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#22c55e] rounded-full"
                   />
                 )}
               </Link>
@@ -162,7 +162,7 @@ const Navbar = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0A1F3D]/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-[110]"
+                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0A1F3D]/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-110"
                     >
                       {moreNav.map((link) => (
                         <Link
@@ -241,7 +241,7 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 z-[150] bg-[#0A1F3D]/60 backdrop-blur-md"
+              className="fixed inset-0 z-150 bg-[#0A1F3D]/60 backdrop-blur-md"
             />
 
             {/* Drawer */}
@@ -250,7 +250,7 @@ const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 h-full w-[85%] max-w-sm z-[160] bg-white dark:bg-[#0A1F3D] shadow-2xl p-8 flex flex-col"
+              className="fixed right-0 top-0 h-full w-[85%] max-w-sm z-160 bg-white dark:bg-[#0A1F3D] shadow-2xl p-8 flex flex-col"
             >
               <div className="flex items-center justify-between mb-12">
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3">
@@ -282,8 +282,8 @@ const Navbar = () => {
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all ${isActive(item.href)
-                          ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
-                          : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
+                        ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
+                        : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
                         }`}
                     >
                       <item.icon size={22} />
@@ -302,8 +302,8 @@ const Navbar = () => {
                       href={dashboardHref}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all ${pathname.startsWith("/dashboard")
-                          ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
-                          : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
+                        ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
+                        : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
                         }`}
                     >
                       <LayoutDashboard size={22} />

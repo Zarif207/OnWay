@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Settings, User, Bell, Lock, Camera, Upload } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Swal from "sweetalert2";
+import SupportLoading from "../SupportLoading";
 
 const toBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -109,11 +110,7 @@ export default function SettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2FCA71]"></div>
-      </div>
-    );
+    return <SupportLoading />;
   }
 
   return (

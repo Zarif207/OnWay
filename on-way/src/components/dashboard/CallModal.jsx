@@ -1,41 +1,67 @@
+"use client";
+
 import { useEffect, useRef } from "react";
+import { PhoneOff } from "lucide-react";
 
-export default function CallModal({ call }) {
+export default function CallModal({
+    callActive,
+    localStreamRef,
+    remoteStreamRef,
+    endCall
+}) {
 
-    const localVideo = useRef();
-    const remoteVideo = useRef();
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
 
+    // attach local stream
     useEffect(() => {
-
-        if (localVideo.current && call.localStreamRef.current) {
-            localVideo.current.srcObject = call.localStreamRef.current;
+        if (localVideoRef.current && localStreamRef?.current) {
+            localVideoRef.current.srcObject = localStreamRef.current;
         }
+    }, [localStreamRef]);
 
-        if (remoteVideo.current && call.remoteStreamRef.current) {
-            remoteVideo.current.srcObject = call.remoteStreamRef.current;
+    // attach remote stream
+    useEffect(() => {
+        if (remoteVideoRef.current && remoteStreamRef?.current) {
+            remoteVideoRef.current.srcObject = remoteStreamRef.current;
         }
+    }, [remoteStreamRef]);
 
-    });
-
-    if (!call.callActive) return null;
+    if (!callActive) return null;
 
     return (
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
 
-        <div className="fixed inset-0 bg-black flex flex-col items-center justify-center">
+            {/* Remote Video */}
+            <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+            />
 
-            <video ref={remoteVideo} autoPlay playsInline className="w-96" />
+            {/* Local Video (small preview) */}
+            <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="absolute bottom-6 right-6 w-40 md:w-52 rounded-2xl border-2 border-white shadow-xl"
+            />
 
-            <video ref={localVideo} autoPlay muted playsInline className="w-32 absolute bottom-10 right-10" />
+            {/* Call Controls */}
+            <div className="absolute bottom-10 flex items-center gap-4">
 
-            <button
-                onClick={call.endCall}
-                className="bg-red-500 text-white px-6 py-2 mt-6"
-            >
-                End Call
-            </button>
+                <button
+                    onClick={endCall}
+                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full shadow-lg transition"
+                >
+                    <PhoneOff size={18} />
+                    End Call
+                </button>
+
+            </div>
 
         </div>
-
-    )
-
+    );
 }

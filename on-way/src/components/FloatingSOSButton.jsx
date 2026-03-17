@@ -24,14 +24,13 @@ export default function FloatingSOSButton() {
   };
 
   return (
-    <div className="fixed bottom-24 right-6 z-46">
+    <div className="fixed bottom-16 right-4 z-86">
       <button
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`group relative w-10 h-10 bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 ${
-          isOnSOSPage ? "animate-pulse" : ""
-        }`}
+        className={`group relative w-10 h-10 bg-linear-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 ${isOnSOSPage ? "animate-pulse" : ""
+          }`}
         aria-label="Emergency SOS"
       >
         {isOnSOSPage && (

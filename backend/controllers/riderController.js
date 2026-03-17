@@ -90,6 +90,52 @@ const riderController = (collections) => {
                 console.error("Dashboard Stats Error:", error);
                 res.status(500).json({ success: false, message: error.message });
             }
+        },
+        // GET /api/riders/nearby
+        getNearbyRiders: async (req, res) => {
+            try {
+                const { lat, lng, radius = 5, excludeId } = req.query; // radius in KM
+                console.log("🚕 [API] getNearbyRiders called with:", { lat, lng, radius, excludeId });
+
+                let query = {
+                    status: "online",
+                    isApproved: true
+                };
+
+                // Exclude specific rider if needed (e.g. current user)
+                if (excludeId && ObjectId.isValid(excludeId)) {
+                    query._id = { $ne: new ObjectId(excludeId) };
+                }
+
+                // If coordinates provided, use geo-spatial filtering
+                if (lat && lng) {
+                    query["location.coordinates"] = {
+                        $nearSphere: {
+                            $geometry: {
+                                type: "Point",
+                                coordinates: [parseFloat(lng), parseFloat(lat)]
+                            },
+                            $maxDistance: parseInt(radius) * 1000 // Convert km to meters
+                        }
+                    };
+                }
+
+                const riders = await collections.ridersCollection.find(query).limit(15).toArray();
+
+                // Format for frontend
+                const formattedRiders = riders.map(r => ({
+                    id: r._id,
+                    lat: r.location?.coordinates ? r.location.coordinates[1] : (r.location?.lat || 23.8103),
+                    lng: r.location?.coordinates ? r.location.coordinates[0] : (r.location?.lng || 90.4125),
+                    name: r.name,
+                    vehicle: r.vehicleDetails || r.vehicle || { type: 'car' }
+                }));
+
+                res.status(200).json({ success: true, data: formattedRiders });
+            } catch (error) {
+                console.error("Nearby Riders Error:", error);
+                res.status(500).json({ success: false, message: error.message });
+            }
         }
     };
 };

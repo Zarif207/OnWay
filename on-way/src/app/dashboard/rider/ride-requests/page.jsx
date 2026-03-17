@@ -158,28 +158,47 @@ export default function RideRequestsPage() {
     return (
         <div className="space-y-10 pb-20">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                <div className="space-y-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
+
+                <div className="space-y-2 relative z-10">
                     <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-8 bg-primary rounded-full" />
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Dispatch Center</span>
+                        <div className="h-1.5 w-8 bg-primary rounded-full shadow-[0_0_10px_rgba(47,202,113,0.5)]" />
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Live Dispatch</span>
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-[#011421]">
-                        Ride <span className="text-primary">Requests</span>
+                        Incoming <span className="text-primary italic">Missions</span>
                     </h1>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                        Real-time incoming trip requests for your proximity
-                    </p>
+                    <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center">
+                                    <User size={10} className="text-gray-400" />
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            24 active passengers nearby
+                        </p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4 bg-[#f5f7fa] px-6 py-4 rounded-2xl border border-gray-100 shadow-inner">
-                    <div className="relative h-4 w-4">
-                        <div className="h-full w-full rounded-full bg-primary/20 absolute inset-0 animate-ping" />
-                        <div className="h-full w-full rounded-full border-2 border-primary flex items-center justify-center relative">
-                            <div className="h-1 w-1 rounded-full bg-primary" />
-                        </div>
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto relative z-10">
+                    <div className="relative w-full sm:w-72 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search location or ID..."
+                            className="w-full bg-gray-50 border border-transparent rounded-2xl pl-12 pr-5 py-4 text-xs font-bold text-[#011421] placeholder:text-gray-300 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 outline-none transition-all shadow-inner"
+                        />
                     </div>
-                    <span className="text-[10px] font-black text-[#011421] uppercase tracking-widest">Scanning Active</span>
+                    <div className="flex items-center gap-4 bg-[#011421] px-8 py-4 rounded-2xl shadow-xl border border-white/5">
+                        <div className="relative h-3 w-3">
+                            <div className="h-full w-full rounded-full bg-primary/40 absolute inset-0 animate-ping" />
+                            <div className="h-full w-full rounded-full border-2 border-primary relative" />
+                        </div>
+                        <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Live Radar</span>
+                    </div>
                 </div>
             </div>
 
@@ -341,18 +360,20 @@ function RideRequestCard({ ride, onAccept, onReject }) {
                 </div>
 
                 {/* Actions */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-4 pt-2">
                     <button
                         onClick={onReject}
-                        className="h-14 rounded-xl border border-gray-200 text-gray-400 font-bold uppercase tracking-widest text-[9px] hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all flex items-center justify-center gap-2"
+                        className="h-14 rounded-2xl border-2 border-gray-100 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all flex items-center justify-center gap-2 group/btn"
                     >
                         Decline
+                        <XCircle size={14} className="group-hover/btn:rotate-90 transition-transform" />
                     </button>
                     <button
                         onClick={onAccept}
-                        className="h-14 bg-primary text-white rounded-xl font-black uppercase tracking-widest text-[9px] shadow-lg shadow-primary/20 hover:bg-primary-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        className="h-14 bg-[#011421] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-[#011421]/20 hover:bg-primary transition-all flex items-center justify-center gap-2 group/btn"
                     >
                         Accept Ride
+                        <CheckCircle2 size={14} className="group-hover/btn:scale-125 transition-transform text-primary group-hover:text-white" />
                     </button>
                 </div>
             </div>

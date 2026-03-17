@@ -49,56 +49,76 @@ export default function VehicleInfoPage() {
         console.log("Image Uploaded URL:", uploadedImageUrl);
       }
 
-      // 2. Map existing structure to requested payload
-      const payload = {
-        firstName: updatedForm.firstName || "",
-        lastName: updatedForm.lastName || "",
-        email: updatedForm.email || "",
-        phone: `+880${updatedForm.mobileNumber || "00000"}`,
-        role: "rider",
+      // 2. Map existing structure to FormData for multipart upload
+      const submitData = new FormData();
 
-        address: {
-          district: updatedForm.district || "Dhaka",
-          city: updatedForm.city || "",
-        },
+      // Basic Information
+      submitData.append("firstName", updatedForm.firstName || "");
+      submitData.append("lastName", updatedForm.lastName || "");
+      submitData.append("email", updatedForm.email || "");
+      submitData.append("phone", `+880${updatedForm.mobileNumber || "00000"}`);
+      submitData.append("role", "rider");
+      submitData.append("gender", updatedForm.gender || "Male");
+      submitData.append("dateOfBirth", updatedForm.dateOfBirth || "");
+      submitData.append("referralCode", updatedForm.referralCode || "");
+      submitData.append("licenseNumber", data.licenseNumber);
 
-        gender: updatedForm.gender || "Male",
-        dateOfBirth: updatedForm.dateOfBirth || "",
+      // Uploaded string URLs or previously configured profile images
+      submitData.append("image", uploadedImageUrl);
 
-        emergencyContact: {
-          name: updatedForm.emergencyName || "", // Re-mapped to match context
-          phone: `+880${updatedForm.emergencyMobile || ""}` // Re-mapped to match context
-        },
+      // Arrays and Nest Objects require stringification before transmission
+      submitData.append("address", JSON.stringify({
+        district: updatedForm.district || "Dhaka",
+        city: updatedForm.city || "",
+      }));
 
-        identity: {
-          type: updatedForm.identityType || "NID",
-          number: updatedForm.identityNumber || "000",
-        },
+      submitData.append("emergencyContact", JSON.stringify({
+        name: updatedForm.emergencyName || "",
+        phone: `+880${updatedForm.emergencyMobile || ""}`
+      }));
 
-        referralCode: updatedForm.referralCode || "",
+      submitData.append("identity", JSON.stringify({
+        type: updatedForm.identityType || "NID",
+        number: updatedForm.identityNumber || "000",
+      }));
 
-        licenseNumber: data.licenseNumber,
+      submitData.append("vehicle", JSON.stringify({
+        category: updatedForm.activeCategory || "bike",
+        type: updatedForm.selectedModel || "Motorcycle",
+        number: data.registrationDigits || data.registrationNumber || "Unregistered",
+        model: data.year || data.model || "2024",
+        registrationNumber: data.registrationNumber || ""
+      }));
 
-        vehicle: {
-          category: updatedForm.activeCategory || "bike",
-          type: updatedForm.selectedModel || "Motorcycle",
-          number: data.registrationDigits || data.registrationNumber || "Unregistered",
-          model: data.year || data.model || "2024",
-          registrationNumber: data.registrationNumber || ""
-        },
+      submitData.append("operationCities", JSON.stringify(updatedForm.cities || []));
 
-        documents: {
-          drivingLicenseFile: "", // Left blank during onboarding logic for now
-          vehicleRegistrationFile: "" // Left blank during onboarding logic for now
-        },
+      submitData.append("faceVerification", JSON.stringify(updatedForm.faceVerification || {
+        isVerified: updatedForm.isFaceVerified || false,
+        verificationStatus: "pending",
+        verifiedAt: null,
+        verificationMethod: "face_match",
+        confidenceScore: 0,
+        verificationImage: "",
+        faceEmbedding: [],
+        lastVerificationAttempt: null,
+        verificationAttempts: 0
+      }));
+      submitData.append("isFaceVerified", updatedForm.isFaceVerified || false);
 
-        operationCities: updatedForm.cities || [],
+      // 3. Append Binary Files safely from React State
+      if (licenseFile) {
+        submitData.append("drivingLicenseFile", licenseFile);
+      }
+      if (regFile) {
+        submitData.append("vehicleRegistrationFile", regFile);
+      }
 
-        image: uploadedImageUrl,
-      };
+      console.log("Submitting FormData... Files present:", {
+        drivingLicense: !!licenseFile,
+        vehicleRegistration: !!regFile
+      });
 
-      console.log("Submitting Payload:", payload);
-      const result = await registerRider(payload);
+      const result = await registerRider(submitData);
 
       if (result.success) {
         toast.success("Application submitted successfully.");
@@ -145,12 +165,23 @@ export default function VehicleInfoPage() {
                 </div>
               </div>
 
+              {/* Step 2 Face Verification Completed */}
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-full bg-[#22c55e] flex items-center justify-center shadow-sm">
+                  <Check className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-[#0A1F3D]">Identity</h4>
+                  <p className="text-sm text-[#22c55e] font-bold">Verified</p>
+                </div>
+              </div>
+
               <div className="w-0.5 h-8 bg-[#22c55e]/30 ml-6 -my-2 rounded-full"></div>
 
-              {/* Step 2 Active */}
+              {/* Step 3 Active */}
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-full bg-[#22c55e] text-white flex items-center justify-center shadow-lg shadow-[#22c55e]/30">
-                  <span className="font-bold text-lg">2</span>
+                  <span className="font-bold text-lg">3</span>
                 </div>
                 <div>
                   <h4 className="font-bold text-[#0A1F3D]">Vehicle Details</h4>

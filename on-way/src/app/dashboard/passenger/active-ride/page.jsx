@@ -25,9 +25,11 @@ import { useSession } from "next-auth/react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-const DynamicMap = dynamic(() => import("../book-ride/_components/DynamicMap"), {
+const LiveTrackingMap = dynamic(() => import("./_components/LiveTrackingMap"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse rounded-3xl" />
+  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse rounded-3xl flex items-center justify-center">
+    <Loader2 className="animate-spin text-primary" size={32} />
+  </div>
 });
 
 function ActiveRideContent() {
@@ -38,6 +40,9 @@ function ActiveRideContent() {
 
   const [booking, setBooking] = useState(null);
   const [driverLocation, setDriverLocation] = useState(null);
+  const [passengerLocation, setPassengerLocation] = useState(null);
+  const [eta, setEta] = useState(null);
+  const [distance, setDistance] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | searching | accepted | started | completed | cancelled
   const [loading, setLoading] = useState(true);
 
@@ -72,12 +77,14 @@ function ActiveRideContent() {
     if (!bookingId || !socket) return;
 
     const onRideAccepted = (data) => {
-      if (data.bookingId === bookingId) {
+      console.log("🚕 [RIDE ACCEPTED]", data);
+      if (data.bookingId === bookingId || data.rideId === bookingId) {
         setStatus("accepted");
         setBooking(prev => ({
           ...prev,
           riderId: data.riderId || data.driverId,
-          driverInfo: data.driver
+          driverInfo: data.driver,
+          otp: data.otp || prev?.otp
         }));
         toast.success("Driver found!");
         emit("join:room", { room: `ride:${bookingId}` });
@@ -85,7 +92,47 @@ function ActiveRideContent() {
     };
 
     const onLocationUpdate = (data) => {
-      setDriverLocation([data.lat, data.lng]);
+      console.log("📍 [LOCATION UPDATE]", data);
+      if (data.rideId === bookingId || data.bookingId === bookingId) {
+        // Handle both lat/lng (old) and latitude/longitude (new) formats
+        const lat = data.latitude || data.lat;
+        const lng = data.longitude || data.lng;
+        if (lat && lng) {
+          setDriverLocation([lat, lng]);
+        }
+        if (data.eta) setEta(data.eta);
+        if (data.distance) setDistance(data.distance);
+      }
+    };
+
+    const onRiderLocationUpdate = (data) => {
+      console.log("🚗 [RIDER LOCATION]", data);
+      if (data.rideId === bookingId || data.bookingId === bookingId) {
+        const lat = data.latitude || data.lat;
+        const lng = data.longitude || data.lng;
+        if (lat && lng) {
+          setDriverLocation([lat, lng]);
+        }
+        if (data.eta) setEta(data.eta);
+        if (data.distance) setDistance(data.distance);
+      }
+    };
+
+    const onDriverLocationUpdate = (data) => {
+      console.log("📡 [DRIVER LIVE TRACKING]", data);
+      if (data.rideId === bookingId || data.bookingId === bookingId) {
+        setDriverLocation([data.latitude, data.longitude]);
+        if (data.eta) setEta(data.eta);
+        if (data.distance) setDistance(data.distance);
+      }
+    };
+
+    const onRiderArrived = (data) => {
+      console.log("✅ [RIDER ARRIVED]", data);
+      if (data.rideId === bookingId || data.bookingId === bookingId) {
+        setStatus("arrived");
+        toast.success(data.message || "Driver has arrived!");
+      }
     };
 
     const handleStatusUpdate = (data) => {
@@ -95,10 +142,32 @@ function ActiveRideContent() {
     };
 
     on("ride:accepted", onRideAccepted);
+    on("rideAccepted", onRideAccepted);
     on("driver:location:updated", onLocationUpdate);
-    on("driver:arrived", (data) => data.bookingId === bookingId && setStatus("arrived"));
-    on("ride:started", (data) => data.bookingId === bookingId && setStatus("started"));
-    on("ride:completed", (data) => data.bookingId === bookingId && setStatus("completed"));
+    on("riderLocationUpdate", onRiderLocationUpdate);
+    on("driver-location-update", onDriverLocationUpdate);
+    on("riderArrived", onRiderArrived);
+    on("driver:arrived", (data) => {
+      if (data.bookingId === bookingId || data.rideId === bookingId) {
+        setStatus("arrived");
+        toast.success("Driver has arrived!");
+      }
+    });
+
+    on("ride:started", (data) => {
+      if (data.bookingId === bookingId || data.rideId === bookingId) {
+        setStatus("started");
+        toast.success("Ride started!");
+      }
+    });
+
+    on("ride:completed", (data) => {
+      if (data.bookingId === bookingId || data.rideId === bookingId) {
+        setStatus("completed");
+        toast.success("Ride completed!");
+      }
+    });
+
     on("ride:status:updated", handleStatusUpdate);
 
     // Initial Join
@@ -106,9 +175,38 @@ function ActiveRideContent() {
 
     return () => {
       off("ride:accepted", onRideAccepted);
+      off("rideAccepted", onRideAccepted);
       off("driver:location:updated", onLocationUpdate);
+      off("riderLocationUpdate", onRiderLocationUpdate);
+      off("driver-location-update", onDriverLocationUpdate);
+      off("riderArrived", onRiderArrived);
     };
   }, [bookingId, socket, emit, on, off]);
+
+  // 3. Passenger Live Geolocation
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation is not supported by this browser");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setPassengerLocation([latitude, longitude]);
+      },
+      (error) => {
+        console.error("Passenger Geolocation Error:", error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   const handleSOS = async () => {
     try {
@@ -178,9 +276,10 @@ function ActiveRideContent() {
         </div>
         <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${status === 'searching' ? 'bg-yellow-50 text-yellow-600 border border-yellow-200' :
           status === 'accepted' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-            'bg-green-50 text-green-600 border border-green-200'
+            status === 'arrived' ? 'bg-orange-50 text-orange-600 border border-orange-200' :
+              'bg-green-50 text-green-600 border border-green-200'
           }`}>
-          {status === 'searching' ? 'Finding Driver' : status.toUpperCase()}
+          {status === 'searching' ? 'Finding Driver' : status === 'arrived' ? 'Driver Arriving Soon' : status.toUpperCase()}
         </div>
       </div>
 
@@ -188,10 +287,13 @@ function ActiveRideContent() {
         {/* MAP SECTION */}
         <div className="lg:col-span-8 space-y-6">
           <div className="bg-white rounded-[3rem] border border-gray-100 shadow-2xl overflow-hidden h-[500px] relative group transition-all">
-            <DynamicMap
+            <LiveTrackingMap
               pickup={[booking.pickupLocation.lat, booking.pickupLocation.lng]}
               dropoff={[booking.dropoffLocation.lat, booking.dropoffLocation.lng]}
-              driver={driverLocation}
+              driverLocation={driverLocation}
+              passengerLocation={passengerLocation}
+              eta={eta}
+              distance={distance}
             />
             {status === 'searching' && (
               <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-8 text-center">

@@ -376,29 +376,37 @@ async function startSocketServer() {
         // Fetch rider/driver details for passenger
         const driver = await ridersCollection.findOne({ _id: riderOid });
 
+        const driverDetails = {
+          name: driver.name || "Driver",
+          photo: driver.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name || 'Driver'}`,
+          rating: driver.rating || 5.0,
+          vehicle: {
+            type: driver.vehicleType || "Car",
+            plate: driver.vehicleDetails?.plate || "DHK-R 1234",
+            color: driver.vehicleDetails?.color || "White",
+            brand: driver.vehicleDetails?.brand || "Toyota"
+          }
+        };
+
         // Join both to a common ride room
         const rideRoom = `ride:${bookingId}`;
         socket.join(rideRoom);
 
         // Notify passenger (in their private room)
         const passengerRoom = `user:${updatedBooking.passengerId}`;
-        io.to(passengerRoom).emit("ride:accepted", {
+        const acceptancePayload = {
           bookingId,
-          driver: {
-            name: driver.name,
-            photo: driver.image || "/default-avatar.png",
-            rating: driver.rating || 5.0,
-            vehicle: driver.vehicleDetails || { type: driver.vehicleType, plate: "DHK-R 1234" }
-          },
+          rideId: bookingId,
+          driverId: riderId,
+          riderId: riderId,
+          driver: driverDetails,
+          otp: updatedBooking.otp,
           eta: "5-10",
           distance: "2.5 km"
-        });
+        };
 
-        // FEATURE 5: Specifically requested event name
-        io.to(passengerRoom).emit("rideAccepted", {
-          rideId: bookingId,
-          driverId: riderId
-        });
+        io.to(passengerRoom).emit("ride:accepted", acceptancePayload);
+        io.to(passengerRoom).emit("rideAccepted", acceptancePayload);
 
         // Acknowledge to driver
         socket.emit("ride:accept:success", { bookingId });
@@ -409,12 +417,21 @@ async function startSocketServer() {
       }
     });
 
+    // 📍 Real-time Location Updates (FEATURE 4)
+    socket.on("riderLocationUpdate", (data) => {
+      const { rideId, lat, lng, eta, distance } = data;
+      console.log(`📍 [LOCATION] Broadcast: Ride ${rideId} at ${lat}, ${lng}`);
+
+      // Broadcast to specific ride room (both passenger and driver)
+      io.to(`ride:${rideId}`).emit("riderLocationUpdate", data);
+
+      // Also emit for dashboard backward compatibility
+      io.to(`ride:${rideId}`).emit("driver:location:updated", data);
+    });
+
     // FEATURE 5: Explicit rideAccepted listener as requested
     socket.on("rideAccepted", (data) => {
       console.log("📡 [SOCKET] Explicit rideAccepted received from driver:", data);
-      // This is primarily for the driver to trigger the passenger redirect via server
-      // The atomic logic is already handled in ride:accept, but we ensure the passenger 
-      // gets the specific event they are listening for.
     });
 
     // 2. DRIVER ARRIVED (FEATURE 7)

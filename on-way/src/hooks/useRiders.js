@@ -5,6 +5,8 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 const useRiders = () => {
     const registerRider = async (payload) => {
         try {
+            // Note: When sending FormData, Axios automatically sets the correct 
+            // 'Content-Type: multipart/form-data' header and boundaries.
             const response = await axios.post(`${apiUrl}/riders`, payload);
             return response.data;
         } catch (error) {
@@ -60,7 +62,17 @@ const useRiders = () => {
         }
     };
 
-    return { registerRider, getRiderProfile, updateRiderProfile, uploadRiderImage, uploadRiderDocuments };
+    const verifyFace = async (payload) => {
+        try {
+            const response = await axios.post(`${apiUrl}/rider/face-verification`, payload);
+            return response.data;
+        } catch (error) {
+            console.error("Face verification error:", error.response?.data?.message || error.message);
+            return { success: false, message: error.response?.data?.message || "Verification failed" };
+        }
+    };
+
+    return { registerRider, getRiderProfile, updateRiderProfile, uploadRiderImage, uploadRiderDocuments, verifyFace };
 };
 
 export default useRiders;

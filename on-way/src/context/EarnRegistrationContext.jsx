@@ -41,6 +41,20 @@ export function EarnRegistrationProvider({ children }) {
     fitnessNumber: "",
     licenseNumber: "",
     registrationNumber: "",
+
+    // Face Verification
+    faceVerification: {
+      isVerified: false,
+      verificationStatus: "pending",
+      verifiedAt: null,
+      verificationMethod: "face_match",
+      confidenceScore: 0,
+      verificationImage: "",
+      faceEmbedding: [],
+      lastVerificationAttempt: null,
+      verificationAttempts: 0
+    },
+    isFaceVerified: false,
   };
 
   // Store all form data across the 3 steps

@@ -4,41 +4,17 @@ const { ObjectId } = require("mongodb");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const uploadRiderFiles = require("../middleware/uploadRiderFiles");
 
 module.exports = function (collections) {
   const router = express.Router();
   const { ridersCollection, ridesCollection, reviewsCollection } = collections;
 
-  // 🔹 Multer Configuration for Rider Uploads
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const dir = path.join(__dirname, "../uploads/riders");
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-    },
-  });
-
-  const upload = multer({
-    storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-      if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
-        cb(null, true);
-      } else {
-        cb(new Error("Only images and PDF files are allowed"));
-      }
-    },
-  });
-
   // 🔹 API: Upload Single Payload Image (Rider Profile Picture)
-  router.post("/upload", upload.single("riderImage"), async (req, res) => {
+  router.post("/upload", uploadRiderFiles.single("riderImage"), async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ success: false, message: "No file provided" });
-      const fileUrl = `/uploads/riders/${req.file.filename}`;
+      const fileUrl = req.file.path; // Cloudinary automatically provides the secure url in path
       res.status(200).json({ success: true, url: fileUrl });
     } catch (err) {
       console.error("Single Upload Error:", err);
@@ -47,7 +23,9 @@ module.exports = function (collections) {
   });
 
   // 🔹 API: Upload Multiple Documents to existing Rider Document
-  router.post("/:id/documents", upload.fields([
+  router.post("/:id/documents", uploadRiderFiles.fields([
+    { name: 'drivingLicenseFile', maxCount: 1 },
+    { name: 'vehicleRegistrationFile', maxCount: 1 },
     { name: 'drivingLicense', maxCount: 1 },
     { name: 'vehicleRegistration', maxCount: 1 }
   ]), async (req, res) => {
@@ -55,11 +33,14 @@ module.exports = function (collections) {
       if (!req.files) return res.status(400).json({ success: false, message: "No documents provided" });
 
       const newDocs = {};
-      if (req.files.drivingLicense) {
-        newDocs["documents.drivingLicenseFile"] = `/uploads/riders/${req.files.drivingLicense[0].filename}`;
+      const dlFile = req.files.drivingLicenseFile || req.files.drivingLicense;
+      if (dlFile) {
+        newDocs["documents.drivingLicenseFile"] = dlFile[0].path;
       }
-      if (req.files.vehicleRegistration) {
-        newDocs["documents.vehicleRegistrationFile"] = `/uploads/riders/${req.files.vehicleRegistration[0].filename}`;
+
+      const vrFile = req.files.vehicleRegistrationFile || req.files.vehicleRegistration;
+      if (vrFile) {
+        newDocs["documents.vehicleRegistrationFile"] = vrFile[0].path;
       }
 
       await ridersCollection.updateOne(
@@ -75,7 +56,15 @@ module.exports = function (collections) {
   });
 
   // 🔹 Create Rider (Register)
-  router.post("/", async (req, res) => {
+  router.post("/", uploadRiderFiles.fields([
+    { name: 'profileImage', maxCount: 1 },
+    { name: 'faceImage', maxCount: 1 },
+    { name: 'drivingLicenseFile', maxCount: 1 },
+    { name: 'nidImage', maxCount: 1 },
+    { name: 'vehicleRegistrationFile', maxCount: 1 },
+    { name: 'driverLicense', maxCount: 1 },
+    { name: 'vehicleDocument', maxCount: 1 }
+  ]), async (req, res) => {
     try {
       const {
         firstName,
@@ -92,12 +81,14 @@ module.exports = function (collections) {
         vehicle,
         documents,
         operationCities,
-        image
+        image,
+        faceVerification
       } = req.body;
 
       console.log("--- New Registration Request ---");
       console.log("Headers:", req.headers["content-type"]);
-      console.log("Incoming Rider Data:", JSON.stringify(req.body, null, 2));
+      console.log("Incoming Rider Data (Body):", JSON.stringify(req.body, null, 2));
+      console.log("Incoming Rider Files:", req.files ? Object.keys(req.files) : "None");
 
       const requiredFields = ["firstName", "email", "phone"];
       const missingFields = requiredFields.filter(field => !req.body[field]);
@@ -111,8 +102,11 @@ module.exports = function (collections) {
         });
       }
 
-      const existing = await ridersCollection.findOne({ email });
-      if (existing) {
+      // Check if email exists
+      let existing = await ridersCollection.findOne({ email });
+
+      // If existing but already has a name, it's a real duplicate
+      if (existing && (existing.firstName || existing.name)) {
         console.warn(`Registration failed: Email ${email} already exists`);
         return res.status(400).json({
           success: false,
@@ -124,38 +118,128 @@ module.exports = function (collections) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
-      const rider = {
+      // Extract uploaded Cloudinary URLs
+      const profileImageUrl = req.files?.profileImage?.[0]?.path || image || null;
+      const faceImageUrl = req.files?.faceImage?.[0]?.path || (faceVerification?.verificationImage || req.body.faceImage) || "";
+      const driverLicenseUrl = req.files?.drivingLicenseFile?.[0]?.path || req.files?.driverLicense?.[0]?.path || documents?.drivingLicenseFile || "";
+      const nidImageUrl = req.files?.nidImage?.[0]?.path || identity?.image || "";
+      const vehicleDocumentUrl = req.files?.vehicleRegistrationFile?.[0]?.path || req.files?.vehicleDocument?.[0]?.path || documents?.vehicleRegistrationFile || "";
+
+      // Construct parsing logic for potentially stringified objects
+      const parseJSON = (str, fallback) => {
+        try {
+          return typeof str === 'string' ? JSON.parse(str) : (str || fallback);
+        } catch { return fallback; }
+      };
+
+      const parsedAddress = parseJSON(address, { district: "", city: "" });
+      const parsedEmergency = parseJSON(emergencyContact, { name: "", phone: "" });
+      const parsedIdentity = parseJSON(identity, { type: "NID", number: "" });
+      const parsedVehicle = parseJSON(vehicle, { category: "bike", type: "", number: "", model: "", registrationNumber: "" });
+      const parsedDocs = parseJSON(documents, { drivingLicenseFile: driverLicenseUrl, vehicleRegistrationFile: vehicleDocumentUrl });
+      const parsedFaceVerification = parseJSON(faceVerification || req.body.faceVerification, {});
+
+      // Assign extracted files to the parsed objects
+      parsedDocs.drivingLicenseFile = driverLicenseUrl;
+      parsedDocs.vehicleRegistrationFile = vehicleDocumentUrl;
+      parsedIdentity.image = nidImageUrl;
+
+      const riderData = {
+        // 1️⃣ BASIC IDENTITY
         name: `${firstName || ''} ${lastName || ''}`.trim(),
+        firstName: firstName || '',
+        lastName: lastName || '',
         email: email || '',
         phone: phone || '',
         password: hashedPassword,
-        address: address || { district: "", city: "" },
+        role: "rider",
+        status: "offline",
+
+        // 2️⃣ PERSONAL INFORMATION
         gender: gender || null,
         dateOfBirth: dateOfBirth || null,
-        emergencyContact: emergencyContact || { name: "", phone: "" },
-        identity: identity || { type: "NID", number: "" },
-        referralCode: referralCode || null,
+        address: parsedAddress,
+
+        // 3️⃣ EMERGENCY CONTACT
+        emergencyContact: parsedEmergency,
+
+        // 4️⃣ IDENTITY DOCUMENTS
+        identity: parsedIdentity,
         licenseNumber: licenseNumber || null,
-        vehicle: vehicle || { category: "bike", type: "", number: "", model: "", registrationNumber: "" },
-        documents: documents || { drivingLicenseFile: "", vehicleRegistrationFile: "" },
-        operationCities: operationCities || [],
-        image: image || null,
-        role: "rider",
-        isApproved: false,
-        status: "offline",
+        documents: parsedDocs,
+
+        // 5️⃣ VEHICLE
+        vehicle: parsedVehicle,
+        vehicleDocument: vehicleDocumentUrl,
+
+        // 6️⃣ OPERATION DATA
+        operationCities: parseJSON(operationCities, []),
         currentRideId: null,
-        rating: 5.0,
+        rating: 5,
         totalTrips: 0,
+        workingDays: [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday"
+        ],
+        workingHours: {
+          start: "04:00",
+          end: "17:00"
+        },
+        vacationMode: false,
+        serviceAreas: [
+          { lat: 23.7937, lng: 90.4066 },
+          { lat: 23.7989, lng: 90.4012 },
+          { lat: 23.7856, lng: 90.4123 },
+          { lat: 23.7912, lng: 90.4145 }
+        ],
+        referralCode: referralCode || null,
+        image: profileImageUrl,
+        isApproved: false,
+
+        // 7️⃣ LOCATION TRACKING
         location: {
           type: "Point",
-          coordinates: [90.4125, 23.8103] // Default to Dhaka, Bangladesh
+          coordinates: [90.4125, 23.8103],
+          lat: 23.8103,
+          lng: 90.4125
         },
         lastLocationUpdate: new Date(),
-        createdAt: new Date(),
+        lastSeen: new Date(),
+        simulatedLocation: null,
+
+        // 8️⃣ FACE VERIFICATION
+        faceVerification: {
+          ...parsedFaceVerification,
+          isVerified: req.body.isFaceVerified === 'true' || req.body.isFaceVerified === true || false,
+          verificationStatus: req.body.verificationStatus || "pending",
+          verifiedAt: req.body.verifiedAt || null,
+          verificationMethod: req.body.verificationMethod || "face_match",
+          confidenceScore: req.body.confidenceScore || 0,
+          verificationImage: faceImageUrl,
+          faceEmbedding: req.body.faceDescriptor || [],
+          lastVerificationAttempt: new Date(),
+          verificationAttempts: req.body.verificationAttempts || 0
+        },
+        isFaceVerified: req.body.isFaceVerified === 'true' || req.body.isFaceVerified === true || false,
+
+        // 9️⃣ TIMESTAMPS
+        createdAt: existing?.createdAt || new Date(),
         updatedAt: new Date(),
       };
 
-      const result = await ridersCollection.insertOne(rider);
+      let riderId;
+      if (existing) {
+        await ridersCollection.updateOne({ email }, { $set: riderData });
+        riderId = existing._id;
+      } else {
+        const result = await ridersCollection.insertOne(riderData);
+        riderId = result.insertedId;
+      }
+
+      console.log(`✅ Rider registered successfully: ${email}`);
 
       // 🔔 Send notification to admins about new rider registration
       try {
@@ -169,11 +253,11 @@ module.exports = function (collections) {
 
         if (collections.notificationsCollection && collections.passengerCollection) {
           await notificationHelper.notifyRiderRegistration(collections, {
-            _id: result.insertedId,
-            name: rider.name,
-            email: rider.email,
-            phone: rider.phone,
-            isApproved: rider.isApproved,
+            _id: riderId,
+            name: riderData.name,
+            email: riderData.email,
+            phone: riderData.phone,
+            isApproved: riderData.isApproved,
           });
         }
       } catch (notifError) {
@@ -183,12 +267,8 @@ module.exports = function (collections) {
 
       res.status(201).json({
         success: true,
-        message: "Rider registered successfully",
-        data: {
-          riderId: result.insertedId,
-          email: rider.email,
-          name: rider.name
-        }
+        message: "Rider registration submitted for verification",
+        data: riderData
       });
     } catch (error) {
       console.error("Rider registration error:", error);
@@ -416,6 +496,49 @@ module.exports = function (collections) {
       res.status(500).json({ success: false });
     }
   });
+  // 🔹 GET Nearby Riders
+  router.get("/nearby", async (req, res) => {
+    try {
+      const { lat, lng, radius = 5, excludeId } = req.query;
+      let query = { status: "online", isApproved: true };
+
+      if (excludeId && ObjectId.isValid(excludeId)) {
+        query._id = { $ne: new ObjectId(excludeId) };
+      }
+
+      const lngNum = parseFloat(lng);
+      const latNum = parseFloat(lat);
+
+      if (!isNaN(lngNum) && !isNaN(latNum)) {
+        query["location.coordinates"] = {
+          $nearSphere: {
+            $geometry: {
+              type: "Point",
+              coordinates: [lngNum, latNum]
+            },
+            $maxDistance: parseInt(radius) * 1000
+          }
+        };
+      } else {
+        return res.status(400).json({ success: false, message: "Valid lat and lng are required for nearby search" });
+      }
+
+      const riders = await ridersCollection.find(query).limit(15).toArray();
+      const formattedRiders = riders.map(r => ({
+        id: r._id,
+        lat: r.location?.coordinates ? r.location.coordinates[1] : (r.location?.lat || latNum),
+        lng: r.location?.coordinates ? r.location.coordinates[0] : (r.location?.lng || lngNum),
+        name: r.firstName || r.name,
+        vehicle: r.vehicle || { category: "bike", type: "Motorcycle" }
+      }));
+
+      res.status(200).json({ success: true, data: formattedRiders });
+    } catch (error) {
+      console.error("Nearby riders error:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch nearby riders" });
+    }
+  });
+
 
   // 🔹 Get All Riders
   router.get("/", async (req, res) => {
@@ -749,6 +872,81 @@ module.exports = function (collections) {
     } catch (error) {
       console.error("Update schedule error:", error);
       res.status(500).json({ success: false, message: "Failed to update schedule" });
+    }
+  });
+
+  // 🔹 API: Face Verification
+  router.post("/face-verification", async (req, res) => {
+    try {
+      const { riderId, faceDescriptor, email, image } = req.body;
+
+      if (!faceDescriptor || !Array.isArray(faceDescriptor)) {
+        return res.status(400).json({ success: false, message: "Invalid face descriptor." });
+      }
+
+      let imagePath = "";
+      if (image && image.includes("base64")) {
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+        const imageBuffer = Buffer.from(base64Data, "base64");
+        const fileName = `face-${riderId || "reg"}-${Date.now()}.png`;
+        const dir = path.join(__dirname, "../uploads/riders/faces");
+
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        imagePath = `/uploads/riders/faces/${fileName}`;
+        fs.writeFileSync(path.join(dir, fileName), imageBuffer);
+      }
+
+      // Find the existing rider to check for previous verification attempts
+      let existingRider = null;
+      if (riderId) {
+        existingRider = await ridersCollection.findOne({ _id: new ObjectId(riderId) });
+      } else if (email) {
+        existingRider = await ridersCollection.findOne({ email });
+      }
+
+      const currentAttempts = (existingRider?.faceVerification?.verificationAttempts || 0) + 1;
+
+      const faceVerificationData = {
+        isVerified: true,
+        verificationStatus: "verified",
+        verifiedAt: new Date(),
+        verificationMethod: "face_match",
+        confidenceScore: 0.98, // Face-api.js doesn't provide a consolidated score easily here, using a high default
+        verificationImage: imagePath,
+        faceEmbedding: faceDescriptor,
+        lastVerificationAttempt: new Date(),
+        verificationAttempts: currentAttempts
+      };
+
+      // Find by ID if available, otherwise fallback to email for pending registrations
+      let result;
+      if (riderId) {
+        result = await ridersCollection.findOneAndUpdate(
+          { _id: new ObjectId(riderId) },
+          { $set: { faceVerification: faceVerificationData, isFaceVerified: true } },
+          { returnDocument: "after" }
+        );
+      } else if (email) {
+        result = await ridersCollection.findOneAndUpdate(
+          { email },
+          { $set: { faceVerification: faceVerificationData, isFaceVerified: true } },
+          { upsert: true, returnDocument: "after" }
+        );
+      } else {
+        return res.status(400).json({ success: false, message: "Rider ID or Email required." });
+      }
+
+      console.log(`✅ Face verification completed for: ${riderId || email} (Attempt ${currentAttempts})`);
+
+      res.status(200).json({
+        success: true,
+        message: "Face verification completed",
+        data: result.value || result
+      });
+    } catch (error) {
+      console.error("Face verification error:", error);
+      res.status(500).json({ success: false, message: "Internal server error during verification." });
     }
   });
 

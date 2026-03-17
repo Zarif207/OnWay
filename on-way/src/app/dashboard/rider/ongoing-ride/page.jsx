@@ -83,22 +83,58 @@ function OngoingRideContent() {
         return () => clearInterval(timer);
     }, []);
 
-    // Live Geolocation Tracking
+    // Real-time Location Broadcast (FEATURE 4)
     useEffect(() => {
-        if (!riderId || status === 'completed') return;
+        if (!bookingId || !socket) return;
 
-        const watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                const { latitude, longitude } = pos.coords;
-                setDriverPos([latitude, longitude]);
-                emit('rider:update-location', { riderId, lat: latitude, lng: longitude });
-            },
-            (err) => console.error("GPS Watch Error:", err),
-            { enableHighAccuracy: true, distanceFilter: 10 }
-        );
+        const broadcastLocation = () => {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const { latitude, longitude } = position.coords;
+                    setDriverPos([latitude, longitude]);
+                    emit("riderLocationUpdate", {
+                        rideId: bookingId,
+                        lat: latitude,
+                        lng: longitude,
+                        timestamp: new Date().toISOString()
+                    });
+                }, (error) => {
+                    console.error("Geolocation error:", error);
+                });
+            }
+        };
 
-        return () => navigator.geolocation.clearWatch(watchId);
-    }, [riderId, status, emit]);
+        const locationInterval = setInterval(broadcastLocation, 2000);
+        return () => clearInterval(locationInterval);
+    }, [bookingId, socket, emit]);
+
+    // Real-time Simulation Synchronization
+    useEffect(() => {
+        if (!bookingId || !socket) return;
+
+        const onLocationUpdate = (data) => {
+            if (data.rideId === bookingId || data.bookingId === bookingId) {
+                setDriverPos([data.lat, data.lng]);
+            }
+        };
+
+        const onArrived = (data) => {
+            if (data.rideId === bookingId || data.bookingId === bookingId) {
+                setStatus("arrived");
+                toast.success(data.message || "You have arrived at the pickup location!");
+            }
+        };
+
+        on("riderLocationUpdate", onLocationUpdate);
+        on("driver:location:updated", onLocationUpdate);
+        on("riderArrived", onArrived);
+
+        return () => {
+            off("riderLocationUpdate", onLocationUpdate);
+            off("driver:location:updated", onLocationUpdate);
+            off("riderArrived", onArrived);
+        };
+    }, [bookingId, socket, on, off]);
 
     // Socket listeners for passenger updates
     useEffect(() => {
@@ -125,6 +161,7 @@ function OngoingRideContent() {
                 setStatus(newStatus);
                 if (newStatus === "arrived") {
                     emit("driver:arrived", { bookingId });
+                    emit("riderArrived", { rideId: bookingId, message: "Driver has arrived!" });
                     toast.success("Arrival notified to passenger.");
                 } else if (newStatus === "completed") {
                     emit("ride:complete", { bookingId, riderId });

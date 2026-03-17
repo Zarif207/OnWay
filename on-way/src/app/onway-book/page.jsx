@@ -9,6 +9,8 @@ import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
 import { useRouter } from "next/navigation";
 import { getPassengerSocket, disconnectPassengerSocket } from "@/lib/passengerSocket";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
   ssr: false,
@@ -50,25 +52,66 @@ export default function BookRidePage() {
   // Tracking online riders
   const [onlineRiders, setOnlineRiders] = useState({});
 
-  // 1. Socket Synchronization for Live Riders
+  // 1. Initial Fetch and Socket Synchronization for Live Riders
   useEffect(() => {
     const passengerId = session?.user?.id;
     if (!passengerId) return;
 
+    // Initial Fetch from API
+    const fetchNearby = async () => {
+      try {
+        // Provide default coordinates (e.g. Dhaka city center) so the query passes backend validation
+        // Once the user clicks "Get Current Location" or searches, the map logic overrides this.
+        const res = await axios.get(`${API_BASE_URL}/riders/nearby?lat=23.8103&lng=90.4125&excludeId=${passengerId}`);
+        if (res.data.success) {
+          const ridersMap = {};
+          res.data.data.forEach(r => {
+            ridersMap[r.id] = r;
+          });
+          setOnlineRiders(ridersMap);
+        }
+      } catch (err) {
+        console.error("Fetch nearby failed:", err);
+      }
+    };
+
+    fetchNearby();
+
     const socket = getPassengerSocket(passengerId);
 
-    // Request initial state
+    // Request state updates periodically or on connection
     socket.emit("get-online-riders");
 
     // Listen for updates
     socket.on("online-riders", (riders) => {
-      console.log("🚕 [SOCKET] Received initial online riders:", riders);
-      setOnlineRiders(riders);
+      // Filter out self just in case
+      const filtered = {};
+      Object.keys(riders).forEach(id => {
+        if (id !== passengerId) filtered[id] = riders[id];
+      });
+      setOnlineRiders(filtered);
     });
 
     socket.on("riders:update", (riders) => {
-      console.log("🚕 [SOCKET] Live riders update:", riders);
-      setOnlineRiders(riders);
+      // If riders is an array (from simulator)
+      if (Array.isArray(riders)) {
+        setOnlineRiders(prev => {
+          const newMap = { ...prev };
+          riders.forEach(r => {
+            if (r.id !== passengerId) {
+              newMap[r.id] = { ...newMap[r.id], ...r };
+            }
+          });
+          return newMap;
+        });
+      } else {
+        // If it's a map
+        const filtered = {};
+        Object.keys(riders).forEach(id => {
+          if (id !== passengerId) filtered[id] = riders[id];
+        });
+        setOnlineRiders(filtered);
+      }
     });
 
     return () => {

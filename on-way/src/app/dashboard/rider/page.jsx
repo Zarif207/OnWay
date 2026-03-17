@@ -122,28 +122,16 @@ const RiderDashboard = () => {
       ), { duration: 10000 });
     });
 
-    // 📍 Geolocation Tracking (PART 3)
-    let watchId = null;
-    if (isOnline && navigator.geolocation) {
-      console.log("📍 [GEO] Starting live tracking for rider:", riderId);
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          socket.emit("rider:update-location", {
-            riderId,
-            lat: latitude,
-            lng: longitude
-          });
-          console.log(`📡 [SOCKET] Sent location: ${latitude}, ${longitude}`);
-        },
-        (error) => console.error("📍 [GEO] error:", error),
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-      );
-    }
+    // 📍 Simulation Synchronization (PART 3)
+    // No longer using navigator.geolocation as per requirements
+    socket.on("riderLocationUpdate", (data) => {
+      console.log("📡 [SIMULATION] Location update received:", data);
+      // Optional: Update some local state if the dashboard needs to show the car moving
+    });
 
     return () => {
       socket.off("new-ride-request");
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      socket.off("riderLocationUpdate");
     };
   }, [riderId, isOnline]);
 

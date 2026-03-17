@@ -375,7 +375,11 @@ export default function PassengerDashboard() {
                   <XCircle size={20} />
                 </div>
                 <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4 border-4 border-white/30 overflow-hidden flex items-center justify-center text-[#2FCA71]">
-                  <User size={48} />
+                  <img
+                    src={matchedDriver.driver?.avatar || matchedDriver.driver?.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${matchedDriver.driver?.name || 'Driver'}`}
+                    alt="Driver"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <h3 className="text-2xl font-black tracking-tight">Driver Found!</h3>
                 <p className="text-white/80 font-bold uppercase tracking-widest text-xs mt-1">Your ride is on the way</p>
@@ -385,11 +389,13 @@ export default function PassengerDashboard() {
                 <div className="flex items-center justify-between border-b border-gray-100 pb-6">
                   <div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Driver</p>
-                    <p className="text-xl font-bold text-gray-900">John Doe (Mock)</p>
+                    <p className="text-xl font-bold text-gray-900">{matchedDriver.driver?.name || "Driver"}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle</p>
-                    <p className="text-xl font-bold text-gray-900">White Toyota Prius</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {matchedDriver.driver?.vehicle?.color || ""} {matchedDriver.driver?.vehicle?.brand || matchedDriver.driver?.vehicle?.type || "Car"}
+                    </p>
                   </div>
                 </div>
 
@@ -399,21 +405,27 @@ export default function PassengerDashboard() {
                       <Star size={20} fill="currentColor" />
                     </div>
                     <div>
-                      <p className="text-lg font-black text-gray-900 leading-none">4.9</p>
+                      <p className="text-lg font-black text-gray-900 leading-none">{matchedDriver.driver?.rating || "5.0"}</p>
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rating</p>
                     </div>
                   </div>
                   <div className="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">OTP Code</p>
-                    <p className="text-2xl font-black text-[#2FCA71] tracking-[0.2em]">{matchedDriver.otp || "8842"}</p>
+                    <p className="text-2xl font-black text-[#2FCA71] tracking-[0.2em]">{matchedDriver.otp}</p>
                   </div>
                 </div>
 
                 <div className="pt-4 flex gap-2">
-                  <button className="flex-1 py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition">
+                  <button
+                    className="flex-1 py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition"
+                    onClick={() => window.open(`tel:${matchedDriver.driver?.phone}`, "_self")}
+                  >
                     Call Driver
                   </button>
-                  <button className="flex-1 py-4 bg-[#2FCA71] text-white font-bold rounded-2xl hover:bg-[#25A65B] transition shadow-lg shadow-[#2FCA71]/20">
+                  <button
+                    onClick={() => router.push(`/dashboard/passenger/active-ride?bookingId=${matchedDriver.bookingId || matchedDriver.rideId}`)}
+                    className="flex-1 py-4 bg-[#2FCA71] text-white font-bold rounded-2xl hover:bg-[#25A65B] transition shadow-lg shadow-[#2FCA71]/20"
+                  >
                     Track Ride
                   </button>
                 </div>

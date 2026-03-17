@@ -26,6 +26,25 @@ class Rider {
             }
         );
     }
+
+    async updateSimulatedLocation(id, lat, lng) {
+        if (!ObjectId.isValid(id)) return null;
+        return await this.collection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+                $set: {
+                    simulatedLocation: { lat, lng },
+                    updatedAt: new Date()
+                }
+            }
+        );
+    }
+
+    async getServiceAreas(id) {
+        if (!ObjectId.isValid(id)) return null;
+        const rider = await this.findById(id);
+        return rider?.serviceAreas || [];
+    }
 }
 
 module.exports = Rider;

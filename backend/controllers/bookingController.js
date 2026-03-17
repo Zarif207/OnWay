@@ -1,6 +1,7 @@
 const { ObjectId } = require("mongodb");
 const generateOTP = require("../utils/generateOTP");
 const socketStore = require("../utils/socketStore");
+const rideSimulation = require("../services/rideSimulationService");
 const Booking = require("../models/Booking");
 const Rider = require("../models/Rider");
 const Passenger = require("../models/Passenger");
@@ -133,11 +134,97 @@ const bookingController = (collections) => {
                     const booking = await bookingModel.findById(id);
                     if (booking && booking.riderId) {
                         await riderModel.updateStatus(booking.riderId, "online");
+                        // Stop simulation when ride ends
+                        rideSimulation.stopSimulation(id);
                     }
                 }
 
                 res.status(200).json({ success: true, message: "Status updated" });
             } catch (error) {
+                res.status(500).json({ success: false, message: error.message });
+            }
+        },
+
+        // POST /api/bookings/:id/accept - Rider accepts ride
+        acceptRide: async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { riderId } = req.body;
+
+                if (!riderId) {
+                    return res.status(400).json({ success: false, message: "Rider ID required" });
+                }
+
+                const booking = await bookingModel.findById(id);
+                if (!booking) {
+                    return res.status(404).json({ success: false, message: "Booking not found" });
+                }
+
+                if (booking.bookingStatus !== "searching") {
+                    return res.status(400).json({ success: false, message: "Ride already assigned" });
+                }
+
+                // Update booking with rider
+                await collections.bookingsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: {
+                            riderId: new ObjectId(riderId),
+                            bookingStatus: "accepted",
+                            acceptedAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    }
+                );
+
+                // Get rider details including service areas
+                const rider = await riderModel.findById(riderId);
+                if (!rider) {
+                    return res.status(404).json({ success: false, message: "Rider not found" });
+                }
+
+                // Update rider status to busy
+                await riderModel.updateStatus(riderId, "busy");
+
+                // Notify passenger via socket
+                if (req.io) {
+                    req.io.to(`passenger:${booking.passengerId}`).emit("ride:accepted", {
+                        bookingId: id,
+                        riderId: riderId,
+                        driver: {
+                            name: rider.name,
+                            phone: rider.phone,
+                            vehicle: rider.vehicle,
+                            rating: rider.rating || 5.0
+                        }
+                    });
+
+                    // Start simulated movement
+                    const serviceAreas = rider.serviceAreas || [];
+                    const pickupLat = booking.pickupLocation.lat;
+                    const pickupLng = booking.pickupLocation.lng;
+
+                    rideSimulation.startSimulation(
+                        id,
+                        riderId,
+                        serviceAreas,
+                        pickupLat,
+                        pickupLng,
+                        req.io,
+                        async (rideId, driverId) => {
+                            // Callback when rider arrives
+                            await bookingModel.updateStatus(rideId, "arrived");
+                        }
+                    );
+                }
+
+                res.status(200).json({
+                    success: true,
+                    message: "Ride accepted successfully",
+                    booking: await bookingModel.findById(id)
+                });
+            } catch (error) {
+                console.error("Accept ride error:", error);
                 res.status(500).json({ success: false, message: error.message });
             }
         }

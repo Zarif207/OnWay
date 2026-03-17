@@ -68,10 +68,17 @@ export default function BookRide() {
 
     const geocode = async (query, setter, coordsSetter) => {
       try {
-        const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=bd&limit=1`);
-        if (res.data.length > 0) {
-          setter(res.data[0].display_name);
-          coordsSetter([parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)]);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=bd&limit=1`;
+        const res = await fetch(url, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'OnWay-App-v1.0'
+          }
+        });
+        const data = await res.json();
+        if (data.length > 0) {
+          setter(data[0].display_name);
+          coordsSetter([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
         } else {
           setter(query); // Fallback to raw text
         }
@@ -86,31 +93,53 @@ export default function BookRide() {
   }, [searchParams]);
 
   // Socket Integration for live rider tracking
+  // Fetch Nearby Riders and listen for socket updates
   useEffect(() => {
+    const passengerId = session?.user?.id;
     if (!passengerId) return;
 
+    const fetchNearby = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/riders/nearby?excludeId=${passengerId}`);
+        if (res.data.success) {
+          const ridersMap = {};
+          res.data.data.forEach(r => {
+            ridersMap[r.id] = r;
+          });
+          setNearbyRiders(ridersMap);
+        }
+      } catch (error) {
+        console.error("Failed to fetch nearby riders:", error);
+      }
+    };
+
+    fetchNearby();
+
+    // Listen for socket updates
     const socket = getPassengerSocket(passengerId);
-
-    socket.on("connect", () => {
-      console.log("🔌 [SOCKET] Passenger connected, requesting riders...");
-      socket.emit("get-online-riders");
-    });
-
-    socket.on("riders:update", (riders) => {
-      console.log("📡 [SOCKET] Received riders update:", Object.keys(riders).length, "riders online");
-      setNearbyRiders(riders);
-    });
-
-    socket.on("online-riders", (riders) => {
-      setNearbyRiders(riders);
-    });
+    if (socket) {
+      socket.on("riders:update", (updatedRiders) => {
+        setNearbyRiders(prev => {
+          const newMap = { ...prev };
+          updatedRiders.forEach(r => {
+            if (r.id !== passengerId) {
+              newMap[r.id] = {
+                ...newMap[r.id],
+                lat: r.lat,
+                lng: r.lng,
+                id: r.id
+              };
+            }
+          });
+          return newMap;
+        });
+      });
+    }
 
     return () => {
-      socket.off("riders:update");
-      socket.off("online-riders");
-      // Don't disconnect here as we might need it for active ride tracking later
+      if (socket) socket.off("riders:update");
     };
-  }, [passengerId]);
+  }, [session]);
 
   const [activeInput, setActiveInput] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -139,8 +168,15 @@ export default function BookRide() {
 
     if (query.length > 2) {
       try {
-        const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=bd&limit=5`);
-        const formatted = res.data.map(item => ({
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=bd&limit=5`;
+        const res = await fetch(url, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'OnWay-App-v1.0'
+          }
+        });
+        const data = await res.json();
+        const formatted = data.map(item => ({
           name: item.display_name,
           coords: [parseFloat(item.lat), parseFloat(item.lon)]
         }));
@@ -272,8 +308,15 @@ export default function BookRide() {
   // Map Click Handler
   const onMapClick = async (lat, lng) => {
     try {
-      const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-      const address = res.data.display_name.split(',')[0];
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'OnWay-App-v1.0'
+        }
+      });
+      const data = await res.json();
+      const address = data.display_name.split(',')[0];
       const coords = [lat, lng];
 
       if (activeInput === 'pickup' || (!pickupCoords && activeInput !== 'dropoff')) {

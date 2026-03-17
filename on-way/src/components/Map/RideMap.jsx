@@ -22,16 +22,8 @@ L.Marker.prototype.options.icon = defaultIcon;
 const pickupIcon = new L.Icon({ ...defaultIcon.options });
 const dropoffIcon = new L.Icon({ ...defaultIcon.options });
 
-// Custom Car Icon for Animation
-const carIconUrl = "data:image/svg+xml;utf8," + encodeURIComponent(`
-<svg fill="#000000" viewBox="0 0 24 24" id="car" data-name="Flat Color" xmlns="http://www.w3.org/2000/svg" class="icon flat-color">
-  <path id="primary" d="M21.71,11A1,1,0,0,0,21,10.63H3a1,1,0,0,0-.71.29A1,1,0,0,0,2,11.63L3,18.63a1,1,0,0,0,.15.39,1,1,0,0,0,.85.61H20a1,1,0,0,0,.84-.6,1,1,0,0,0,.16-1ZM6,17.63a1,1,0,1,1,1-1A1,1,0,0,1,6,17.63Zm12,0a1,1,0,1,1,1-1A1,1,0,0,1,18,17.63Z" style="fill: rgb(37, 99, 235);"></path>
-  <path id="secondary" d="M19,10.63l-.7-3.56A1,1,0,0,0,17.32,6.2H6.68a1,1,0,0,0-1,.84l-.7,3.59Z" style="fill: rgb(147, 197, 253);"></path>
-</svg>
-`);
-
 const carIcon = new L.Icon({
-  iconUrl: carIconUrl,
+  iconUrl: "/icons/car.png",
   iconSize: [36, 36],
   iconAnchor: [18, 18],
   popupAnchor: [0, -18],

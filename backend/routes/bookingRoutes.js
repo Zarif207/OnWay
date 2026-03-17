@@ -10,6 +10,7 @@ module.exports = (collections) => {
     router.get("/:id", controller.getBookingById);
     router.post("/verify-otp", controller.verifyOTP);
     router.patch("/:id/status", controller.updateStatus);
+    router.post("/:id/accept", controller.acceptRide);
 
     return router;
 };

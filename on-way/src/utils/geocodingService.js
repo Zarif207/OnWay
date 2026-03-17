@@ -1,3 +1,5 @@
+"use client";
+
 import axios from "axios";
 
 /**
@@ -62,11 +64,11 @@ export const geocodeAddress = async (query, countryCode = 'BD') => {
 
     // Get the best result (first one is usually most relevant)
     const result = response.data[0];
-    
+
     // Validate coordinates
     const lat = parseFloat(result.lat);
     const lon = parseFloat(result.lon);
-    
+
     if (isNaN(lat) || isNaN(lon)) {
       throw new Error("Invalid coordinates received");
     }
@@ -90,18 +92,18 @@ export const geocodeAddress = async (query, countryCode = 'BD') => {
     if (error.code === 'ECONNABORTED') {
       throw new Error("Request timeout. Please check your internet connection.");
     }
-    
+
     if (error.response) {
       if (error.response.status === 429) {
         throw new Error("Too many requests. Please wait a moment and try again.");
       }
       throw new Error(`Geocoding service error: ${error.response.status}`);
     }
-    
+
     if (error.message.includes('Location not found')) {
       throw error;
     }
-    
+
     throw new Error("Failed to find location. Please try again.");
   }
 };

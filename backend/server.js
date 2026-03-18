@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -29,9 +30,12 @@ const dashboardRoutes = require("./routes/dashboard");
 const settingsRoutes = require("./routes/settings");
 const notificationsRoutes = require("./routes/notifications");
 const searchRoutes = require("./routes/search");
+const kycRoutes = require("./routes/kyc");
+const notice = require("./routes/notice");
 const notificationHelper = require("./utils/notificationHelper");
 const socketStore = require("./utils/socketStore");
 const RiderSimulator = require("./services/riderSimulator");
+const { newsletterRoute, transporter } = require("./routes/newsletter");
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -46,7 +50,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
-// ✅ Initialize Socket.io for backend (optional - for direct backend notifications)
+// Initialize Socket.io for backend 
 // Note: Main socket server runs separately on port 4001
 const io = new Server(server, {
   cors: {
@@ -64,7 +68,7 @@ const io = new Server(server, {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // Allow all in development
+        callback(null, true);
       }
     },
     credentials: true,
@@ -74,9 +78,9 @@ const io = new Server(server, {
 // Set Socket.io instance in notification helper
 notificationHelper.setSocketIO(io);
 
-console.log("✅ Socket.io initialized for backend notifications");
+console.log(" Socket.io initialized for backend notifications");
 
-// ✅ CORS Configuration for Production
+//  CORS Configuration for Production
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -400,7 +404,7 @@ app.use((req, res, next) => {
 let cachedDb = null;
 let isConnecting = false;
 
-// ✅ Optimized MongoDB Connection for Vercel Serverless
+//  Optimized MongoDB Connection for Vercel Serverless
 async function connectDB() {
   if (cachedDb) {
     return cachedDb;
@@ -418,7 +422,7 @@ async function connectDB() {
     isConnecting = true;
     await client.connect();
     await client.db("admin").command({ ping: 1 });
-    console.log("✅ MongoDB connected");
+    console.log(" MongoDB connected");
 
     cachedDb = client.db("onWayDB");
     isConnecting = false;
@@ -430,12 +434,12 @@ async function connectDB() {
     return cachedDb;
   } catch (error) {
     isConnecting = false;
-    console.error("❌ MongoDB connection error:", error);
+    console.error(" MongoDB connection error:", error);
     throw error;
   }
 }
 
-// ✅ Middleware to attach database collections to request
+// Middleware to attach database collections to request
 app.use(async (req, res, next) => {
   try {
     const database = await connectDB();
@@ -452,8 +456,11 @@ app.use(async (req, res, next) => {
       complaintsCollection: database.collection("complaints"),
       promoCodeCollection: database.collection("promoCode"),
       emergencyCollection: database.collection("emergency"),
+      settingsCollection: database.collection("settings"),
       notificationsCollection: database.collection("notifications"),
-      settingsCollection: database.collection("settings")
+      kycCollection: database.collection("kyc"),
+      newsletterCollection: database.collection("newsletter"),
+      noticeCollection: database.collection("notice")
     };
     next();
   } catch (error) {
@@ -465,13 +472,17 @@ app.use(async (req, res, next) => {
   }
 });
 
-// ✅ Register routes
+// Register routes
 app.use("/api/passenger", (req, res, next) => {
   passengerRoutes(req.collections.passengerCollection)(req, res, next);
 });
 
 app.use("/api/blogs", (req, res, next) => {
-  blogRoutes(req.collections.blogsCollection)(req, res, next);
+  blogRoutes(
+    req.collections.blogsCollection,
+    req.collections.newsletterCollection,
+    transporter
+  )(req, res, next);
 });
 
 app.use("/api/location", (req, res, next) => {
@@ -516,7 +527,11 @@ app.use("/api/rider", (req, res, next) => {
 app.use("/api/geocoding", geocodingRoutes);
 
 app.use("/api/promo", (req, res, next) => {
-  promoCodeRoutes(req.collections.promoCodeCollection)(req, res, next);
+  promoCodeRoutes(
+    req.collections.promoCodeCollection,
+    req.collections.newsletterCollection,
+    transporter
+  )(req, res, next);
 });
 
 app.use("/api/emergency", (req, res, next) => {
@@ -539,7 +554,18 @@ app.use("/api/search", (req, res, next) => {
   searchRoutes(req.collections)(req, res, next);
 });
 
-// ✅ Health check endpoint
+app.use("/api/kyc", (req, res, next) => {
+  kycRoutes(req.collections.kycCollection, req.collections.ridersCollection)(req, res, next);
+});
+
+app.use("/api/notice", (req, res, next) => {
+  notice(req.collections.noticeCollection, req.collections.passengerCollection, transporter)(req, res, next);
+});
+
+app.use("/api/newsletter", (req, res, next) => {
+  newsletterRoute(req.collections.newsletterCollection)(req, res, next);
+});
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "onWay Backend running",
@@ -548,7 +574,8 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ✅ Test endpoint for debugging
+
+// Test endpoint for debugging
 app.get("/api/test", (req, res) => {
   res.json({
     message: "API is working",
@@ -558,7 +585,7 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-// ✅ 404 handler
+//  404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -568,7 +595,7 @@ app.use((req, res) => {
   });
 });
 
-// ✅ Global error handler
+//  Global error handler
 app.use((err, req, res, next) => {
   console.error("Global error:", err);
   res.status(err.status || 500).json({
@@ -578,7 +605,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Start server for local development
+//  Start server for local development
 if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
@@ -587,5 +614,5 @@ if (require.main === module) {
   });
 }
 
-// ✅ For Vercel serverless
+//  For Vercel serverless
 module.exports = app;

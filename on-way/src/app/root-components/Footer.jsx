@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { toast, Toaster } from "react-hot-toast";
 import {
   Facebook,
   Instagram,
@@ -19,11 +20,87 @@ import AnimatedButton from "./AnimatedButton";
 
 import { AnimatedHeading, StaggerContainer } from "./MotionWrappers";
 
-/**
- * Footer Component (Final V2)
- * Premium image background with glassmorphism layout and modern hover interactions.
- */
+// Quick Links Data with Routes
+const quickLinks = [
+  { label: "About Us", href: "/about" },
+  { label: "Our Services", href: "/onway-book" },
+  { label: "Project", href: "/earn-with-onway" },
+  { label: "FAQ's", href: "/faq" },
+  { label: "Our Blog", href: "/blog" },
+  { label: "Contact Us", href: "/contact" },
+];
+
+// Our Services Data with Routes
+const serviceLinks = [
+  { label: "OnWay Ride Share", href: "/onway-book" },
+  { label: "Premium Car Rent", href: "/pricing" },
+  { label: "OnWay CNG Rapid", href: "/onway-book" },
+  { label: "Executive Travel", href: "/rideSharing-guidlines" },
+  { label: "OnWay Pay Secure", href: "/Safety-Coverage" },
+  { label: "Air Freight Tracking", href: "/onway-book" },
+];
+
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (isSubscribed) {
+      setIsSubscribed(false);
+      setStatus("idle");
+    }
+  };
+
+  // Handle Subscribe Logic
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setStatus("loading");
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/newsletter/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsSubscribed(true);
+        setStatus("success");
+        setEmail("");
+        toast.success(data.message || "Successfully Subscribed!", {
+          duration: 4000,
+          position: "top-center",
+          style: {
+            background: "#0A1F3D",
+            color: "#fff",
+            border: "1px solid #22c55e",
+          },
+        });
+      } else {
+
+        if (data.message && data.message.toLowerCase().includes("already")) {
+          setIsSubscribed(true);
+          setStatus("idle");
+        } else {
+          setStatus("error");
+        }
+        toast.error(data.message || "Something went wrong!");
+      }
+    } catch (error) {
+      console.error("Subscription Error:", error);
+      setStatus("error");
+      toast.error("Failed to connect to server.");
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0, y: 30 },
     show: {
@@ -43,12 +120,7 @@ export default function Footer() {
   };
 
   const XIcon = ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={className}
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );
@@ -59,12 +131,11 @@ export default function Footer() {
       // Added slight contrast/brightness filter to make image pop more
       style={{ backgroundImage: "url('/home-3.webp')", filter: "brightness(1.05) contrast(1.05)" }}
     >
-      {/* ================= BACKGROUND OVERLAYS ================= */}
-      {/* Smooth linear gradient replacing the heavy solid overlay: Right side is darker to keep text readable, Left side is lighter to show image */}
-     <div className="absolute inset-0 bg-gradient-to-r from-[#020617]/95 via-[#0B2A52]/80 to-[#1E3A8A]/55 z-0 pointer-events-none" />
+      <Toaster />
 
-      {/* Subtle bottom fade to seamlessly blend with the end of the page */}
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#030712] to-transparent z-0 pointer-events-none" />
+      {/* Heavy Dark Overlays */}
+      <div className="absolute inset-0 bg-[#0A1F3D]/95 z-0" />
+      <div className="absolute inset-0 bg-linear-to-b from-[#0A1F3D]/50 via-transparent to-[#050B1A] z-0" />
 
       {/* Floating blur blobs (low opacity) background effects for a touch of tech-glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -95,7 +166,8 @@ export default function Footer() {
             </motion.div>
           </div>
 
-          <motion.div
+          <motion.form
+            onSubmit={handleSubscribe}
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -107,16 +179,29 @@ export default function Footer() {
 
             <input
               type="email"
-              placeholder="Enter your email address..."
-              className="flex-1 min-w-0 bg-transparent text-white placeholder:text-white/60 outline-none text-sm font-medium pr-4 overflow-hidden text-ellipsis whitespace-nowrap"
+              required
+              disabled={status === "loading"}
+              value={email}
+              onChange={handleEmailChange}
+              placeholder={isSubscribed && !email ? "You're already a subscriber!" : "Your Email"}
+              className="group w-full bg-transparent text-white placeholder:text-zinc-400 outline-none text-sm font-medium"
             />
-            <button className="h-full px-6 sm:px-8 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white text-sm font-bold tracking-wide rounded-full transition-all duration-300 shadow-[inset_0_1px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-[1.02] active:scale-95 flex-shrink-0 relative overflow-hidden group-hover:after:absolute group-hover:after:inset-0 group-hover:after:bg-white/10 group-hover:after:rounded-full">
-              Subscribe
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className={`h-full px-8 rounded-full flex items-center gap-2 font-black uppercase text-xs tracking-widest transition-all shadow-xl 
+                ${(isSubscribed && !email)
+                  ? "bg-zinc-600 cursor-not-allowed text-white"
+                  : "bg-[#22c55e] hover:brightness-110 active:scale-95 shadow-[#22c55e]/20 text-white"}`}
+            >
+              {status === "loading" ? "..." : (isSubscribed && !email) ? "Subscribed" : (
+                <>Subscribe <Send size={16} fill="currentColor" /></>
+              )}
             </button>
-          </motion.div>
+          </motion.form>
         </div>
 
-        {/* ================= MAIN FOOTER CONTAINER (Glassmorphism) ================= */}
+        {/* ================= MAIN FOOTER CONTAINER ================= */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -165,68 +250,69 @@ export default function Footer() {
             </div>
           </motion.div>
 
-          <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
-            {/* Column 2: Product */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h4 className="text-white font-bold text-sm tracking-widest uppercase opacity-90">Product</h4>
-              <ul className="space-y-4">
-                {["Ride Booking", "Real-time Tracking", "Safety Features", "Pricing"].map((link) => (
-                  <li key={link} className="flex justify-center sm:justify-start">
-                    <Link href="#" className="flex w-fit items-center text-[#A0AEC0] text-sm font-medium hover:text-[#22c55e] transition-all duration-300 group outline-none relative hover:tracking-wide">
-                      {link}
-                      <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-gradient-to-r from-[#22c55e] to-emerald-400 transition-all duration-300 group-hover:w-full rounded-full" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+          {/* Column 2: Quick Links */}
+          <motion.div variants={itemVariants}>
+            <h4 className="text-white font-black text-xl mb-4 relative inline-block">
+              Quick Links
+              <span className="absolute -bottom-2 left-0 w-8 h-0.75 bg-[#22c55e] rounded-full" />
+            </h4>
+            <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
+            <ul className="space-y-4">
+              {quickLinks.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
 
-            {/* Column 3: Company */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h4 className="text-white font-bold text-sm tracking-widest uppercase opacity-90">Company</h4>
-              <ul className="space-y-4">
-                {["About Us", "Careers", "Blog", "Contact"].map((link) => (
-                  <li key={link} className="flex justify-center sm:justify-start">
-                    <Link href="#" className="flex w-fit items-center text-[#A0AEC0] text-sm font-medium hover:text-[#22c55e] transition-all duration-300 group outline-none relative hover:tracking-wide">
-                      {link}
-                      <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-gradient-to-r from-[#22c55e] to-emerald-400 transition-all duration-300 group-hover:w-full rounded-full" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+          {/* Column 3: Our Services */}
+          <motion.div variants={itemVariants}>
+            <h4 className="text-white font-black text-xl mb-4 relative inline-block">
+              Our Services
+              <span className="absolute -bottom-2 left-0 w-8 h-0.75 bg-[#22c55e] rounded-full" />
+            </h4>
+            <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
+            <ul className="space-y-4">
+              {serviceLinks.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
 
-            {/* Column 4: Resources */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h4 className="text-white font-bold text-sm tracking-widest uppercase opacity-90">Resources</h4>
-              <ul className="space-y-4">
-                {["Help Center", "Documentation", "API Access", "Privacy"].map((link) => (
-                  <li key={link} className="flex justify-center sm:justify-start">
-                    <Link href="#" className="flex w-fit items-center text-[#A0AEC0] text-sm font-medium hover:text-[#22c55e] transition-all duration-300 group outline-none relative hover:tracking-wide">
-                      {link}
-                      <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-gradient-to-r from-[#22c55e] to-emerald-400 transition-all duration-300 group-hover:w-full rounded-full" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+          {/* Column 4: Opening Hours */}
+          <motion.div variants={itemVariants} className="space-y-10">
+            <div>
+              <h4 className="text-white font-black text-xl mb-4 relative inline-block">
+                Opening Hours
+                <span className="absolute -bottom-2 left-0 w-8 h-0.75 bg-[#22c55e] rounded-full" />
+              </h4>
+              <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold">
+                  <span>Week Days</span>
+                  <span className="text-white/80 tracking-tighter">09.00 - 7.00</span>
+                </div>
+                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
+                  <span>Saturday</span>
+                  <span className="text-white/80 tracking-tighter">08.00 - 4.00</span>
+                </div>
+                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
+                  <span>Friday</span>
+                  <span className="text-white/80">Day Off</span>
+                </div>
+              </div>
+            </div>
 
-            {/* Column 5: Platform */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h4 className="text-white font-bold text-sm tracking-widest uppercase opacity-90">Platform</h4>
-              <ul className="space-y-4">
-                {["Become a Rider", "Driver Dashboard", "Earnings", "Requirements"].map((link) => (
-                  <li key={link} className="flex justify-center sm:justify-start">
-                    <Link href="#" className="flex w-fit items-center text-[#A0AEC0] text-sm font-medium hover:text-[#22c55e] transition-all duration-300 group outline-none relative hover:tracking-wide">
-                      {link}
-                      <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-gradient-to-r from-[#22c55e] to-emerald-400 transition-all duration-300 group-hover:w-full rounded-full" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          </div>
-
+          </motion.div>
         </motion.div>
 
         {/* ================= COPYRIGHT ROW ================= */}

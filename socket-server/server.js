@@ -1,16 +1,16 @@
 require("dotenv").config();
+const express = require("express");
 const http = require("http");
+const cors = require("cors");
 const { Server } = require("socket.io");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
+// ------------------- CONFIGURATION -------------------
 const PORT = process.env.SOCKET_PORT || 4001;
 const uri = process.env.MONGODB_URI;
 
-// Validate MongoDB URI
 if (!uri) {
-  console.error("❌ ERROR: MONGODB_URI is not defined in .env file");
-  console.error("Please create a .env file in socket-server directory with:");
-  console.error("MONGODB_URI=your_mongodb_connection_string");
+  console.error("❌ ERROR: MONGODB_URI is not defined");
   process.exit(1);
 }
 
@@ -22,182 +22,103 @@ const client = new MongoClient(uri, {
   },
 });
 
-// Store active connections for monitoring
-const activeConnections = new Map();
+// ------------------- GLOBAL STATE -------------------
+const onlineUsers = new Map(); // userId -> socketId
+const activeConnections = new Map(); // socketId -> user info
 
-async function connectDB() {
-  try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log("✅ MongoDB connected (Socket Server)");
-  } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
-    process.exit(1);
-  }
-}
-
-// Verify JWT token (simple validation - enhance for production)
+// ------------------- HELPER FUNCTIONS -------------------
 function verifyToken(token) {
-  // In development, allow any token for testing
-  if (process.env.NODE_ENV === 'development') {
-    return { valid: true };
-  }
-
-  // TODO: Implement proper JWT verification with your AUTH_SECRET
-  if (!token || token.length < 10) {
-    return null;
-  }
-
-  // In production, decode JWT and verify signature
-  // const jwt = require("jsonwebtoken");
-  // const decoded = jwt.verify(token, process.env.AUTH_SECRET);
-  // return decoded;
-
-  return { valid: true }; // Placeholder - implement proper JWT verification
+  if (process.env.NODE_ENV === 'development') return { valid: true };
+  if (!token || token.length < 10) return null;
+  return { valid: true }; // TODO: Replace with real JWT verification
 }
 
-// Check if user is admin or authorized role
 function isAdmin(userRole) {
   const authorizedRoles = ["admin", "supportAgent", "rider", "passenger"];
   return authorizedRoles.includes(userRole);
 }
 
-async function startSocketServer() {
-  await connectDB();
-  const database = client.db("onWayDB");
-  const gpsLocationsCollection = database.collection("gpsLocations");
-  const notificationsCollection = database.collection("notifications");
-  const rideSessionsCollection = database.collection("rideSessions");
+// ------------------- DATABASE CONNECTION -------------------
+async function connectDB() {
+  try {
+    await client.connect();
+    console.log("✅ MongoDB Connected Successfully (Socket Server)");
+    return client.db("onWayDB");
+  } catch (error) {
+    console.error("❌ MongoDB Connection Error:", error);
+    process.exit(1);
+  }
+}
 
-  // Create HTTP server
-  const server = http.createServer();
+// ------------------- SOCKET HANDLERS -------------------
+function setupSocket(io, collections) {
+  const {
+    gpsLocationsCollection,
+    notificationsCollection,
+    rideSessionsCollection,
+    chatCollection,
+    bookingsCollection,
+    ridersCollection
+  } = collections;
 
-  // Create Socket.io server with CORS and authentication
-  const io = new Server(server, {
-    cors: {
-      origin: [
-        "http://localhost:3000",
-        "http://localhost:4000",
-        "http://localhost:5000",
-        "https://on-way-neon.vercel.app",
-        process.env.FRONTEND_URL
-      ].filter(Boolean),
-      methods: ["GET", "POST"],
-      credentials: true,
-    },
-    // Connection timeout
-    pingTimeout: 60000,
-    pingInterval: 25000,
-  });
-
-  // ✅ Authentication Middleware
-  io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
-    const userRole = socket.handshake.auth.role;
-    const userId = socket.handshake.auth.userId;
-
-    console.log(`🔐 Authentication attempt - Role: ${userRole}, UserId: ${userId}, Token: ${token ? 'Present' : 'Missing'}`);
-
-    // In development, be more lenient
-    if (process.env.NODE_ENV === 'development') {
-      // Allow connection if userId and role are present
-      if (userId && userRole) {
-        // Check if user is admin or support agent
-        if (isAdmin(userRole)) {
-          socket.userId = userId;
-          socket.userRole = userRole;
-          socket.authenticated = true;
-          console.log(`✅ Authentication successful (DEV MODE) - ${userRole} (${userId})`);
-          return next();
-        } else {
-          console.log(`❌ Authorization failed - Role: ${userRole} is not authorized`);
-          return next(new Error("Authorization failed: Admin access required"));
-        }
-      }
-    }
-
-    // Verify token
-    const verified = verifyToken(token);
-
-    if (!verified) {
-      console.log(`❌ Authentication failed - Invalid token`);
-      return next(new Error("Authentication failed: Invalid token"));
-    }
-
-    // Check if user is admin or support agent
-    if (!isAdmin(userRole)) {
-      console.log(`❌ Authorization failed - Role: ${userRole} is not authorized`);
-      return next(new Error("Authorization failed: Admin access required"));
-    }
-
-    // Attach user info to socket
-    socket.userId = userId;
-    socket.userRole = userRole;
-    socket.authenticated = true;
-
-    console.log(`✅ Authentication successful - ${userRole} (${userId})`);
-    next();
-  });
-
-  // Socket.io connection handling
   io.on("connection", (socket) => {
-    console.log(`🔌 Admin client connected: ${socket.id} (${socket.userRole})`);
+    console.log(`🔌 New connection: ${socket.id} (Role: ${socket.userRole || 'guest'})`);
 
-    // Store active connection
-    activeConnections.set(socket.id, {
-      userId: socket.userId,
-      role: socket.userRole,
-      connectedAt: new Date(),
-    });
+    // --- Admin/Role Tracking ---
+    if (socket.authenticated) {
+      activeConnections.set(socket.id, {
+        userId: socket.userId,
+        role: socket.userRole,
+        connectedAt: new Date(),
+      });
 
-    // Log connection to database
-    rideSessionsCollection.insertOne({
-      socketId: socket.id,
-      userId: socket.userId,
-      role: socket.userRole,
-      type: "admin_connection",
-      connectedAt: new Date(),
-      status: "active",
-    }).catch(err => console.error("Error logging connection:", err));
+      rideSessionsCollection.insertOne({
+        socketId: socket.id,
+        userId: socket.userId,
+        role: socket.userRole,
+        type: "connection_log",
+        connectedAt: new Date(),
+        status: "active",
+      }).catch(err => console.error("Error logging connection:", err));
+    }
 
-    // Join user-specific notification room (admin only)
-    socket.on("joinNotifications", (userId) => {
-      if (!socket.authenticated) {
-        socket.emit("error", { message: "Unauthorized" });
-        return;
-      }
-
+    // --- User Registration & Rooms ---
+    socket.on("registerUser", ({ userId, role }) => {
+      if (!userId) return;
+      onlineUsers.set(String(userId), socket.id);
       socket.join(`user_${userId}`);
-      console.log(`🔔 Admin ${socket.id} joined notifications for user: ${userId}`);
-
-      socket.emit("joinedNotifications", {
-        userId,
-        message: "Successfully joined notification room"
-      });
+      console.log(`👤 User registered: ${userId} (${role || 'no role'})`);
     });
 
-    // ✅ Join ride tracking room (admin monitoring)
+    socket.on("joinRoom", ({ roomId }) => {
+      socket.join(roomId);
+      console.log(`🛋️ Socket ${socket.id} joined room: ${roomId}`);
+    });
+
+    socket.on("join:room", ({ room }) => {
+      socket.join(room);
+      console.log(`🛋️ Socket ${socket.id} joined custom room: ${room}`);
+    });
+
+    socket.on("joinSupport", () => {
+      socket.join("support");
+      console.log(`🎧 Support agent ${socket.id} joined support room`);
+    });
+
+    socket.on("joinNotifications", (userId) => {
+      socket.join(`user_${userId}`);
+      socket.emit("joinedNotifications", { userId, message: "Joined notification room" });
+    });
+
     socket.on("joinRide", (rideId) => {
-      if (!socket.authenticated) {
-        socket.emit("error", { message: "Unauthorized" });
-        return;
-      }
-
       socket.join(`ride_${rideId}`);
-      console.log(`📍 Admin ${socket.id} monitoring ride: ${rideId}`);
-
-      socket.emit("joinedRide", {
-        rideId,
-        message: "Successfully joined ride monitoring"
-      });
+      socket.emit("joinedRide", { rideId, message: "Joined ride monitoring" });
     });
 
-    // ✅ Handle GPS updates (from driver app) - Store in DB first
+    // --- GPS & Real-time Location ---
     socket.on("gpsUpdate", async (data) => {
       const { rideId, driverId, latitude, longitude, speed, heading } = data;
-
       try {
-        // ✅ Save GPS location to database FIRST
         const gpsData = {
           rideId,
           driverId,
@@ -210,383 +131,347 @@ async function startSocketServer() {
         };
 
         const result = await gpsLocationsCollection.insertOne(gpsData);
+        // Broadcast to specific ride rooms
+        io.to(`ride_${rideId}`).emit("receiveGpsUpdate", { _id: result.insertedId, ...gpsData });
+        io.to(`ride:${rideId}`).emit("riderLocationUpdate", data);
+        io.to(`ride:${rideId}`).emit("driver:location:updated", data);
 
-        console.log(`📍 GPS saved to DB: Ride ${rideId}, Driver ${driverId}`);
-
-        // ✅ Then broadcast to admin dashboard monitoring this ride
-        io.to(`ride_${rideId}`).emit("receiveGpsUpdate", {
-          _id: result.insertedId,
-          ...gpsData,
-        });
-
-        // Send acknowledgment
-        socket.emit("gpsUpdateAck", {
-          success: true,
-          rideId,
-          savedId: result.insertedId
-        });
-
+        socket.emit("gpsUpdateAck", { success: true, rideId, savedId: result.insertedId });
       } catch (error) {
-        console.error("❌ Error saving GPS location:", error);
-        socket.emit("gpsUpdateAck", {
-          success: false,
-          error: "Failed to save GPS data"
-        });
+        console.error("❌ GPS Update Error:", error);
+        socket.emit("gpsUpdateAck", { success: false, error: "Failed to save GPS data" });
       }
     });
 
-    // ✅ Handle sending notifications - Store in DB first
-    socket.on("sendNotification", async (data) => {
-      if (!socket.authenticated) {
-        socket.emit("error", { message: "Unauthorized" });
-        return;
-      }
-
-      const { userId, message, type, metadata } = data;
-
-      try {
-        // ✅ Save notification to database FIRST
-        const notification = {
-          userId,
-          message,
-          type,
-          metadata: metadata || {},
-          isRead: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          sentBy: socket.userId,
-          sentByRole: socket.userRole,
-        };
-
-        const result = await notificationsCollection.insertOne(notification);
-
-        const savedNotification = {
-          _id: result.insertedId,
-          ...notification
-        };
-
-        console.log(`🔔 Notification saved to DB and sent to user ${userId}: ${type}`);
-
-        // ✅ Then emit to specific user's notification room
-        io.to(`user_${userId}`).emit("newNotification", savedNotification);
-
-        // Send acknowledgment to sender
-        socket.emit("notificationSent", {
-          success: true,
-          notificationId: result.insertedId
-        });
-
-      } catch (error) {
-        console.error("❌ Error sending notification:", error);
-        socket.emit("notificationSent", {
-          success: false,
-          error: "Failed to send notification"
-        });
-      }
+    socket.on("riderLocationUpdate", (data) => {
+      const { rideId } = data;
+      io.to(`ride:${rideId}`).emit("riderLocationUpdate", data);
+      io.to(`ride:${rideId}`).emit("driver:location:updated", data);
     });
 
-    // ✅ Get active rides (admin monitoring)
-    socket.on("getActiveRides", async () => {
-      if (!socket.authenticated) {
-        socket.emit("error", { message: "Unauthorized" });
-        return;
-      }
-
-      try {
-        const activeRides = await rideSessionsCollection
-          .find({ status: "active", type: "ride" })
-          .sort({ startedAt: -1 })
-          .limit(50)
-          .toArray();
-
-        socket.emit("activeRides", {
-          success: true,
-          rides: activeRides
-        });
-      } catch (error) {
-        console.error("Error fetching active rides:", error);
-        socket.emit("activeRides", {
-          success: false,
-          error: "Failed to fetch active rides"
-        });
-      }
-    });
-
-    // ✅ Get connection statistics (admin only)
-    socket.on("getConnectionStats", () => {
-      if (!socket.authenticated || socket.userRole !== "admin") {
-        socket.emit("error", { message: "Unauthorized" });
-        return;
-      }
-
-      const stats = {
-        totalConnections: activeConnections.size,
-        connections: Array.from(activeConnections.values()),
-        timestamp: new Date(),
-      };
-
-      socket.emit("connectionStats", stats);
-    });
-
-    // ==========================================
-    // 🚕 RIDE MATCHING & FLOW (FEATURE 3, 5, 7, 8)
-    // ==========================================
-
-    const bookingsCollection = database.collection("bookings");
-    const ridersCollection = database.collection("riders");
-
-    // 1. DRIVER ACCEPTS RIDE (FEATURE 5 & 9)
+    // --- Ride Flow ---
     socket.on("ride:accept", async (data) => {
       const { bookingId, riderId } = data;
-      console.log(`🚕 [RIDE] Accept attempt: Booking ${bookingId} by Rider ${riderId}`);
-
       try {
-        const { ObjectId } = require("mongodb");
         const bookingOid = new ObjectId(bookingId);
         const riderOid = new ObjectId(riderId);
 
-        // ATOMIC CHECK: Only accept if status is still "searching"
         const result = await bookingsCollection.findOneAndUpdate(
           { _id: bookingOid, bookingStatus: "searching" },
-          {
-            $set: {
-              bookingStatus: "accepted",
-              riderId: riderOid,
-              updatedAt: new Date()
-            }
-          },
+          { $set: { bookingStatus: "accepted", riderId: riderOid, updatedAt: new Date() } },
           { returnDocument: "after" }
         );
 
         if (!result) {
-          console.log(`❌ [RIDE] Accept failed: Ride ${bookingId} already taken or expired`);
           socket.emit("ride:accept:error", { message: "Ride is no longer available" });
           return;
         }
 
         const updatedBooking = result;
-        console.log(`✅ [RIDE] Accept success: Booking ${bookingId} accepted by ${riderId}`);
+        await ridersCollection.updateOne({ _id: riderOid }, { $set: { status: "busy", currentRideId: bookingOid } });
 
-        // Update rider status to busy
-        await ridersCollection.updateOne(
-          { _id: riderOid },
-          { $set: { status: "busy", currentRideId: bookingOid } }
-        );
-
-        // Fetch rider/driver details for passenger
         const driver = await ridersCollection.findOne({ _id: riderOid });
-
         const driverDetails = {
           name: driver.name || "Driver",
-          photo: driver.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name || 'Driver'}`,
+          photo: driver.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name}`,
           rating: driver.rating || 5.0,
           vehicle: {
             type: driver.vehicleType || "Car",
-            plate: driver.vehicleDetails?.plate || "DHK-R 1234",
-            color: driver.vehicleDetails?.color || "White",
-            brand: driver.vehicleDetails?.brand || "Toyota"
+            plate: driver.vehicleDetails?.plate || "N/A",
+            color: driver.vehicleDetails?.color || "N/A",
+            brand: driver.vehicleDetails?.brand || "N/A"
           }
         };
 
-        // Join both to a common ride room
-        const rideRoom = `ride:${bookingId}`;
-        socket.join(rideRoom);
-
-        // Notify passenger (in their private room)
-        const passengerRoom = `user:${updatedBooking.passengerId}`;
+        socket.join(`ride:${bookingId}`);
         const acceptancePayload = {
-          bookingId,
-          rideId: bookingId,
-          driverId: riderId,
-          riderId: riderId,
-          driver: driverDetails,
-          otp: updatedBooking.otp,
-          eta: "5-10",
-          distance: "2.5 km"
+          bookingId, rideId: bookingId, driverId: riderId, riderId, driver: driverDetails,
+          otp: updatedBooking.otp, eta: "5-10", distance: "2.5 km"
         };
 
-        io.to(passengerRoom).emit("ride:accepted", acceptancePayload);
-        io.to(passengerRoom).emit("rideAccepted", acceptancePayload);
-
-        // Acknowledge to driver
+        io.to(`user:${updatedBooking.passengerId}`).emit("ride:accepted", acceptancePayload);
+        io.to(`user:${updatedBooking.passengerId}`).emit("rideAccepted", acceptancePayload);
         socket.emit("ride:accept:success", { bookingId });
-
       } catch (error) {
-        console.error("❌ [RIDE] Accept Error:", error);
+        console.error("❌ Ride Accept Error:", error);
         socket.emit("ride:accept:error", { message: "Internal server error" });
       }
     });
 
-    // 📍 Real-time Location Updates (FEATURE 4)
-    socket.on("riderLocationUpdate", (data) => {
-      const { rideId, lat, lng, eta, distance } = data;
-      console.log(`📍 [LOCATION] Broadcast: Ride ${rideId} at ${lat}, ${lng}`);
-
-      // Broadcast to specific ride room (both passenger and driver)
-      io.to(`ride:${rideId}`).emit("riderLocationUpdate", data);
-
-      // Also emit for dashboard backward compatibility
-      io.to(`ride:${rideId}`).emit("driver:location:updated", data);
-    });
-
-    // FEATURE 5: Explicit rideAccepted listener as requested
-    socket.on("rideAccepted", (data) => {
-      console.log("📡 [SOCKET] Explicit rideAccepted received from driver:", data);
-    });
-
-    // 2. DRIVER ARRIVED (FEATURE 7)
     socket.on("driver:arrived", async (data) => {
       const { bookingId } = data;
-      console.log(`🏁 [RIDE] Driver arrived at pickup: Booking ${bookingId}`);
-
       try {
-        const { ObjectId } = require("mongodb");
-        await bookingsCollection.updateOne(
-          { _id: new ObjectId(bookingId) },
-          { $set: { bookingStatus: "arrived", updatedAt: new Date() } }
-        );
-
+        await bookingsCollection.updateOne({ _id: new ObjectId(bookingId) }, { $set: { bookingStatus: "arrived", updatedAt: new Date() } });
         const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
-        const passengerRoom = `user:${booking.passengerId}`;
-
-        io.to(passengerRoom).emit("driver:arrived", {
-          bookingId,
-          message: "Driver has arrived at your location"
-        });
-
-        // Also emit to ride room
+        io.to(`user:${booking.passengerId}`).emit("driver:arrived", { bookingId, message: "Driver arrived" });
         io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "arrived" });
-
-      } catch (error) {
-        console.error("❌ [RIDE] Arrived Error:", error);
-      }
+      } catch (err) { console.error("Arrived error:", err); }
     });
 
-    // 3. START RIDE (FEATURE 8)
     socket.on("ride:start", async (data) => {
       const { bookingId } = data;
-      console.log(`🚕 [RIDE] Ride started: Booking ${bookingId}`);
-
       try {
-        const { ObjectId } = require("mongodb");
-        await bookingsCollection.updateOne(
-          { _id: new ObjectId(bookingId) },
-          { $set: { bookingStatus: "started", updatedAt: new Date() } }
-        );
-
+        await bookingsCollection.updateOne({ _id: new ObjectId(bookingId) }, { $set: { bookingStatus: "started", updatedAt: new Date() } });
         const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         io.to(`user:${booking.passengerId}`).emit("ride:started", { bookingId });
         io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "started" });
-
-      } catch (error) {
-        console.error("❌ [RIDE] Start Error:", error);
-      }
+      } catch (err) { console.error("Start error:", err); }
     });
 
-    // 4. COMPLETE RIDE
     socket.on("ride:complete", async (data) => {
       const { bookingId, riderId } = data;
-      console.log(`✅ [RIDE] Ride completed: Booking ${bookingId}`);
-
       try {
-        const { ObjectId } = require("mongodb");
-        await bookingsCollection.updateOne(
-          { _id: new ObjectId(bookingId) },
-          { $set: { bookingStatus: "completed", updatedAt: new Date() } }
-        );
-
-        // Reset rider to online
-        await ridersCollection.updateOne(
-          { _id: new ObjectId(riderId) },
-          { $set: { status: "online", currentRideId: null } }
-        );
-
+        await bookingsCollection.updateOne({ _id: new ObjectId(bookingId) }, { $set: { bookingStatus: "completed", updatedAt: new Date() } });
+        await ridersCollection.updateOne({ _id: new ObjectId(riderId) }, { $set: { status: "online", currentRideId: null } });
         const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         io.to(`user:${booking.passengerId}`).emit("ride:completed", { bookingId });
         io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "completed" });
-
-      } catch (error) {
-        console.error("❌ [RIDE] Complete Error:", error);
-      }
+      } catch (err) { console.error("Complete error:", err); }
     });
 
-    // 5. JOIN ROOMS (Helper)
-    socket.on("join:room", (data) => {
-      const { room } = data;
-      socket.join(room);
-      console.log(`🛋️ [SOCKET] ${socket.id} joined room: ${room}`);
+    // --- Chat & Presence ---
+    socket.on("typing", ({ roomId, userId, userName }) => {
+      socket.to(roomId).emit("userTyping", { roomId, userId, userName });
     });
 
-    // ✅ Handle disconnection
+    socket.on("stopTyping", ({ roomId, userId }) => {
+      socket.to(roomId).emit("userStopTyping", { roomId, userId });
+    });
+
+    socket.on("markAsRead", async ({ roomId, userId }) => {
+      if (!roomId || !userId) return;
+      try {
+        await chatCollection.updateMany(
+          { roomId, isRead: false, senderId: { $ne: String(userId) } },
+          { $set: { isRead: true } }
+        );
+        io.to(roomId).emit("messagesSeen", { roomId, userId });
+        if (roomId.startsWith("support_")) io.to("support").emit("supportSessionUpdated", { roomId });
+      } catch (err) { console.error("markAsRead error:", err); }
+    });
+
+    // --- WebRTC / Calls ---
+    socket.on("callUser", ({ toUserId, offer, fromUserId }) => {
+      const target = onlineUsers.get(String(toUserId));
+      if (target) io.to(target).emit("incomingCall", { fromUserId, offer });
+    });
+
+    socket.on("answerCall", ({ toUserId, answer }) => {
+      const target = onlineUsers.get(String(toUserId));
+      if (target) io.to(target).emit("callAccepted", { answer });
+    });
+
+    socket.on("iceCandidate", ({ toUserId, candidate }) => {
+      const target = onlineUsers.get(String(toUserId));
+      if (target) io.to(target).emit("iceCandidate", { candidate });
+    });
+
+    socket.on("endCall", ({ toUserId }) => {
+      const target = onlineUsers.get(String(toUserId));
+      if (target) io.to(target).emit("callEnded");
+    });
+
+    // --- Notifications ---
+    socket.on("sendNotification", async (data) => {
+      if (!socket.authenticated) return;
+      const { userId, message, type, metadata } = data;
+      try {
+        const notification = {
+          userId, message, type, isRead: false, createdAt: new Date(), updatedAt: new Date(),
+          metadata: metadata || {}, sentBy: socket.userId, sentByRole: socket.userRole
+        };
+        const result = await notificationsCollection.insertOne(notification);
+        io.to(`user_${userId}`).emit("newNotification", { _id: result.insertedId, ...notification });
+        socket.emit("notificationSent", { success: true, notificationId: result.insertedId });
+      } catch (err) { console.error("Notification error:", err); }
+    });
+
+    // --- Stats ---
+    socket.on("getConnectionStats", () => {
+      if (!socket.authenticated || socket.userRole !== "admin") return;
+      socket.emit("connectionStats", {
+        totalConnections: activeConnections.size,
+        connections: Array.from(activeConnections.values()),
+        timestamp: new Date(),
+      });
+    });
+
+    // --- Disconnection ---
     socket.on("disconnect", async (reason) => {
-      console.log(`🔌 Admin client disconnected: ${socket.id} - Reason: ${reason}`);
-
-      // Remove from active connections
+      console.log(`🔌 Client disconnected: ${socket.id} - Reason: ${reason}`);
       activeConnections.delete(socket.id);
 
-      // Update session in database
+      // Cleanup onlineUsers map
+      for (const [userId, sockId] of onlineUsers.entries()) {
+        if (sockId === socket.id) {
+          onlineUsers.delete(userId);
+          break;
+        }
+      }
+
       try {
         await rideSessionsCollection.updateOne(
           { socketId: socket.id, status: "active" },
-          {
-            $set: {
-              status: "disconnected",
-              disconnectedAt: new Date(),
-              disconnectReason: reason,
-            }
-          }
+          { $set: { status: "disconnected", disconnectedAt: new Date(), disconnectReason: reason } }
         );
-      } catch (error) {
-        console.error("Error updating disconnection:", error);
-      }
+      } catch (err) { /* ignore */ }
     });
-
-    // ✅ Handle errors
-    socket.on("error", (error) => {
-      console.error(`❌ Socket error for ${socket.id}:`, error);
-    });
-  });
-
-  //  Periodic cleanup of old GPS data (run every hour)
-  setInterval(async () => {
-    try {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const result = await gpsLocationsCollection.deleteMany({
-        timestamp: { $lt: oneDayAgo }
-      });
-
-      if (result.deletedCount > 0) {
-        console.log(`🧹 Cleaned up ${result.deletedCount} old GPS records`);
-      }
-    } catch (error) {
-      console.error("Error cleaning up GPS data:", error);
-    }
-  }, 60 * 60 * 1000); // Every hour
-
-  // Export io instance for use in other modules
-  global.io = io;
-
-  // Start the server
-  server.listen(PORT, () => {
-    console.log(`🚀 Socket.io server running on http://localhost:${PORT}`);
-    console.log(`🔐 Authentication: ENABLED`);
-    console.log(`📊 Admin monitoring: ACTIVE`);
-    console.log(`💾 Database persistence: ENABLED`);
   });
 }
 
-// Handle graceful shutdown
-process.on("SIGINT", async () => {
+// ------------------- EXPRESS ROUTES -------------------
+function setupRoutes(app, collections) {
+  const { chatCollection, rideSessionsCollection } = collections;
+
+  // Chat API
+  app.post("/api/chat/send", async (req, res) => {
+    try {
+      const data = req.body;
+      let { chatType, roomId, senderId, passengerId, riderId, senderRole, message, messageType, fileUrl } = data;
+
+      chatType = chatType === "support" ? "support" : "ride";
+      if (chatType === "ride" && !String(roomId).startsWith("ride_")) roomId = `ride_${roomId}`;
+      if (chatType === "support" && !String(roomId).startsWith("support_")) roomId = `support_${roomId}`;
+
+      const chatMessage = {
+        roomId: String(roomId), rideId: data.rideId || null, passengerId: passengerId ? String(passengerId) : null,
+        riderId: riderId ? String(riderId) : null, senderId: String(senderId), senderName: data.senderName || null,
+        senderRole: senderRole || "passenger", chatType, message: message || "",
+        messageType: messageType || "text", fileUrl: fileUrl || null, isRead: false, createdAt: new Date()
+      };
+
+      const result = await chatCollection.insertOne(chatMessage);
+      chatMessage._id = result.insertedId;
+
+      global.io.to(String(roomId)).emit("receiveMessage", chatMessage);
+
+      // Notify support agents
+      if (chatType === "support") global.io.to("support").emit("supportSessionUpdated", { roomId });
+
+      // Signal chat update to driver/passenger
+      if (chatType === "ride") {
+        const rId = onlineUsers.get(String(riderId));
+        const pId = onlineUsers.get(String(passengerId));
+        if (rId) global.io.to(rId).emit("riderChatUpdated", { roomId });
+        if (pId) global.io.to(pId).emit("riderChatUpdated", { roomId });
+      }
+
+      res.status(201).json(chatMessage);
+    } catch (error) {
+      console.error("API send error:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  app.get("/api/chat/history/:roomId", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const history = await chatCollection.find({ roomId }).sort({ createdAt: 1 }).toArray();
+      res.json(history || []);
+    } catch (err) { res.status(500).json({ error: "Failed to load history" }); }
+  });
+
+  app.get("/api/support/sessions", async (req, res) => {
+    try {
+      const sessions = await chatCollection.aggregate([
+        { $match: { chatType: "support" } },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: "$roomId", roomId: { $first: "$roomId" }, passengerId: { $first: "$passengerId" },
+            senderName: { $first: "$senderName" }, lastMessage: { $first: "$message" },
+            createdAt: { $first: "$createdAt" }, unreadCount: { $sum: { $cond: [{ $and: [{ $eq: ["$isRead", false] }, { $ne: ["$senderRole", "support"] }] }, 1, 0] } }
+          }
+        },
+        { $sort: { createdAt: -1 } }
+      ]).toArray();
+      res.json(sessions);
+    } catch (err) { res.status(500).json({ error: "Failed to fetch support sessions" }); }
+  });
+
+  // Health Check
+  app.get("/api/health", (req, res) => res.json({ status: "OnWay Socket Server Running", timestamp: new Date() }));
+}
+
+// ------------------- SERVER STARTUP -------------------
+async function startServer() {
+  const database = await connectDB();
+
+  const collections = {
+    chatCollection: database.collection("chats"),
+    gpsLocationsCollection: database.collection("gpsLocations"),
+    notificationsCollection: database.collection("notifications"),
+    rideSessionsCollection: database.collection("rideSessions"),
+    bookingsCollection: database.collection("bookings"),
+    ridersCollection: database.collection("riders"),
+  };
+
+  // Indexes
+  await collections.chatCollection.createIndex({ roomId: 1 });
+  await collections.chatCollection.createIndex({ createdAt: -1 });
+
+  const app = express();
+  app.use(cors({ origin: "*" }));
+  app.use(express.json());
+
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: ["http://localhost:3000", "http://localhost:4000", "http://localhost:5000", "https://on-way-neon.vercel.app", process.env.FRONTEND_URL].filter(Boolean),
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+  });
+
+  global.io = io;
+
+  // --- Auth Middleware ---
+  io.use((socket, next) => {
+    const { token, role, userId } = socket.handshake.auth;
+    if (process.env.NODE_ENV === 'development' && userId && role) {
+      socket.userId = userId; socket.userRole = role; socket.authenticated = true;
+      return next();
+    }
+    const verified = verifyToken(token);
+    if (verified && isAdmin(role)) {
+      socket.userId = userId; socket.userRole = role; socket.authenticated = true;
+      return next();
+    }
+    next(); // Allow unauthenticated but limited
+  });
+
+  setupSocket(io, collections);
+  setupRoutes(app, collections);
+
+  // GPS Cleanup
+  setInterval(async () => {
+    try {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await collections.gpsLocationsCollection.deleteMany({ timestamp: { $lt: oneDayAgo } });
+    } catch (err) { console.error("Cleanup error:", err); }
+  }, 3600000);
+
+  server.listen(PORT, () => {
+    console.log(`🚀 Socket.io Server running on port ${PORT}`);
+  });
+}
+
+// ------------------- GRACEFUL SHUTDOWN -------------------
+const shutdown = async () => {
   console.log("\n⏳ Closing MongoDB connection...");
-
-  // Close all active socket connections
-  if (global.io) {
-    global.io.close();
-  }
-
+  if (global.io) global.io.close();
   await client.close();
   console.log("✅ MongoDB connection closed");
   process.exit(0);
-});
+};
 
-startSocketServer();
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
+// Launch
+startServer().catch(err => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});

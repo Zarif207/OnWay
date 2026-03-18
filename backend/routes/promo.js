@@ -1,7 +1,7 @@
 const express = require("express");
 const { ObjectId } = require("mongodb");
 
-module.exports = (promoCollection) => {
+module.exports = (promoCollection, newsletterCollection, transporter) => {
     const router = express.Router();
 
     router.post("/", async (req, res) => {
@@ -16,6 +16,7 @@ module.exports = (promoCollection) => {
                 usageLimit,
             } = req.body;
 
+            // 1. Validation
             if (!code || !discountType || !discountValue || !expiryDate) {
                 return res.status(400).json({
                     success: false,
@@ -23,6 +24,7 @@ module.exports = (promoCollection) => {
                 });
             }
 
+            // 2. Check if exists
             const existing = await promoCollection.findOne({
                 code: code.toUpperCase(),
             });
@@ -34,6 +36,7 @@ module.exports = (promoCollection) => {
                 });
             }
 
+            // 3. Create Promo Object
             const newPromo = {
                 code: code.toUpperCase(),
                 discountType,
@@ -48,11 +51,44 @@ module.exports = (promoCollection) => {
                 updatedAt: new Date(),
             };
 
+            // 4. Insert into Database
             const result = await promoCollection.insertOne(newPromo);
+
+            if (result.insertedId) {
+                const subscribers = await newsletterCollection.find({ status: "active" }).toArray();
+                const emailList = subscribers.map(sub => sub.email);
+
+                if (emailList.length > 0) {
+                    const mailOptions = {
+                        from: `"OnWay Offers" <${process.env.EMAIL_USER}>`,
+                        bcc: emailList,
+                        subject: `🎁 New Promo Code: ${code.toUpperCase()}`,
+                        html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd;">
+                            <h2 style="color: #22c55e;">Exclusive Offer for You!</h2>
+                            <p>Hi there,</p>
+                            <p>We have a new discount for your next ride. Use the code below:</p>
+                            <div style="background: #f3f4f6; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 2px;">
+                                ${code.toUpperCase()}
+                            </div>
+                            <p><b>Discount:</b> ${discountValue}${discountType === 'percentage' ? '%' : ' TK'}</p>
+                            <p><b>Expires on:</b> ${new Date(expiryDate).toLocaleDateString()}</p>
+                            <br>
+                            <p>Safe travels,<br>The OnWay Team</p>
+                        </div>
+                    `
+                    };
+
+                    transporter.sendMail(mailOptions, (err, info) => {
+                        if (err) console.error("❌ Notification Email Failed:", err);
+                        else console.log("✅ Promo Notification Sent");
+                    });
+                }
+            }
 
             res.status(201).json({
                 success: true,
-                message: "Promo created successfully",
+                message: "Promo created successfully and subscribers notified!",
                 data: result.insertedId,
             });
         } catch (error) {

@@ -78,7 +78,7 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 h-20 flex items-center justify-center px-4 sm:px-8 md:px-12 ${scrollDirection === "down" && !isMobileMenuOpen ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+        className={`fixed top-0 left-0 right-0 z-100 transition-all duration-500 h-20 flex items-center justify-center px-4 sm:px-8 md:px-12 ${scrollDirection === "down" && !isMobileMenuOpen ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
           }`}
       >
         <div
@@ -115,7 +115,7 @@ const Navbar = () => {
                 {isActive(item.href) && (
                   <motion.div
                     layoutId="navbarIndicator"
-                    className="absolute bottom-0 left-4 right-4 h-[2px] bg-[#22c55e] rounded-full"
+                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#22c55e] rounded-full"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -134,7 +134,7 @@ const Navbar = () => {
                 {pathname.startsWith("/dashboard") && (
                   <motion.div
                     layoutId="navbarIndicator"
-                    className="absolute bottom-0 left-4 right-4 h-[2px] bg-[#22c55e] rounded-full"
+                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#22c55e] rounded-full"
                   />
                 )}
               </Link>
@@ -156,7 +156,7 @@ const Navbar = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0A1F3D]/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-[110]"
+                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0A1F3D]/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-110"
                     >
                       {moreNav.map((link) => (
                         <Link
@@ -235,7 +235,7 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 z-[150] bg-[#0A1F3D]/60 backdrop-blur-md"
+              className="fixed inset-0 z-150 bg-[#0A1F3D]/60 backdrop-blur-md"
             />
 
             {/* Drawer */}
@@ -244,7 +244,7 @@ const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 h-full w-[85%] max-w-sm z-[160] bg-white dark:bg-[#0A1F3D] shadow-2xl p-8 flex flex-col"
+              className="fixed right-0 top-0 h-full w-[85%] max-w-sm z-160 bg-white dark:bg-[#0A1F3D] shadow-2xl p-8 flex flex-col"
             >
               <div className="flex items-center justify-between mb-12">
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3">

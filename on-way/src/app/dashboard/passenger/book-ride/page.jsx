@@ -153,6 +153,34 @@ function BookRideContent() {
     };
   }, [session]);
 
+  const [isApplying, setIsApplying] = useState(false);
+
+  const handleApplyPromo = async () => {
+    if (!promoCode) return;
+    setIsApplying(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      const currentFare = selectedVehicle ? selectedVehicle.estimatedPrice : 0;
+
+      const response = await axios.post(`${apiUrl}/promo/apply`, {
+        code: promoCode,
+        rideAmount: currentFare
+      });
+
+      if (response.data.success) {
+        setDiscount(response.data.discount);
+        toast.success(`Promo applied! You saved ৳${response.data.discount}`);
+      } else {
+        toast.error(response.data.message || "Invalid promo code");
+      }
+    } catch (err) {
+      console.error("Promo error:", err);
+      toast.error("Failed to apply promo code");
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   const [activeInput, setActiveInput] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
 
@@ -252,15 +280,6 @@ function BookRideContent() {
     fetchEstimates();
   }, [pickupCoords, dropoffCoords]);
 
-  const applyPromo = () => {
-    if (promoCode.toUpperCase() === "ONWAY50") {
-      setDiscount(50);
-      toast.success("Promo code applied!");
-    } else {
-      setDiscount(0);
-      toast.error("Invalid promo code");
-    }
-  };
 
   const getFinalPrice = (veh) => {
     if (!veh) return 0;
@@ -483,7 +502,9 @@ function BookRideContent() {
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block mb-3">Promo Code</label>
                   <div className="flex gap-3">
                     <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="ONWAY50" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold text-secondary uppercase" />
-                    <button onClick={applyPromo} className="px-8 bg-secondary text-white rounded-2xl text-xs font-black uppercase tracking-widest">Apply</button>
+                    <button onClick={handleApplyPromo} disabled={isApplying} className="px-8 bg-secondary text-white rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50">
+                      {isApplying ? <Loader2 className="animate-spin h-4 w-4" /> : "Apply"}
+                    </button>
                   </div>
                 </div>
                 <div>

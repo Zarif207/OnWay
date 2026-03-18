@@ -5,12 +5,12 @@ import { geocodeAddress, getLocationSuggestions } from '@/utils/geocodingService
 import { useDebounce } from '@/hooks/useDebounce';
 import '@/styles/location-dropdown.css';
 
-const LocationInput = ({ 
-  label, 
-  placeholder, 
-  value, 
-  onChange, 
-  onLocationSelect, 
+const LocationInput = ({
+  label,
+  placeholder,
+  value,
+  onChange,
+  onLocationSelect,
   type = 'pickup',
   isActive = false,
   onFocus,
@@ -26,7 +26,7 @@ const LocationInput = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
-  
+
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -140,7 +140,7 @@ const LocationInput = ({
     setShowSuggestions(false);
     setSelectedIndex(-1);
     inputRef.current?.blur();
-    
+
     // Reset parent container styles
     const parentContainer = inputRef.current?.closest('.rounded-3xl');
     if (parentContainer) {
@@ -169,14 +169,14 @@ const LocationInput = ({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude, accuracy } = position.coords;
-        
+
         try {
           // Get address for the coordinates
           const { reverseGeocode } = await import('@/utils/geocodingService');
           const addressData = await reverseGeocode(latitude, longitude);
-          
+
           const locationName = addressData.name || `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-          
+
           const locationObj = {
             lat: latitude,
             lon: longitude,
@@ -190,15 +190,15 @@ const LocationInput = ({
           setInputValue(locationName);
           onChange?.(locationName);
           onLocationSelect?.(locationObj);
-          
+
           // Call parent callback if provided
           onYourLocationClick?.(locationObj);
-          
+
           console.log('✅ Current location set:', locationObj);
-          
+
         } catch (err) {
           console.error('Failed to get address for current location:', err);
-          
+
           // Fallback: use coordinates as name
           const locationName = `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
           const locationObj = {
@@ -221,7 +221,7 @@ const LocationInput = ({
       (err) => {
         console.error('Geolocation error:', err);
         setIsGettingLocation(false);
-        
+
         switch (err.code) {
           case err.PERMISSION_DENIED:
             setLocationError("Location access denied. Please enable location permissions.");
@@ -282,13 +282,13 @@ const LocationInput = ({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < suggestions.length - 1 ? prev + 1 : 0
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev > 0 ? prev - 1 : suggestions.length - 1
         );
         break;
@@ -326,7 +326,7 @@ const LocationInput = ({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        inputRef.current && 
+        inputRef.current &&
         !inputRef.current.contains(event.target) &&
         suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target)
@@ -349,9 +349,8 @@ const LocationInput = ({
   return (
     <div className={`location-input-container ${showSuggestions ? 'active' : ''} ${className}`} style={{ zIndex: showSuggestions ? 10000 : 'auto' }}>
       {/* Label */}
-      <label className={`text-xs font-semibold uppercase tracking-wider transition-colors mb-2 block ${
-        isActive ? colors.text : 'text-gray-500'
-      }`}>
+      <label className={`text-xs font-semibold uppercase tracking-wider transition-colors mb-2 block ${isActive ? colors.text : 'text-gray-500'
+        }`}>
         <MapPin className="inline w-3 h-3 mr-1" />
         {label} {isActive && "(Click Map or Type)"}
       </label>
@@ -367,11 +366,10 @@ const LocationInput = ({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
-            className={`w-full bg-gray-50 border rounded-xl px-4 py-3 pr-10 focus:bg-white focus:${colors.ring} focus:ring-2 focus:border-transparent outline-none transition-all ${
-              isActive ? `${colors.border} ${colors.bg}` : 'border-gray-200'
-            } ${error ? 'border-red-300 bg-red-50' : ''}`}
+            className={`w-full bg-gray-50 border rounded-xl px-4 py-3 pr-10 focus:bg-white focus:${colors.ring} focus:ring-2 focus:border-transparent outline-none transition-all ${isActive ? `${colors.border} ${colors.bg}` : 'border-gray-200'
+              } ${error ? 'border-red-300 bg-red-50' : ''}`}
           />
-          
+
           {/* Loading indicator */}
           {(isLoading || isGettingLocation) && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -423,21 +421,21 @@ const LocationInput = ({
       {/* Error Messages */}
       {error && (
         <div className="mt-2 p-2 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
       )}
 
       {locationError && (
         <div className="mt-2 p-2 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 shrink-0" />
           {locationError}
         </div>
       )}
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div 
+        <div
           ref={suggestionsRef}
           className="location-dropdown"
         >
@@ -448,7 +446,7 @@ const LocationInput = ({
               className={`dropdown-item ${index === selectedIndex ? 'selected' : ''}`}
             >
               <div className="flex items-start gap-3">
-                <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${colors.text}`} />
+                <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${colors.text}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {suggestion.address?.road || suggestion.address?.name || 'Unknown Location'}

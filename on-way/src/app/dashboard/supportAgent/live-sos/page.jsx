@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ShieldAlert, MapPin, Phone, User, Clock, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import SupportLoading from "../SupportLoading";
 
 export default function LiveSOSPage() {
   const [sosAlerts, setSosAlerts] = useState([]);
@@ -107,14 +108,7 @@ export default function LiveSOSPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2FCA71] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading SOS alerts...</p>
-        </div>
-      </div>
-    );
+    return <SupportLoading />;
   }
 
   return (

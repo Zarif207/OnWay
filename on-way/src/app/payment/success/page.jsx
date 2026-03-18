@@ -3,7 +3,6 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transaction");

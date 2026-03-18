@@ -29,7 +29,8 @@ export default function VehicleInfoPage() {
       registrationCategory: formData.registrationCategory || "Metric",
       registrationDigits: formData.registrationDigits || "",
       year: formData.year || "",
-      licenseNumber: formData.licenseNumber || "",
+      // Pre-fill license Number from context if it's uploaded and Identity Type is Driving License
+      licenseNumber: formData.licenseNumber || (formData.identityType === 'Driving License' ? formData.identityNumber : ""),
       registrationNumber: formData.registrationNumber || "",
     },
   });
@@ -53,6 +54,7 @@ export default function VehicleInfoPage() {
       const submitData = new FormData();
 
       // Basic Information
+      submitData.append("name", `${updatedForm.firstName} ${updatedForm.lastName}`.trim());
       submitData.append("firstName", updatedForm.firstName || "");
       submitData.append("lastName", updatedForm.lastName || "");
       submitData.append("email", updatedForm.email || "");
@@ -63,7 +65,36 @@ export default function VehicleInfoPage() {
       submitData.append("referralCode", updatedForm.referralCode || "");
       submitData.append("licenseNumber", data.licenseNumber);
 
-      // Uploaded string URLs or previously configured profile images
+      // Document OCR Data (Structured for MongoDB)
+      submitData.append("documents", JSON.stringify({
+        submittedType: updatedForm.documentType?.toLowerCase() || "nid",
+        files: {
+          nid: updatedForm.documentType === "NID" ? "pending_upload" : "",
+          license: updatedForm.documentType === "Driving License" ? "pending_upload" : "",
+          passport: updatedForm.documentType === "Passport" ? "pending_upload" : "",
+          birthCertificate: updatedForm.documentType === "Birth Certificate" ? "pending_upload" : ""
+        },
+        extractedData: updatedForm.extractedData || {}
+      }));
+
+      // NEW: Dynamic Smart Data from OCR
+      if (updatedForm.documentDetails) {
+        submitData.append("documentDetails", JSON.stringify(updatedForm.documentDetails));
+      }
+
+      // Append Document OCR File if available
+      if (updatedForm.documentFile) {
+        const fieldName = updatedForm.documentType === "NID"
+          ? "nidFile"
+          : updatedForm.documentType === "Driving License"
+            ? "drivingLicenseFile"
+            : updatedForm.documentType === "Passport"
+              ? "passportFile"
+              : "birthCertificateFile";
+        submitData.append(fieldName, updatedForm.documentFile);
+      }
+
+      // Profile Image
       submitData.append("image", uploadedImageUrl);
 
       // Arrays and Nest Objects require stringification before transmission
@@ -78,8 +109,8 @@ export default function VehicleInfoPage() {
       }));
 
       submitData.append("identity", JSON.stringify({
-        type: updatedForm.identityType || "NID",
-        number: updatedForm.identityNumber || "000",
+        type: updatedForm.identityType || "NID (National ID)",
+        number: updatedForm.identityNumber || updatedForm.extractedData?.documentNumber || "000",
       }));
 
       submitData.append("vehicle", JSON.stringify({
@@ -105,18 +136,22 @@ export default function VehicleInfoPage() {
       }));
       submitData.append("isFaceVerified", updatedForm.isFaceVerified || false);
 
-      // 3. Append Binary Files safely from React State
+      // 3. Append Binary Files safely from React State or Global State
+      // If we uploaded a new license here, use it. Wait, the global state already appended the global file in step 1 as drivingLicenseFile?
+      // Yes, if `updatedForm.documentType === "Driving License"`, step 1's file is appended above as `drivingLicenseFile`.
+      // If the user uploaded a **replacement** file here (`licenseFile`), it might override the backend key if appended again, or we should use a specific field name.
       if (licenseFile) {
-        submitData.append("drivingLicenseFile", licenseFile);
+        submitData.set("drivingLicenseFile", licenseFile); // Use set to overwrite if it was already appended
+      } else if (formData.documents?.license?.uploaded && formData.documents?.license?.image) {
+        // Fallback to the globally stored Base64 string if it was somehow missed or if we're not relying on `updatedForm.documentFile` anymore.
+        submitData.set("drivingLicenseBase64", formData.documents.license.image);
       }
+
       if (regFile) {
         submitData.append("vehicleRegistrationFile", regFile);
       }
 
-      console.log("Submitting FormData... Files present:", {
-        drivingLicense: !!licenseFile,
-        vehicleRegistration: !!regFile
-      });
+      console.log("Submitting FormData...");
 
       const result = await registerRider(submitData);
 
@@ -291,7 +326,10 @@ export default function VehicleInfoPage() {
                     <label className="block text-xs font-bold text-[#0A1F3D] uppercase tracking-wider mb-2">Driving License Number <span className="text-red-500">*</span></label>
                     <input
                       placeholder="DHXXXXXXXXX"
-                      {...register("licenseNumber", { required: "License Number is required" })}
+                      /* If license is uploaded, validation is passed, but it's still a required string */
+                      {...register("licenseNumber", {
+                        required: !formData.documents?.license?.uploaded ? "License Number is required" : false
+                      })}
                       className={`w-full rounded-xl px-4 py-3.5 bg-white text-[#0A1F3D] border outline-none transition focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] ${errors.licenseNumber ? "border-red-400" : "border-gray-200"}`}
                     />
                   </div>
@@ -306,18 +344,35 @@ export default function VehicleInfoPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <label className={`border border-dashed rounded-xl p-6 lg:p-8 flex flex-col items-center justify-center transition cursor-pointer group ${licenseFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
-                    <input type="file" accept=".jpg,.png,.jpeg,.pdf" className="hidden" onChange={(e) => setLicenseFile(e.target.files[0])} />
-                    {licenseFile ? (
+                  {/* Driving License Conditional Box */}
+                  {formData.documents?.license?.uploaded && !licenseFile ? (
+                    <div className="border-2 border-[#22c55e] rounded-xl p-6 lg:p-8 flex flex-col items-center justify-center bg-[#22c55e]/5 relative">
                       <Check className="w-8 h-8 text-[#22c55e] mb-3" />
-                    ) : (
-                      <UploadCloud className="w-8 h-8 text-gray-400 mb-3 group-hover:text-[#22c55e] transition-colors" />
-                    )}
-                    <span className="text-sm font-bold text-[#0A1F3D] text-center max-w-full truncate px-2">
-                      {licenseFile ? licenseFile.name : "Upload Driving License"}
-                    </span>
-                    <span className="text-[11px] lg:text-xs text-gray-400 mt-2">{licenseFile ? 'Click to change file' : '(JPG, PNG, PDF max 5MB)'}</span>
-                  </label>
+                      <span className="text-sm font-bold text-[#0A1F3D] text-center max-w-full">
+                        Driving License Uploaded ✓
+                      </span>
+                      <span className="text-[11px] lg:text-xs text-gray-500 mt-2 text-center">
+                        Verified from previous step
+                      </span>
+                      <label className="mt-4 text-xs font-bold text-[#22c55e] hover:text-[#16a34a] cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-[#22c55e]/30 transition shadow-sm">
+                        <input type="file" accept=".jpg,.png,.jpeg,.pdf" className="hidden" onChange={(e) => setLicenseFile(e.target.files[0])} />
+                        Replace Document
+                      </label>
+                    </div>
+                  ) : (
+                    <label className={`border border-dashed rounded-xl p-6 lg:p-8 flex flex-col items-center justify-center transition cursor-pointer group ${licenseFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
+                      <input type="file" accept=".jpg,.png,.jpeg,.pdf" className="hidden" onChange={(e) => setLicenseFile(e.target.files[0])} />
+                      {licenseFile ? (
+                        <Check className="w-8 h-8 text-[#22c55e] mb-3" />
+                      ) : (
+                        <UploadCloud className="w-8 h-8 text-gray-400 mb-3 group-hover:text-[#22c55e] transition-colors" />
+                      )}
+                      <span className="text-sm font-bold text-[#0A1F3D] text-center max-w-full truncate px-2">
+                        {licenseFile ? licenseFile.name : "Upload Driving License"}
+                      </span>
+                      <span className="text-[11px] lg:text-xs text-gray-400 mt-2">{licenseFile ? 'Click to change file' : '(JPG, PNG, PDF max 5MB)'}</span>
+                    </label>
+                  )}
 
                   <label className={`border border-dashed rounded-xl p-6 lg:p-8 flex flex-col items-center justify-center transition cursor-pointer group ${regFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
                     <input type="file" accept=".jpg,.png,.jpeg,.pdf" className="hidden" onChange={(e) => setRegFile(e.target.files[0])} />

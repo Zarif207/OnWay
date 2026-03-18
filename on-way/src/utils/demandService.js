@@ -2,13 +2,13 @@
 export const getDemandMultiplier = (params) => {
     const {
         pickupAddress = "",
-        appOpenCount = 0,
         weatherMultiplier = 1.0,
         weatherCondition = "",
         rainMm = 0,
         visibility = 10000,
         temp = 30,
         humidity = 60,
+        trafficRatio = 1.0,
     } = params;
 
     const HOTSPOTS = [
@@ -120,14 +120,17 @@ export const getDemandMultiplier = (params) => {
     }
 
     // ৪. Real-time Demand (Dynamic Traffic)
-    if (appOpenCount > 10) {
-        const trafficFactor = Math.min(1 + (appOpenCount / 100), 1.5);
-        multiplier *= trafficFactor;
-
-        if (trafficFactor >= 1.1) {
-            reasons.push("High Traffic");
-        }
+    if (trafficRatio < 0.3) {
+        multiplier *= 1.5;
+        reasons.push("Standstill Traffic");
+    } else if (trafficRatio < 0.5) {
+        multiplier *= 1.35;
+        reasons.push("Heavy Traffic");
+    } else if (trafficRatio < 0.8) {
+        multiplier *= 1.2;
+        reasons.push("Moderate Traffic");
     }
+
 
     // ৫. Weather Integration
 

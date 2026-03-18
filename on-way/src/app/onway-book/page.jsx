@@ -60,8 +60,10 @@ export default function BookRidePage() {
     let visibility = 10000;
     let temp = 30;
     let humidity = 60;
+    let trafficRatio = 1.0;
 
     try {
+      // ── Weather API ──
       const res = await axios.get(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
       );
@@ -72,18 +74,48 @@ export default function BookRidePage() {
       visibility = res.data.visibility;
       rainMm = res.data.rain?.["1h"] ?? 0;
 
+      console.log(`Weather: ${weatherCondition}, Visibility: ${visibility}, Temp: ${temp}, Rain: ${rainMm}mm`);
+
     } catch (err) {
       console.error("Weather API error, using default multiplier:", err);
     }
 
+    try {
+      // ── TomTom Traffic API ──
+      const TOMTOM_KEY = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
+      if (TOMTOM_KEY) {
+        const trafficRes = await axios.get(
+          `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json`,
+          {
+            params: {
+              point: `${lat},${lon}`,
+              unit: "KMPH",
+              key: TOMTOM_KEY,
+            },
+            validateStatus: (status) => status === 200,
+          }
+        );
+
+        if (trafficRes?.data?.flowSegmentData) {
+          const { currentSpeed, freeFlowSpeed } = trafficRes.data.flowSegmentData;
+          if (freeFlowSpeed > 0) {
+            trafficRatio = currentSpeed / freeFlowSpeed;
+            console.log(`Traffic: ${currentSpeed}km/h of ${freeFlowSpeed}km/h = ratio ${trafficRatio.toFixed(2)}`);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Traffic API unavailable for this location, skipping.");
+    }
+
     const finalSurge = getDemandMultiplier({
       pickupAddress: address,
-      appOpenCount: 0,
       weatherCondition,
       rainMm,
       visibility,
       temp,
       humidity,
+      trafficRatio,
     });
 
     setSurge({
@@ -259,8 +291,9 @@ export default function BookRidePage() {
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
-            <p className="text-gray-500 text-sm">Real-time navigation & Dynamic weather pricing.</p>
+            <p className="text-gray-500 text-sm">Demand prediction & Dynamic pricing based on weather.</p>
           </div>
+
 
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">

@@ -1,45 +1,112 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const ScrollProgress = ({ children }) => {
-    const [scrollWidth, setScrollWidth] = useState(0);
-    const handleScroll = useCallback(() => {
-        const currentScroll = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-        const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-
-        if (totalHeight > 0) {
-            const percentage = (currentScroll / totalHeight) * 100;
-            setScrollWidth(Math.min(percentage, 100));
-        }
-    }, []);
+    const [progress, setProgress] = useState(0);
+    const [scrolling, setScrolling] = useState(false);
+    const scrollTimeout = useRef(null);
 
     useEffect(() => {
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        window.addEventListener("resize", handleScroll);
-        handleScroll();
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-            window.removeEventListener("resize", handleScroll);
+        const handleScroll = () => {
+            const scrollTop =
+                window.scrollY ||
+                document.documentElement.scrollTop;
+
+            const scrollHeight =
+                document.documentElement.scrollHeight -
+                document.documentElement.clientHeight;
+
+            const percent =
+                scrollHeight > 0
+                    ? (scrollTop / scrollHeight) * 100
+                    : 0;
+
+            setProgress(percent);
+
+            // scrolling detect
+            setScrolling(true);
+            clearTimeout(scrollTimeout.current);
+            scrollTimeout.current = setTimeout(() => {
+                setScrolling(false);
+            }, 700);
         };
-    }, [handleScroll]);
+
+        window.addEventListener("scroll", handleScroll);
+        handleScroll();
+
+        return () =>
+            window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    };
+
+    const radius = 20;
+    const stroke = 4;
+    const normalizedRadius = radius - stroke * 0.5;
+    const circumference =
+        normalizedRadius * 2 * Math.PI;
+
+    const strokeDashoffset =
+        circumference - (progress / 100) * circumference;
 
     return (
         <>
+            {/* Floating Circle */}
             <div
-                className="fixed top-0 left-0 w-full pointer-events-none"
-                style={{
-                    zIndex: 99999,
-                    height: '4px'
-                }}
+                onClick={scrollToTop}
+                className="fixed bottom-14 left-4 z-9999 cursor-pointer group"
             >
-                <div
-                    className="h-full bg-primary transition-all duration-150 rounded-r-full ease-out"
-                    style={{
-                        width: `${scrollWidth}%`,
-                        backgroundColor: '#001820'
-                    }}
-                ></div>
+                <svg
+                    height={radius * 2}
+                    width={radius * 2}
+                    className="drop-shadow-xl"
+                >
+                    {/* bg */}
+                    <circle
+                        stroke="#e5e7eb"
+                        fill="#fffcfd"
+                        strokeWidth={stroke}
+                        r={normalizedRadius}
+                        cx={radius}
+                        cy={radius}
+                    />
+
+                    {/* progress */}
+                    <circle
+                        stroke="#2cbe6b"
+                        fill="transparent"
+                        strokeWidth={stroke}
+                        strokeDasharray={`${circumference} ${circumference}`}
+                        style={{
+                            strokeDashoffset,
+                            transition: "stroke-dashoffset .2s linear",
+                            transform: "rotate(-90deg)",
+                            transformOrigin: "50% 50%",
+                        }}
+                        r={normalizedRadius}
+                        cx={radius}
+                        cy={radius}
+                    />
+
+                    {/* dynamic text */}
+                    <text
+                        x="50%"
+                        y="60%"
+                        textAnchor="middle"
+                        fontSize="16px"
+                        fontWeight="bold"
+                        fill="#001820"
+                    >
+                        {scrolling ? `${Math.round(progress)}` : "▲"}
+                    </text>
+                </svg>
             </div>
+
             {/* Page Content */}
             {children}
         </>

@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { transportationServices } from "./homeData";
+import { StaggerContainer, AnimatedHeading } from "../MotionWrappers";
 
 const Transportation = () => {
   const leftServices = transportationServices.filter((s) => s.side === "left");
@@ -33,28 +34,21 @@ const Transportation = () => {
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="text-[#22c55e] text-sm font-bold uppercase tracking-[0.3em]"
-          >
-            Why Choose Us
-          </motion.span>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-4 text-3xl md:text-5xl font-black text-[#0A1F3D] leading-tight"
-          >
-            Transportation Services We Are <br className="hidden md:block" />
-            Often Considered
-          </motion.h2>
+          <AnimatedHeading>
+            <span className="text-[#22c55e] text-sm font-bold uppercase tracking-[0.3em]">
+              Why Choose Us
+            </span>
+            <h2 className="mt-4 text-3xl md:text-5xl font-black text-[#0A1F3D] leading-tight">
+              Transportation Services We Are <br className="hidden md:block" />
+              Often Considered
+            </h2>
+          </AnimatedHeading>
         </div>
 
         {/* Main Content Layout */}
         <div className="grid lg:grid-cols-12 gap-8 items-center relative">
           {/* Left Cards */}
-          <div className="lg:col-span-3 space-y-12 z-20 order-2 lg:order-1">
+          <StaggerContainer className="lg:col-span-3 space-y-12 z-20 order-2 lg:order-1">
             {leftServices.map((service, index) => (
               <ServiceCard
                 key={index}
@@ -63,7 +57,7 @@ const Transportation = () => {
                 index={index}
               />
             ))}
-          </div>
+          </StaggerContainer>
 
           {/* Center Image Component */}
           <div className="lg:col-span-6 relative flex justify-center order-1 lg:order-2">
@@ -74,9 +68,16 @@ const Transportation = () => {
             </div>
 
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              animate={{
+                y: [0, -8, 0]
+              }}
+              transition={{
+                duration: 0.8,
+                ease: "easeOut",
+                y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+              }}
               className="relative w-full aspect-square md:aspect-video lg:aspect-square max-w-[500px]"
             >
               <Image
@@ -90,7 +91,7 @@ const Transportation = () => {
           </div>
 
           {/* Right Cards */}
-          <div className="lg:col-span-3 space-y-12 z-20 order-3">
+          <StaggerContainer className="lg:col-span-3 space-y-12 z-20 order-3">
             {rightServices.map((service, index) => (
               <ServiceCard
                 key={index}
@@ -99,7 +100,7 @@ const Transportation = () => {
                 index={index}
               />
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </div>
     </section>
@@ -109,13 +110,17 @@ const Transportation = () => {
 const ServiceCard = ({ service, side, index }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, x: side === "left" ? -50 : 50 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.2 }}
-      viewport={{ once: true }}
-      className={`group flex items-center gap-4 bg-white p-4 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100/50 hover:shadow-[0_15px_40px_rgba(34,197,94,0.1)] transition-all duration-300 ${
-        side === "right" ? "flex-row-reverse text-right" : ""
-      }`}
+      variants={{
+        hidden: { opacity: 0, x: side === "left" ? -30 : 30 },
+        visible: { opacity: 1, x: 0 }
+      }}
+      whileHover={{
+        scale: 1.03,
+        y: -4,
+        transition: { duration: 0.3 }
+      }}
+      className={`group flex items-center gap-4 bg-white p-4 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100/50 hover:shadow-[0_15px_40px_rgba(34,197,94,0.1)] transition-all duration-300 ${side === "right" ? "flex-row-reverse text-right" : ""
+        }`}
     >
       <div className="flex-shrink-0 p-3 rounded-lg bg-[#22c55e] text-white shadow-[0_5px_15px_rgba(34,197,94,0.3)] group-hover:scale-110 transition-transform duration-300">
         <service.icon size={24} />
@@ -202,3 +207,4 @@ const PulseDot = ({ cx, cy }) => {
 };
 
 export default Transportation;
+

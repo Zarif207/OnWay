@@ -1,5 +1,6 @@
 // 1. Example Query Logic
-import { findNearbyDrivers } from "./utils/riderMatching.js";
+const { findNearbyDrivers } = require("./utils/riderMatching");
+
 const pickupLocation = { lat: 23.8103, lng: 90.4125 }; // Dhaka, Bangladesh
 const nearbyDrivers = await findNearbyDrivers(ridersCollection, pickupLocation.lat, pickupLocation.lng);
 

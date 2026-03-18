@@ -11,11 +11,14 @@
   },
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.18.3",
+    "@react-google-maps/api": "^2.20.8",
+    "@tanstack/react-query": "^5.90.21",
     "animate.css": "^4.1.1",
     "aos": "^2.3.4",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "daisyui": "^5.5.18",
+    "face-api.js": "^0.22.2",
     "framer-motion": "^12.34.3",
     "gsap": "^3.14.2",
     "jspdf": "^4.2.0",
@@ -34,14 +37,21 @@
     "react-icons": "^5.5.0",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.7.0",
-    "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.21",
     "swiper": "^12.1.1",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/react": "19.2.14",
+    "@types/socket.io": "^3.0.1",
+    "@types/socket.io-client": "^1.4.36",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6"
+    "eslint-config-next": "16.1.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2",
+    "prettier": "^3.8.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   }
 }

@@ -7,12 +7,17 @@ module.exports = (notificationsCollection) => {
     // GET /api/notifications - Get all notifications for a user
     router.get("/", async (req, res) => {
         try {
+            if (!notificationsCollection) {
+                console.error("❌ NotificationsCollection is missing from route init");
+                return res.status(500).json({ success: false, message: "Internal server error: Database collection not found" });
+            }
+
             const { userId, limit = 20, unreadOnly = false } = req.query;
 
             if (!userId) {
                 return res.status(400).json({
                     success: false,
-                    message: "userId is required"
+                    message: "userId is required to fetch notifications"
                 });
             }
 
@@ -24,7 +29,7 @@ module.exports = (notificationsCollection) => {
             const notifications = await notificationsCollection
                 .find(query)
                 .sort({ createdAt: -1 })
-                .limit(parseInt(limit))
+                .limit(Math.min(100, parseInt(limit))) // Cap limit for safety
                 .toArray();
 
             const unreadCount = await notificationsCollection.countDocuments({
@@ -42,7 +47,7 @@ module.exports = (notificationsCollection) => {
             console.error("Fetch Notifications Error:", error);
             res.status(500).json({
                 success: false,
-                message: "Failed to fetch notifications",
+                message: "Failed to fetch notifications from the database",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
             });
         }
@@ -135,12 +140,12 @@ module.exports = (notificationsCollection) => {
 
             const result = await notificationsCollection.updateOne(
                 { _id: new ObjectId(id) },
-                { 
-                    $set: { 
+                {
+                    $set: {
                         isRead: true,
                         readAt: new Date(),
                         updatedAt: new Date()
-                    } 
+                    }
                 }
             );
 
@@ -179,12 +184,12 @@ module.exports = (notificationsCollection) => {
 
             const result = await notificationsCollection.updateMany(
                 { userId, isRead: false },
-                { 
-                    $set: { 
+                {
+                    $set: {
                         isRead: true,
                         readAt: new Date(),
                         updatedAt: new Date()
-                    } 
+                    }
                 }
             );
 

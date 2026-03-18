@@ -16,6 +16,9 @@ import {
   MapPin
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
+import AnimatedButton from "./AnimatedButton";
+
+import { AnimatedHeading, StaggerContainer } from "./MotionWrappers";
 
 // Quick Links Data with Routes
 const quickLinks = [
@@ -106,14 +109,14 @@ export default function Footer() {
       transition: {
         staggerChildren: 0.1,
         duration: 0.8,
-        ease: "easeOut"
+        ease: [0.16, 1, 0.3, 1] // Custom ease for premium feel
       }
     }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
   };
 
   const XIcon = ({ className }) => (
@@ -124,8 +127,9 @@ export default function Footer() {
 
   return (
     <footer
-      className="relative w-full overflow-hidden bg-fixed bg-cover bg-center border-t border-white/5"
-      style={{ backgroundImage: "url('/footer-1.jpg')" }}
+      className="relative w-full overflow-hidden bg-cover bg-center border-t border-white/5 pb-10"
+      // Added slight contrast/brightness filter to make image pop more
+      style={{ backgroundImage: "url('/home-3.webp')", filter: "brightness(1.05) contrast(1.05)" }}
     >
       <Toaster />
 
@@ -133,24 +137,46 @@ export default function Footer() {
       <div className="absolute inset-0 bg-[#0A1F3D]/95 z-0" />
       <div className="absolute inset-0 bg-linear-to-b from-[#0A1F3D]/50 via-transparent to-[#050B1A] z-0" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 pb-10">
+      {/* Floating blur blobs (low opacity) background effects for a touch of tech-glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full mix-blend-screen" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-500/10 blur-[150px] rounded-full mix-blend-screen" />
+
+        {/* Very soft noise texture (optional but adds premium feel) */}
+        <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-10 lg:px-16 py-16">
 
         {/* ================= NEWSLETTER SECTION ================= */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-10 mb-20 px-4">
-          <motion.h2
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            className="text-white text-4xl sm:text-5xl font-black tracking-tighter"
-          >
-            Subscribe Our <br /> Newsletter
-          </motion.h2>
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-10 mb-16 px-2 lg:px-4">
+          <div className="max-w-xl text-center lg:text-left">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-white text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 drop-shadow-md">
+                Stay in the loop
+              </h3>
+              <p className="text-white/80 text-base lg:text-lg font-medium leading-relaxed drop-shadow-sm">
+                Get exclusive updates, early access features, and premium mobility insights.
+              </p>
+            </motion.div>
+          </div>
 
           <motion.form
             onSubmit={handleSubscribe}
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
-            className={`flex w-full lg:w-125 h-16 bg-white/5 backdrop-blur-md rounded-full border border-white/10 p-1 pl-8 transition-all ${isSubscribed && !email ? 'opacity-60 grayscale' : ''}`}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="flex items-center w-full lg:w-[480px] h-14 sm:h-16 bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-1.5 pl-5 sm:pl-6 focus-within:ring-2 focus-within:ring-[#22c55e] focus-within:bg-white/15 focus-within:shadow-[0_0_25px_rgba(34,197,94,0.15)] transition-all duration-300 relative group overflow-hidden"
           >
+            {/* Subtle inner glow for the input container */}
+            <div className="absolute inset-0 shadow-[inset_0_1px_rgba(255,255,255,0.05)] rounded-full pointer-events-none" />
+
             <input
               type="email"
               required
@@ -180,30 +206,45 @@ export default function Footer() {
           variants={containerVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 p-12 md:p-20 rounded-[4rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.3)]"
+          viewport={{ once: true, margin: "-100px" }}
+          className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-12 p-8 md:p-12 lg:p-14 rounded-2xl lg:rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.2),inset_0_1px_rgba(255,255,255,0.05)] transition-transform duration-500 hover:-translate-y-1"
         >
-          {/* Column 1: Branding */}
-          <motion.div variants={itemVariants} className="space-y-10">
-            <div className="space-y-4">
-              <Link href="/" className="inline-block">
-                <div className="flex items-center justify-center gap-1">
-                  <Image src={logoImage} alt="OnWay" width={110} height={80} className="drop-shadow-lg" />
+          {/* Subtle Radial Gradient Glow inner */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent rounded-2xl lg:rounded-3xl pointer-events-none" />
+
+          {/* Column 1: Branding (Spans 4 columns on lg) */}
+          <motion.div variants={itemVariants} className="lg:col-span-4 space-y-8 lg:pr-10 text-center md:text-left flex flex-col items-center md:items-start group/brand">
+            <Link href="/" className="inline-block outline-none">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {/* Subtle logo glow that activates when hovering over the branding column */}
+                  <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 rounded-full pointer-events-none" />
+                  <Image
+                    src={logoImage}
+                    alt="OnWay"
+                    width={52}
+                    height={52}
+                    className="drop-shadow-xl object-contain transition-transform duration-500 group-hover/brand:scale-105 relative z-10"
+                  />
                 </div>
-              </Link>
-            </div>
-            <p className="text-[#A0AEC0] text-sm font-medium leading-[1.8] max-w-70">
-              Our dedication lies in embracing challenges and pioneering innovation within the mobility sector, delivering premium experiences.
+                <span className="text-3xl font-extrabold text-white tracking-tight">OnWay</span>
+              </div>
+            </Link>
+
+            <p className="text-[#A0AEC0] text-sm/relaxed lg:text-base/relaxed max-w-[280px] font-medium mx-auto md:mx-0">
+              Smart mobility platform engineered for fast, safe, and seamless everyday rides.
             </p>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center justify-center md:justify-start gap-4">
               {[Facebook, XIcon, Instagram, Linkedin].map((Icon, i) => (
                 <motion.a
                   key={i}
                   href="#"
-                  whileHover={{ y: -5, backgroundColor: '#22c55e', borderColor: '#22c55e' }}
-                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all duration-300"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#A0AEC0] hover:text-white transition-all duration-300 hover:bg-[#22c55e]/20 hover:border-[#22c55e]/30 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] group relative overflow-hidden"
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-[20px] h-[20px] relative z-10 transition-transform duration-300" />
                 </motion.a>
               ))}
             </div>
@@ -275,12 +316,12 @@ export default function Footer() {
         </motion.div>
 
         {/* ================= COPYRIGHT ROW ================= */}
-        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 px-4 text-[#A0AEC0]/60 text-xs font-bold uppercase tracking-widest">
-          <p>Copyright © {new Date().getFullYear()} <span className="text-[#22c55e]">OnWay</span> All Rights Reserved.</p>
-          <div className="flex items-center gap-8">
-            <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <span className="text-white/10">|</span>
-            <Link href="#" className="hover:text-white transition-colors">Terms & Condition</Link>
+        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 px-4 pt-8 border-t border-white/10 text-[#A0AEC0] text-sm font-medium">
+          <p>© {new Date().getFullYear()} OnWay. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <Link href="#" className="hover:text-white transition-colors duration-300">Privacy Policy</Link>
+            <div className="w-1 h-1 bg-white/20 rounded-full" />
+            <Link href="#" className="hover:text-white transition-colors duration-300">Terms of Service</Link>
           </div>
         </div>
 

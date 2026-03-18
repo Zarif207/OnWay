@@ -21,7 +21,7 @@ export default function SupportAgentDashboard() {
     const fetchData = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-        
+
         // Fetch stats
         const statsResponse = await fetch(`${apiUrl}/support-agent/stats`);
         const statsData = await statsResponse.json();
@@ -37,7 +37,7 @@ export default function SupportAgentDashboard() {
           const pending = complaints.filter(c => c.status === "Pending").length;
           const inProgress = complaints.filter(c => c.status === "In Progress").length;
           const resolved = complaints.filter(c => c.status === "Resolved").length;
-          
+
           setComplaintsData([
             { name: 'Pending', value: pending, color: '#EF4444' },
             { name: 'In Progress', value: inProgress, color: '#F59E0B' },
@@ -50,7 +50,7 @@ export default function SupportAgentDashboard() {
         const sosResult = await sosResponse.json();
         if (sosResult.success) {
           const alerts = sosResult.alerts;
-          
+
           // Group by day of week
           const weekData = {
             Mon: { active: 0, responding: 0, resolved: 0 },
@@ -66,7 +66,7 @@ export default function SupportAgentDashboard() {
             const date = new Date(alert.timestamp || alert.createdAt);
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const day = days[date.getDay()];
-            
+
             const status = alert.status?.toLowerCase();
             if (status === 'active') weekData[day].active++;
             else if (status === 'responding') weekData[day].responding++;
@@ -151,57 +151,61 @@ export default function SupportAgentDashboard() {
         <div className="bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-gray-800">📋 Complaints Status</h3>
-            <a 
+            <a
               href="/dashboard/supportAgent/complaints"
               className="text-sm text-[#2FCA71] hover:underline"
             >
               View All →
             </a>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={complaintStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {complaintStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={complaintStatusData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {complaintStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Bar Chart - SOS Alerts */}
         <div className="bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-gray-800">🚨 Live SOS Alerts (Weekly)</h3>
-            <a 
+            <a
               href="/dashboard/supportAgent/live-sos"
               className="text-sm text-[#2FCA71] hover:underline"
             >
               View All →
             </a>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={sosAlertsData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="active" fill="#EF4444" name="Active" />
-              <Bar dataKey="responding" fill="#F59E0B" name="Responding" />
-              <Bar dataKey="resolved" fill="#2FCA71" name="Resolved" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sosAlertsData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="active" fill="#EF4444" name="Active" />
+                <Bar dataKey="responding" fill="#F59E0B" name="Responding" />
+                <Bar dataKey="resolved" fill="#2FCA71" name="Resolved" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -210,34 +214,38 @@ export default function SupportAgentDashboard() {
         {/* Line Chart - Chat Support */}
         <div className="bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">💬 Chat Support Activity</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={chatResponseData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="messages" stroke="#3B82F6" strokeWidth={3} name="Messages" />
-              <Line type="monotone" dataKey="avgResponse" stroke="#2FCA71" strokeWidth={3} name="Avg Response (min)" />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chatResponseData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="time" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="messages" stroke="#3B82F6" strokeWidth={3} name="Messages" />
+                <Line type="monotone" dataKey="avgResponse" stroke="#2FCA71" strokeWidth={3} name="Avg Response (min)" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Bar Chart - Refunds */}
         <div className="bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">💰 Refunds (Monthly)</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={refundsData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="approved" fill="#2FCA71" name="Approved" />
-              <Bar dataKey="pending" fill="#F59E0B" name="Pending" />
-              <Bar dataKey="rejected" fill="#EF4444" name="Rejected" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={refundsData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="approved" fill="#2FCA71" name="Approved" />
+                <Bar dataKey="pending" fill="#F59E0B" name="Pending" />
+                <Bar dataKey="rejected" fill="#EF4444" name="Rejected" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -246,45 +254,49 @@ export default function SupportAgentDashboard() {
         {/* Pie Chart - Verification Status */}
         <div className="bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">✅ Verification Status</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={verificationData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {verificationData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={verificationData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {verificationData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Bar Chart - Overall Performance */}
         <div className="bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">📊 Overall Performance</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={[
-              { category: 'Complaints', count: 25 },
-              { category: 'SOS', count: 18 },
-              { category: 'Chat', count: 108 },
-              { category: 'Refunds', count: 75 },
-              { category: 'Verification', count: 100 },
-            ]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#2FCA71" name="Total Handled" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { category: 'Complaints', count: 25 },
+                { category: 'SOS', count: 18 },
+                { category: 'Chat', count: 108 },
+                { category: 'Refunds', count: 75 },
+                { category: 'Verification', count: 100 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="category" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#2FCA71" name="Total Handled" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>

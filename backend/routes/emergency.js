@@ -51,7 +51,7 @@ module.exports = function (emergencyCollection) {
   router.get("/alerts", async (req, res) => {
     try {
       const { status } = req.query;
-      
+
       const query = status ? { status } : {};
       const alerts = await emergencyCollection
         .find(query)

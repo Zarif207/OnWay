@@ -7,14 +7,21 @@ module.exports = (settingsCollection) => {
     // GET /api/settings - Get all platform settings
     router.get("/", async (req, res) => {
         try {
+            if (!settingsCollection) {
+                console.error("❌ SettingsCollection is missing from route init");
+                return res.status(500).json({ success: false, message: "Internal server error: Database collection not found" });
+            }
+
             let settings = await settingsCollection.findOne({ type: "platform" });
-            
+
             // If no settings exist, create default settings
             if (!settings) {
+                console.log("ℹ️ No platform settings found. Creating defaults...");
                 const defaultSettings = {
                     type: "platform",
                     // Platform Configuration
                     rideConfig: {
+                        // ... [rest of the defaultSettings object remains the same]
                         baseFare: 50,
                         perKmRate: 15,
                         perMinuteRate: 2,
@@ -49,7 +56,7 @@ module.exports = (settingsCollection) => {
                     updatedAt: new Date(),
                     createdAt: new Date()
                 };
-                
+
                 await settingsCollection.insertOne(defaultSettings);
                 settings = defaultSettings;
             }
@@ -62,7 +69,7 @@ module.exports = (settingsCollection) => {
             console.error("Fetch Settings Error:", error);
             res.status(500).json({
                 success: false,
-                message: "Failed to fetch settings",
+                message: "Failed to fetch platform settings from the database",
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
             });
         }

@@ -26,7 +26,7 @@ import toast, { Toaster } from "react-hot-toast";
 
 // import OnWayLoading from "@/app/components/Loading/page";
 
-/* ---------- UI Components ---------- */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 function Card({ children, className = "", noPadding = false }) {
   return (

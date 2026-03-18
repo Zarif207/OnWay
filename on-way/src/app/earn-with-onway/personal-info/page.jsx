@@ -111,7 +111,7 @@ export default function PersonalInfoPage() {
 
   const onSubmit = (data) => {
     updateFormData(data);
-    router.push("/earn-with-onway/vehicle-info");
+    router.push("/earn-with-onway/face-verification");
   };
 
   return (
@@ -169,6 +169,24 @@ export default function PersonalInfoPage() {
                 <div className="flex items-center gap-5">
                   <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
                     <span className="font-bold text-lg">2</span>
+                  </div>
+                  <div>
+                    <h4 className="text-[16px] font-bold text-gray-400">
+                      Face Verification
+                    </h4>
+                    <p className="text-[13px] text-gray-400 font-medium tracking-wide">
+                      Pending
+                    </p>
+                  </div>
+                </div>
+
+                {/* Connector Line */}
+                <div className="w-[2px] h-8 bg-gray-200 ml-6 -my-2 rounded-full"></div>
+
+                {/* Step 3: Pending */}
+                <div className="flex items-center gap-5">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
+                    <span className="font-bold text-lg">3</span>
                   </div>
                   <div>
                     <h4 className="text-[16px] font-bold text-gray-400">
@@ -241,8 +259,8 @@ export default function PersonalInfoPage() {
                           required: "First Name is required",
                         })}
                         className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.firstName
-                            ? "border-red-400 bg-red-50/50"
-                            : "border-gray-200"
+                          ? "border-red-400 bg-red-50/50"
+                          : "border-gray-200"
                           }`}
                       />
                     </div>
@@ -277,8 +295,8 @@ export default function PersonalInfoPage() {
                         type="tel"
                         {...register("mobileNumber", { required: true })}
                         className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.mobileNumber
-                            ? "border-red-400 bg-red-50/50"
-                            : "border-gray-200"
+                          ? "border-red-400 bg-red-50/50"
+                          : "border-gray-200"
                           }`}
                       />
                     </div>
@@ -302,8 +320,8 @@ export default function PersonalInfoPage() {
                           },
                         })}
                         className={`w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.email
-                            ? "border-red-400 bg-red-50/50"
-                            : "border-gray-200"
+                          ? "border-red-400 bg-red-50/50"
+                          : "border-gray-200"
                           }`}
                       />
                     </div>
@@ -463,8 +481,8 @@ export default function PersonalInfoPage() {
                         type="date"
                         {...register("dateOfBirth", { required: true })}
                         className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${errors.dateOfBirth
-                            ? "border-red-400 bg-red-50/50"
-                            : "border-gray-200"
+                          ? "border-red-400 bg-red-50/50"
+                          : "border-gray-200"
                           }`}
                       />
                     </div>
@@ -591,8 +609,8 @@ export default function PersonalInfoPage() {
                         placeholder="e.g. 199XXXXXXXXXX"
                         {...register("identityNumber", { required: true })}
                         className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.identityNumber
-                            ? "border-red-400 bg-red-50/50"
-                            : "border-gray-200"
+                          ? "border-red-400 bg-red-50/50"
+                          : "border-gray-200"
                           }`}
                       />
                     </div>
@@ -617,7 +635,7 @@ export default function PersonalInfoPage() {
                     type="submit"
                     className="w-full md:w-auto bg-[#31ca71] text-[#001820] px-10 py-4 rounded-xl hover:bg-[#28ad60] hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(49,202,113,0.5)] transition-all duration-300 font-extrabold text-[15px] flex items-center justify-center gap-3 group"
                   >
-                    Continue to Vehicle Details
+                    Continue to Face Verification
                     <span className="w-6 h-6 rounded-full bg-[#001820]/10 flex items-center justify-center group-hover:bg-[#001820]/20 transition-colors">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

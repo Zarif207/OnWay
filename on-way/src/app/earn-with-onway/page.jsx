@@ -167,7 +167,7 @@ export default function EarnWithOnWayPage() {
             src="/ride.png"
             alt="OnWay ride booking"
             fill
-            className="object-cover object-center"
+            className="w-auto h-auto object-contain object-center"
             priority
           />
           <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black/70" />

@@ -142,9 +142,8 @@ module.exports = (collections) => {
           id: booking._id.toString(),
           type: "booking",
           category: "Bookings",
-          title: `${booking.pickupLocation?.address || "Unknown"} → ${
-            booking.dropoffLocation?.address || "Unknown"
-          }`,
+          title: `${booking.pickupLocation?.address || "Unknown"} → ${booking.dropoffLocation?.address || "Unknown"
+            }`,
           subtitle: `${booking.bookingStatus} • ₹${booking.price || 0}`,
           metadata: {
             distance: booking.distance,
@@ -159,9 +158,8 @@ module.exports = (collections) => {
           type: "review",
           category: "Reviews",
           title: review.userName || "Anonymous",
-          subtitle: `${review.rating}⭐ - ${
-            review.review?.substring(0, 50) || ""
-          }...`,
+          subtitle: `${review.rating}⭐ - ${review.review?.substring(0, 50) || ""
+            }...`,
           metadata: {
             driverName: review.driverName,
             rating: review.rating,

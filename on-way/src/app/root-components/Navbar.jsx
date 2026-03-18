@@ -23,6 +23,8 @@ import {
   Tag
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
+
+
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 
@@ -87,7 +89,7 @@ const Navbar = () => {
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 shrink-0">
+            <div className="relative w-25 h-25 flex-shrink-0">
               <Image
                 src={logoImage}
                 alt="OnWay Logo"
@@ -95,14 +97,6 @@ const Navbar = () => {
                 className="object-contain"
                 priority
               />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tighter text-[#0A1F3D] dark:text-white leading-none">
-                OnWay
-              </span>
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#22c55e]">
-                Premium Mobility
-              </span>
             </div>
           </Link>
 

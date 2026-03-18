@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { getDrivingRoute } from "@/utils/routingService";
@@ -11,6 +12,8 @@ import LocationInput from "@/components/LocationInput";
 import NetworkStatus from "@/components/NetworkStatus";
 import { MapPin, Clock, Route, DollarSign, Loader2, Thermometer, CloudRain, AlertTriangle } from "lucide-react";
 import '@/styles/location-dropdown.css';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
@@ -46,6 +49,7 @@ export default function BookRidePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState("pickup");
+  const [onlineRiders, setOnlineRiders] = useState({});
 
   const router = useRouter();
 
@@ -129,6 +133,7 @@ export default function BookRidePage() {
             setDuration(routeData.durationMin);
             setRouteGeometry(routeData.geometry);
 
+            // Show different messages for fallback vs real routes
             if (routeData.routeInfo?.isFallback) {
               setError("⚠️ Using estimated route (network issues detected).");
             }
@@ -137,9 +142,27 @@ export default function BookRidePage() {
             resetRouteState();
           }
         } catch (err) {
-          console.error("Route calculation failed:", err);
-          setError("Route calculation failed. Please try again.");
-          resetRouteState();
+          console.error("❌ Route calculation failed:", err);
+
+          // Handle specific network errors
+          if (err.message.includes('Network Error') || err.code === 'ERR_NETWORK') {
+            setError("⚠️ Network connection issue. Using estimated route calculation.");
+
+            // Create a fallback route manually
+            try {
+              const { createFallbackRoute } = await import('@/utils/routingService');
+              const fallbackRoute = createFallbackRoute(pickupLocation, dropoffLocation);
+              setDistance(fallbackRoute.distanceKm);
+              setDuration(fallbackRoute.durationMin);
+              setRouteGeometry(fallbackRoute.geometry);
+            } catch (fallbackErr) {
+              console.error("Failed to create fallback route:", fallbackErr);
+              resetRouteState();
+            }
+          } else {
+            setError(`Route calculation failed: ${err.message}`);
+            resetRouteState();
+          }
         } finally {
           setIsRouting(false);
         }
@@ -150,6 +173,36 @@ export default function BookRidePage() {
 
     fetchRoute();
   }, [pickupLocation, dropoffLocation]);
+
+  // Update fare when distance or ride type changes
+  useEffect(() => {
+    setFare(calculateFare(distance, rideType));
+  }, [distance, rideType]);
+
+  // Fetch nearby riders
+  useEffect(() => {
+    const fetchNearbyRiders = async () => {
+      if (!pickupLocation) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/riders/nearby?lat=${pickupLocation.lat}&lng=${pickupLocation.lon}&radius=5`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+          // Convert array to object indexed by id for RideMap
+          const ridersObj = {};
+          result.data.forEach(rider => {
+            ridersObj[rider.id] = rider;
+          });
+          setOnlineRiders(ridersObj);
+        }
+      } catch (err) {
+        console.error("Failed to fetch nearby riders:", err);
+      }
+    };
+
+    fetchNearbyRiders();
+    const interval = setInterval(fetchNearbyRiders, 10000); // Refresh every 10s
+    return () => clearInterval(interval);
+  }, [pickupLocation]);
 
   const resetRouteState = () => {
     setDistance(0);
@@ -192,8 +245,25 @@ export default function BookRidePage() {
     }
   };
 
+  // Handle "Your Location" button clicks
+  const handlePickupYourLocation = (locationData) => {
+    setPickupLocation(locationData);
+    setActiveInput("dropoff");
+
+    // Also trigger map update if we have a map reference
+    // The RideMap component will handle centering and marker placement
+  };
+
+  const handleDropoffYourLocation = (locationData) => {
+    setDropoffLocation(locationData);
+
+    // The RideMap component will handle centering and marker placement
+  };
+  // Handle current location from map button
   const handleCurrentLocationFound = (locationData) => {
     const { lat, lng } = locationData;
+
+    // Use the enhanced reverse geocoding
     reverseGeocode(lat, lng).then(addressData => {
       const newLocationObj = { lat, lon: lng, name: addressData.name };
       if (activeInput === "pickup") {
@@ -217,6 +287,8 @@ export default function BookRidePage() {
     setError("");
 
     try {
+      const passengerId = session?.user?.id || "anonymous_passenger";
+
       const bookingData = {
         pickupLocation: { name: pickupLocation.name, lat: pickupLocation.lat, lng: pickupLocation.lon },
         dropoffLocation: { name: dropoffLocation.name, lat: dropoffLocation.lat, lng: dropoffLocation.lon },
@@ -229,7 +301,9 @@ export default function BookRidePage() {
         bookingStatus: "pending",
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+      console.log("📤 Submitting booking request to backend...", bookingData);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
       const response = await fetch(`${apiUrl}/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -238,7 +312,9 @@ export default function BookRidePage() {
 
       const result = await response.json();
       if (result.success) {
-        router.push(`/dashboard/passenger/book-ride?bookingId=${result.booking._id}`);
+        console.log("✅ Booking created successfully:", result.booking._id);
+        // Redirect to passenger dashboard with searching state
+        router.push(`/dashboard/passenger?searching=true&bookingId=${result.booking._id}`);
       } else {
         setError(result.message || "Failed to confirm booking.");
       }
@@ -254,14 +330,10 @@ export default function BookRidePage() {
       <NetworkStatus />
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
 
-        {/* LEFT SIDE: Form Section */}
-        <div className={`form-container w-full lg:w-100 xl:w-112.5 shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''}`}>
-
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
-            <p className="text-gray-500 text-sm">Real-time navigation & Dynamic weather pricing.</p>
-          </div>
-
+        {/* LEFT SIDE: Enhanced Form Section */}
+        <div className={`form-container w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''
+          }`}>
+          {/* Global Error Display */}
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
@@ -322,7 +394,10 @@ export default function BookRidePage() {
                 <button
                   key={key}
                   onClick={() => setRideType(key)}
-                  className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${rideType === key ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]" : "border-gray-100 text-gray-500"}`}
+                  className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${rideType === key
+                    ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
+                    : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
+                    }`}
                 >
                   <span className="text-2xl mb-1">{data.icon}</span>
                   <span className="font-semibold capitalize text-gray-900">{data.name}</span>
@@ -397,10 +472,12 @@ export default function BookRidePage() {
             onMapClick={handleMapClick}
             showCurrentLocationButton={true}
             onCurrentLocationFound={handleCurrentLocationFound}
+            onlineRiders={onlineRiders}
           />
         </div>
       </div>
     </div>
+
   );
 }
 

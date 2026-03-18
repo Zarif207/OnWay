@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 module.exports = function (paymentsCollection) {
-  
+
   router.post("/initiate", async (req, res) => {
     try {
       const { amount, customerName, customerEmail, customerPhone, productName, paymentMethod } = req.body;
@@ -74,7 +74,7 @@ module.exports = function (paymentsCollection) {
         paymentData.emi_option = 0;
       }
 
-     
+
       await paymentsCollection.insertOne({
         transactionId,
         ...paymentData,
@@ -86,17 +86,17 @@ module.exports = function (paymentsCollection) {
       // SSLCommerz integration
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
       const apiResponse = await sslcz.init(paymentData);
-      
+
       if (apiResponse.GatewayPageURL) {
         let gatewayUrl = apiResponse.GatewayPageURL;
-        
-        
+
+
         if (paymentMethod === "bkash" || paymentMethod === "nagad") {
           gatewayUrl += "?type=mobilebanking";
         } else if (paymentMethod === "card") {
           gatewayUrl += "?type=cards";
         }
-        
+
         return res.json({ success: true, gatewayUrl: gatewayUrl });
       } else {
         return res.status(400).json({ success: false, message: "Failed to initialize payment gateway" });
@@ -172,6 +172,28 @@ module.exports = function (paymentsCollection) {
     } catch (error) {
       console.error("IPN error:", error);
       res.status(500).json({ success: false });
+    }
+  });
+
+  // Get user payment history
+  router.get("/user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const payments = await paymentsCollection
+        .find({
+          $or: [
+            { "cus_email": userId }, // In case email is stored
+            { "customerEmail": userId },
+            { "userId": userId }
+          ]
+        })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      res.json({ success: true, data: payments });
+    } catch (error) {
+      console.error("Get user payment history error:", error);
+      res.status(500).json({ success: false, message: "Error fetching history" });
     }
   });
 

@@ -21,19 +21,17 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!session?.user?.id || !session?.user?.role) return;
 
-    // Only allow admin and supportAgent to connect
-    if (session.user.role !== "admin" && session.user.role !== "supportAgent") {
-      console.log("❌ Socket connection denied: User is not admin");
-      return;
-    }
+    // Socket connections now allowed for all roles via auth middleware
 
     // Create socket connection if not exists
     if (!socket) {
+      console.log("🔌 Attempting Socket connection to:", SOCKET_URL);
       socket = io(SOCKET_URL, {
         transports: ["websocket", "polling"],
+        withCredentials: true,
         reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+        reconnectionAttempts: 10,
         // ✅ Send authentication data
         auth: {
           token: session.user.id, // In production, use actual JWT token
@@ -46,7 +44,7 @@ export const useNotifications = () => {
         console.log("🔌 Socket connected:", socket.id);
         console.log("✅ Authenticated as:", session.user.role);
         setConnected(true);
-        
+
         // Join user-specific notification room
         socket.emit("joinNotifications", session.user.id);
       });
@@ -73,10 +71,10 @@ export const useNotifications = () => {
     // Listen for new notifications
     const handleNewNotification = (notification) => {
       console.log("🔔 New notification received:", notification);
-      
+
       // Add to notifications list
       setNotifications((prev) => [notification, ...prev]);
-      
+
       // Increment unread count
       setUnreadCount((prev) => prev + 1);
 

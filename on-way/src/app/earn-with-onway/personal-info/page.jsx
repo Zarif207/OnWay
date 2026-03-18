@@ -130,69 +130,71 @@ export default function PersonalInfoPage() {
         className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-400/10 rounded-full blur-[120px] pointer-events-none z-0 transform -translate-x-1/3 translate-y-1/3"
       />
 
-      <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-32 relative z-10">
+      <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-24 lg:pt-32 relative z-10">
         {/* 2-Column Split Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-20 items-start">
           {/* LEFT COLUMN: Stepper & Info (Sticky) */}
-          <div className="lg:col-span-4 lg:sticky lg:top-32 flex flex-col gap-10">
+          <div className="lg:col-span-4 lg:sticky lg:top-32 flex flex-col gap-6 lg:gap-10">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h1 className="text-4xl font-extrabold text-[#001820] mb-8 leading-tight">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-[#001820] mb-6 lg:mb-8 leading-tight">
                 Become an <br />{" "}
                 <span className="text-accent">OnWay Partner</span>
               </h1>
 
               {/* Progress Stepper */}
-              <div className="flex flex-col gap-6 mb-12">
+              <div className="flex lg:flex-col gap-4 lg:gap-6 mb-8 lg:mb-12 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 no-scrollbar">
                 {/* Step 1: Active */}
-                <div className="flex items-center gap-5 group">
-                  <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-[#31ca71] text-[#001820] shadow-[0_0_20px_rgba(49,202,113,0.4)] transition-all">
-                    <span className="font-bold text-lg">1</span>
+                <div className="flex items-center gap-4 lg:gap-5 group shrink-0">
+                  <div className="relative flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#31ca71] text-[#001820] shadow-[0_0_20px_rgba(49,202,113,0.4)] transition-all">
+                    <span className="font-bold text-base lg:text-lg">1</span>
                   </div>
-                  <div>
-                    <h4 className="text-[16px] font-bold text-[#001820]">
+                  <div className="hidden sm:block">
+                    <h4 className="text-[14px] lg:text-[16px] font-bold text-[#001820] whitespace-nowrap">
                       Personal Info
                     </h4>
-                    <p className="text-[13px] text-gray-500 font-medium tracking-wide">
+                    <p className="text-[11px] lg:text-[13px] text-gray-500 font-medium tracking-wide">
                       In Progress
                     </p>
                   </div>
                 </div>
 
                 {/* Connector Line */}
-                <div className="w-[2px] h-8 bg-gray-200 ml-6 -my-2 rounded-full"></div>
+                <div className="hidden lg:block w-[2px] h-8 bg-gray-200 ml-6 -my-2 rounded-full"></div>
+                <div className="lg:hidden w-8 h-[2px] bg-gray-200 self-center shrink-0"></div>
 
                 {/* Step 2: Pending */}
-                <div className="flex items-center gap-5">
-                  <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
-                    <span className="font-bold text-lg">2</span>
+                <div className="flex items-center gap-4 lg:gap-5 shrink-0">
+                  <div className="relative flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
+                    <span className="font-bold text-base lg:text-lg">2</span>
                   </div>
-                  <div>
-                    <h4 className="text-[16px] font-bold text-gray-400">
+                  <div className="hidden sm:block">
+                    <h4 className="text-[14px] lg:text-[16px] font-bold text-gray-400 whitespace-nowrap">
                       Face Verification
                     </h4>
-                    <p className="text-[13px] text-gray-400 font-medium tracking-wide">
+                    <p className="text-[11px] lg:text-[13px] text-gray-400 font-medium tracking-wide">
                       Pending
                     </p>
                   </div>
                 </div>
 
                 {/* Connector Line */}
-                <div className="w-[2px] h-8 bg-gray-200 ml-6 -my-2 rounded-full"></div>
+                <div className="hidden lg:block w-[2px] h-8 bg-gray-200 ml-6 -my-2 rounded-full"></div>
+                <div className="lg:hidden w-8 h-[2px] bg-gray-200 self-center shrink-0"></div>
 
                 {/* Step 3: Pending */}
-                <div className="flex items-center gap-5">
-                  <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
-                    <span className="font-bold text-lg">3</span>
+                <div className="flex items-center gap-4 lg:gap-5 shrink-0">
+                  <div className="relative flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-gray-200 text-gray-400">
+                    <span className="font-bold text-base lg:text-lg">3</span>
                   </div>
-                  <div>
-                    <h4 className="text-[16px] font-bold text-gray-400">
+                  <div className="hidden sm:block">
+                    <h4 className="text-[14px] lg:text-[16px] font-bold text-gray-400 whitespace-nowrap">
                       Vehicle Details
                     </h4>
-                    <p className="text-[13px] text-gray-400 font-medium tracking-wide">
+                    <p className="text-[11px] lg:text-[13px] text-gray-400 font-medium tracking-wide">
                       Pending
                     </p>
                   </div>
@@ -222,15 +224,15 @@ export default function PersonalInfoPage() {
             transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-8 w-full"
           >
-            <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-[0_30px_60px_-15px_rgba(49,202,113,0.1)] p-8 md:p-12 border border-white/60 relative overflow-hidden">
+            <div className="bg-white/90 backdrop-blur-2xl rounded-[24px] lg:rounded-[32px] shadow-[0_30px_60px_-15px_rgba(49,202,113,0.1)] p-6 md:p-10 lg:p-12 border border-white/60 relative overflow-hidden">
               {/* Glass edge highlight */}
-              <div className="absolute inset-0 rounded-[32px] ring-1 ring-inset ring-white pointer-events-none" />
+              <div className="absolute inset-0 rounded-[24px] lg:rounded-[32px] ring-1 ring-inset ring-white pointer-events-none" />
 
-              <div className="mb-10 relative z-10">
+              <div className="mb-8 lg:mb-10 relative z-10">
                 <h2 className="text-2xl md:text-3xl font-extrabold text-[#001820] mb-2 tracking-tight">
                   Personal Information
                 </h2>
-                <p className="text-gray-500 text-[15px]">
+                <p className="text-gray-500 text-[14px] lg:text-[15px]">
                   Please provide your accurate details to create your captain
                   profile.
                 </p>
@@ -238,16 +240,16 @@ export default function PersonalInfoPage() {
 
               <form
                 onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col gap-8 relative z-10"
+                className="flex flex-col gap-6 lg:gap-8 relative z-10"
               >
                 {/* Contact Information Group */}
-                <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-8 border border-gray-100 shadow-inner shadow-gray-200/50">
-                  <h3 className="text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                <div className="bg-[#f8f9fa] rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-inner shadow-gray-200/50">
+                  <h3 className="text-[12px] lg:text-[13px] font-bold text-gray-400 tracking-widest uppercase mb-6 flex items-center gap-2">
                     <span className="w-6 h-[2px] bg-[#31ca71] rounded-full"></span>
                     Contact Profile
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 mb-5 lg:mb-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-[13px] font-bold text-[#001820] tracking-wide">
                         First Name <span className="text-[#31ca71]">*</span>
@@ -413,7 +415,7 @@ export default function PersonalInfoPage() {
                       Emergency Contact (Optional)
                     </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
                       {/* Emergency Name */}
                       <div className="flex flex-col gap-2">
                         <label className="text-[13px] font-bold text-[#001820] tracking-wide">
@@ -459,7 +461,7 @@ export default function PersonalInfoPage() {
                     Demographics
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 mb-5 lg:mb-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-[13px] font-bold text-[#001820] tracking-wide">
                         Gender
@@ -584,7 +586,7 @@ export default function PersonalInfoPage() {
                     Verification
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 mb-5 lg:mb-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-[13px] font-bold text-[#001820] tracking-wide">
                         Identity Type <span className="text-[#31ca71]">*</span>

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "react-hot-toast";
 import {
   Facebook,
@@ -13,15 +13,18 @@ import {
   Linkedin,
   Phone,
   Clock,
-  MapPin
+  MapPin,
+  ArrowRight,
+  Mail,
+  ShieldCheck,
+  Zap,
+  Star
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
-import AnimatedButton from "./AnimatedButton";
 
-import { AnimatedHeading, StaggerContainer } from "./MotionWrappers";
+// ================= CONSTANTS & DATA =================
 
-// Quick Links Data with Routes
-const quickLinks = [
+const QUICK_LINKS = [
   { label: "About Us", href: "/about" },
   { label: "Our Services", href: "/onway-book" },
   { label: "Project", href: "/earn-with-onway" },
@@ -30,8 +33,7 @@ const quickLinks = [
   { label: "Contact Us", href: "/contact" },
 ];
 
-// Our Services Data with Routes
-const serviceLinks = [
+const SERVICE_LINKS = [
   { label: "OnWay Ride Share", href: "/onway-book" },
   { label: "Premium Car Rent", href: "/pricing" },
   { label: "OnWay CNG Rapid", href: "/onway-book" },
@@ -40,292 +42,272 @@ const serviceLinks = [
   { label: "Air Freight Tracking", href: "/onway-book" },
 ];
 
+const SOCIAL_LINKS = [
+  { icon: Facebook, href: "#", color: "hover:bg-blue-600" },
+  { icon: Instagram, href: "#", color: "hover:bg-pink-600" },
+  { icon: Linkedin, href: "#", color: "hover:bg-blue-700" },
+  { icon: Youtube, href: "#", color: "hover:bg-red-600" },
+];
+
+const OPENING_HOURS = [
+  { day: "Week Days", time: "09:00 - 19:00", info: "Normal Shift" },
+  { day: "Saturday", time: "08:00 - 16:00", info: "Reduced Hours" },
+  { day: "Friday", time: "Closed", info: "Emergency Only" },
+];
+
+// ================= SUB-COMPONENTS =================
+
+const FooterHeading = ({ children }) => (
+  <div className="relative mb-8 group">
+    <h4 className="text-white font-bold text-xl tracking-tight">
+      {children}
+    </h4>
+    <div className="absolute -bottom-2 left-0 w-12 h-1 bg-gradient-to-r from-[#2FCA71] to-blue-500 rounded-full transition-all duration-300 group-hover:w-20" />
+  </div>
+);
+
+const FooterLink = ({ href, children }) => (
+  <li>
+    <Link
+      href={href}
+      className="text-gray-400 hover:text-white flex items-center gap-2 group transition-all duration-300 translate-x-0 hover:translate-x-2"
+    >
+      <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 -ml-4 transition-all duration-300 group-hover:ml-0 text-[#2FCA71]" />
+      <span className="text-sm font-medium">{children}</span>
+    </Link>
+  </li>
+);
+
+// ================= MAIN COMPONENT =================
+
 export default function Footer() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle");
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-    if (isSubscribed) {
-      setIsSubscribed(false);
-      setStatus("idle");
-    }
-  };
-
-  // Handle Subscribe Logic
   const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
 
-    setStatus("loading");
-
+    setIsSubmitting(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/newsletter/subscribe`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
-
       if (response.ok && data.success) {
-        setIsSubscribed(true);
-        setStatus("success");
-        setEmail("");
-        toast.success(data.message || "Successfully Subscribed!", {
-          duration: 4000,
-          position: "top-center",
-          style: {
-            background: "#0A1F3D",
-            color: "#fff",
-            border: "1px solid #22c55e",
-          },
+        toast.success("Welcome aboard! You're subscribed.", {
+          style: { background: "#0B1E3C", color: "#fff", borderRadius: "1rem", border: "1px solid #2FCA71" }
         });
+        setEmail("");
       } else {
-
-        if (data.message && data.message.toLowerCase().includes("already")) {
-          setIsSubscribed(true);
-          setStatus("idle");
-        } else {
-          setStatus("error");
-        }
         toast.error(data.message || "Something went wrong!");
       }
     } catch (error) {
-      console.error("Subscription Error:", error);
-      setStatus("error");
-      toast.error("Failed to connect to server.");
+      toast.error("Bridge link failed. Try again soon.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 30 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.1,
-        duration: 0.8,
-        ease: [0.16, 1, 0.3, 1] // Custom ease for premium feel
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
-  };
-
-  const XIcon = ({ className }) => (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
 
   return (
-    <footer
-      className="relative w-full overflow-hidden bg-cover bg-center border-t border-white/5 pb-10"
-      // Added slight contrast/brightness filter to make image pop more
-      style={{ backgroundImage: "url('/home-3.webp')", filter: "brightness(1.05) contrast(1.05)" }}
-    >
-      <Toaster />
+    <footer className="relative bg-[#0B1E3C] pt-24 pb-12 overflow-hidden">
+      <Toaster position="bottom-right" />
 
-      {/* Heavy Dark Overlays */}
-      <div className="absolute inset-0 bg-[#0A1F3D]/95 z-0" />
-      <div className="absolute inset-0 bg-linear-to-b from-[#0A1F3D]/50 via-transparent to-[#050B1A] z-0" />
+      {/* --- BACKGROUND LAYERS --- */}
+      {/* 1. Background Image */}
+      <div
+        className="absolute inset-0 z-0 bg-[url('/home-3.webp')] bg-cover bg-center bg-no-repeat opacity-40 grayscale"
+      />
 
-      {/* Floating blur blobs (low opacity) background effects for a touch of tech-glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full mix-blend-screen" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-500/10 blur-[150px] rounded-full mix-blend-screen" />
+      {/* 2. Dark Navy Overlay (Gradient for depth) */}
+      <div
+        className="absolute inset-0 z-0 bg-gradient-to-b from-[#0B1D3A]/90 via-[#0B1D3A]/85 to-[#07142A]/95 backdrop-blur-[2px]"
+      />
 
-        {/* Very soft noise texture (optional but adds premium feel) */}
-        <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      {/* 3. Original Premium Glow Effects */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent shadow-[0_1px_10px_rgba(255,255,255,0.05)]" />
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-blue-600/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#2FCA71]/5 blur-[100px] rounded-full" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-10 lg:px-16 py-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
 
-        {/* ================= NEWSLETTER SECTION ================= */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-10 mb-16 px-2 lg:px-4">
-          <div className="max-w-xl text-center lg:text-left">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <h3 className="text-white text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 drop-shadow-md">
-                Stay in the loop
-              </h3>
-              <p className="text-white/80 text-base lg:text-lg font-medium leading-relaxed drop-shadow-sm">
-                Get exclusive updates, early access features, and premium mobility insights.
-              </p>
-            </motion.div>
-          </div>
-
-          <motion.form
-            onSubmit={handleSubscribe}
-            initial={{ opacity: 0, x: 20 }}
+        {/* Newsletter & Header Section */}
+        <div className="mb-24 grid lg:grid-cols-2 gap-16 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
-            className="flex items-center w-full lg:w-[480px] h-14 sm:h-16 bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-1.5 pl-5 sm:pl-6 focus-within:ring-2 focus-within:ring-[#22c55e] focus-within:bg-white/15 focus-within:shadow-[0_0_25px_rgba(34,197,94,0.15)] transition-all duration-300 relative group overflow-hidden"
+            className="space-y-6"
           >
-            {/* Subtle inner glow for the input container */}
-            <div className="absolute inset-0 shadow-[inset_0_1px_rgba(255,255,255,0.05)] rounded-full pointer-events-none" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+              <Zap size={14} className="text-[#2FCA71]" />
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Premium Mobility</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
+              Ready for your next <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2FCA71] to-blue-400">
+                Premium Journey?
+              </span>
+            </h2>
+            <p className="text-gray-400 text-lg max-w-md leading-relaxed">
+              Stay ahead with OnWay. Get exclusive updates on new routes, driver benefits, and platform security insights.
+            </p>
+          </motion.div>
 
-            <input
-              type="email"
-              required
-              disabled={status === "loading"}
-              value={email}
-              onChange={handleEmailChange}
-              placeholder={isSubscribed && !email ? "You're already a subscriber!" : "Your Email"}
-              className="group w-full bg-transparent text-white placeholder:text-zinc-400 outline-none text-sm font-medium"
-            />
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className={`h-full px-8 rounded-full flex items-center gap-2 font-black uppercase text-xs tracking-widest transition-all shadow-xl 
-                ${(isSubscribed && !email)
-                  ? "bg-zinc-600 cursor-not-allowed text-white"
-                  : "bg-[#22c55e] hover:brightness-110 active:scale-95 shadow-[#22c55e]/20 text-white"}`}
-            >
-              {status === "loading" ? "..." : (isSubscribed && !email) ? "Subscribed" : (
-                <>Subscribe <Send size={16} fill="currentColor" /></>
-              )}
-            </button>
-          </motion.form>
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl relative group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#2FCA71]/5 to-blue-500/5 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+            <form onSubmit={handleSubscribe} className="relative z-10 space-y-4">
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#2FCA71] transition-colors" size={20} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="w-full bg-[#0A2540] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-[#2FCA71]/30 focus:border-[#2FCA71] transition-all"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-[#2FCA71] to-[#26a15a] py-4 rounded-2xl text-white font-black uppercase tracking-widest text-sm hover:translate-y-[-2px] hover:shadow-[0_10px_20px_rgba(47,202,113,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 group/btn"
+              >
+                {isSubmitting ? "Connecting..." : (
+                  <>
+                    Join the Elite
+                    <Send size={18} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                  </>
+                )}
+              </button>
+              <p className="text-center text-[11px] text-gray-500 font-medium">
+                We respect your privacy. Unsubscribe at any time.
+              </p>
+            </form>
+          </motion.div>
         </div>
 
-        {/* ================= MAIN FOOTER CONTAINER ================= */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
-          className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-12 p-8 md:p-12 lg:p-14 rounded-2xl lg:rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.2),inset_0_1px_rgba(255,255,255,0.05)] transition-transform duration-500 hover:-translate-y-1"
-        >
-          {/* Subtle Radial Gradient Glow inner */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent rounded-2xl lg:rounded-3xl pointer-events-none" />
-
-          {/* Column 1: Branding (Spans 4 columns on lg) */}
-          <motion.div variants={itemVariants} className="lg:col-span-4 space-y-8 lg:pr-10 text-center md:text-left flex flex-col items-center md:items-start group/brand">
-            <Link href="/" className="inline-block outline-none">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  {/* Subtle logo glow that activates when hovering over the branding column */}
-                  <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 rounded-full pointer-events-none" />
-                  <Image
-                    src={logoImage}
-                    alt="OnWay"
-                    width={52}
-                    height={52}
-                    className="drop-shadow-xl object-contain transition-transform duration-500 group-hover/brand:scale-105 relative z-10"
-                  />
-                </div>
-                <span className="text-3xl font-extrabold text-white tracking-tight">OnWay</span>
+        {/* Links Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 pb-16 border-b border-white/5">
+          {/* Brand Col */}
+          <div className="lg:col-span-4 space-y-8">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#2FCA71]/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-500" />
+                <Image src={logoImage} alt="OnWay" width={48} height={48} className="relative z-10" />
               </div>
+              <span className="text-3xl font-black text-white tracking-tighter">OnWay</span>
             </Link>
-
-            <p className="text-[#A0AEC0] text-sm/relaxed lg:text-base/relaxed max-w-[280px] font-medium mx-auto md:mx-0">
-              Smart mobility platform engineered for fast, safe, and seamless everyday rides.
+            <p className="text-gray-400 leading-relaxed text-sm lg:text-base pr-4">
+              OnWay is reshaping city transit through smart, safe, and efficient mobility solutions. Join the network that moves you better.
             </p>
-
-            <div className="flex items-center justify-center md:justify-start gap-4">
-              {[Facebook, XIcon, Instagram, Linkedin].map((Icon, i) => (
-                <motion.a
-                  key={i}
-                  href="#"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#A0AEC0] hover:text-white transition-all duration-300 hover:bg-[#22c55e]/20 hover:border-[#22c55e]/30 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] group relative overflow-hidden"
+            <div className="flex items-center gap-3">
+              {SOCIAL_LINKS.map((social, idx) => (
+                <Link
+                  key={idx}
+                  href={social.href}
+                  className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 ${social.color} hover:scale-110 shadow-lg`}
                 >
-                  <Icon className="w-[20px] h-[20px] relative z-10 transition-transform duration-300" />
-                </motion.a>
+                  <social.icon size={18} />
+                </Link>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Column 2: Quick Links */}
-          <motion.div variants={itemVariants}>
-            <h4 className="text-white font-black text-xl mb-4 relative inline-block">
-              Quick Links
-              <span className="absolute -bottom-2 left-0 w-8 h-0.75 bg-[#22c55e] rounded-full" />
-            </h4>
-            <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
+          {/* Nav Col 1 */}
+          <div className="lg:col-span-2">
+            <FooterHeading>Platform</FooterHeading>
             <ul className="space-y-4">
-              {quickLinks.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
-                    {item.label}
-                  </Link>
-                </li>
+              {QUICK_LINKS.map((link) => (
+                <FooterLink key={link.label} href={link.href}>{link.label}</FooterLink>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Column 3: Our Services */}
-          <motion.div variants={itemVariants}>
-            <h4 className="text-white font-black text-xl mb-4 relative inline-block">
-              Our Services
-              <span className="absolute -bottom-2 left-0 w-8 h-0.75 bg-[#22c55e] rounded-full" />
-            </h4>
-            <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
+          {/* Nav Col 2 */}
+          <div className="lg:col-span-3">
+            <FooterHeading>Solutions</FooterHeading>
             <ul className="space-y-4">
-              {serviceLinks.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="flex items-center gap-2 group text-[#A0AEC0] text-sm font-bold hover:text-[#22c55e] transition-colors">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#22c55e] transition-colors" />
-                    {item.label}
-                  </Link>
-                </li>
+              {SERVICE_LINKS.map((link) => (
+                <FooterLink key={link.label} href={link.href}>{link.label}</FooterLink>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Column 4: Opening Hours */}
-          <motion.div variants={itemVariants} className="space-y-10">
-            <div>
-              <h4 className="text-white font-black text-xl mb-4 relative inline-block">
-                Opening Hours
-                <span className="absolute -bottom-2 left-0 w-8 h-0.75 bg-[#22c55e] rounded-full" />
-              </h4>
-              <div className="h-0.5 w-full bg-white/5 mt-1 mb-8" />
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold">
-                  <span>Week Days</span>
-                  <span className="text-white/80 tracking-tighter">09.00 - 7.00</span>
+          {/* Op Hours Col */}
+          <div className="lg:col-span-3">
+            <FooterHeading>Operations</FooterHeading>
+            <div className="space-y-4">
+              {OPENING_HOURS.map((oh) => (
+                <div key={oh.day} className="flex justify-between items-center group">
+                  <div>
+                    <p className="text-sm font-bold text-white group-hover:text-[#2FCA71] transition-colors">{oh.day}</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest text-gray-500">{oh.info}</p>
+                  </div>
+                  <div className="h-px flex-1 mx-4 bg-white/5" />
+                  <p className="text-sm font-mono text-gray-400 group-hover:text-white transition-colors">{oh.time}</p>
                 </div>
-                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
-                  <span>Saturday</span>
-                  <span className="text-white/80 tracking-tighter">08.00 - 4.00</span>
-                </div>
-                <div className="flex items-center justify-between text-[#A0AEC0] text-sm font-bold border-t border-white/5 pt-4">
-                  <span>Friday</span>
-                  <span className="text-white/80">Day Off</span>
-                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#2FCA71]/10 flex items-center justify-center text-[#2FCA71]">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-black text-white uppercase tracking-tighter">Safety First</p>
+                <p className="text-[10px] text-gray-500 font-medium">24/7 Live Monitoring</p>
               </div>
             </div>
-
-          </motion.div>
-        </motion.div>
-
-        {/* ================= COPYRIGHT ROW ================= */}
-        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 px-4 pt-8 border-t border-white/10 text-[#A0AEC0] text-sm font-medium">
-          <p>© {new Date().getFullYear()} OnWay. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <Link href="#" className="hover:text-white transition-colors duration-300">Privacy Policy</Link>
-            <div className="w-1 h-1 bg-white/20 rounded-full" />
-            <Link href="#" className="hover:text-white transition-colors duration-300">Terms of Service</Link>
           </div>
         </div>
 
+        {/* Stats / Badges (Uber-style depth) */}
+        <div className="py-12 flex flex-wrap items-center justify-center lg:justify-between gap-8 opacity-40 grayscale group-hover:opacity-100 transition-all duration-700">
+          <div className="flex items-center gap-2 text-white">
+            <Star size={16} className="text-yellow-500 fill-yellow-500" />
+            <span className="text-sm font-black tracking-widest uppercase">Top Rated App</span>
+          </div>
+          <div className="flex items-center gap-2 text-white">
+            <ShieldCheck size={16} className="text-blue-400" />
+            <span className="text-sm font-black tracking-widest uppercase">Verified Drivers</span>
+          </div>
+          <div className="flex items-center gap-2 text-white">
+            <MapPin size={16} className="text-[#2FCA71]" />
+            <span className="text-sm font-black tracking-widest uppercase">Global Network</span>
+          </div>
+          <div className="flex items-center gap-2 text-white">
+            <Zap size={16} className="text-orange-400 fill-orange-400" />
+            <span className="text-sm font-black tracking-widest uppercase">Instant Support</span>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-gray-500 text-xs font-medium">
+            © {new Date().getFullYear()} OnWay Technologies Ltd. <span className="mx-2 opacity-30">|</span> Made with passion for mobility.
+          </div>
+          <div className="flex items-center gap-8">
+            <Link href="#" className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors">Privacy Policy</Link>
+            <Link href="#" className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors">Terms of Service</Link>
+            <Link href="#" className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors">Safety Coverage</Link>
+          </div>
+        </div>
       </div>
+
+      {/* Extreme Bottom Gradient */}
+      <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-[#2FCA71] via-blue-500 to-emerald-500 opacity-50" />
     </footer>
   );
 }

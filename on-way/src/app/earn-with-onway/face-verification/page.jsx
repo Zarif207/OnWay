@@ -83,48 +83,48 @@ export default function FaceVerificationPage() {
             {/* Dynamic Background */}
             <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_20%,#31ca7115,transparent_40%)] pointer-events-none" />
 
-            <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 pt-32 relative z-10 flex flex-col items-center">
+            <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 pt-24 lg:pt-32 relative z-10 flex flex-col items-center">
 
                 {/* Step Indicator */}
-                <div className="w-full max-w-2xl mb-12 flex items-center justify-between px-6">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-[#31ca71] text-white flex items-center justify-center shadow-lg shadow-[#31ca71]/20">
-                            <CheckCircle2 className="w-7 h-7" />
+                <div className="w-full max-w-2xl mb-8 lg:mb-12 flex items-center justify-between px-2 md:px-6">
+                    <div className="flex flex-col items-center gap-2 lg:gap-3">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#31ca71] text-white flex items-center justify-center shadow-lg shadow-[#31ca71]/20">
+                            <CheckCircle2 className="w-6 h-6 lg:w-7 lg:h-7" />
                         </div>
-                        <span className="text-xs font-bold text-gray-500 tracking-tighter uppercase">Step 1</span>
+                        <span className="text-[10px] lg:text-xs font-bold text-gray-500 tracking-tighter uppercase">Step 1</span>
                     </div>
 
-                    <div className="flex-1 h-1 bg-[#31ca71] mx-4 rounded-full opacity-20" />
+                    <div className="flex-1 h-1 bg-[#31ca71] mx-2 md:mx-4 rounded-full opacity-20" />
 
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-[#31ca71] text-[#001820] flex items-center justify-center shadow-xl shadow-[#31ca71]/40 border-4 border-white">
-                            <span className="font-black text-xl">2</span>
+                    <div className="flex flex-col items-center gap-2 lg:gap-3">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#31ca71] text-[#001820] flex items-center justify-center shadow-xl shadow-[#31ca71]/40 border-4 border-white">
+                            <span className="font-black text-lg lg:text-xl">2</span>
                         </div>
-                        <span className="text-xs font-bold text-[#31ca71] tracking-tighter uppercase border-[#31ca71] border-b-2">Step 2: Security</span>
+                        <span className="text-[10px] lg:text-xs font-bold text-[#31ca71] tracking-tighter uppercase border-[#31ca71] border-b-2">Step 2</span>
                     </div>
 
-                    <div className="flex-1 h-1 bg-gray-200 mx-4 rounded-full" />
+                    <div className="flex-1 h-1 bg-gray-200 mx-2 md:mx-4 rounded-full" />
 
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-white border-2 border-gray-100 text-gray-300 flex items-center justify-center">
-                            <span className="font-bold text-xl text-gray-200">3</span>
+                    <div className="flex flex-col items-center gap-2 lg:gap-3">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border-2 border-gray-100 text-gray-300 flex items-center justify-center">
+                            <span className="font-bold text-lg lg:text-xl text-gray-200">3</span>
                         </div>
-                        <span className="text-xs font-bold text-gray-300 tracking-tighter uppercase">Step 3</span>
+                        <span className="text-[10px] lg:text-xs font-bold text-gray-300 tracking-tighter uppercase">Step 3</span>
                     </div>
                 </div>
 
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] p-10 md:p-14 w-full max-w-2xl text-center relative border border-gray-50 overflow-hidden"
+                    className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] p-6 md:p-10 lg:p-14 w-full max-w-2xl text-center relative border border-gray-50 overflow-hidden"
                 >
                     {/* Header Card UI */}
-                    <div className="mb-10 flex flex-col items-center">
-                        <div className="p-4 bg-[#31ca71]/10 rounded-3xl mb-6">
-                            <ShieldCheck className="w-12 h-12 text-[#31ca71]" />
+                    <div className="mb-8 lg:mb-10 flex flex-col items-center">
+                        <div className="p-3 lg:p-4 bg-[#31ca71]/10 rounded-2xl lg:rounded-3xl mb-4 lg:mb-6">
+                            <ShieldCheck className="w-10 h-10 lg:w-12 lg:h-12 text-[#31ca71]" />
                         </div>
-                        <h2 className="text-4xl font-black text-[#001820] tracking-tight mb-3">Identity Verification</h2>
-                        <p className="text-gray-500 font-medium max-w-xs mx-auto leading-relaxed">
+                        <h2 className="text-3xl md:text-4xl font-black text-[#001820] tracking-tight mb-3">Identity Verification</h2>
+                        <p className="text-gray-500 font-medium max-w-xs mx-auto leading-relaxed text-sm lg:text-base">
                             We use secure biometric scanning to ensure you are a genuine human rider.
                         </p>
                     </div>

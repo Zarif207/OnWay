@@ -27,7 +27,8 @@ export default function EarnWithOnWayPage() {
   const { formData, updateFormData } = useEarnRegistration();
   console.log("data:", formData);
 
-  const [activeCategory, setActiveCategory] = useState(formData.activeCategory || null); // "car" | "bike" | "ambulance" | null
+  // Initially show all categories (null) as per user request
+  const [activeCategory, setActiveCategory] = useState(null);
   const [selectedModel, setSelectedModel] = useState(formData.selectedModel || "");
   const [selectedDistrict, setSelectedDistrict] = useState(
     formData.district || "Dhaka",
@@ -148,9 +149,9 @@ export default function EarnWithOnWayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col font-sans pt-20 pb-15 overflow-hidden">
+    <div className="min-h-screen bg-primary flex flex-col font-sans pt-16 lg:pt-20 pb-10 lg:pb-15 overflow-x-hidden">
       {/* Header Section */}
-      <div className="w-full pt-28 pb-32 flex flex-col items-center justify-center text-center px-4 sm:px-10 relative overflow-hidden">
+      <div className="w-full pt-20 pb-24 lg:pt-28 lg:pb-32 flex flex-col items-center justify-center text-center px-4 sm:px-10 relative overflow-hidden">
         {/* Background ride image with subtle motion */}
         <motion.div
           className="absolute inset-0 -z-20"
@@ -190,14 +191,14 @@ export default function EarnWithOnWayPage() {
         {/* Curved background bottom effect (subtle geometric 3D touch) */}
         <div className="absolute -bottom-32 left-1/2 transform -translate-x-1/2 w-[150%] h-[200px] bg-[#f8f9fa] rounded-t-[100%] z-0 border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.18)]"></div>
 
-        <div className="relative z-10 max-w-7xl mx-auto grid md:grid-cols-2 items-center gap-10 px-4">
+        <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 items-center gap-10 px-4">
           {/* LEFT SIDE - TEXT */}
           <div className="text-center md:text-left">
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-5xl md:text-7xl font-extrabold text-white mb-8 tracking-tight drop-shadow-[0_12px_45px_rgba(0,0,0,0.55)]"
+              className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 lg:mb-8 tracking-tight drop-shadow-[0_12px_45px_rgba(0,0,0,0.55)]"
             >
               Start Earning with{" "}
               <span
@@ -213,7 +214,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.15 }}
-              className="text-white/80 text-xl md:text-2xl max-w-xl font-medium"
+              className="text-white/80 text-lg md:text-xl lg:text-2xl max-w-xl font-medium mx-auto lg:mx-0"
             >
               Become a Rider on the highest earning platform!
             </motion.p>
@@ -227,21 +228,21 @@ after:blur-2xl after:opacity-20 after:-z-10"
       </div>
 
       {/* Main Content Section */}
-      <div className="w-full max-w-7xl mx-auto px-4 md:px-8 -mt-20 relative z-30 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-8 -mt-12 lg:-mt-20 relative z-30 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20">
         {/* Left Column: Register Form */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-5 relative z-20 -mt-25"
+          className="lg:col-span-12 xl:col-span-5 relative z-20 mt-0 lg:-mt-24"
         >
           {/* 3D Glassmorphic Form Container */}
-          <div className="bg-white/90 backdrop-blur-xl mt-10 rounded-2xl shadow-[0_30px_60px_-15px_rgba(49,202,113,0.15)] p-10 border border-white/50 relative overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_30px_60px_-15px_rgba(49,202,113,0.15)] p-6 md:p-8 lg:p-10 border border-white/50 relative overflow-hidden">
             {/* Subtle inner highlight for glass edge */}
             <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/60 pointer-events-none" />
 
             <div className="relative z-10 mb-8 space-y-2">
-              <h2 className="text-4xl font-extrabold text-[#001820]">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#001820]">
                 Register Now
               </h2>
               <p className="text-sm text-gray-400">
@@ -261,7 +262,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
               )}
 
               {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-5 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
                 <div className="flex flex-col gap-2">
                   <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
                     First Name <span className="text-[#2FCA71]">*</span>
@@ -422,11 +423,11 @@ after:blur-2xl after:opacity-20 after:-z-10"
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-7 flex flex-col gap-8 mt-4 lg:mt-16 lg:pl-8"
+          className="lg:col-span-12 xl:col-span-7 flex flex-col gap-8 mt-4 lg:mt-16 xl:pl-8"
         >
           {/* category div */}
-          <div className="py-15 px-0 relative">
-            <h3 className="text-4xl font-bold text-center text-white mb-3">
+          <div className="py-10 lg:py-15 px-0 relative">
+            <h3 className="text-3xl md:text-4xl font-bold text-center text-white mb-3">
               Choose Your Ride
             </h3>
             <p className="text-white text-center mb-10">
@@ -442,7 +443,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -12 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-8"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
                   >
                     {["car", "bike", "ambulance"].map((key) => {
                       const category = CATEGORY_CONFIG[key];
@@ -455,9 +456,9 @@ after:blur-2xl after:opacity-20 after:-z-10"
                           key={category.key}
                           type="button"
                           onClick={() => handleCategoryToggle(key)}
-                          whileHover={{ y: -6, scale: 1.02 }}
+                          whileHover={{ y: -6, scale: 1.02, backgroundColor: "rgba(255, 255, 255, 1)" }}
                           whileTap={{ scale: 0.98 }}
-                          className="group relative flex flex-col items-center justify-between rounded-3xl bg-white/90 backdrop-blur-xl p-7 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] border border-white/60 transition-all"
+                          className="group relative flex flex-col items-center justify-between rounded-3xl bg-white/90 backdrop-blur-xl p-6 lg:p-7 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] border border-white/60 transition-all cursor-pointer"
                         >
                           <div
                             className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 ${CATEGORY_CONFIG[key].accentBg} transition-colors duration-300 group-hover:bg-[var(--color-primary)]`}
@@ -611,12 +612,12 @@ after:blur-2xl after:opacity-20 after:-z-10"
 
           {/* Easy Income Opportunity Section */}
           <div
-            className="relative group mt-5 p-8 rounded-3xl 
+            className="relative group mt-5 p-6 md:p-8 rounded-3xl 
   bg-white shadow-sm border border-transparent 
   hover:border-[var(--color-primary)]/20 
   hover:shadow-[0_20px_40px_-15px_rgba(47,202,113,0.1)] 
   transition-all duration-500 
-  max-w-5xl -ml-20 mx-auto"
+  max-w-5xl mx-auto lg:-ml-10 xl:-ml-20"
           >
             <h3 className="text-[26px] font-extrabold text-[#001820] mb-4 leading-snug">
               OnWay:{" "}

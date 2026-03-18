@@ -137,55 +137,61 @@ export default function VehicleInfoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] relative font-sans lg:pb-24 pt-24 md:pt-32 px-4 md:px-8">
+    <div className="min-h-screen bg-[#f8fafc] relative font-sans pb-10 lg:pb-24 pt-20 lg:pt-32 px-4 md:px-8">
 
       <div className="w-full max-w-[1400px] mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
 
         {/* ===================== LEFT COLUMN (Info Panel) ===================== */}
-        <div className="lg:col-span-4 lg:sticky lg:top-32 flex flex-col gap-10 h-fit">
+        <div className="lg:col-span-12 xl:col-span-4 lg:sticky lg:top-32 flex flex-col gap-8 lg:gap-10 h-fit">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-4xl font-extrabold text-[#0A1F3D] mb-8">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-[#0A1F3D] mb-6 lg:mb-8 leading-tight">
               Become an <br />
               <span className="text-[#22c55e]">OnWay Partner</span>
             </h1>
 
-            <div className="flex flex-col gap-6 mb-8">
+            <div className="flex lg:flex-col gap-4 lg:gap-6 mb-6 lg:mb-8 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 no-scrollbar">
               {/* Step 1 Completed */}
-              <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-full bg-[#22c55e] flex items-center justify-center shadow-sm">
-                  <Check className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-4 lg:gap-5 shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#22c55e] flex items-center justify-center shadow-sm">
+                  <Check className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-[#0A1F3D]">Personal Info</h4>
-                  <p className="text-sm text-[#22c55e] font-bold">Completed</p>
+                <div className="hidden sm:block">
+                  <h4 className="font-bold text-[#0A1F3D] text-sm lg:text-base">Personal Info</h4>
+                  <p className="text-xs lg:text-sm text-[#22c55e] font-bold">Completed</p>
                 </div>
               </div>
+
+              {/* Connector Line (Mobile) */}
+              <div className="lg:hidden w-8 h-[2px] bg-[#22c55e]/30 self-center shrink-0"></div>
 
               {/* Step 2 Face Verification Completed */}
-              <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-full bg-[#22c55e] flex items-center justify-center shadow-sm">
-                  <Check className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-4 lg:gap-5 shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#22c55e] flex items-center justify-center shadow-sm">
+                  <Check className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-[#0A1F3D]">Identity</h4>
-                  <p className="text-sm text-[#22c55e] font-bold">Verified</p>
+                <div className="hidden sm:block">
+                  <h4 className="font-bold text-[#0A1F3D] text-sm lg:text-base">Identity</h4>
+                  <p className="text-xs lg:text-sm text-[#22c55e] font-bold">Verified</p>
                 </div>
               </div>
 
-              <div className="w-0.5 h-8 bg-[#22c55e]/30 ml-6 -my-2 rounded-full"></div>
+              {/* Connector Line (Desktop) */}
+              <div className="hidden lg:block w-0.5 h-8 bg-[#22c55e]/30 ml-6 -my-2 rounded-full"></div>
+              {/* Connector Line (Mobile) */}
+              <div className="lg:hidden w-8 h-[2px] bg-[#22c55e]/30 self-center shrink-0"></div>
 
               {/* Step 3 Active */}
-              <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-full bg-[#22c55e] text-white flex items-center justify-center shadow-lg shadow-[#22c55e]/30">
-                  <span className="font-bold text-lg">3</span>
+              <div className="flex items-center gap-4 lg:gap-5 shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#22c55e] text-white flex items-center justify-center shadow-lg shadow-[#22c55e]/30">
+                  <span className="font-bold text-base lg:text-lg">3</span>
                 </div>
-                <div>
-                  <h4 className="font-bold text-[#0A1F3D]">Vehicle Details</h4>
-                  <p className="text-sm text-gray-500 font-medium">In Progress</p>
+                <div className="hidden sm:block">
+                  <h4 className="font-bold text-[#0A1F3D] text-sm lg:text-base">Vehicle Details</h4>
+                  <p className="text-xs lg:text-sm text-gray-500 font-medium">In Progress</p>
                 </div>
               </div>
             </div>
@@ -206,28 +212,29 @@ export default function VehicleInfoPage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="lg:col-span-8"
+          className="lg:col-span-12 xl:col-span-8"
         >
-          <div className="bg-white rounded-[32px] shadow-sm p-6 md:p-10 border border-gray-100 relative">
+          <div className="bg-white rounded-[24px] lg:rounded-[32px] shadow-sm p-6 md:p-8 lg:p-10 border border-gray-100 relative">
 
             <div className="mb-8">
               <h2 className="text-2xl md:text-3xl font-extrabold text-[#0A1F3D] mb-2">
                 Vehicle Information
               </h2>
-              <p className="text-gray-500 font-medium">
+              <p className="text-gray-500 font-medium text-sm lg:text-base">
                 Enter your vehicle details carefully for verification.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 lg:gap-8">
 
               {/* Card 1: Vehicle Profile */}
-              <div className="bg-[#f8fafc] rounded-2xl p-6 md:p-8 border border-gray-200">
-                <h3 className="text-sm font-bold text-[#0A1F3D] tracking-wide mb-6 uppercase border-b border-gray-200 pb-3">
+              <div className="bg-[#f8fafc] rounded-2xl p-6 lg:p-8 border border-gray-200">
+                <h3 className="text-xs lg:text-sm font-bold text-[#0A1F3D] tracking-wide mb-6 uppercase border-b border-gray-200 pb-3 flex items-center gap-2">
+                  <span className="w-4 h-[2px] bg-[#22c55e] rounded-full"></span>
                   Vehicle Profile
                 </h3>
 
-                <div className="grid md:grid-cols-2 gap-5 mb-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Vehicle Category</label>
                     <input
@@ -248,7 +255,7 @@ export default function VehicleInfoPage() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-5 mb-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-xs font-bold text-[#0A1F3D] uppercase tracking-wider mb-2">Vehicle Number <span className="text-red-500">*</span></label>
                     <input
@@ -261,7 +268,7 @@ export default function VehicleInfoPage() {
                     <label className="block text-xs font-bold text-[#0A1F3D] uppercase tracking-wider mb-2">Model Year <span className="text-red-500">*</span></label>
                     <select
                       {...register("year", { required: true })}
-                      className={`w-full rounded-xl px-4 py-3.5 bg-white text-[#0A1F3D] border outline-none transition focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] appearance-none ${errors.year ? "border-red-400" : "border-gray-200"}`}
+                      className={`w-full rounded-xl px-4 py-3.5 bg-white text-[#0A1F3D] border outline-none transition focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] appearance-none cursor-pointer ${errors.year ? "border-red-400" : "border-gray-200"}`}
                     >
                       <option value="">Select Year</option>
                       {Array.from({ length: 25 }, (_, i) => new Date().getFullYear() - i).map((y) => (
@@ -273,12 +280,13 @@ export default function VehicleInfoPage() {
               </div>
 
               {/* Card 2: Documents */}
-              <div className="bg-[#f8fafc] rounded-2xl p-6 md:p-8 border border-gray-200">
-                <h3 className="text-sm font-bold text-[#0A1F3D] tracking-wide mb-6 uppercase border-b border-gray-200 pb-3">
+              <div className="bg-[#f8fafc] rounded-2xl p-6 lg:p-8 border border-gray-200">
+                <h3 className="text-xs lg:text-sm font-bold text-[#0A1F3D] tracking-wide mb-6 uppercase border-b border-gray-200 pb-3 flex items-center gap-2">
+                  <span className="w-4 h-[2px] bg-[#22c55e] rounded-full"></span>
                   Documents
                 </h3>
 
-                <div className="grid md:grid-cols-2 gap-5 mb-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 lg:mb-8">
                   <div>
                     <label className="block text-xs font-bold text-[#0A1F3D] uppercase tracking-wider mb-2">Driving License Number <span className="text-red-500">*</span></label>
                     <input
@@ -297,46 +305,46 @@ export default function VehicleInfoPage() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-5 mt-8">
-                  <label className={`border border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition cursor-pointer group ${licenseFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <label className={`border border-dashed rounded-xl p-6 lg:p-8 flex flex-col items-center justify-center transition cursor-pointer group ${licenseFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
                     <input type="file" accept=".jpg,.png,.jpeg,.pdf" className="hidden" onChange={(e) => setLicenseFile(e.target.files[0])} />
                     {licenseFile ? (
-                      <Check className="w-8 h-8 text-[#22c55e] mb-2" />
+                      <Check className="w-8 h-8 text-[#22c55e] mb-3" />
                     ) : (
-                      <UploadCloud className="w-8 h-8 text-gray-400 mb-2 group-hover:text-[#22c55e] transition-colors" />
+                      <UploadCloud className="w-8 h-8 text-gray-400 mb-3 group-hover:text-[#22c55e] transition-colors" />
                     )}
                     <span className="text-sm font-bold text-[#0A1F3D] text-center max-w-full truncate px-2">
                       {licenseFile ? licenseFile.name : "Upload Driving License"}
                     </span>
-                    <span className="text-xs text-gray-400 mt-1">{licenseFile ? 'Click to change file' : '(JPG, PNG, PDF max 5MB)'}</span>
+                    <span className="text-[11px] lg:text-xs text-gray-400 mt-2">{licenseFile ? 'Click to change file' : '(JPG, PNG, PDF max 5MB)'}</span>
                   </label>
 
-                  <label className={`border border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition cursor-pointer group ${regFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
+                  <label className={`border border-dashed rounded-xl p-6 lg:p-8 flex flex-col items-center justify-center transition cursor-pointer group ${regFile ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-gray-300 bg-white hover:bg-gray-50'}`}>
                     <input type="file" accept=".jpg,.png,.jpeg,.pdf" className="hidden" onChange={(e) => setRegFile(e.target.files[0])} />
                     {regFile ? (
-                      <Check className="w-8 h-8 text-[#22c55e] mb-2" />
+                      <Check className="w-8 h-8 text-[#22c55e] mb-3" />
                     ) : (
-                      <UploadCloud className="w-8 h-8 text-gray-400 mb-2 group-hover:text-[#22c55e] transition-colors" />
+                      <UploadCloud className="w-8 h-8 text-gray-400 mb-3 group-hover:text-[#22c55e] transition-colors" />
                     )}
                     <span className="text-sm font-bold text-[#0A1F3D] text-center max-w-full truncate px-2">
                       {regFile ? regFile.name : "Upload Vehicle Registration"}
                     </span>
-                    <span className="text-xs text-gray-400 mt-1">{regFile ? 'Click to change file' : '(JPG, PNG, PDF max 5MB)'}</span>
+                    <span className="text-[11px] lg:text-xs text-gray-400 mt-2">{regFile ? 'Click to change file' : '(JPG, PNG, PDF max 5MB)'}</span>
                   </label>
                 </div>
               </div>
 
               {/* Submit Area */}
-              <div className="flex flex-col md:flex-row justify-end pt-4 mt-4">
+              <div className="flex flex-col md:flex-row justify-end pt-4 mt-2 lg:mt-4">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full md:w-auto bg-[#22c55e] text-white px-12 py-4 rounded-xl hover:bg-[#16a34a] font-bold text-lg flex items-center justify-center gap-3 transition-colors shadow-lg shadow-[#22c55e]/20 disabled:bg-[#22c55e]/60 disabled:cursor-not-allowed"
+                  className="w-full md:w-auto bg-[#22c55e] text-white px-12 py-4 rounded-xl hover:bg-[#16a34a] font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-[#22c55e]/20 disabled:bg-[#22c55e]/60 disabled:cursor-not-allowed"
                 >
                   {isSubmitting && (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   )}
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                  {isSubmitting ? "Submitting Application..." : "Finish Registration"}
                 </button>
               </div>
 

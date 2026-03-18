@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -20,193 +20,221 @@ import {
   Newspaper,
   ShieldCheck,
   FileText,
-  Tag
+  Tag,
+  Settings,
+  HelpCircle,
+  Bell
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
-
-
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useScrollDirection } from "@/hooks/useScrollDirection";
 
-const baseNav = [
+// ================= CONSTANTS & DATA =================
+
+const NAV_ITEMS = [
   { label: "Home", href: "/", icon: Home },
   { label: "OnWay Book", href: "/onway-book", icon: BookOpen },
-  { label: "Earn With OnWay", href: "/earn-with-onway", icon: DollarSign },
+  { label: "Earn", href: "/earn-with-onway", icon: DollarSign },
   { label: "About", href: "/about", icon: Info },
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
 
-const moreNav = [
-  { label: "Ride Sharing Guidelines", href: "/rideSharing-guidlines", icon: FileText },
-  { label: "Safety Coverage", href: "/Safety-Coverage", icon: ShieldCheck },
-  { label: "Pricing", href: "/pricing", icon: Tag },
+const MORE_ITEMS = [
+  { label: "Guidelines", href: "/rideSharing-guidlines", icon: FileText, desc: "Ride sharing standards" },
+  { label: "Safety", href: "/Safety-Coverage", icon: ShieldCheck, desc: "Our protection policy" },
+  { label: "Pricing", href: "/pricing", icon: Tag, desc: "Fare and rate details" },
+  { label: "Help Center", href: "/help", icon: HelpCircle, desc: "Support and FAQs" },
 ];
 
-/**
- * Navbar Component (V4)
- * Premium Glassmorphism SaaS style with right-side drawer.
- * Strictly preserves route names and link paths.
- */
+// ================= SUB-COMPONENTS =================
+
+const NavIndicator = () => (
+  <motion.div
+    layoutId="activeIndicator"
+    className="absolute inset-0 bg-gray-100 rounded-full -z-10"
+    transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+  />
+);
+
+const DropdownItem = ({ item, onClick }) => (
+  <Link
+    href={item.href}
+    onClick={onClick}
+    className="group flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 transition-all duration-300 cursor-pointer"
+  >
+    <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors duration-300">
+      <item.icon size={20} className="text-gray-500 group-hover:text-green-600 transition-colors" />
+    </div>
+    <div>
+      <h4 className="text-sm font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
+        {item.label}
+      </h4>
+      <p className="text-[11px] text-gray-500 font-medium">{item.desc}</p>
+    </div>
+  </Link>
+);
+
+// ================= MAIN COMPONENT =================
+
 const Navbar = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const dropdownRef = useRef(null);
 
   const { data: session } = useSession();
   const { user } = useCurrentUser();
   const pathname = usePathname();
-  const scrollDirection = useScrollDirection();
 
   const role = user?.role || "passenger";
   const dashboardHref = useMemo(() => `/dashboard/${role}`, [role]);
 
-  // Handle scroll for glass effect saturation/opacity
+  // Handle Scroll Behavior
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSignOut = () => {
     signOut({ callbackUrl: "/login" });
   };
 
-  const isActive = (path) => pathname === path;
+  const isActive = (path) => {
+    if (path === "/") return pathname === "/";
+    return pathname.startsWith(path);
+  };
 
   return (
     <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-100 transition-all duration-500 h-20 flex items-center justify-center px-4 sm:px-8 md:px-12 ${scrollDirection === "down" && !isMobileMenuOpen ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
-          }`}
+      <header
+        className={`fixed top-0 left-0 right-0 z-[100] h-20 transition-all duration-500 flex items-center justify-center px-4 sm:px-8 
+        ${isScrolled ? "translate-y-2" : "translate-y-0"}`}
       >
         <div
-          className={`w-full max-w-7xl flex items-center justify-between px-6 py-2.5 rounded-2xl border transition-all duration-300 ${isScrolled
-            ? "bg-white/70 dark:bg-black/70 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-2xl"
-            : "bg-transparent border-transparent"
-            }`}
+          className={`w-full max-w-7xl flex items-center justify-between px-6 py-2 rounded-3xl transition-all duration-500
+          ${isScrolled
+              ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+              : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-25 h-25 flex-shrink-0">
-              <Image
-                src={logoImage}
-                alt="OnWay Logo"
-                fill
-                className="object-contain"
-                priority
-              />
+            <div className="relative w-10 h-10 transition-transform duration-500 group-hover:scale-110">
+              <Image src={logoImage} alt="OnWay Logo" fill className="object-contain" priority />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tighter text-gray-900 leading-none">OnWay</span>
+              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-primary">Premium</span>
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          <div className="hidden lg:flex items-center gap-1">
-            {baseNav.map((item) => (
+          <nav className="hidden lg:flex items-center gap-1 bg-gray-50/50 p-1.5 rounded-full border border-gray-100">
+            {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative px-4 py-2 text-sm font-bold tracking-tight transition-colors duration-300 rounded-lg hover:bg-[#22c55e]/5 ${isActive(item.href)
-                  ? "text-[#22c55e]"
-                  : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
-                  }`}
+                className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                ${isActive(item.href) ? "text-primary bg-primary/5" : "text-gray-500 hover:text-primary"}`}
               >
+                {isActive(item.href) && <NavIndicator />}
                 {item.label}
-                {isActive(item.href) && (
-                  <motion.div
-                    layoutId="navbarIndicator"
-                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#22c55e] rounded-full"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
               </Link>
             ))}
 
             {session && (
               <Link
                 href={dashboardHref}
-                className={`relative px-4 py-2 text-sm font-bold tracking-tight transition-colors duration-300 rounded-lg hover:bg-[#22c55e]/5 ${pathname.startsWith("/dashboard")
-                  ? "text-[#22c55e]"
-                  : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
-                  }`}
+                className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                ${pathname.startsWith("/dashboard") ? "text-primary bg-primary/5" : "text-gray-500 hover:text-primary"}`}
               >
+                {pathname.startsWith("/dashboard") && <NavIndicator />}
                 Dashboard
-                {pathname.startsWith("/dashboard") && (
-                  <motion.div
-                    layoutId="navbarIndicator"
-                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#22c55e] rounded-full"
-                  />
-                )}
               </Link>
             )}
 
-            {/* "More" Dropdown */}
-            <div className="relative">
+            {/* More Dropdown */}
+            <div className="relative group" ref={dropdownRef}>
               <button
-                onMouseEnter={() => setIsMoreOpen(true)}
-                onMouseLeave={() => setIsMoreOpen(false)}
-                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-lg ${isMoreOpen ? "text-[#22c55e] bg-[#22c55e]/5" : "text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e]"
+                onClick={() => setIsMoreOpen(!isMoreOpen)}
+                className={`flex items-center gap-1.5 px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full lg:group-hover:bg-primary/5 lg:group-hover:text-primary
+                ${isMoreOpen ? "bg-primary/5 text-primary" : "text-gray-500 hover:text-primary"}`}
+              >
+                More{" "}
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-300 ${isMoreOpen ? "rotate-180" : ""} lg:group-hover:rotate-180`}
+                />
+              </button>
+
+              <div
+                className={`absolute top-full right-0 w-85 pt-3 transition-all duration-300 ease-in-out origin-top-right z-[110]
+                ${isMoreOpen
+                    ? "opacity-100 visible translate-y-0 scale-100"
+                    : "opacity-0 invisible translate-y-4 scale-95 lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:scale-100"
                   }`}
               >
-                More <ChevronDown size={14} className={`transition-transform duration-300 ${isMoreOpen ? "rotate-180" : ""}`} />
-
-                <AnimatePresence>
-                  {isMoreOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0A1F3D]/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-110"
-                    >
-                      {moreNav.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#0A1F3D]/70 dark:text-white/70 hover:text-[#22c55e] hover:bg-[#22c55e]/5 rounded-xl transition-all"
-                        >
-                          <link.icon size={16} className="text-[#22c55e]" />
-                          {link.label}
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </button>
+                <div className="bg-white rounded-3xl shadow-xl p-4 border border-gray-100 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent pointer-events-none" />
+                  <div className="relative flex flex-col gap-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2 px-3">Expertise</p>
+                    {MORE_ITEMS.map((item) => (
+                      <DropdownItem key={item.href} item={item} onClick={() => setIsMoreOpen(false)} />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </nav>
 
           {/* ================= RIGHT: AUTH ================= */}
-          <div className="flex items-center gap-4">
-
+          <div className="flex items-center gap-3">
             {!session ? (
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="hidden sm:block px-5 py-2 text-sm font-bold text-[#0A1F3D] dark:text-white hover:text-[#22c55e] transition-colors"
+                  className="hidden sm:inline-flex px-6 py-2.5 text-sm font-bold text-gray-700 hover:text-gray-950 transition-colors"
                 >
-                  Login
+                  Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-6 py-2.5 bg-[#22c55e] text-white text-xs font-black uppercase tracking-widest rounded-xl hover:brightness-110 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#22c55e]/20"
+                  className="px-6 py-3 bg-gray-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-primary transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-gray-900/10 hover:shadow-primary/30"
                 >
-                  Join Now
+                  Join OnWay
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center gap-5">
-                {/* Profile Avatar */}
+              <div className="flex items-center gap-4">
+                <button className="hidden sm:flex w-10 h-10 rounded-full items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all">
+                  <Bell size={20} />
+                </button>
+
                 <Link
                   href="/dashboard/profile"
-                  className="w-10 h-10 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center text-[#22c55e] text-sm font-black overflow-hidden hover:border-[#22c55e] transition-all shadow-sm"
+                  className="relative w-10 h-10 rounded-full bg-gray-100 border-2 border-transparent hover:border-primary transition-all overflow-hidden flex items-center justify-center group"
                 >
-                  {session?.user?.name?.charAt(0) || <User size={18} />}
+                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-gray-900 font-black text-sm relative z-10 transition-colors group-hover:text-primary">
+                    {session?.user?.name?.charAt(0) || <User size={18} />}
+                  </span>
                 </Link>
 
-                {/* Logout Button (Icon + Text) */}
                 <button
                   onClick={handleSignOut}
-                  className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/10"
+                  className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all transform active:scale-95"
                 >
                   <LogOut size={14} />
                   <span>Logout</span>
@@ -217,55 +245,49 @@ const Navbar = () => {
             {/* Mobile Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-[#0A1F3D] dark:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="lg:hidden w-10 h-10 flex items-center justify-center bg-gray-100 rounded-xl text-gray-900 hover:bg-gray-200 transition-all active:scale-90"
             >
               <Menu size={24} />
             </button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ================= MOBILE DRAWER (RIGHT) ================= */}
+      {/* ================= MOBILE DRAWER ================= */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 z-150 bg-[#0A1F3D]/60 backdrop-blur-md"
+              className="fixed inset-0 z-[150] bg-gray-900/20 backdrop-blur-sm"
             />
 
-            {/* Drawer */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 h-full w-[85%] max-w-sm z-160 bg-white dark:bg-[#0A1F3D] shadow-2xl p-8 flex flex-col"
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed right-0 top-0 h-full w-[85%] max-w-sm z-[160] bg-white shadow-2xl p-8 flex flex-col"
             >
               <div className="flex items-center justify-between mb-12">
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3">
                   <Image src={logoImage} alt="OnWay" width={40} height={40} />
-                  <div className="flex flex-col">
-                    <span className="text-xl font-black tracking-tighter text-[#0A1F3D] dark:text-white leading-none">OnWay</span>
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[#22c55e]">Premium</span>
-                  </div>
+                  <span className="text-xl font-black text-gray-900 tracking-tighter">OnWay</span>
                 </Link>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2.5 rounded-xl bg-[#0A1F3D]/5 dark:bg-white/5 text-[#0A1F3D] dark:text-white"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-500"
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="flex flex-col gap-1 overflow-y-auto pr-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-4 px-4">Menu</span>
-
-                {baseNav.map((item, idx) => (
+              <div className="flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4 px-4">Navigation</p>
+                {NAV_ITEMS.map((item, idx) => (
                   <motion.div
                     key={item.href}
                     initial={{ opacity: 0, x: 20 }}
@@ -275,10 +297,8 @@ const Navbar = () => {
                     <Link
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all ${isActive(item.href)
-                        ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
-                        : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
-                        }`}
+                      className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] text-lg font-black transition-all
+                      ${isActive(item.href) ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-gray-500 hover:bg-gray-50 hover:text-primary"}`}
                     >
                       <item.icon size={22} />
                       {item.label}
@@ -290,15 +310,13 @@ const Navbar = () => {
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + baseNav.length * 0.05 }}
+                    transition={{ delay: 0.1 + NAV_ITEMS.length * 0.05 }}
                   >
                     <Link
                       href={dashboardHref}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all ${pathname.startsWith("/dashboard")
-                        ? "bg-[#22c55e] text-white shadow-lg shadow-[#22c55e]/20"
-                        : "text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] hover:bg-[#22c55e]/5"
-                        }`}
+                      className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] text-lg font-black transition-all
+                      ${pathname.startsWith("/dashboard") ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-gray-500 hover:bg-gray-50 hover:text-primary"}`}
                     >
                       <LayoutDashboard size={22} />
                       Dashboard
@@ -306,20 +324,20 @@ const Navbar = () => {
                   </motion.div>
                 )}
 
-                <div className="h-px bg-zinc-100 dark:bg-white/10 my-6 mx-4" />
+                <div className="h-px bg-gray-100 my-8 mx-6" />
 
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-4 px-4">Resources</span>
-                {moreNav.map((item, idx) => (
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4 px-4">Resources</p>
+                {MORE_ITEMS.map((item, idx) => (
                   <motion.div
                     key={item.href}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 + (baseNav.length + idx) * 0.05 }}
+                    transition={{ delay: 0.2 + (NAV_ITEMS.length + idx) * 0.05 }}
                   >
                     <Link
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-4 px-6 py-3 text-base font-bold text-[#0A1F3D]/60 dark:text-white/60 hover:text-[#22c55e] transition-colors"
+                      className="flex items-center gap-4 px-6 py-3 text-sm font-bold text-gray-500 hover:text-primary transition-colors"
                     >
                       <item.icon size={18} />
                       {item.label}
@@ -328,35 +346,31 @@ const Navbar = () => {
                 ))}
               </div>
 
-              {/* Auth Bottom */}
               <div className="mt-auto pt-10">
                 {!session ? (
                   <div className="flex flex-col gap-3">
                     <Link
                       href="/register"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-center h-14 bg-[#22c55e] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-[#22c55e]/20"
+                      className="flex items-center justify-center h-14 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl"
                     >
                       Join Now
                     </Link>
                     <Link
                       href="/login"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-center h-14 bg-zinc-100 dark:bg-white/5 text-[#0A1F3D] dark:text-white rounded-2xl font-black text-sm uppercase tracking-widest"
+                      className="flex items-center justify-center h-14 bg-gray-100 text-gray-900 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em]"
                     >
                       Sign In
                     </Link>
                   </div>
                 ) : (
                   <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleSignOut();
-                    }}
-                    className="w-full flex items-center justify-center gap-3 h-14 bg-red-500/10 text-red-500 rounded-2xl font-black text-sm uppercase tracking-widest border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+                    onClick={handleSignOut}
+                    className="w-full flex items-center justify-center gap-3 h-14 bg-red-50 text-red-600 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em]"
                   >
                     <LogOut size={20} />
-                    <span>Logout</span>
+                    Logout
                   </button>
                 )}
               </div>

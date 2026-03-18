@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import OnWayLoading from "@/app/components/Loading/page";
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast, { Toaster } from "react-hot-toast";
@@ -219,7 +219,7 @@ export default function RideHistoryPage() {
     }
   };
 
-  if (loading) return <OnWayLoading />;
+  // if (loading) return <OnWayloa />;
 
   if (error)
     return (

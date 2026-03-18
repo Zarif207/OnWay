@@ -24,7 +24,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 
-import OnWayLoading from "@/app/components/Loading/page";
+// import OnWayLoading from "@/app/components/Loading/page";
 
 /* ---------- UI Components ---------- */
 
@@ -120,9 +120,9 @@ export default function Profile() {
   // Fetch from Database
   useEffect(() => {
     const fetchUserData = async () => {
-      if (status === "authenticated" && session?.user?.id) {
+      if (status === "authenticated" && session?.user?.email) {
         try {
-          const res = await fetch(`http://localhost:4000/api/passenger/${session.user.id}`);
+          const res = await fetch(`http://localhost:4000/api/passenger/find?email=${session.user.email}`);
           const result = await res.json();
           const dbData = result.data || result;
 
@@ -176,7 +176,8 @@ export default function Profile() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: session.user.id,
+          userId: user?._id || session.user.id,
+          email: session.user.email,
           ...formData,
           image: selectedImage
         })
@@ -198,7 +199,7 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <OnWayLoading />;
+  // if (loading) return <OnWayLoading />;
 
   if (status === "unauthenticated") {
     return (

@@ -384,20 +384,18 @@ module.exports = (passengerCollection) => {
     // 12. Update Profile (PUT - Comprehensive)
     router.put("/profile/update", async (req, res) => {
         try {
-            const { userId, name, phone, address, language, notifications, image } = req.body;
+            const { userId, email, name, phone, address, language, notifications, image } = req.body;
 
             // Validation
-            if (!userId) {
+            let filter = {};
+            if (userId && ObjectId.isValid(userId)) {
+                filter = { _id: new ObjectId(userId) };
+            } else if (email) {
+                filter = { email: email };
+            } else {
                 return res.status(400).json({
                     success: false,
-                    message: "User ID is required"
-                });
-            }
-
-            if (!ObjectId.isValid(userId)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid user ID"
+                    message: "Valid User ID or Email is required"
                 });
             }
 
@@ -424,7 +422,7 @@ module.exports = (passengerCollection) => {
 
             // Update user in database
             const updatedUser = await passengerCollection.findOneAndUpdate(
-                { _id: new ObjectId(userId) },
+                filter,
                 { $set: updateData },
                 { returnDocument: "after" }
             );

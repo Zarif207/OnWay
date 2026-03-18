@@ -33,6 +33,7 @@ export default function PersonalInfoPage() {
       referralCode: formData.referralCode || "",
       district: formData.district || "Dhaka",
       cities: formData.cities || [],
+      bloodGroup: formData.bloodGroup || "",
     },
   });
 
@@ -257,9 +258,15 @@ export default function PersonalInfoPage() {
                       <input
                         type="text"
                         placeholder="rider first name"
+                        value={formData.firstName || ""}
                         {...register("firstName", {
                           required: "First Name is required",
                         })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ firstName: val });
+                          setValue("firstName", val, { shouldValidate: true });
+                        }}
                         className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.firstName
                           ? "border-red-400 bg-red-50/50"
                           : "border-gray-200"
@@ -274,7 +281,13 @@ export default function PersonalInfoPage() {
                       <input
                         type="text"
                         placeholder="rider last name"
+                        value={formData.lastName || ""}
                         {...register("lastName")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ lastName: val });
+                          setValue("lastName", val, { shouldValidate: true });
+                        }}
                         className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
                       />
                     </div>
@@ -295,7 +308,13 @@ export default function PersonalInfoPage() {
                       </span>
                       <input
                         type="tel"
+                        value={formData.mobileNumber || ""}
                         {...register("mobileNumber", { required: true })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ mobileNumber: val });
+                          setValue("mobileNumber", val, { shouldValidate: true });
+                        }}
                         className={`w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.mobileNumber
                           ? "border-red-400 bg-red-50/50"
                           : "border-gray-200"
@@ -314,6 +333,7 @@ export default function PersonalInfoPage() {
                       <input
                         type="email"
                         placeholder="example@email.com"
+                        value={formData.email || ""}
                         {...register("email", {
                           required: "Email is required",
                           pattern: {
@@ -321,6 +341,11 @@ export default function PersonalInfoPage() {
                             message: "Please enter a valid email address",
                           },
                         })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ email: val });
+                          setValue("email", val, { shouldValidate: true });
+                        }}
                         className={`w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.email
                           ? "border-red-400 bg-red-50/50"
                           : "border-gray-200"
@@ -424,7 +449,13 @@ export default function PersonalInfoPage() {
                         <input
                           type="text"
                           placeholder="Emergency contact name"
+                          value={formData.emergencyName || ""}
                           {...register("emergencyName")}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateFormData({ emergencyName: val });
+                            setValue("emergencyName", val, { shouldValidate: true });
+                          }}
                           className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
                         />
                       </div>
@@ -445,7 +476,13 @@ export default function PersonalInfoPage() {
 
                           <input
                             type="tel"
+                            value={formData.emergencyMobile || ""}
                             {...register("emergencyMobile")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateFormData({ emergencyMobile: val });
+                              setValue("emergencyMobile", val, { shouldValidate: true });
+                            }}
                             className="w-full rounded-xl pl-[100px] pr-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
                           />
                         </div>
@@ -461,17 +498,49 @@ export default function PersonalInfoPage() {
                     Demographics
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 mb-5 lg:mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 mb-5 lg:mb-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-[13px] font-bold text-[#001820] tracking-wide">
                         Gender
                       </label>
                       <select
+                        value={formData.gender || "Male"}
                         {...register("gender")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ gender: val });
+                          setValue("gender", val, { shouldValidate: true });
+                        }}
                         className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
                       >
-                        <option>Male</option>
-                        <option>Female</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Blood Group
+                      </label>
+                      <select
+                        value={formData.bloodGroup || ""}
+                        {...register("bloodGroup")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ bloodGroup: val });
+                          setValue("bloodGroup", val, { shouldValidate: true });
+                        }}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
+                      >
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
                       </select>
                     </div>
 
@@ -481,7 +550,13 @@ export default function PersonalInfoPage() {
                       </label>
                       <input
                         type="date"
+                        value={formData.dateOfBirth || ""}
                         {...register("dateOfBirth", { required: true })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ dateOfBirth: val });
+                          setValue("dateOfBirth", val, { shouldValidate: true });
+                        }}
                         className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm cursor-text ${errors.dateOfBirth
                           ? "border-red-400 bg-red-50/50"
                           : "border-gray-200"
@@ -592,12 +667,19 @@ export default function PersonalInfoPage() {
                         Identity Type <span className="text-[#31ca71]">*</span>
                       </label>
                       <select
+                        value={formData.identityType || "NID (National ID)"}
                         {...register("identityType")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ identityType: val });
+                          setValue("identityType", val, { shouldValidate: true });
+                        }}
                         className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm appearance-none cursor-pointer"
                       >
-                        <option>NID (National ID)</option>
-                        <option>Passport</option>
-                        <option>Driving License</option>
+                        <option value="NID (National ID)">NID (National ID)</option>
+                        <option value="Passport">Passport</option>
+                        <option value="Driving License">Driving License</option>
+                        <option value="Birth Certificate">Birth Certificate</option>
                       </select>
                     </div>
 
@@ -609,7 +691,13 @@ export default function PersonalInfoPage() {
                       <input
                         type="text"
                         placeholder="e.g. 199XXXXXXXXXX"
+                        value={formData.identityNumber || ""}
                         {...register("identityNumber", { required: true })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ identityNumber: val });
+                          setValue("identityNumber", val, { shouldValidate: true });
+                        }}
                         className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.identityNumber
                           ? "border-red-400 bg-red-50/50"
                           : "border-gray-200"
@@ -625,10 +713,86 @@ export default function PersonalInfoPage() {
                     <input
                       type="text"
                       placeholder="Enter code if you have one"
+                      value={formData.referralCode || ""}
                       {...register("referralCode")}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateFormData({ referralCode: val });
+                        setValue("referralCode", val);
+                      }}
                       className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
                     />
                   </div>
+
+                  {/* Dynamic Smart Fields (Blood Group, Father Name, Nationality, etc.) */}
+                  {(formData.documentDetails?.bloodGroup ||
+                    formData.documentDetails?.fatherName ||
+                    formData.documentDetails?.nationality ||
+                    formData.documentDetails?.issueDate ||
+                    formData.documentDetails?.expiryDate) && (
+                      <div className="mt-8 pt-6 border-t border-gray-100">
+                        <h4 className="text-[11px] font-black text-[#31ca71] uppercase tracking-[0.2em] mb-4">
+                          Additional Documents Data
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {formData.documentDetails?.fatherName && (
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[13px] font-bold text-gray-500">Father's Name</label>
+                              <input
+                                type="text"
+                                value={formData.documentDetails.fatherName}
+                                readOnly
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                              />
+                            </div>
+                          )}
+                          {formData.documentDetails?.bloodGroup && (
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[13px] font-bold text-gray-500">Blood Group</label>
+                              <input
+                                type="text"
+                                value={formData.documentDetails.bloodGroup}
+                                readOnly
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                              />
+                            </div>
+                          )}
+                          {formData.documentDetails?.nationality && (
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[13px] font-bold text-gray-500">Nationality</label>
+                              <input
+                                type="text"
+                                value={formData.documentDetails.nationality}
+                                readOnly
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                              />
+                            </div>
+                          )}
+                          {formData.documentDetails?.issueDate && (
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[13px] font-bold text-gray-500">Issue Date</label>
+                              <input
+                                type="text"
+                                value={formData.documentDetails.issueDate}
+                                readOnly
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                              />
+                            </div>
+                          )}
+                          {formData.documentDetails?.expiryDate && (
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[13px] font-bold text-gray-500">Expiry Date</label>
+                              <input
+                                type="text"
+                                value={formData.documentDetails.expiryDate}
+                                readOnly
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                 </div>
 
                 {/* Submit Action */}

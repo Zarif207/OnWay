@@ -16,7 +16,30 @@ export function EarnRegistrationProvider({ children }) {
     mobileNumber: "",
     email: "",
     district: "Dhaka",
-    city: "",
+    bloodGroup: "",
+    documents: {
+      license: { uploaded: false, image: "" },
+      passport: { uploaded: false, image: "" },
+      nid: { uploaded: false, image: "" }
+    },
+    documentType: "NID",
+    documentImage: null,
+    documentFile: null,
+    documentDetails: {}, // Stores all smart OCR fields (bloodGroup, fatherName, etc.)
+    extractedData: {
+      fullName: "",
+      firstName: "",
+      lastName: "",
+      dateOfBirth: "",
+      documentNumber: "",
+      documentType: "",
+      bloodGroup: "",
+      fatherName: "",
+      nationality: "",
+      issueDate: "",
+      expiryDate: "",
+      address: "",
+    },
 
     // Step 2: Personal Info
     gender: "Male",

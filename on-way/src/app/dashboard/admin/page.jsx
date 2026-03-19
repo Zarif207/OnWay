@@ -62,7 +62,7 @@ export default function DashboardOverview() {
     };
 
     fetchStats();
-    
+
     // Refresh every 30 seconds
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
@@ -70,7 +70,7 @@ export default function DashboardOverview() {
 
   if (loading) {
     return (
-    <OnWayLoading></OnWayLoading>
+      <OnWayLoading></OnWayLoading>
     );
   }
 
@@ -174,58 +174,62 @@ export default function DashboardOverview() {
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Revenue Trend */}
           <ChartCard title="Revenue Trend (Last 7 Days)">
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={charts.dailyBookings}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2FCA71" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#2FCA71" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#2FCA71"
-                  fillOpacity={1}
-                  fill="url(#colorRevenue)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={charts.dailyBookings}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2FCA71" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#2FCA71" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="day" stroke="#888" />
+                  <YAxis stroke="#888" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#2FCA71"
+                    fillOpacity={1}
+                    fill="url(#colorRevenue)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
 
           {/* Ride Status Distribution */}
           <ChartCard title="Ride Status Distribution">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={charts.statusDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {charts.statusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={charts.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {charts.statusDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
         </div>
 
@@ -233,51 +237,55 @@ export default function DashboardOverview() {
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Peak Hours */}
           <ChartCard title="Today's Hourly Activity">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={charts.hourlyBookings}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="hour" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  fill="#2FCA71"
-                  radius={[8, 8, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={charts.hourlyBookings}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="hour" stroke="#888" />
+                  <YAxis stroke="#888" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="#2FCA71"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
 
           {/* Weekly Bookings */}
           <ChartCard title="Weekly Bookings Trend">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={charts.dailyBookings}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#2FCA71"
-                  strokeWidth={3}
-                  dot={{ fill: "#2FCA71", r: 5 }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={charts.dailyBookings}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="day" stroke="#888" />
+                  <YAxis stroke="#888" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#2FCA71"
+                    strokeWidth={3}
+                    dot={{ fill: "#2FCA71", r: 5 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
         </div>
 
@@ -315,13 +323,12 @@ export default function DashboardOverview() {
                       ${booking.price?.toFixed(2) || "0.00"}
                     </p>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        booking.bookingStatus === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : booking.bookingStatus === "ongoing"
+                      className={`text-xs px-2 py-1 rounded-full ${booking.bookingStatus === "completed"
+                        ? "bg-green-100 text-green-700"
+                        : booking.bookingStatus === "ongoing"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-yellow-100 text-yellow-700"
-                      }`}
+                        }`}
                     >
                       {booking.bookingStatus}
                     </span>
@@ -383,11 +390,10 @@ function MetricCard({ title, value, icon: Icon, color, trend, subtitle, danger }
         </div>
         {trend !== undefined && (
           <div
-            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-              trend >= 0
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${trend >= 0
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+              }`}
           >
             {trend >= 0 ? (
               <ArrowUpRight className="w-3 h-3" />

@@ -51,59 +51,65 @@ module.exports = (collections) => {
                 // User stats
                 passengerCollection.countDocuments(),
                 ridersCollection.countDocuments(),
-                
+
                 // Booking stats
                 bookingsCollection.countDocuments(),
                 bookingsCollection.countDocuments({ createdAt: { $gte: todayStart } }),
                 bookingsCollection.countDocuments({ createdAt: { $gte: weekStart } }),
                 bookingsCollection.countDocuments({ createdAt: { $gte: monthStart } }),
-                bookingsCollection.countDocuments({ 
-                    createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd } 
+                bookingsCollection.countDocuments({
+                    createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
                 }),
-                
+
                 // Booking status
                 bookingsCollection.countDocuments({ bookingStatus: "completed" }),
                 bookingsCollection.countDocuments({ bookingStatus: "ongoing" }),
                 bookingsCollection.countDocuments({ bookingStatus: "pending" }),
                 bookingsCollection.countDocuments({ bookingStatus: "cancelled" }),
-                
+
                 // Revenue stats
                 bookingsCollection.aggregate([
                     { $match: { bookingStatus: "completed" } },
                     { $group: { _id: null, total: { $sum: "$price" } } }
                 ]).toArray(),
                 bookingsCollection.aggregate([
-                    { $match: { 
-                        bookingStatus: "completed",
-                        createdAt: { $gte: todayStart }
-                    }},
+                    {
+                        $match: {
+                            bookingStatus: "completed",
+                            createdAt: { $gte: todayStart }
+                        }
+                    },
                     { $group: { _id: null, total: { $sum: "$price" } } }
                 ]).toArray(),
                 bookingsCollection.aggregate([
-                    { $match: { 
-                        bookingStatus: "completed",
-                        createdAt: { $gte: weekStart }
-                    }},
+                    {
+                        $match: {
+                            bookingStatus: "completed",
+                            createdAt: { $gte: weekStart }
+                        }
+                    },
                     { $group: { _id: null, total: { $sum: "$price" } } }
                 ]).toArray(),
                 bookingsCollection.aggregate([
-                    { $match: { 
-                        bookingStatus: "completed",
-                        createdAt: { $gte: monthStart }
-                    }},
+                    {
+                        $match: {
+                            bookingStatus: "completed",
+                            createdAt: { $gte: monthStart }
+                        }
+                    },
                     { $group: { _id: null, total: { $sum: "$price" } } }
                 ]).toArray(),
-                
+
                 // Review stats
                 reviewsCollection.aggregate([
                     { $group: { _id: null, avgRating: { $avg: "$rating" } } }
                 ]).toArray(),
                 reviewsCollection.countDocuments(),
-                
+
                 // Emergency stats
                 emergencyCollection.countDocuments(),
                 emergencyCollection.countDocuments({ createdAt: { $gte: todayStart } }),
-                
+
                 // Recent data
                 bookingsCollection.find().sort({ createdAt: -1 }).limit(10).toArray(),
                 ridersCollection.find().sort({ totalRides: -1 }).limit(5).toArray(),
@@ -111,46 +117,54 @@ module.exports = (collections) => {
             ]);
 
             // Calculate growth percentages
-            const userGrowth = lastMonthBookings > 0 
+            const userGrowth = lastMonthBookings > 0
                 ? ((monthBookings - lastMonthBookings) / lastMonthBookings * 100).toFixed(1)
                 : 0;
 
             // Get hourly distribution for today
             const hourlyBookings = await bookingsCollection.aggregate([
                 { $match: { createdAt: { $gte: todayStart } } },
-                { $group: {
-                    _id: { $hour: "$createdAt" },
-                    count: { $sum: 1 }
-                }},
+                {
+                    $group: {
+                        _id: { $hour: "$createdAt" },
+                        count: { $sum: 1 }
+                    }
+                },
                 { $sort: { _id: 1 } }
             ]).toArray();
 
             // Get daily bookings for the week
             const dailyBookings = await bookingsCollection.aggregate([
                 { $match: { createdAt: { $gte: weekStart } } },
-                { $group: {
-                    _id: { $dayOfWeek: "$createdAt" },
-                    count: { $sum: 1 },
-                    revenue: { $sum: "$price" }
-                }},
+                {
+                    $group: {
+                        _id: { $dayOfWeek: "$createdAt" },
+                        count: { $sum: 1 },
+                        revenue: { $sum: "$price" }
+                    }
+                },
                 { $sort: { _id: 1 } }
             ]).toArray();
 
             // Get monthly revenue trend (last 6 months)
             const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
             const monthlyRevenue = await bookingsCollection.aggregate([
-                { $match: { 
-                    createdAt: { $gte: sixMonthsAgo },
-                    bookingStatus: "completed"
-                }},
-                { $group: {
-                    _id: { 
-                        year: { $year: "$createdAt" },
-                        month: { $month: "$createdAt" }
-                    },
-                    revenue: { $sum: "$price" },
-                    count: { $sum: 1 }
-                }},
+                {
+                    $match: {
+                        createdAt: { $gte: sixMonthsAgo },
+                        bookingStatus: "completed"
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: "$createdAt" },
+                            month: { $month: "$createdAt" }
+                        },
+                        revenue: { $sum: "$price" },
+                        count: { $sum: 1 }
+                    }
+                },
                 { $sort: { "_id.year": 1, "_id.month": 1 } }
             ]).toArray();
 
@@ -186,7 +200,7 @@ module.exports = (collections) => {
                     },
                     growth: {
                         userGrowth: parseFloat(userGrowth),
-                        bookingGrowth: lastMonthBookings > 0 
+                        bookingGrowth: lastMonthBookings > 0
                             ? ((monthBookings - lastMonthBookings) / lastMonthBookings * 100).toFixed(1)
                             : 0
                     },

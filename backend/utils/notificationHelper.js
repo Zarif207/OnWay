@@ -26,7 +26,7 @@ async function getAdminUserIds(passengerCollection) {
       .find({ role: { $in: ["admin", "supportAgent"] } })
       .project({ _id: 1 })
       .toArray();
-    
+
     return admins.map(admin => admin._id.toString());
   } catch (error) {
     console.error("Error fetching admin users:", error);

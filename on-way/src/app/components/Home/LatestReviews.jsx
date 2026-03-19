@@ -11,6 +11,8 @@ import "swiper/css";
 import "swiper/css/effect-coverflow";
 import "swiper/css/pagination";
 
+import { AnimatedHeading } from "../../root-components/MotionWrappers";
+
 /**
  * LatestReviews Component (V2)
  * Premium "2026 Fintech" style testimonials with glassmorphism and green accents.
@@ -44,14 +46,77 @@ export default function HomeLatestReviews() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 py-24">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-80 bg-slate-100 animate-pulse rounded-[2.5rem]"
-          ></div>
-        ))}
-      </div>
+      <section className="py-5 overflow-hidden ">
+        <div className="max-w-7xl mx-auto px-6 bg-white/50">
+
+          <div className="text-center mb-16">
+            <AnimatedHeading>
+              <h2 className="text-4xl md:text-5xl font-black text-secondary mb-5 tracking-tight">
+                What Our <span className="text-primary">Riders</span> Say
+              </h2>
+              <p className="text-secondary/60 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
+                Real experiences from real people across the city.
+                Join thousands of satisfied riders using OnWay daily.
+              </p>
+            </AnimatedHeading>
+          </div>
+
+          <div className="relative">
+            <Swiper
+              effect={"coverflow"}
+              grabCursor={true}
+              centeredSlides={true}
+              slidesPerView={"auto"}
+              loop={reviews.length > 2}
+              speed={1000}
+              autoplay={{ delay: 4000, disableOnInteraction: false }}
+              coverflowEffect={{
+                rotate: 0,
+                stretch: 0,
+                depth: 100,
+                modifier: 2.5,
+                slideShadows: false,
+              }}
+              pagination={{
+                clickable: true,
+                dynamicBullets: true
+              }}
+              modules={[EffectCoverflow, Autoplay, Pagination]}
+              className="pb-20"
+            >
+              {/* Skeleton or Empty Slides could go here */}
+            </Swiper>
+          </div>
+        </div>
+
+        {/* Premium Carousel Logic Styles */}
+        <style jsx global>{`
+                .swiper-slide {
+                    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+                    opacity: 0.4;
+                    filter: blur(4px) scale(0.85);
+                }
+                .swiper-slide-active {
+                    opacity: 1;
+                    filter: blur(0) scale(1.05);
+                    z-index: 10;
+                }
+                /* Custom Green Pagination */
+                .swiper-pagination-bullet {
+                    background: #CBD5E1 !important;
+                    opacity: 0.5 !important;
+                    transition: all 0.3s ease !important;
+                    width: 8px !important;
+                    height: 8px !important;
+                }
+                .swiper-pagination-bullet-active {
+                    background: var(--color-primary) !important;
+                    opacity: 1 !important;
+                    width: 32px !important;
+                    border-radius: 10px !important;
+                }
+            `}</style>
+      </section>
     );
   }
 
@@ -61,13 +126,15 @@ export default function HomeLatestReviews() {
     <section className="py-5 overflow-hidden ">
       <div className="max-w-7xl mx-auto px-6 bg-white/50">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-5 tracking-tight">
-            What Our <span className="text-blue-600">Riders</span> Say
-          </h2>
-          <p className="text-[#0A1F3D]/60 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
-            Real experiences from real people across the city. Join thousands of
-            satisfied riders using OnWay daily.
-          </p>
+          <AnimatedHeading>
+            <h2 className="text-4xl md:text-5xl font-black text-secondary mb-5 tracking-tight">
+              What Our <span className="text-primary">Riders</span> Say
+            </h2>
+            <p className="text-secondary/60 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
+              Real experiences from real people across the city. Join thousands of
+              satisfied riders using OnWay daily.
+            </p>
+          </AnimatedHeading>
         </div>
 
         <div className="relative">
@@ -109,7 +176,7 @@ export default function HomeLatestReviews() {
                     {/* User Info */}
                     <div className="flex items-center gap-4 mb-6">
                       {/* Passenger Image */}
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-blue-200">
+                      <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-primary/20">
                         <img
                           src={
                             review.passengerImage ||
@@ -122,7 +189,7 @@ export default function HomeLatestReviews() {
 
                       <div>
                         {/* Passenger Name */}
-                        <h4 className="font-bold text-slate-900 leading-none mb-1">
+                        <h4 className="font-bold text-secondary leading-none mb-1">
                           {review.passengerName}
                         </h4>
 
@@ -150,7 +217,7 @@ export default function HomeLatestReviews() {
 
                     {/* Testimonial Message */}
                     <div className="grow mb-8">
-                      <p className="text-[#0A1F3D]/70 text-xl leading-relaxed font-medium italic">
+                      <p className="text-secondary/70 text-xl leading-relaxed font-medium italic">
                         {review.review && review.review !== "11"
                           ? `"${review.review}"`
                           : "The service was exceptional, reliable, and smooth."}
@@ -158,7 +225,7 @@ export default function HomeLatestReviews() {
                     </div>
 
                     <div className="pt-2 border-t border-slate-50 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-md">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-md">
                         Verified Ride
                       </span>
                       <span className="text-[10px] text-slate-300 font-mono italic">
@@ -194,7 +261,7 @@ export default function HomeLatestReviews() {
           height: 8px !important;
         }
         .swiper-pagination-bullet-active {
-          background: #22c55e !important;
+          background: var(--color-primary) !important;
           opacity: 1 !important;
           width: 32px !important;
           border-radius: 10px !important;

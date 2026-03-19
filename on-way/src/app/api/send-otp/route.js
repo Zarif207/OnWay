@@ -53,7 +53,7 @@ export async function POST(req) {
 
         await transporter.sendMail(mailOptions);
 
-        // ✅ OTP return করো
+        // ✅ OTP return
         return NextResponse.json(
             { success: true, message: "OTP sent successfully to " + email, otp: otp },
             { status: 200 }

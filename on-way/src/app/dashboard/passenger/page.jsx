@@ -312,6 +312,7 @@ export default function PassengerDashboard() {
             </div>
           </div>
         </div>
+      </div>
 
         {/* Right Column */}
         <div className="lg:col-span-1 space-y-6">
@@ -333,6 +334,7 @@ export default function PassengerDashboard() {
               <Link href="/dashboard/passenger/wallet" className="flex-1 bg-[#2FCA71] hover:bg-[#25A65B] text-white text-center font-bold py-2.5 rounded-xl transition">Add Money</Link>
               <Link href="/dashboard/passenger/wallet" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-center font-bold py-2.5 rounded-xl transition">History</Link>
             </div>
+            <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"><MoreHorizontal size={18} /></Link>
           </div>
 
           <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">

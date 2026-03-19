@@ -51,6 +51,8 @@ export default function BookRidePage() {
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState("pickup");
   const [onlineRiders, setOnlineRiders] = useState({});
+  const { data: session } = useSession(); 
+
 
   const router = useRouter();
 
@@ -315,25 +317,41 @@ export default function BookRidePage() {
       return;
     }
 
+    if (!session?.user?.id) {
+      setError("Please login to book a ride.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
     try {
-      const passengerId = session?.user?.id || "anonymous_passenger";
-
       const bookingData = {
-        pickupLocation: { name: pickupLocation.name, lat: pickupLocation.lat, lng: pickupLocation.lon },
-        dropoffLocation: { name: dropoffLocation.name, lat: dropoffLocation.lat, lng: dropoffLocation.lon },
-        routeGeometry: routeGeometry.map((coord) => ({ lat: coord[0], lng: coord[1] })),
+        passengerId: session.user.id,                    // ← এটা add করো
+        pickupLocation: {
+          address: pickupLocation.name,                // ← address field add করো
+          name: pickupLocation.name,
+          lat: pickupLocation.lat,
+          lng: pickupLocation.lon,
+        },
+        dropoffLocation: {
+          address: dropoffLocation.name,               // ← address field add করো
+          name: dropoffLocation.name,
+          lat: dropoffLocation.lat,
+          lng: dropoffLocation.lon,
+        },
+        routeGeometry: routeGeometry.map((coord) => ({
+          lat: coord[0],
+          lng: coord[1],
+        })),
         distance,
         duration,
         price: fare,
         rideType,
         surgeApplied: surge.multiplier > 1.0,
-        bookingStatus: "pending",
       };
 
-      console.log("📤 Submitting booking request to backend...", bookingData);
+      console.log("📤 Submitting booking:", bookingData);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
       const response = await fetch(`${apiUrl}/bookings`, {
@@ -343,14 +361,17 @@ export default function BookRidePage() {
       });
 
       const result = await response.json();
+
       if (result.success) {
-        console.log("✅ Booking created successfully:", result.booking._id);
-        // Redirect to passenger dashboard with searching state
-        router.push(`/dashboard/passenger?searching=true&bookingId=${result.booking._id}`);
+        console.log("✅ Booking created:", result.booking._id);
+        router.push(
+          `/dashboard/passenger?searching=true&bookingId=${result.booking._id}`
+        );
       } else {
         setError(result.message || "Failed to confirm booking.");
       }
     } catch (err) {
+      console.error("Booking error:", err);
       setError("An error occurred while confirming your booking.");
     } finally {
       setIsSubmitting(false);

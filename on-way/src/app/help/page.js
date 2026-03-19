@@ -1,209 +1,427 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { ChevronDown, Bike, DollarSign, Star, FileText, AlertTriangle, Users, CreditCard, MapPin, Shield, Phone, Clock, Wrench, Info, Search, X } from "lucide-react";
 
-export default function HelpPage() {
+// ─── RIDER DATA ───────────────────────────────────────────
+const riderFaqs = [
+  {
+    category: "Getting Started", icon: FileText,
+    questions: [
+      { question: "How do I register as an OnWay rider?", answer: "Go to the OnWay app, tap 'Become a Rider', upload your NID, driving license, and vehicle registration documents. After verification (2-3 business days), you'll be approved to start accepting rides." },
+      { question: "What documents do I need to start riding?", answer: "You'll need a valid National ID (NID), driving license, vehicle registration certificate, vehicle fitness certificate, and a clear profile photo. All documents must be up to date." },
+      { question: "How do I update my vehicle or document information?", answer: "Go to your rider profile in the app, tap 'Documents', and upload the updated files. Changes are reviewed within 24 hours." },
+    ]
+  },
+  {
+    category: "Earnings & Payments", icon: DollarSign,
+    questions: [
+      { question: "How and when do I get paid?", answer: "Your earnings are credited to your OnWay wallet after each completed trip. You can withdraw to bKash, Nagad, or your bank account anytime. Minimum withdrawal amount is ৳100." },
+      { question: "What is OnWay's commission rate?", answer: "OnWay takes a 20% platform fee per ride. You keep 80% of the fare plus 100% of any tips from passengers." },
+      { question: "I didn't receive the correct fare. What should I do?", answer: "Go to 'My Trips', select the affected ride, and tap 'Report a Fare Issue'. Our team will review and adjust within 24 hours." },
+      { question: "What are the peak hours and how do surge fares work?", answer: "Peak hours are 7–9 AM and 5–8 PM on weekdays, and Friday/Saturday evenings. Surge pricing (1.2x–2x) automatically applies during these times." },
+    ]
+  },
+  {
+    category: "Rides & Requests", icon: Bike,
+    questions: [
+      { question: "Why am I not getting ride requests?", answer: "Make sure your app is online and GPS is enabled. Low acceptance rate or low rating can also reduce ride requests. Try moving to a busier area." },
+      { question: "Can I take a break or go offline anytime?", answer: "Yes, you can go offline anytime by toggling your status in the app. There's no penalty for going offline." },
+    ]
+  },
+  {
+    category: "Ratings & Account", icon: Star,
+    questions: [
+      { question: "How does the rating system work for riders?", answer: "Passengers rate you 1-5 stars after each trip. You need to maintain at least a 4.0 rating to stay active." },
+      { question: "My account has been suspended. What do I do?", answer: "Contact OnWay rider support through the app or visit a Walk-In Support Center with your NID. Most suspensions can be resolved within 48 hours." },
+    ]
+  },
+  {
+    category: "Safety", icon: AlertTriangle,
+    questions: [
+      { question: "What should I do if a passenger misbehaves?", answer: "End the trip safely and report the passenger immediately through the app under 'Report an Issue'. OnWay has zero tolerance for harassment." },
+    ]
+  },
+];
+
+// ─── PASSENGER DATA ───────────────────────────────────────
+const passengerFaqs = [
+  {
+    category: "Getting Started", icon: Users,
+    questions: [
+      { question: "How do I create an OnWay account?", answer: "Download the OnWay app, tap 'Sign Up', enter your phone number, verify with the OTP, and complete your profile. It takes less than 2 minutes." },
+      { question: "Is my personal data safe with OnWay?", answer: "Yes. OnWay uses end-to-end encryption for all personal and payment data. We never share your information with third parties without your consent." },
+    ]
+  },
+  {
+    category: "Booking Rides", icon: MapPin,
+    questions: [
+      { question: "How do I book a ride?", answer: "Open the app, enter your pickup location and destination, choose your ride type, review the fare, and tap 'Book Ride'. A nearby rider will be assigned within minutes." },
+      { question: "Can I schedule a ride in advance?", answer: "Yes. When booking, tap 'Schedule' and pick your preferred date and time. Scheduled rides can be cancelled up to 30 minutes before pickup." },
+      { question: "How do I track my ride in real-time?", answer: "After booking, you'll see your rider's live location on the map along with their estimated arrival time." },
+      { question: "Can I cancel a ride after booking?", answer: "Yes, you can cancel before the rider arrives. Cancellations within 2 minutes of booking are free. After that, a small fee may apply." },
+      { question: "How do I contact my rider?", answer: "After booking, tap 'Call Rider' or 'Message Rider'. Your personal number stays private through OnWay's secure system." },
+    ]
+  },
+  {
+    category: "Payments", icon: CreditCard,
+    questions: [
+      { question: "What payment methods does OnWay accept?", answer: "We accept bKash, Nagad, Rocket, credit/debit cards, and cash. Set your preferred method in Settings → Payment." },
+      { question: "How do I apply a promo code?", answer: "On the booking screen, tap 'Add Promo Code' before confirming. The discount will be applied automatically." },
+    ]
+  },
+  {
+    category: "Safety", icon: Shield,
+    questions: [
+      { question: "What safety features does OnWay offer passengers?", answer: "OnWay provides an SOS emergency button, live trip sharing, verified rider profiles, and 24/7 support." },
+      { question: "I left something in the vehicle. What should I do?", answer: "Go to 'My Trips', select the trip, and tap 'Report Lost Item'. Most items are recovered within 24 hours." },
+    ]
+  },
+  {
+    category: "Ratings & Feedback", icon: Star,
+    questions: [
+      { question: "How do I rate my ride?", answer: "After each trip, you'll be prompted to rate your rider from 1 to 5 stars and leave optional feedback." },
+    ]
+  },
+];
+
+// ─── WALK-IN DATA ─────────────────────────────────────────
+const supportCenters = [
+  { name: "OnWay Tangail Support Center", address: "Zubaear's House, Tangail Sadar, Tangail 1900", phone: "+880 1700-000000", hours: "9:00 AM - 8:00 PM (7 days a week)", services: ["Account Issues", "Payment Problems", "Driver Registration", "Vehicle Inspection"] },
+  { name: "OnWay Bogura Branch", address: "Minhajer's House, Bogura Sadar, Bogura 5800", phone: "+880 1700-000001", hours: "10:00 AM - 7:00 PM (Closed on Fridays)", services: ["General Support", "Lost & Found", "Complaint Resolution"] },
+  { name: "OnWay Kishoreganj Office", address: "Zarif's House, Kishoreganj Sadar, Kishoreganj 2300", phone: "+880 1800-000000", hours: "9:00 AM - 6:00 PM (Closed on Fridays)", services: ["Driver Registration", "Account Support", "Payment Issues"] },
+  { name: "OnWay Jamalpur Center", address: "Shourove's House, Jamalpur Sadar, Jamalpur 2000", phone: "+880 1800-000001", hours: "10:00 AM - 6:00 PM (Closed on Fridays)", services: ["General Support", "Driver Onboarding", "Account Issues"] },
+  { name: "OnWay Chittagong Hub", address: "Ishteak's House, Chittagong Sadar, Chittagong 4000", phone: "+880 1900-000002", hours: "9:00 AM - 9:00 PM (7 days a week)", services: ["Account Issues", "Driver Registration", "Lost & Found", "Payment Problems", "App Technical Support"] },
+];
+
+// ─── FAQ ACCORDION ────────────────────────────────────────
+function FaqSection({ sections, searchQuery }) {
   const [openFaq, setOpenFaq] = useState(null);
+  const toggle = (id) => setOpenFaq(openFaq === id ? null : id);
 
-  const categories = [
-    { name: "Getting Started", icon: "🚀", color: "bg-pink-100", type: "emoji" },
-    { name: "Booking Rides", icon: "/ride.png", color: "bg-purple-100", type: "image" },
-    { name: "Payments", icon: "💳", color: "bg-blue-100", type: "emoji" },
-    { name: "Safety", icon: "🛡️", color: "bg-green-100", type: "emoji" },
-    { name: "Driver Info", icon: "👨‍✈️", color: "bg-primary", type: "emoji" },
-    { name: "Account", icon: "👤", color: "bg-indigo-100", type: "emoji" },
+  const allQuestions = sections.flatMap((s) =>
+    s.questions.map((q) => ({ ...q, category: s.category, icon: s.icon }))
+  );
+
+  const filtered = searchQuery.trim()
+    ? allQuestions.filter(
+        (q) =>
+          q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          q.answer.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : null;
+
+  if (filtered !== null) {
+    return (
+      <div className="space-y-2">
+        {filtered.length === 0 ? (
+          <p className="text-center text-gray-400 text-sm py-8">No results found. Try a different keyword.</p>
+        ) : (
+          filtered.map((faq, i) => {
+            const id = `s-${i}`;
+            const isOpen = openFaq === id;
+            return (
+              <div key={i} className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen ? "border-primary/30 shadow-sm" : "border-gray-100"}`}>
+                <button onClick={() => toggle(id)} className="w-full px-6 py-4 text-left flex justify-between items-center gap-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary block mb-1">{faq.category}</span>
+                    <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
+                  </div>
+                  <ChevronDown size={16} className={`text-primary shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+                {isOpen && <div className="px-6 pb-5 border-t border-gray-50"><p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.answer}</p></div>}
+              </div>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {sections.map((section, si) => (
+        <div key={si}>
+          <div className="flex items-center gap-3 mb-3 px-1">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <section.icon size={16} className="text-primary" />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">{section.category}</h4>
+          </div>
+          <div className="space-y-2">
+            {section.questions.map((faq, qi) => {
+              const id = `${si}-${qi}`;
+              const isOpen = openFaq === id;
+              return (
+                <div key={qi} className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen ? "border-primary/30 shadow-sm" : "border-gray-100"}`}>
+                  <button onClick={() => toggle(id)} className="w-full px-6 py-4 text-left flex justify-between items-center gap-4">
+                    <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
+                    <ChevronDown size={16} className={`text-primary shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isOpen && <div className="px-6 pb-5 border-t border-gray-50"><p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.answer}</p></div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────
+function HelpContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabParam || "rider");
+  const [query, setQuery] = useState("");
+  const [centerQuery, setCenterQuery] = useState("");
+
+  useEffect(() => {
+    if (tabParam) setActiveTab(tabParam);
+  }, [tabParam]);
+
+  const tabs = [
+    { id: "rider", label: "Rider Help Center", icon: Bike },
+    { id: "passenger", label: "Passenger Help Center", icon: Users },
+    { id: "walkin", label: "Walk-In Support Centers", icon: MapPin },
   ];
 
-  const faqs = [
-    {
-      question: "How do I book a ride on OnWay?",
-      category: "Booking Rides",
-      answer: "Booking a ride is simple! Open the OnWay app, enter your pickup and destination locations, choose your preferred ride type, and confirm your booking. A nearby driver will be assigned to you within minutes."
-    },
-    {
-      question: "What payment methods are accepted?",
-      category: "Payments",
-      answer: "We accept credit/debit cards, mobile wallets, and cash payments. You can add your preferred payment method in the app settings."
-    },
-    {
-      question: "How can I track my ride in real time?",
-      category: "Booking Rides",
-      answer: "Once your ride is confirmed, you can track your driver's location in real-time on the map within the app."
-    },
-    {
-      question: "What safety features does OnWay provide?",
-      category: "Safety",
-      answer: "OnWay offers SOS emergency button, ride sharing with contacts, driver verification, and 24/7 support for your safety."
-    },
-    {
-      question: "How do I become an OnWay driver?",
-      category: "Driver Info",
-      answer: "Visit our driver registration page, submit required documents, pass background verification, and start earning!"
-    },
-    {
-      question: "Can I cancel a ride after booking?",
-      category: "Booking Rides",
-      answer: "Yes, you can cancel a ride before the driver arrives. Cancellation fees may apply based on timing."
-    },
-    {
-      question: "How do I contact customer support?",
-      category: "Getting Started",
-      answer: "You can reach us via live chat in the app, email at support@onway.com, or call our 24/7 helpline."
-    },
-    {
-      question: "What should I do if I left an item in the vehicle?",
-      category: "Getting Started",
-      answer: "Contact support immediately with your ride details. We'll help you connect with the driver to retrieve your item."
-    },
-  ];
+  const filteredCenters = centerQuery.trim()
+    ? supportCenters.filter(
+        (c) =>
+          c.name.toLowerCase().includes(centerQuery.toLowerCase()) ||
+          c.address.toLowerCase().includes(centerQuery.toLowerCase()) ||
+          c.services.some((s) => s.toLowerCase().includes(centerQuery.toLowerCase()))
+      )
+    : supportCenters;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-linear-to-r from-gray-900 via-gray-800 to-black text-white py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h1 className="text-5xl font-bold mb-4">Help Center</h1>
-          <p className="text-lg text-gray-300 mb-8">
-            Find answers to common questions and get the help you need
-          </p>
-          <div className="relative max-w-2xl mx-auto">
-            <input
-              type="text"
-              placeholder="Search for help..."
-              className="w-full px-6 py-4 rounded-full bg-gray-900 text-white text-lg border-2 border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-black px-6 py-2 rounded-full hover:bg-primary transition font-medium">
-              Search
-            </button>
-          </div>
-        </div>
-      </div>
-      <div></div>
 
-      {/* Categories Section */}
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Browse by Category
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {categories.map((category, index) => (
-            <div
-              key={index}
-              className="flex flex-col items-center p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition cursor-pointer"
-            >
-              <div className={`mb-3 rounded-full ${category.color} flex items-center justify-center w-28 h-28`}>
-                {category.type === "image" ? (
-                  <Image
-                    src={category.icon}
-                    alt={category.name}
-                    width={84}
-                    height={84}
-                    className="object-contain"
-                  />
-                ) : (
-                  <span className="text-7xl">{category.icon}</span>
-                )}
-              </div>
-              <p className="text-sm font-medium text-gray-700 text-center">
-                {category.name}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div className="max-w-4xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Frequently Asked Questions
-        </h2>
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
-            >
-              <button
-                onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                className="w-full px-6 py-5 text-left flex justify-between items-center hover:bg-gray-50 transition"
-              >
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {faq.question}
-                  </h3>
-                  <p className="text-sm text-primary mt-1">{faq.category}</p>
-                </div>
-                <span className="text-2xl text-gray-400">
-                  {openFaq === index ? "−" : "+"}
-                </span>
-              </button>
-              {openFaq === index && (
-                <div className="px-6 py-4 bg-gray-50 border-t">
-                  <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
-                </div>
+      {/* Hero */}
+      <div className="bg-secondary text-white py-20 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #259461 0%, transparent 50%), radial-gradient(circle at 80% 20%, #2cbe6b 0%, transparent 40%)" }} />
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+          <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">Help Center</h1>
+          <p className="text-lg text-gray-300 mb-8">Find answers, get support, visit us in person</p>
+          {activeTab !== "walkin" && (
+            <div className="relative max-w-2xl mx-auto">
+              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); }}
+                placeholder={activeTab === "rider" ? "Search rider help articles..." : "Search passenger help articles..."}
+                className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
+              />
+              {query && (
+                <button onClick={() => setQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                  <X size={18} />
+                </button>
               )}
             </div>
-          ))}
+          )}
+          {activeTab === "walkin" && (
+            <div className="relative max-w-2xl mx-auto">
+              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={centerQuery}
+                onChange={(e) => setCenterQuery(e.target.value)}
+                placeholder="Search by city, service, or center name..."
+                className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
+              />
+              {centerQuery && (
+                <button onClick={() => setCenterQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Contact Support Section */}
-      <div className="bg-white py-16">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-4 text-gray-900">
-            Still Need Help?
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Our support team is here for you 24/7
-          </p>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-6">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 className="text-black font-bold text-lg mb-2">Live Chat</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Chat with our support team
-              </p>
-              <button className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 transition">
-                Start Chat
+      {/* Tabs */}
+      <div className="sticky top-20 z-40 bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="flex">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id); setQuery(""); setCenterQuery(""); }}
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-2 transition-all ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-400 hover:text-gray-700"
+                }`}
+              >
+                <tab.icon size={16} />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
               </button>
-            </div>
-            <div className="p-6">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-black font-bold text-lg mb-2">Email Support</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Get help via email
-                
-              </p>
-              <button className="bg-green-500 text-white px-6 py-2 rounded-full hover:bg-green-600 transition">
-                Send Email
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-              </div>
-              <h3 className="text-black font-bold text-lg mb-2">Call Us</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Speak with our team
-              </p>
-              <button className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600 transition">
-                Call Now
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* ── RIDER TAB ── */}
+      {activeTab === "rider" && (
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          {!query && (
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              {[
+                { icon: DollarSign, title: "Earnings", desc: "Payment schedules, bonuses, and cash out options" },
+                { icon: Bike, title: "Vehicle Requirements", desc: "Standards, inspections, and maintenance tips" },
+                { icon: Star, title: "Ratings & Reviews", desc: "How ratings work and tips to improve" },
+              ].map((item, i) => (
+                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <item.icon size={22} className="text-primary" />
+                  </div>
+                  <h3 className="text-base font-bold text-secondary mb-1">{item.title}</h3>
+                  <p className="text-gray-500 text-sm">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {query && (
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+              Results for &quot;{query}&quot;
+            </p>
+          )}
+          <FaqSection sections={riderFaqs} searchQuery={query} />
+        </div>
+      )}
+
+      {/* ── PASSENGER TAB ── */}
+      {activeTab === "passenger" && (
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          {!query && (
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              {[
+                { icon: MapPin, title: "Booking Rides", desc: "Learn how to book, schedule, and manage your rides" },
+                { icon: CreditCard, title: "Payments", desc: "Payment methods, receipts, and billing questions" },
+                { icon: Users, title: "Account", desc: "Manage your profile, settings, and preferences" },
+              ].map((item, i) => (
+                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <item.icon size={22} className="text-primary" />
+                  </div>
+                  <h3 className="text-base font-bold text-secondary mb-1">{item.title}</h3>
+                  <p className="text-gray-500 text-sm">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {query && (
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+              Results for &quot;{query}&quot;
+            </p>
+          )}
+          <FaqSection sections={passengerFaqs} searchQuery={query} />
+        </div>
+      )}
+
+      {/* ── WALK-IN TAB ── */}
+      {activeTab === "walkin" && (
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          {/* Info Banner */}
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex items-start gap-4 mb-10">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+              <Info size={20} className="text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-secondary mb-2">Before You Visit</h3>
+              <ul className="text-gray-600 text-sm space-y-1">
+                <li>• Bring your government-issued ID</li>
+                <li>• Have your OnWay account details ready</li>
+                <li>• For driver registration, bring vehicle documents</li>
+                <li>• Walk-ins are welcome, but appointments are recommended for faster service</li>
+              </ul>
+            </div>
+          </div>
+
+          {filteredCenters.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+              <p className="text-gray-400 text-sm">No centers found for &quot;{centerQuery}&quot;. Try searching by city or service.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {filteredCenters.map((center, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all overflow-hidden">
+                  <div className="bg-secondary px-6 py-5 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
+                      <MapPin size={18} className="text-primary" />
+                    </div>
+                    <h3 className="text-white font-black text-base tracking-tight">{center.name}</h3>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Address</p>
+                        <p className="text-sm text-gray-700">{center.address}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Phone size={16} className="text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Phone</p>
+                        <p className="text-sm text-gray-700">{center.phone}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Clock size={16} className="text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hours</p>
+                        <p className="text-sm text-gray-700">{center.hours}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Wrench size={16} className="text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Services</p>
+                        <div className="flex flex-wrap gap-2">
+                          {center.services.map((s, idx) => (
+                            <span key={idx} className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <button className="w-full mt-2 bg-secondary text-white py-3 rounded-xl text-sm font-bold hover:bg-primary transition-all active:scale-95">
+                      Get Directions
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Support CTA */}
+      <div className="bg-secondary py-16 mt-8">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Still Need Help?</h2>
+          <p className="text-gray-400 mb-8 text-sm">Our support team is here for you 24/7</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-accent transition-all hover:scale-105 active:scale-95">Live Chat</button>
+            <button className="bg-white/10 text-white border border-white/20 px-8 py-3 rounded-2xl font-bold text-sm hover:bg-white/20 transition-all">Email Support</button>
+          </div>
+        </div>
+      </div>
+
     </div>
+  );
+}
+
+export default function HelpPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <HelpContent />
+    </Suspense>
   );
 }

@@ -102,6 +102,14 @@ export default function PassengerDashboard() {
     router.push(`/dashboard/passenger/book-ride?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
   // 1. Socket Integration & Initial State
   useEffect(() => {
     if (!passengerId) return;
@@ -158,7 +166,8 @@ export default function PassengerDashboard() {
           <img src={USER_MOCK.avatar} alt="Profile" className="w-16 h-16 rounded-full border-2 border-white shadow-sm" />
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-              Good afternoon, {session?.user?.name || USER_MOCK.name} <span className="inline-block animate-wave origin-bottom-right">👋</span>
+              {getGreeting()}, {session?.user?.name || USER_MOCK.name}{" "}
+              <span className="inline-block animate-wave origin-bottom-right">👋</span>
             </h1>
             <p className="text-gray-500 text-sm md:text-base font-medium">{USER_MOCK.date}</p>
           </div>
@@ -275,134 +284,134 @@ export default function PassengerDashboard() {
         </div>
       </div>
 
-        {/* ===================== RIGHT COLUMN (Widgets) ===================== */}
-        <div className="lg:col-span-1 space-y-6">
+      {/* ===================== RIGHT COLUMN (Widgets) ===================== */}
+      <div className="lg:col-span-1 space-y-6">
 
-          {/* SECTION 6: WALLET OVERVIEW */}
-          <div className="bg-gray-900 text-white rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-gray-900/20">
-            {/* Background design */}
-            <div className="absolute right-0 bottom-0 w-32 h-32 bg-[#2FCA71]/20 rounded-full blur-3xl" />
+        {/* SECTION 6: WALLET OVERVIEW */}
+        <div className="bg-gray-900 text-white rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-gray-900/20">
+          {/* Background design */}
+          <div className="absolute right-0 bottom-0 w-32 h-32 bg-[#2FCA71]/20 rounded-full blur-3xl" />
 
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-2 text-gray-300 font-medium">
-                <Wallet size={18} className="text-[#2FCA71]" /> Wallet Balance
-              </div>
-              <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"><MoreHorizontal size={18} /></Link>
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center gap-2 text-gray-300 font-medium">
+              <Wallet size={18} className="text-[#2FCA71]" /> Wallet Balance
             </div>
-
-            <div className="mb-6 relative z-10">
-              <span className="text-4xl font-extrabold tracking-tight">৳1,250</span>
-              <div className="text-sm text-gray-400 mt-1 font-medium bg-gray-800 inline-block px-2.5 py-1 rounded-md">Includes ৳350 Ride Credits</div>
-            </div>
-
-            <div className="flex gap-2 relative z-10">
-              <Link href="/dashboard/passenger/wallet" className="flex-1 bg-[#2FCA71] hover:bg-[#25A65B] text-white text-center font-bold py-2.5 rounded-xl transition">
-                Add Money
-              </Link>
-              <Link href="/dashboard/passenger/wallet" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-center font-bold py-2.5 rounded-xl transition">
-                History
-              </Link>
-            </div>
+            <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"><MoreHorizontal size={18} /></Link>
           </div>
 
-          {/* SECTION 4: UPCOMING / SCHEDULED RIDES */}
-          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Clock size={20} className="text-[#2FCA71]" /> Scheduled
-            </h2>
+          <div className="mb-6 relative z-10">
+            <span className="text-4xl font-extrabold tracking-tight">৳1,250</span>
+            <div className="text-sm text-gray-400 mt-1 font-medium bg-gray-800 inline-block px-2.5 py-1 rounded-md">Includes ৳350 Ride Credits</div>
+          </div>
 
-            {SCHEDULED_RIDES.length > 0 ? (
-              <div className="space-y-4">
-                {SCHEDULED_RIDES.map(ride => (
-                  <div key={ride.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div className="font-bold text-[#2FCA71] mb-2">{ride.date}</div>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400" /> {ride.pickup}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#2FCA71]" /> {ride.dropoff}
-                    </div>
+          <div className="flex gap-2 relative z-10">
+            <Link href="/dashboard/passenger/wallet" className="flex-1 bg-[#2FCA71] hover:bg-[#25A65B] text-white text-center font-bold py-2.5 rounded-xl transition">
+              Add Money
+            </Link>
+            <Link href="/dashboard/passenger/wallet" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-center font-bold py-2.5 rounded-xl transition">
+              History
+            </Link>
+          </div>
+        </div>
 
-                    <div className="flex gap-2">
-                      <button className="flex-1 bg-white border border-gray-200 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition">View Details</button>
-                      <button className="flex-1 bg-red-50 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-100 transition">Cancel</button>
-                    </div>
+        {/* SECTION 4: UPCOMING / SCHEDULED RIDES */}
+        <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Clock size={20} className="text-[#2FCA71]" /> Scheduled
+          </h2>
+
+          {SCHEDULED_RIDES.length > 0 ? (
+            <div className="space-y-4">
+              {SCHEDULED_RIDES.map(ride => (
+                <div key={ride.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="font-bold text-[#2FCA71] mb-2">{ride.date}</div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-400" /> {ride.pickup}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 text-center border-dashed border-2">
-                <span className="text-gray-400 font-medium">No upcoming rides scheduled.</span>
-              </div>
-            )}
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#2FCA71]" /> {ride.dropoff}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button className="flex-1 bg-white border border-gray-200 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition">View Details</button>
+                    <button className="flex-1 bg-red-50 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-100 transition">Cancel</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 text-center border-dashed border-2">
+              <span className="text-gray-400 font-medium">No upcoming rides scheduled.</span>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 7: PROMOTIONS / OFFERS */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-blue-600 text-white rounded-3xl p-6 border border-blue-500 shadow-xl shadow-blue-500/20 relative overflow-hidden"
+        >
+          <div className="absolute right-[-20px] top-[-20px] text-blue-500 opacity-50 rotate-12">
+            <TicketPercent size={120} />
           </div>
 
-          {/* SECTION 7: PROMOTIONS / OFFERS */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-blue-600 text-white rounded-3xl p-6 border border-blue-500 shadow-xl shadow-blue-500/20 relative overflow-hidden"
-          >
-            <div className="absolute right-[-20px] top-[-20px] text-blue-500 opacity-50 rotate-12">
-              <TicketPercent size={120} />
-            </div>
+          <div className="relative z-10">
+            <span className="inline-block px-2.5 py-1 bg-white/20 rounded-md text-xs font-bold uppercase tracking-wider mb-3">Limited Offer</span>
+            <h3 className="text-xl font-bold leading-tight mb-2">Get 20% off your next ride</h3>
+            <p className="text-blue-100 text-sm mb-4 font-medium">Use code <span className="font-mono bg-white/20 px-1 py-0.5 rounded text-white">ONWAY20</span> at checkout</p>
 
-            <div className="relative z-10">
-              <span className="inline-block px-2.5 py-1 bg-white/20 rounded-md text-xs font-bold uppercase tracking-wider mb-3">Limited Offer</span>
-              <h3 className="text-xl font-bold leading-tight mb-2">Get 20% off your next ride</h3>
-              <p className="text-blue-100 text-sm mb-4 font-medium">Use code <span className="font-mono bg-white/20 px-1 py-0.5 rounded text-white">ONWAY20</span> at checkout</p>
+            <Link href="/dashboard/passenger/wallet" className="w-full inline-block text-center bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition shadow-sm">
+              Apply Promo
+            </Link>
+          </div>
+        </motion.div>
 
-              <Link href="/dashboard/passenger/wallet" className="w-full inline-block text-center bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition shadow-sm">
-                Apply Promo
-              </Link>
-            </div>
-          </motion.div>
+      </div>
 
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          <FeatureCard
-            icon={<Car />}
-            title="Book a Ride"
-            desc="Request a car instantly or schedule for later with your preferred driver."
-            href="/dashboard/passenger/book-ride"
-            color="#2FCA71"
-          />
-          <FeatureCard
-            icon={<MapPin />}
-            title="Live Tracking"
-            desc="Keep an eye on your journey with real-time GPS tracking and ETAs."
-            href="/dashboard/passenger/active-ride"
-            color="#3b82f6"
-          />
-          <FeatureCard
-            icon={<Wallet />}
-            title="Manage Wallet"
-            desc="Add funds, view transaction history, and pay for your rides effortlessly."
-            href="/dashboard/passenger/wallet"
-            color="#8b5cf6"
-          />
-          <FeatureCard
-            icon={<Clock />}
-            title="Trip History"
-            desc="Detailed history of all your previous journeys and payments recorded."
-            href="/dashboard/passenger/ride-history"
-            color="#f59e0b"
-          />
-          <FeatureCard
-            icon={<Shield />}
-            title="Safety Protocols"
-            desc="Configure emergency contacts and ride safety features for peace of mind."
-            href="#"
-            color="#ef4444"
-          />
-          <FeatureCard
-            icon={<Headphones />}
-            title="24/7 Concierge"
-            desc="Premium support whenever you need assistance with your journeys."
-            href="#"
-            color="#0ea5e9"
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        <FeatureCard
+          icon={<Car />}
+          title="Book a Ride"
+          desc="Request a car instantly or schedule for later with your preferred driver."
+          href="/dashboard/passenger/book-ride"
+          color="#2FCA71"
+        />
+        <FeatureCard
+          icon={<MapPin />}
+          title="Live Tracking"
+          desc="Keep an eye on your journey with real-time GPS tracking and ETAs."
+          href="/dashboard/passenger/active-ride"
+          color="#3b82f6"
+        />
+        <FeatureCard
+          icon={<Wallet />}
+          title="Manage Wallet"
+          desc="Add funds, view transaction history, and pay for your rides effortlessly."
+          href="/dashboard/passenger/wallet"
+          color="#8b5cf6"
+        />
+        <FeatureCard
+          icon={<Clock />}
+          title="Trip History"
+          desc="Detailed history of all your previous journeys and payments recorded."
+          href="/dashboard/passenger/ride-history"
+          color="#f59e0b"
+        />
+        <FeatureCard
+          icon={<Shield />}
+          title="Safety Protocols"
+          desc="Configure emergency contacts and ride safety features for peace of mind."
+          href="#"
+          color="#ef4444"
+        />
+        <FeatureCard
+          icon={<Headphones />}
+          title="24/7 Concierge"
+          desc="Premium support whenever you need assistance with your journeys."
+          href="#"
+          color="#0ea5e9"
+        />
+      </div>
       {/* 🔍 SEARCHING OVERLAY */}
       <AnimatePresence>
         {isSearching && (

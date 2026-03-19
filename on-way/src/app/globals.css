@@ -188,8 +188,10 @@ html {
   backdrop-filter: blur(2px);
   z-index: 9999 !important;
 }
+
 .animated-btn:hover .circle {
-  transform: translate(-50%, -50%) scale(1.15); /* slightly bigger = smoother feel */
-  
+  transform: translate(-50%, -50%) scale(1.15);
+  /* slightly bigger = smoother feel */
+
   opacity: 1;
 }

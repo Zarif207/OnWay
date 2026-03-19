@@ -23,7 +23,10 @@ import {
   Tag,
   Settings,
   HelpCircle,
-  Bell
+  Bell,
+  Bike,
+  Users,
+  MapPin
 } from "lucide-react";
 import logoImage from "../../../public/icon2.png";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -38,11 +41,16 @@ const NAV_ITEMS = [
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
 
+const HELP_ITEMS = [
+  { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
+  { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
+  { label: "Walk-In Support Centers", href: "/help?tab=walkin", icon: MapPin, desc: "Find a support center" },
+];
+
 const MORE_ITEMS = [
   { label: "Guidelines", href: "/rideSharing-guidlines", icon: FileText, desc: "Ride sharing standards" },
   { label: "Safety", href: "/Safety-Coverage", icon: ShieldCheck, desc: "Our protection policy" },
   { label: "Pricing", href: "/pricing", icon: Tag, desc: "Fare and rate details" },
-  { label: "Help Center", href: "/help", icon: HelpCircle, desc: "Support and FAQs" },
 ];
 
 // ================= SUB-COMPONENTS =================
@@ -79,7 +87,9 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const helpRef = useRef(null);
 
   const { data: session } = useSession();
   const { user } = useCurrentUser();
@@ -102,6 +112,9 @@ const Navbar = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsMoreOpen(false);
+      }
+      if (helpRef.current && !helpRef.current.contains(event.target)) {
+        setIsHelpOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -186,13 +199,64 @@ const Navbar = () => {
                     : "opacity-0 invisible translate-y-4 scale-95 lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:scale-100"
                   }`}
               >
-                <div className="bg-white rounded-3xl shadow-xl p-4 border border-gray-100 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent pointer-events-none" />
+                <div className="bg-white rounded-3xl shadow-xl p-4 border border-gray-100 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent pointer-events-none rounded-3xl" />
                   <div className="relative flex flex-col gap-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2 px-3">Expertise</p>
                     {MORE_ITEMS.map((item) => (
                       <DropdownItem key={item.href} item={item} onClick={() => setIsMoreOpen(false)} />
                     ))}
+
+                    {/* Help Center with right-side flyout */}
+                    <div
+                      className="relative"
+                      ref={helpRef}
+                      onMouseEnter={() => setIsHelpOpen(true)}
+                      onMouseLeave={() => setIsHelpOpen(false)}
+                    >
+                      <div className="group flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 transition-all duration-300 cursor-pointer">
+                        <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors duration-300">
+                          <HelpCircle size={20} className="text-gray-500 group-hover:text-green-600 transition-colors" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <h4 className="text-sm font-semibold text-gray-900 group-hover:text-green-600 transition-colors">Help Center</h4>
+                          <p className="text-[11px] text-gray-500 font-medium">Support and FAQs</p>
+                        </div>
+                        <ChevronDown size={14} className="text-gray-400 -rotate-90" />
+                      </div>
+
+                      {/* Right flyout */}
+                      <AnimatePresence>
+                        {isHelpOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -8 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-full top-0 pl-2 z-[120]"
+                          >
+                            <div className="bg-white rounded-2xl shadow-xl p-3 border border-gray-100 w-64 flex flex-col gap-1">
+                              {HELP_ITEMS.map((item) => (
+                                <Link
+                                  key={item.href}
+                                  href={item.href}
+                                  onClick={() => { setIsMoreOpen(false); setIsHelpOpen(false); }}
+                                  className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-green-50 transition-all duration-200"
+                                >
+                                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors">
+                                    <item.icon size={16} className="text-gray-500 group-hover:text-green-600 transition-colors" />
+                                  </div>
+                                  <div>
+                                    <h4 className="text-xs font-semibold text-gray-800 group-hover:text-green-600 transition-colors">{item.label}</h4>
+                                    <p className="text-[10px] text-gray-400">{item.desc}</p>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -344,6 +408,45 @@ const Navbar = () => {
                     </Link>
                   </motion.div>
                 ))}
+
+                {/* Mobile Help Center */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + (NAV_ITEMS.length + MORE_ITEMS.length) * 0.05 }}
+                >
+                  <button
+                    onClick={() => setIsHelpOpen(!isHelpOpen)}
+                    className="w-full flex items-center gap-4 px-6 py-3 text-sm font-bold text-gray-500 hover:text-primary transition-colors"
+                  >
+                    <HelpCircle size={18} />
+                    <span className="flex-1 text-left">Help Center</span>
+                    <ChevronDown size={14} className={`transition-transform duration-300 ${isHelpOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isHelpOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden ml-6 border-l-2 border-green-100 pl-3"
+                      >
+                        {HELP_ITEMS.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-primary transition-colors"
+                          >
+                            <item.icon size={16} />
+                            {item.label}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               </div>
 
               <div className="mt-auto pt-10">

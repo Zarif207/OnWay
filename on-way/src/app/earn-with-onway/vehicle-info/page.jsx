@@ -109,8 +109,8 @@ export default function VehicleInfoPage() {
       }));
 
       submitData.append("identity", JSON.stringify({
-        type: updatedForm.identityType || "NID (National ID)",
-        number: updatedForm.identityNumber || updatedForm.extractedData?.documentNumber || "000",
+        type: updatedForm.identity?.type || updatedForm.identityType || "NID (National ID)",
+        number: updatedForm.identity?.number || updatedForm.identityNumber || updatedForm.extractedData?.documentNumber || "000",
       }));
 
       submitData.append("vehicle", JSON.stringify({
@@ -324,14 +324,28 @@ export default function VehicleInfoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 lg:mb-8">
                   <div>
                     <label className="block text-xs font-bold text-[#0A1F3D] uppercase tracking-wider mb-2">Driving License Number <span className="text-red-500">*</span></label>
-                    <input
-                      placeholder="DHXXXXXXXXX"
-                      /* If license is uploaded, validation is passed, but it's still a required string */
-                      {...register("licenseNumber", {
-                        required: !formData.documents?.license?.uploaded ? "License Number is required" : false
-                      })}
-                      className={`w-full rounded-xl px-4 py-3.5 bg-white text-[#0A1F3D] border outline-none transition focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] ${errors.licenseNumber ? "border-red-400" : "border-gray-200"}`}
-                    />
+                    {formData?.documents?.license?.uploaded ? (
+                      <div className="w-full rounded-xl px-4 py-3.5 bg-[#f0fdf4] border border-[#bbf7d0] text-green-700 font-semibold text-sm flex items-center shadow-sm">
+                        Driving License Already Submitted ✅
+                      </div>
+                    ) : (
+                      <input
+                        placeholder="DHXXXXXXXXX"
+                        value={formData?.licenseNumber || ""}
+                        readOnly={!!formData?.documents?.license?.uploaded}
+                        {...register("licenseNumber", {
+                          required: !formData?.documents?.license?.uploaded ? "License Number is required" : false
+                        })}
+                        onChange={(e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            licenseNumber: e.target.value,
+                          }));
+                          setValue("licenseNumber", e.target.value, { shouldValidate: true });
+                        }}
+                        className={`w-full rounded-xl px-4 py-3.5 bg-white text-[#0A1F3D] border outline-none transition focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] ${errors.licenseNumber ? "border-red-400" : "border-gray-200"}`}
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[#0A1F3D] uppercase tracking-wider mb-2">Vehicle Reg. Number <span className="text-red-500">*</span></label>

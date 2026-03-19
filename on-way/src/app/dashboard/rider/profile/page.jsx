@@ -178,6 +178,9 @@ export default function ProfilePage() {
         if (file) {
             const fd = new FormData();
             fd.append(docType, file);
+            if (docType === "drivingLicense" || docType === "drivingLicenseFile") {
+                fd.append("documentType", "license");
+            }
             uploadDocsMutation.mutate(fd);
         }
     };

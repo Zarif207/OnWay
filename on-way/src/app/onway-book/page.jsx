@@ -10,8 +10,9 @@ import { reverseGeocode } from "@/utils/geocodingService";
 import { useRouter } from "next/navigation";
 import LocationInput from "@/components/LocationInput";
 import NetworkStatus from "@/components/NetworkStatus";
-import { MapPin, Clock, Route, DollarSign, Loader2, Thermometer, CloudRain, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle } from "lucide-react";
 import '@/styles/location-dropdown.css';
+import { getDemandMultiplier } from "@/utils/demandService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -50,62 +51,95 @@ export default function BookRidePage() {
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState("pickup");
   const [onlineRiders, setOnlineRiders] = useState({});
+  const { data: session } = useSession(); 
+
 
   const router = useRouter();
 
-  // --- 1. Weather Surge Logic  ---
-  const checkWeatherSurge = useCallback(async (lat, lon) => {
+  // --- 1. Comprehensive Surge Manager ---
+  const updateSurgeAndFare = useCallback(async (lat, lon, address = "") => {
     const API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
     if (!API_KEY) return;
 
+    let weatherCondition = "Clear";
+    let rainMm = 0;
+    let visibility = 10000;
+    let temp = 30;
+    let humidity = 60;
+    let trafficRatio = 1.0;
+
     try {
+      // ── Weather API ──
       const res = await axios.get(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
       );
 
-      const condition = res.data.weather[0].main;
-      const temp = res.data.main.temp;
-      const humidity = res.data.main.humidity;
-      const visibility = res.data.visibility;
+      weatherCondition = res.data.weather[0].main;
+      temp = res.data.main.temp;
+      humidity = res.data.main.humidity;
+      visibility = res.data.visibility;
+      rainMm = res.data.rain?.["1h"] ?? 0;
 
-      let surgeData = { multiplier: 1.0, label: "Normal", icon: "☀️" };
-
-      // 1. Storm Surge 
-      if (condition === "Thunderstorm" || condition === "Squall") {
-        surgeData = { multiplier: 1.5, label: "Storm Surge", icon: "⛈️" };
-      }
-      // 2. Heavy/Normal Rain
-      else if (condition === "Rain" || condition === "Drizzle") {
-        surgeData = { multiplier: 1.3, label: "Rainy Surge", icon: "🌧️" };
-      }
-      // 3. Extreme Fog 
-      else if (visibility < 1000 || condition === "Fog" || condition === "Mist") {
-        surgeData = { multiplier: 1.2, label: "Foggy Surge", icon: "🌫️" };
-      }
-      // 4. Heatwave 
-      else if (temp > 36 && humidity > 70) {
-        surgeData = { multiplier: 1.15, label: "Heatwave Surge", icon: "🔥" };
-      }
-      // 5. Normal High Temp
-      else if (temp > 38) {
-        surgeData = { multiplier: 1.1, label: "High Temp Surge", icon: "🌡️" };
-      }
-
-      setSurge(surgeData);
-      console.log(`Weather: ${condition}, Temp: ${temp}, Visibility: ${visibility}, Surge: ${surgeData.label}`);
+      console.log(`Weather: ${weatherCondition}, Visibility: ${visibility}, Temp: ${temp}, Rain: ${rainMm}mm`);
 
     } catch (err) {
-      console.error("Weather API error:", err);
-      setSurge({ multiplier: 1.0, label: "Normal", icon: "☀️" });
+      console.error("Weather API error, using default multiplier:", err);
     }
+
+    try {
+      // ── TomTom Traffic API ──
+      const TOMTOM_KEY = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
+      if (TOMTOM_KEY) {
+        const trafficRes = await axios.get(
+          `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json`,
+          {
+            params: {
+              point: `${lat},${lon}`,
+              unit: "KMPH",
+              key: TOMTOM_KEY,
+            },
+            validateStatus: (status) => status === 200,
+          }
+        );
+
+        if (trafficRes?.data?.flowSegmentData) {
+          const { currentSpeed, freeFlowSpeed } = trafficRes.data.flowSegmentData;
+          if (freeFlowSpeed > 0) {
+            trafficRatio = currentSpeed / freeFlowSpeed;
+            console.log(`Traffic: ${currentSpeed}km/h of ${freeFlowSpeed}km/h = ratio ${trafficRatio.toFixed(2)}`);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Traffic API unavailable for this location, skipping.");
+    }
+
+    const finalSurge = getDemandMultiplier({
+      pickupAddress: address,
+      weatherCondition,
+      rainMm,
+      visibility,
+      temp,
+      humidity,
+      trafficRatio,
+    });
+
+    setSurge({
+      multiplier: finalSurge.value,
+      label: finalSurge.reasons[0] || "Normal",
+      reasons: finalSurge.reasons,
+      icon: finalSurge.value > 1.3 ? "⚡" : finalSurge.value > 1.0 ? "🌩️" : "☀️",
+      isSurge: finalSurge.isSurge
+    });
   }, []);
 
-  // Fetch surge whenever pickup location changes
+  // Fetch surge whenever pickup location or address changes
   useEffect(() => {
     if (pickupLocation) {
-      checkWeatherSurge(pickupLocation.lat, pickupLocation.lon);
+      const currentAddress = pickupLocation.name || pickupQuery || "";
+      updateSurgeAndFare(pickupLocation.lat, pickupLocation.lon, currentAddress);
     }
-  }, [pickupLocation, checkWeatherSurge]);
+  }, [pickupLocation, updateSurgeAndFare, pickupQuery]);
 
   // ---2. Unified Fare Calculation ---
   useEffect(() => {
@@ -283,25 +317,41 @@ export default function BookRidePage() {
       return;
     }
 
+    if (!session?.user?.id) {
+      setError("Please login to book a ride.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
     try {
-      const passengerId = session?.user?.id || "anonymous_passenger";
-
       const bookingData = {
-        pickupLocation: { name: pickupLocation.name, lat: pickupLocation.lat, lng: pickupLocation.lon },
-        dropoffLocation: { name: dropoffLocation.name, lat: dropoffLocation.lat, lng: dropoffLocation.lon },
-        routeGeometry: routeGeometry.map((coord) => ({ lat: coord[0], lng: coord[1] })),
+        passengerId: session.user.id,                    // ← এটা add করো
+        pickupLocation: {
+          address: pickupLocation.name,                // ← address field add করো
+          name: pickupLocation.name,
+          lat: pickupLocation.lat,
+          lng: pickupLocation.lon,
+        },
+        dropoffLocation: {
+          address: dropoffLocation.name,               // ← address field add করো
+          name: dropoffLocation.name,
+          lat: dropoffLocation.lat,
+          lng: dropoffLocation.lon,
+        },
+        routeGeometry: routeGeometry.map((coord) => ({
+          lat: coord[0],
+          lng: coord[1],
+        })),
         distance,
         duration,
         price: fare,
         rideType,
         surgeApplied: surge.multiplier > 1.0,
-        bookingStatus: "pending",
       };
 
-      console.log("📤 Submitting booking request to backend...", bookingData);
+      console.log("📤 Submitting booking:", bookingData);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
       const response = await fetch(`${apiUrl}/bookings`, {
@@ -311,14 +361,17 @@ export default function BookRidePage() {
       });
 
       const result = await response.json();
+
       if (result.success) {
-        console.log("✅ Booking created successfully:", result.booking._id);
-        // Redirect to passenger dashboard with searching state
-        router.push(`/dashboard/passenger?searching=true&bookingId=${result.booking._id}`);
+        console.log("✅ Booking created:", result.booking._id);
+        router.push(
+          `/dashboard/passenger?searching=true&bookingId=${result.booking._id}`
+        );
       } else {
         setError(result.message || "Failed to confirm booking.");
       }
     } catch (err) {
+      console.error("Booking error:", err);
       setError("An error occurred while confirming your booking.");
     } finally {
       setIsSubmitting(false);
@@ -330,10 +383,15 @@ export default function BookRidePage() {
       <NetworkStatus />
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
 
-        {/* LEFT SIDE: Enhanced Form Section */}
-        <div className={`form-container w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''
-          }`}>
-          {/* Global Error Display */}
+        {/* LEFT SIDE: Form Section */}
+        <div className={`form-container w-full lg:w-100 xl:w-112.5 shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''}`}>
+
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
+            <p className="text-gray-500 text-sm">Demand prediction & Dynamic pricing based on weather.</p>
+          </div>
+
+
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
@@ -407,15 +465,31 @@ export default function BookRidePage() {
             </div>
           </div>
 
-          {/* Dynamic Surge Badge */}
+          {/* Dynamic Surge Badge Section */}
           {surge.multiplier > 1.0 && (
-            <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl animate-in fade-in slide-in-from-top-2 duration-500">
-              <div className="bg-orange-500 p-2 rounded-lg text-white">
-                <span className="text-lg">{surge.icon}</span>
+            <div className="flex flex-col gap-2 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-orange-500 p-2 rounded-lg text-white shadow-sm">
+                    <span className="text-lg">{surge.icon}</span>
+                  </div>
+                  <div>
+                    <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider">High Demand detected</p>
+                    <p className="text-gray-900 text-sm font-bold">{surge.label}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-orange-600 font-black text-lg">x{surge.multiplier}</span>
+                </div>
               </div>
-              <div>
-                <p className="text-orange-400 text-[10px] font-bold uppercase tracking-wider">Demand is high</p>
-                <p className="text-gray-900 text-sm font-semibold">{surge.label} (x{surge.multiplier})</p>
+
+              {/* All reasons as small tags */}
+              <div className="flex gap-1.5 flex-wrap border-t border-orange-200/30 pt-2 mt-1">
+                {surge.reasons?.map((reason, index) => (
+                  <span key={index} className="text-[9px] bg-white/50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200">
+                    • {reason}
+                  </span>
+                ))}
               </div>
             </div>
           )}

@@ -139,10 +139,13 @@ export default function SupportAgentDashboard() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#2FCA71]">
-          Support Agent Dashboard 👋
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-3 bg-[#2FCA71] rounded-full" />
+          <span className="text-[#2FCA71] text-sm font-bold tracking-[0.2em] uppercase">Operational Center</span>
+        </div>
+        <h1 className="text-6xl md:text-7xl font-black text-[#0a1628] leading-none tracking-tight">
+          Dashboard
         </h1>
-        <p className="text-gray-600 mt-2">Monitor and manage support activities</p>
       </div>
 
       {/* Charts Row 1 - Complaints & SOS */}

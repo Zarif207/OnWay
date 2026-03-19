@@ -47,6 +47,10 @@ export function EarnRegistrationProvider({ children }) {
     serviceProvide: [],
     identityType: "NID",
     identityNumber: "",
+    identity: {
+      type: "NID",
+      number: "",
+    },
     referralCode: "",
     riderImage: null,
     cities: [],
@@ -56,6 +60,7 @@ export function EarnRegistrationProvider({ children }) {
     // Step 3: Vehicle Info
     brand: "",
     model: "",
+    licenseNumber: "",
     registrationRegion: "Dhaka",
     registrationCategory: "Metric",
     registrationDigits: "",

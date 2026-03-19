@@ -21,7 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Sparkles } from "lucide-react";
 import DriverAnimation from "../components/DriverAnimation/DriverAnimation";
-import DocumentOCR from "@/components/DocumentOCR/DocumentOCR";
+import DocumentOCR from "@/app/components/DocumentOCR/DocumentOCR";
 
 export default function EarnWithOnWayPage() {
   const router = useRouter();
@@ -138,79 +138,64 @@ export default function EarnWithOnWayPage() {
   };
 
   const handleExtractionComplete = (results) => {
-    // Log the incoming extraction results for debugging
-    console.log("SMART OCR RESULTS:", results);
-    console.log("DOC TYPE:", results.type);
-    console.log("PARSED:", results.extractedData);
+    console.log("OCR Extraction Results:", results);
+
+    // Determine typeKey from detected type
+    const typeKey = results.type?.toLowerCase().includes("license") ? "license"
+      : results.type?.toLowerCase().includes("passport") ? "passport"
+        : "nid";
+
+    const extracted = results.extractedData;
 
     // Use setFormData directly for function-based merging
     setFormData((prev) => {
-      // Correct Mapping for Step 3 storage & logic
-      const rawType = results.type?.toLowerCase() || "";
-      const typeKey = (rawType.includes("license") || rawType.includes("licence")) ? "license"
-        : rawType.includes("passport") ? "passport"
-          : "nid";
-
-      // User requested explicit mapping to these strings
-      const displayType = typeKey === "license" ? "Driving License"
-        : typeKey === "passport" ? "Passport"
-          : "NID";
+      let idType = "NID";
+      if (typeKey === "nid") idType = "NID (National ID)";
+      if (typeKey === "passport") idType = "Passport";
+      if (typeKey === "license") idType = "Driving License";
 
       const updates = {
-        documentType: displayType,
-        documentImage: results.image, // Base64 from DocumentOCR
+        documentType: idType,
         documentFile: results.file,
+        extractedData: extracted,
         documents: {
           ...prev.documents,
-          [typeKey]: { uploaded: true, image: results.image } // Persistent Base64
+          type: typeKey,
+          [typeKey]: {
+            uploaded: true,
+            image: results.image, // Base64
+            extracted: extracted,
+          },
         },
-        documentDetails: {
-          ...prev.documentDetails,
-          ...results.extractedData,
+        identity: {
+          type: idType,
+          number: extracted.documentNumber || ""
         },
+        profile: {
+          ...prev.profile,
+          firstName: extracted.firstName || "",
+          lastName: extracted.lastName || "",
+          dateOfBirth: extracted.dateOfBirth || "",
+          bloodGroup: extracted.bloodGroup || null,
+        }
       };
 
-      // Atomic sync to useForm and formData
-      if (results.extractedData.firstName) {
-        setValue("firstName", results.extractedData.firstName, { shouldValidate: true });
-        updates.firstName = results.extractedData.firstName;
-      }
-      if (results.extractedData.lastName) {
-        setValue("lastName", results.extractedData.lastName, { shouldValidate: true });
-        updates.lastName = results.extractedData.lastName;
-      }
+      // Keep flat values for any older components that rely on them
+      if (extracted.firstName) updates.firstName = extracted.firstName;
+      if (extracted.lastName) updates.lastName = extracted.lastName;
+      if (extracted.gender) updates.gender = extracted.gender;
+      if (extracted.bloodGroup) updates.bloodGroup = extracted.bloodGroup;
+      if (extracted.dateOfBirth) updates.dateOfBirth = extracted.dateOfBirth;
+      if (extracted.documentNumber) updates.identityNumber = extracted.documentNumber;
+      updates.identityType = idType;
 
-      // Sync Blood Group
-      if (results.extractedData.bloodGroup) {
-        updates.bloodGroup = results.extractedData.bloodGroup;
-      }
-
-      // Map Identity Details (+ VALIDATION LAYER)
-      let idNum = results.extractedData.documentNumber;
-
-      // CRITICAL: Reject if missing or has NO numbers
-      if (!idNum || !/[0-9]/.test(idNum)) {
-        console.warn("Invalid ID detected (missing numbers):", idNum);
-        idNum = "";
-      }
-
-      if (idNum) {
-        updates.identityNumber = idNum;
-        updates.identityType = displayType;
-
-        setValue("identityType", displayType, { shouldValidate: true });
-        setValue("identityNumber", idNum, { shouldValidate: true });
-      }
-
-      if (results.extractedData.dateOfBirth) {
-        updates.dateOfBirth = results.extractedData.dateOfBirth;
-        setValue("dateOfBirth", results.extractedData.dateOfBirth, { shouldValidate: true });
-      }
-
-      const finalState = { ...prev, ...updates };
-      console.log("SMART OVERHAUL: Documents & Data Synced", finalState);
-      return finalState;
+      return { ...prev, ...updates };
     });
+
+    // Explicitly update react-hook-form fields so validation kicks in
+    setValue("firstName", extracted.firstName || "", { shouldValidate: true });
+    setValue("lastName", extracted.lastName || "", { shouldValidate: true });
+    setValue("identityNumber", extracted.documentNumber || "", { shouldValidate: true });
   };
 
   const onSubmit = (data) => {
@@ -307,171 +292,168 @@ after:blur-2xl after:opacity-20 after:-z-10"
       {/* Main Content Section */}
       <div className="w-full max-w-7xl mx-auto px-4 md:px-8 -mt-12 lg:-mt-20 relative z-30 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20">
         {/* Left Column: Register Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-12 xl:col-span-5 relative z-20 mt-0 lg:-mt-24"
-        >
-          {/* 3D Glassmorphic Form Container */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_30px_60px_-15px_rgba(49,202,113,0.15)] p-6 md:p-8 lg:p-10 border border-white/50 relative overflow-hidden">
-            {/* Subtle inner highlight for glass edge */}
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/60 pointer-events-none" />
-
-            <div className="relative z-10 mb-8 space-y-2">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#001820]">
-                Register Now
-              </h2>
-              <p className="text-sm text-gray-400">
-                Tell us a bit about you and where you ride. You can adjust these
-                details later from your profile.
-              </p>
-            </div>
-
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-5"
+        <AnimatePresence>
+          {selectedModel && (
+            <motion.div
+              initial={{ opacity: 0, x: -50, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: "auto" }}
+              exit={{ opacity: 0, x: -50, width: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:col-span-12 xl:col-span-5 relative z-20 mt-0 lg:-mt-24"
             >
-              {!selectedModel && (
-                <p className="text-xs text-red-500 text-center mb-2">
-                  Please select a ride category and model to continue.
-                </p>
-              )}
+              {/* 3D Glassmorphic Form Container */}
+              <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_30px_60px_-15px_rgba(49,202,113,0.15)] p-6 md:p-8 lg:p-10 border border-white/50 relative overflow-hidden">
+                {/* Subtle inner highlight for glass edge */}
+                <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/60 pointer-events-none" />
 
-              {/* Document OCR Auto-Extraction */}
-              <div className="mb-6 pb-6 border-b border-gray-100 relative z-10">
-                <div className="flex items-center gap-2 mb-4 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
-                  <Sparkles size={14} className="text-[var(--color-primary)]" />
-                  <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Fast Track Registration</span>
+                <div className="relative z-10 mb-8 space-y-2">
+                  <h2 className="text-3xl md:text-4xl font-extrabold text-[#001820]">
+                    Register Now
+                  </h2>
+                  <p className="text-sm text-gray-400">
+                    Tell us a bit about you and where you ride. You can adjust these
+                    details later from your profile.
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-[#001820] mb-1">Fill Automatically with ID</h3>
-                <p className="text-xs text-gray-500 mb-5">Upload your document to auto-fill the form using AI OCR.</p>
 
-                <DocumentOCR onExtractionComplete={handleExtractionComplete} />
-              </div>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="flex flex-col gap-5"
+                >
+                  {/* Document OCR Auto-Extraction */}
+                  <div className="mb-6 pb-6 border-b border-gray-100 relative z-10">
+                    <div className="flex items-center gap-2 mb-4 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
+                      <Sparkles size={14} className="text-[var(--color-primary)]" />
+                      <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Fast Track Registration</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-[#001820] mb-1">Fill Automatically with ID</h3>
+                    <p className="text-xs text-gray-500 mb-5">Upload your document to auto-fill the form using AI OCR.</p>
 
-              {/* Name Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
-                    First Name <span className="text-[#2FCA71]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName || ""}
-                    {...register("firstName", {
-                      required: "First Name is required",
-                    })}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateFormData({ firstName: val });
-                      setValue("firstName", val, { shouldValidate: true });
-                    }}
-                    className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName || ""}
-                    {...register("lastName")}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateFormData({ lastName: val });
-                      setValue("lastName", val, { shouldValidate: true });
-                    }}
-                    className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
-                  />
-                </div>
-              </div>
+                    <DocumentOCR onExtractionComplete={handleExtractionComplete} />
+                  </div>
 
-              {/* Mobile Number */}
-              <div className="flex flex-col gap-2 relative z-10">
-                <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
-                  Mobile Number <span className="text-[#2FCA71]">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                    +880
-                  </span>
-                  <input
-                    type="tel"
-                    value={formData.mobileNumber || ""}
-                    {...register("mobileNumber", {
-                      required: "Mobile Number is required",
-                      pattern: {
-                        value: /^[0-9]+$/,
-                        message: "Please enter a valid number",
-                      },
-                    })}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateFormData({ mobileNumber: val });
-                      setValue("mobileNumber", val, { shouldValidate: true });
-                    }}
-                    className="w-full rounded-xl pl-16 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
-                  />
-                </div>
-              </div>
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
+                        First Name <span className="text-[#2FCA71]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.firstName || ""}
+                        {...register("firstName", {
+                          required: "First Name is required",
+                        })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ firstName: val });
+                          setValue("firstName", val, { shouldValidate: true });
+                        }}
+                        className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName || ""}
+                        {...register("lastName")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ lastName: val });
+                          setValue("lastName", val, { shouldValidate: true });
+                        }}
+                        className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                      />
+                    </div>
+                  </div>
 
-              {/* Email */}
-              <div className="flex flex-col gap-2 relative z-10">
-                <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
-                  Email <span className="text-[#2FCA71]">*</span>
-                </label>
+                  {/* Mobile Number */}
+                  <div className="flex flex-col gap-2 relative z-10">
+                    <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
+                      Mobile Number <span className="text-[#2FCA71]">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                        +880
+                      </span>
+                      <input
+                        type="tel"
+                        value={formData.mobileNumber || ""}
+                        {...register("mobileNumber", {
+                          required: "Mobile Number is required",
+                          pattern: {
+                            value: /^[0-9]+$/,
+                            message: "Please enter a valid number",
+                          },
+                        })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ mobileNumber: val });
+                          setValue("mobileNumber", val, { shouldValidate: true });
+                        }}
+                        className="w-full rounded-xl pl-16 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                      />
+                    </div>
+                  </div>
 
-                <div className="relative">
-                  <input
-                    type="email"
-                    placeholder="example@email.com"
-                    value={formData.email || ""}
-                    {...register("email", {
-                      required: "Email is required",
-                      pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: "Please enter a valid email address",
-                      },
-                    })}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateFormData({ email: val });
-                      setValue("email", val, { shouldValidate: true });
-                    }}
-                    className="w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
-                  />
-                </div>
-              </div>
+                  {/* Email */}
+                  <div className="flex flex-col gap-2 relative z-10">
+                    <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
+                      Email <span className="text-[#2FCA71]">*</span>
+                    </label>
 
-              {/* Location */}
-              <div className="flex flex-col gap-2 relative z-10">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
-                    District <span className="text-[#2FCA71]">*</span>
-                  </label>
-                  <select
-                    {...register("district", {
-                      required: "District is required",
-                    })}
-                    value={selectedDistrict}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSelectedDistrict(value);
-                      setValue("district", value);
-                      setValue("city", "");
-                    }}
-                    className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50 appearance-none"
-                  >
-                    {Object.keys(DISTRICT_OPTIONS).map((district) => (
-                      <option key={district} value={district}>
-                        {district}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* <div className="flex flex-col gap-2">
+                    <div className="relative">
+                      <input
+                        type="email"
+                        placeholder="example@email.com"
+                        value={formData.email || ""}
+                        {...register("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                            message: "Please enter a valid email address",
+                          },
+                        })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ email: val });
+                          setValue("email", val, { shouldValidate: true });
+                        }}
+                        className="w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="flex flex-col gap-2 relative z-10">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
+                        District <span className="text-[#2FCA71]">*</span>
+                      </label>
+                      <select
+                        {...register("district", {
+                          required: "District is required",
+                        })}
+                        value={selectedDistrict}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setSelectedDistrict(value);
+                          setValue("district", value);
+                          setValue("city", "");
+                        }}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50 appearance-none"
+                      >
+                        {Object.keys(DISTRICT_OPTIONS).map((district) => (
+                          <option key={district} value={district}>
+                            {district}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* <div className="flex flex-col gap-2">
                   <label className="text-[13px] font-bold text-gray-700 tracking-wide uppercase">
                     City / Area <span className="text-[#2FCA71]">*</span>
                   </label>
@@ -487,59 +469,63 @@ after:blur-2xl after:opacity-20 after:-z-10"
                     ))}
                   </select>
                 </div> */}
-              </div>
+                  </div>
 
-              {/* Submit Button */}
-              <div className="mt-4 relative z-10">
-                <button
-                  type="submit"
-                  disabled={!selectedModel}
-                  className={`w-full px-8 py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 group transition-all duration-300
+                  {/* Submit Button */}
+                  <div className="mt-4 relative z-10">
+                    <button
+                      type="submit"
+                      disabled={!selectedModel}
+                      className={`w-full px-8 py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 group transition-all duration-300
     ${selectedModel
-                      ? "bg-primary text-[var(--color-secondary)] hover:bg-[#26b861] hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_rgba(47,202,113,0.5)]"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
-                >
-                  Next Step
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="group-hover:translate-x-1 transition-transform"
-                  >
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-                <p className="text-[11px] text-gray-400 mt-4 leading-tight text-center max-w-sm mx-auto">
-                  By clicking this button, you agree to OnWay's{" "}
-                  <a
-                    href="#"
-                    className="text-gray-900 underline hover:text-[#31ca71] transition-colors"
-                  >
-                    terms and privacy policy
-                  </a>
-                  .
-                </p>
+                          ? "bg-primary text-[var(--color-secondary)] hover:bg-[#26b861] hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_rgba(47,202,113,0.5)]"
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        }`}
+                    >
+                      Next Step
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="group-hover:translate-x-1 transition-transform"
+                      >
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    <p className="text-[11px] text-gray-400 mt-4 leading-tight text-center max-w-sm mx-auto">
+                      By clicking this button, you agree to OnWay's{" "}
+                      <a
+                        href="#"
+                        className="text-gray-900 underline hover:text-[#31ca71] transition-colors"
+                      >
+                        terms and privacy policy
+                      </a>
+                      .
+                    </p>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
-        </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Right Column: Information */}
         <motion.div
+          layout
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-12 xl:col-span-7 flex flex-col gap-8 mt-4 lg:mt-16 xl:pl-8"
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className={`flex flex-col gap-8 mt-4 lg:mt-16 xl:pl-8 transition-all duration-700 w-full ${selectedModel ? 'lg:col-span-12 xl:col-span-7' : 'lg:col-span-12 xl:col-span-12 max-w-5xl mx-auto'
+            }`}
         >
           {/* category div */}
-          <div className="py-10 lg:py-15 px-0 relative">
+          <div className="py-10 lg:py-15 px-0 relative w-full">
             <h3 className="text-3xl md:text-4xl font-bold text-center text-white mb-3">
               Choose Your Ride
             </h3>

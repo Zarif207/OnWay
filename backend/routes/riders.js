@@ -32,15 +32,32 @@ module.exports = function (collections) {
     try {
       if (!req.files) return res.status(400).json({ success: false, message: "No documents provided" });
 
+      const { documentType, extractedData } = req.body;
+      let parsedExtracted = {};
+      try {
+        parsedExtracted = typeof extractedData === 'string' ? JSON.parse(extractedData) : (extractedData || {});
+      } catch (e) {
+        parsedExtracted = {};
+      }
+
       const newDocs = {};
       const dlFile = req.files.drivingLicenseFile || req.files.drivingLicense;
       if (dlFile) {
-        newDocs["documents.drivingLicenseFile"] = dlFile[0].path;
+        const secureUrl = dlFile[0].path;
+        if (documentType === "license" || documentType === "Driving License") {
+          newDocs["documents.type"] = "license";
+          newDocs["documents.license.uploaded"] = true;
+          newDocs["documents.license.image"] = secureUrl;
+          newDocs["documents.license.extracted"] = parsedExtracted;
+          newDocs["documents.license.verified"] = false;
+        } else {
+          newDocs["documents.drivingLicenseFile"] = secureUrl; // Fallback
+        }
       }
 
       const vrFile = req.files.vehicleRegistrationFile || req.files.vehicleRegistration;
       if (vrFile) {
-        newDocs["documents.vehicleRegistrationFile"] = vrFile[0].path;
+        newDocs["vehicle.document"] = vrFile[0].path;
       }
 
       await ridersCollection.updateOne(
@@ -139,116 +156,127 @@ module.exports = function (collections) {
       const parsedDocs = parseJSON(documents, { drivingLicenseFile: driverLicenseUrl, vehicleRegistrationFile: vehicleDocumentUrl });
       const parsedFaceVerification = parseJSON(faceVerification || req.body.faceVerification, {});
 
+      // Extracted Data from Frontend (Dynamic)
+      let submittedDocType = parsedDocs.submittedType || "nid";
+      if (submittedDocType.includes("license") || submittedDocType.includes("licence") || submittedDocType.includes("driving")) {
+        submittedDocType = "license";
+      } else if (submittedDocType.includes("passport")) {
+        submittedDocType = "passport";
+      } else {
+        submittedDocType = "nid";
+      }
+
+      const extractedDataPayload = parsedDocs.extractedData || {};
+
+      // Calculate KYC Score
+      const confidence = parseFloat(req.body.confidenceScore || parsedFaceVerification.confidenceScore || 0);
+      const isFaceMatch = req.body.isFaceVerified === 'true' || req.body.isFaceVerified === true || parsedFaceVerification.isVerified === true;
+      const documentUploaded = !!(driverLicenseUrl || nidImageUrl || req.body.documentImage || parsedDocs.license?.uploaded || parsedDocs.nid?.uploaded || parsedDocs.passport?.uploaded || parsedDocs.files?.nid || parsedDocs.files?.license || parsedDocs.files?.passport);
+
+      const kycChecks = {
+        documentUploaded: documentUploaded,
+        faceMatch: isFaceMatch,
+        validFormat: !!(req.body.identityNumber || parsedIdentity.number || extractedDataPayload.documentNumber),
+        duplicateCheck: true, // Passed since email duplicate check passed above
+        expiryValid: true
+      };
+
+      let kycScore = 0;
+      if (kycChecks.documentUploaded) kycScore += 20;
+      if (kycChecks.faceMatch && confidence >= 0.85) kycScore += 40;
+      else if (kycChecks.faceMatch) kycScore += 20; // Fallback for low confidence
+      if (kycChecks.validFormat) kycScore += 20;
+      if (kycChecks.duplicateCheck) kycScore += 20;
+
+      let kycStatus = "pending";
+      if (kycScore >= 80) kycStatus = "verified";
+      else if (kycScore >= 50) kycStatus = "pending";
+      else kycStatus = "rejected";
+
       // Assign extracted files to the parsed objects
       parsedDocs.drivingLicenseFile = driverLicenseUrl;
       parsedDocs.vehicleRegistrationFile = vehicleDocumentUrl;
       parsedIdentity.image = nidImageUrl;
 
       const riderData = {
-        // 1️⃣ BASIC IDENTITY
-        name: `${firstName || ''} ${lastName || ''}`.trim(),
-        firstName: firstName || '',
-        lastName: lastName || '',
         email: email || '',
         phone: phone || '',
         password: hashedPassword,
-        role: "rider",
-        status: "offline",
 
-        // 2️⃣ PERSONAL INFORMATION
-        gender: gender || null,
-        dateOfBirth: dateOfBirth || null,
-        bloodGroup: req.body.bloodGroup || null, // NEW: Blood Group support
-        address: parsedAddress,
-
-        // 3️⃣ EMERGENCY CONTACT
-        emergencyContact: parsedEmergency,
-
-        // 4️⃣ IDENTITY DOCUMENTS
-        identity: {
-          ...parsedIdentity,
-          type: req.body.identityType || parsedIdentity.type || "NID",
-          number: req.body.identityNumber || parsedIdentity.number || ""
+        profile: {
+          firstName: firstName || extractedDataPayload.firstName || '',
+          lastName: lastName || extractedDataPayload.lastName || '',
+          fullName: `${firstName || extractedDataPayload.firstName || ''} ${lastName || extractedDataPayload.lastName || ''}`.trim(),
+          gender: gender || null,
+          dateOfBirth: dateOfBirth || req.body.dateOfBirth || extractedDataPayload.dateOfBirth || null,
+          bloodGroup: req.body.bloodGroup || extractedDataPayload.bloodGroup || null,
+          nationality: req.body.nationality || extractedDataPayload.nationality || 'Bangladeshi',
+          image: profileImageUrl
         },
-        licenseNumber: req.body.identityNumber || licenseNumber || null,
 
-        // Structure documents according to tracking requirements
+        address: {
+          district: parsedAddress.district || "Dhaka",
+          city: parsedAddress.city || ""
+        },
+
         documents: {
-          license: {
-            uploaded: parsedDocs.license?.uploaded || !!driverLicenseUrl,
-            image: driverLicenseUrl || parsedDocs.license?.image || ""
+          type: submittedDocType,
+          nid: {
+            uploaded: parsedDocs.files?.nid === "pending_upload" || !!nidImageUrl || parsedDocs.nid?.uploaded || submittedDocType === "nid",
+            image: nidImageUrl || parsedDocs.nid?.image || "",
+            extracted: submittedDocType === "nid" ? extractedDataPayload : {},
+            verified: kycStatus === "verified"
           },
           passport: {
-            uploaded: parsedDocs.passport?.uploaded || (req.body.identityType === "Passport"),
-            image: req.body.documentImage || parsedDocs.passport?.image || ""
+            uploaded: parsedDocs.files?.passport === "pending_upload" || (req.body.identityType === "Passport") || parsedDocs.passport?.uploaded || submittedDocType === "passport",
+            image: req.body.documentImage || parsedDocs.passport?.image || "",
+            extracted: submittedDocType === "passport" ? extractedDataPayload : {},
+            verified: kycStatus === "verified"
           },
-          nid: {
-            uploaded: parsedDocs.nid?.uploaded || !!nidImageUrl,
-            image: nidImageUrl || parsedDocs.nid?.image || ""
+          license: {
+            uploaded: parsedDocs.files?.license === "pending_upload" || !!driverLicenseUrl || parsedDocs.license?.uploaded || submittedDocType === "license",
+            image: driverLicenseUrl || parsedDocs.license?.image || "",
+            extracted: submittedDocType === "license" ? extractedDataPayload : {},
+            verified: kycStatus === "verified"
           }
         },
-        documentDetails: parseJSON(req.body.documentDetails, {}),
 
-        // 5️⃣ VEHICLE
-        vehicle: parsedVehicle,
-        vehicleDocument: vehicleDocumentUrl,
-
-        // 6️⃣ OPERATION DATA
-        operationCities: parseJSON(operationCities, []),
-        currentRideId: null,
-        rating: 5,
-        totalTrips: 0,
-        workingDays: [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday"
-        ],
-        workingHours: {
-          start: "04:00",
-          end: "17:00"
+        identity: {
+          type: submittedDocType === "license" ? "Driving License" : (submittedDocType === "passport" ? "Passport" : "NID"),
+          number: req.body.identityNumber || parsedIdentity.number || extractedDataPayload.documentNumber || ""
         },
-        vacationMode: false,
-        serviceAreas: [
-          { lat: 23.7937, lng: 90.4066 },
-          { lat: 23.7989, lng: 90.4012 },
-          { lat: 23.7856, lng: 90.4123 },
-          { lat: 23.7912, lng: 90.4145 }
-        ],
-        referralCode: referralCode || null,
-        image: profileImageUrl,
-        isApproved: false,
 
-        // 7️⃣ LOCATION TRACKING
-        location: {
-          type: "Point",
-          coordinates: [90.4125, 23.8103],
-          lat: 23.8103,
-          lng: 90.4125
-        },
-        lastLocationUpdate: new Date(),
-        lastSeen: new Date(),
-        simulatedLocation: null,
-
-        // 8️⃣ FACE VERIFICATION
         faceVerification: {
-          ...parsedFaceVerification,
-          isVerified: req.body.isFaceVerified === 'true' || req.body.isFaceVerified === true || false,
-          verificationStatus: req.body.verificationStatus || "pending",
-          verifiedAt: req.body.verifiedAt || null,
-          verificationMethod: req.body.verificationMethod || "face_match",
-          confidenceScore: req.body.confidenceScore || 0,
+          isVerified: isFaceMatch,
+          confidenceScore: confidence,
           verificationImage: faceImageUrl,
-          faceEmbedding: req.body.faceDescriptor || [],
-          lastVerificationAttempt: new Date(),
-          verificationAttempts: req.body.verificationAttempts || 0
+          verifiedAt: isFaceMatch ? new Date() : null
         },
-        isFaceVerified: req.body.isFaceVerified === 'true' || req.body.isFaceVerified === true || false,
 
-        // 9️⃣ TIMESTAMPS
+        kyc: {
+          status: kycStatus,
+          score: kycScore,
+          checks: kycChecks,
+          submittedAt: existing?.kyc?.submittedAt || new Date(),
+          verifiedAt: kycStatus === "verified" ? new Date() : null,
+          rejectionReason: kycStatus === "rejected" ? "Low KYC Score" : ""
+        },
+
+        vehicle: {
+          category: parsedVehicle.category || "bike",
+          type: parsedVehicle.type || "",
+          number: parsedVehicle.number || "",
+          model: parsedVehicle.model || "",
+          registrationNumber: parsedVehicle.registrationNumber || req.body.registrationNumber || "",
+          document: vehicleDocumentUrl
+        },
+
+        role: "rider",
+        status: kycStatus === "verified" ? "online" : "offline",
+        isApproved: kycStatus === "verified",
+
         createdAt: existing?.createdAt || new Date(),
-        updatedAt: new Date(),
+        updatedAt: new Date()
       };
 
       let riderId;

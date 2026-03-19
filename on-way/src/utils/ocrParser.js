@@ -37,10 +37,31 @@ export const normalizeDate = (dateStr) => {
 };
 
 /**
+ * Removes OCR garbage words and symbols
+ */
+export function cleanText(text) {
+    if (!text) return "";
+    let clean = text.replace(/[^A-Za-z\s]/g, " "); // Replace non-alphabets with space
+
+    // Remove specific noisy keywords
+    const noiseWords = [
+        "nationality", "bangladesh", "license", "licence", "wes", "ange",
+        "name", "blood", "group", "dob", "date of birth", "id no", "issue date", "expiry date"
+    ];
+
+    noiseWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        clean = clean.replace(regex, "");
+    });
+
+    return clean.replace(/\s+/g, " ").trim();
+}
+
+/**
  * Label-Based Name Extraction
  */
 export function extractName(text) {
-    if (!text) return { firstName: "", lastName: "" };
+    if (!text) return { firstName: "", lastName: "", fullName: "" };
 
     const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
     let nameLine = "";
@@ -70,15 +91,19 @@ export function extractName(text) {
         }
     }
 
-    nameLine = nameLine.replace(/[^A-Za-z\s]/g, "").trim();
+    // Clean OCR garbage from name
+    nameLine = cleanText(nameLine);
     const parts = nameLine.split(/\s+/).filter(Boolean);
 
-    if (parts.length === 0) return { firstName: "", lastName: "" };
-    if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+    if (parts.length === 0) return { firstName: "", lastName: "", fullName: "" };
+
+    const fullName = parts.join(" ");
+    if (parts.length === 1) return { firstName: parts[0], lastName: "", fullName };
 
     return {
         firstName: parts[0],
-        lastName: parts[parts.length - 1]
+        lastName: parts[parts.length - 1],
+        fullName
     };
 }
 
@@ -86,8 +111,8 @@ export function extractName(text) {
  * Blood Group Extractor
  */
 export function extractBloodGroup(text) {
-    const match = text.match(/\b(A|B|AB|O)[+-]\b/i);
-    return match ? match[0].toUpperCase() : "";
+    const match = text.match(/(A|B|AB|O)[+-]/i);
+    return match ? match[0].toUpperCase() : null;
 }
 
 /**

@@ -312,7 +312,6 @@ export default function PassengerDashboard() {
             </div>
           </div>
         </div>
-      </div>
 
         {/* Right Column */}
         <div className="lg:col-span-1 space-y-6">

@@ -242,7 +242,7 @@
 
 Legend:
 ✅ = Access Granted
-❌ = Access Denied
+❌ = Access Denied 
 → = Redirected to
 ```
 

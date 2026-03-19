@@ -1,6 +1,14 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from "react-leaflet";
+import { useEffect, useState, useRef, useMemo } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import CurrentLocationButton from "./CurrentLocationButton";
@@ -11,7 +19,8 @@ import CurrentLocationButton from "./CurrentLocationButton";
 
 const defaultIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -29,7 +38,7 @@ const pickupIconSvg = `
 `;
 
 const pickupIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(pickupIconSvg),
+  iconUrl: "data:image/svg+xml;base64," + btoa(pickupIconSvg),
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -46,7 +55,7 @@ const dropoffIconSvg = `
 `;
 
 const dropoffIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(dropoffIconSvg),
+  iconUrl: "data:image/svg+xml;base64," + btoa(dropoffIconSvg),
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -56,7 +65,9 @@ const dropoffIcon = new L.Icon({
 
 // Custom current location marker icon (blue dot)
 const currentLocationIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+  iconUrl:
+    "data:image/svg+xml;base64," +
+    btoa(`
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="3"/>
       <circle cx="12" cy="12" r="3" fill="white"/>
@@ -69,7 +80,9 @@ const currentLocationIcon = new L.Icon({
 });
 
 // Enhanced Car Icon for smoother animation
-const carIconUrl = "data:image/svg+xml;utf8," + encodeURIComponent(`
+const carIconUrl =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(`
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <g filter="url(#filter0_d)">
     <rect x="4" y="8" width="24" height="16" rx="3" fill="#2563EB"/>
@@ -97,9 +110,19 @@ const carIconUrl = "data:image/svg+xml;utf8," + encodeURIComponent(`
 </svg>
 `);
 
+// carIcon definition for marker rendering
+const carIcon = new L.Icon({
+  iconUrl: carIconUrl,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
+});
+
 // Enhanced Car Icon with proper rotation support
 const createRotatedCarIcon = (rotation = 0) => {
-  const carIconUrl = "data:image/svg+xml;utf8," + encodeURIComponent(`
+  const carIconUrl =
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(`
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(${rotation}deg);">
     <g filter="url(#filter0_d)">
       <rect x="4" y="8" width="24" height="16" rx="3" fill="#2563EB"/>
@@ -132,7 +155,7 @@ const createRotatedCarIcon = (rotation = 0) => {
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     popupAnchor: [0, -16],
-    className: 'car-marker-animated'
+    className: "car-marker-animated",
   });
 };
 
@@ -140,17 +163,19 @@ const createRotatedCarIcon = (rotation = 0) => {
 const RouteProgressIndicator = ({ progress, isPlaying, durationMin }) => {
   const progressPercentage = Math.round(progress * 100);
   const remainingTime = Math.max(0, Math.round(durationMin * (1 - progress)));
-  
+
   return (
     <div className="route-progress">
       <div className="flex items-center gap-2 mb-2">
-        <div className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+        <div
+          className={`w-2 h-2 rounded-full ${isPlaying ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+        ></div>
         <span className="text-xs font-semibold text-gray-700">
-          {isPlaying ? 'En Route' : progress === 1 ? 'Arrived' : 'Ready'}
+          {isPlaying ? "En Route" : progress === 1 ? "Arrived" : "Ready"}
         </span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-        <div 
+        <div
           className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
           style={{ width: `${progressPercentage}%` }}
         ></div>
@@ -173,17 +198,17 @@ const MapEffect = ({ pickup, dropoff, routeGeometry }) => {
 
   useEffect(() => {
     // Check if locations actually changed to avoid unnecessary updates
-    const pickupChanged = pickup && (
-      !prevPickupRef.current || 
-      prevPickupRef.current.lat !== pickup.lat || 
-      prevPickupRef.current.lon !== pickup.lon
-    );
-    
-    const dropoffChanged = dropoff && (
-      !prevDropoffRef.current || 
-      prevDropoffRef.current.lat !== dropoff.lat || 
-      prevDropoffRef.current.lon !== dropoff.lon
-    );
+    const pickupChanged =
+      pickup &&
+      (!prevPickupRef.current ||
+        prevPickupRef.current.lat !== pickup.lat ||
+        prevPickupRef.current.lon !== pickup.lon);
+
+    const dropoffChanged =
+      dropoff &&
+      (!prevDropoffRef.current ||
+        prevDropoffRef.current.lat !== dropoff.lat ||
+        prevDropoffRef.current.lon !== dropoff.lon);
 
     // Update refs
     prevPickupRef.current = pickup;
@@ -192,50 +217,52 @@ const MapEffect = ({ pickup, dropoff, routeGeometry }) => {
     // Priority 1: If we have a complete route, fit bounds to show entire route
     if (routeGeometry && routeGeometry.length > 0) {
       const bounds = L.latLngBounds(routeGeometry);
-      
+
       // Add padding based on route complexity
       const padding = routeGeometry.length > 10 ? [60, 60] : [40, 40];
-      
-      map.fitBounds(bounds, { 
-        padding, 
-        animate: true, 
+
+      map.fitBounds(bounds, {
+        padding,
+        animate: true,
         duration: 1.5,
         maxZoom: 16,
-        easeLinearity: 0.25 // Smooth easing
+        easeLinearity: 0.25, // Smooth easing
       });
-    } 
+    }
     // Priority 2: If both locations exist, show both markers with optimal zoom
     else if (pickup && dropoff) {
       const bounds = L.latLngBounds(
-        [pickup.lat, pickup.lon], 
-        [dropoff.lat, dropoff.lon]
+        [pickup.lat, pickup.lon],
+        [dropoff.lat, dropoff.lon],
       );
-      
+
       // Calculate distance to determine appropriate zoom
-      const distance = map.distance([pickup.lat, pickup.lon], [dropoff.lat, dropoff.lon]);
+      const distance = map.distance(
+        [pickup.lat, pickup.lon],
+        [dropoff.lat, dropoff.lon],
+      );
       const maxZoom = distance < 1000 ? 17 : distance < 5000 ? 15 : 13;
-      
-      map.fitBounds(bounds, { 
-        padding: [80, 80], 
-        maxZoom, 
-        animate: true, 
+
+      map.fitBounds(bounds, {
+        padding: [80, 80],
+        maxZoom,
+        animate: true,
         duration: 1.2,
-        easeLinearity: 0.25
+        easeLinearity: 0.25,
       });
-    } 
+    }
     // Priority 3: Single location - center with appropriate zoom
     else if (pickup && pickupChanged) {
-      map.flyTo([pickup.lat, pickup.lon], 15, { 
-        animate: true, 
+      map.flyTo([pickup.lat, pickup.lon], 15, {
+        animate: true,
         duration: 1.2,
-        easeLinearity: 0.25
+        easeLinearity: 0.25,
       });
-    } 
-    else if (dropoff && dropoffChanged) {
-      map.flyTo([dropoff.lat, dropoff.lon], 15, { 
-        animate: true, 
+    } else if (dropoff && dropoffChanged) {
+      map.flyTo([dropoff.lat, dropoff.lon], 15, {
+        animate: true,
         duration: 1.2,
-        easeLinearity: 0.25
+        easeLinearity: 0.25,
       });
     }
   }, [pickup, dropoff, routeGeometry, map]);
@@ -260,11 +287,11 @@ const MapClickHandler = ({ onMapClick }) => {
 // ---------------------------------------------------------
 // Main Component with Enhanced Professional Styling
 // ---------------------------------------------------------
-export default function RideMap({ 
-  pickup, 
-  dropoff, 
-  routeGeometry, 
-  durationMin, 
+export default function RideMap({
+  pickup,
+  dropoff,
+  routeGeometry,
+  durationMin,
   onMapClick,
   showCurrentLocationButton = true,
   onCurrentLocationFound = null,
@@ -273,17 +300,25 @@ export default function RideMap({
   routeWeight = 6,
   routeOpacity = 0.8,
   showRouteAlternatives = false,
-  onRouteAlternativeSelect = null
+  onRouteAlternativeSelect = null,
+  onlineRiders = {}, // Default value to prevent ReferenceError
 }) {
   const defaultCenter = [23.8103, 90.4125]; // Dhaka, Bangladesh
-  
+
   const [carPosition, setCarPosition] = useState(null);
   const [carRotation, setCarRotation] = useState(0);
   const animationRef = useRef(null);
+
+  // Convert object of riders to array
+  const nearbyRidersList = useMemo(
+    () => Object.values(onlineRiders),
+    [onlineRiders],
+  );
+
   const [animationProgress, setAnimationProgress] = useState(0);
   const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
   const [routeAlternatives, setRouteAlternatives] = useState([]);
-  
+
   // -------------------------------------------------------
   // Fetch Route Alternatives (Optional Enhancement)
   // -------------------------------------------------------
@@ -295,11 +330,11 @@ export default function RideMap({
 
     const fetchAlternatives = async () => {
       try {
-        const { getRouteAlternatives } = await import('@/utils/routingService');
+        const { getRouteAlternatives } = await import("@/utils/routingService");
         const alternatives = await getRouteAlternatives(pickup, dropoff, 2);
         setRouteAlternatives(alternatives.slice(1)); // Exclude primary route
       } catch (error) {
-        console.warn('Failed to fetch route alternatives:', error);
+        console.warn("Failed to fetch route alternatives:", error);
         setRouteAlternatives([]);
       }
     };
@@ -325,24 +360,29 @@ export default function RideMap({
     setIsAnimationPlaying(true);
 
     let startTime = null;
-    
+
     // Calculate animation duration based on actual route duration
     // Scale it down for demo purposes (1 real minute = 3 seconds animation)
-    const animDurationBase = (durationMin || 5) * 3000; 
-    const clampedAnimationDuration = Math.max(4000, Math.min(animDurationBase, 20000));
+    const animDurationBase = (durationMin || 5) * 3000;
+    const clampedAnimationDuration = Math.max(
+      4000,
+      Math.min(animDurationBase, 20000),
+    );
 
     // Function to calculate bearing between two points
     const calculateBearing = (start, end) => {
-      const startLat = start[0] * Math.PI / 180;
-      const startLng = start[1] * Math.PI / 180;
-      const endLat = end[0] * Math.PI / 180;
-      const endLng = end[1] * Math.PI / 180;
+      const startLat = (start[0] * Math.PI) / 180;
+      const startLng = (start[1] * Math.PI) / 180;
+      const endLat = (end[0] * Math.PI) / 180;
+      const endLng = (end[1] * Math.PI) / 180;
 
       const dLng = endLng - startLng;
       const y = Math.sin(dLng) * Math.cos(endLat);
-      const x = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
+      const x =
+        Math.cos(startLat) * Math.sin(endLat) -
+        Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
 
-      const bearing = Math.atan2(y, x) * 180 / Math.PI;
+      const bearing = (Math.atan2(y, x) * 180) / Math.PI;
       return (bearing + 360) % 360; // Normalize to 0-360
     };
 
@@ -352,7 +392,8 @@ export default function RideMap({
       const percentage = Math.min(progress / clampedAnimationDuration, 1);
 
       // Smooth easing function for more natural movement
-      const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+      const easeInOutCubic = (t) =>
+        t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
       const easedPercentage = easeInOutCubic(percentage);
 
       // Calculate position along the route
@@ -370,7 +411,7 @@ export default function RideMap({
         const lat = p1[0] + (p2[0] - p1[0]) * segmentProgress;
         const lng = p1[1] + (p2[1] - p1[1]) * segmentProgress;
         const newPosition = [lat, lng];
-        
+
         setCarPosition(newPosition);
         setAnimationProgress(percentage);
 
@@ -404,7 +445,7 @@ export default function RideMap({
   // -------------------------------------------------------
   // Render
   // -------------------------------------------------------
-  
+
   return (
     <MapContainer
       center={defaultCenter}
@@ -417,20 +458,48 @@ export default function RideMap({
         url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=en"
         attribution="Map data © Google"
       />
-      
+
+      {/* Nearby Online Riders Markers */}
+      {nearbyRidersList.map((rider) => (
+        <Marker
+          key={rider.id || Math.random()}
+          position={[rider.lat, rider.lng]}
+          icon={carIcon}
+          zIndexOffset={500}
+        >
+          <Popup>
+            <div className="text-center p-1">
+              <p className="font-black text-xs text-primary uppercase tracking-tighter">
+                Available Now
+              </p>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-[10px] font-bold">4.8</span>
+                <span className="text-yellow-500 text-[10px]">★</span>
+              </div>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+
       {/* Pickup Marker - Green or Current Location Blue */}
       {pickup && pickup.lat && pickup.lon && (
-        <Marker 
-          position={[pickup.lat, pickup.lon]} 
+        <Marker
+          position={[pickup.lat, pickup.lon]}
           icon={pickup.isCurrentLocation ? currentLocationIcon : pickupIcon}
           key={`pickup-${pickup.lat}-${pickup.lon}`}
         >
           <Popup>
             <div className="text-sm">
-              <strong className={`block mb-1 font-semibold ${pickup.isCurrentLocation ? 'text-blue-600' : 'text-green-600'}`}>
-                {pickup.isCurrentLocation ? '📍 You are here' : '📍 Pickup Location'}
+              <strong
+                className={`block mb-1 font-semibold ${pickup.isCurrentLocation ? "text-blue-600" : "text-green-600"}`}
+              >
+                {pickup.isCurrentLocation
+                  ? "📍 You are here"
+                  : "📍 Pickup Location"}
               </strong>
-              <p className="text-gray-700">{pickup.name || 'Selected Location'}</p>
+              <p className="text-gray-700">
+                {pickup.name || "Selected Location"}
+              </p>
               <p className="text-gray-500 text-xs mt-1">
                 {pickup.lat.toFixed(6)}, {pickup.lon.toFixed(6)}
               </p>
@@ -446,17 +515,23 @@ export default function RideMap({
 
       {/* Drop-off Marker - Red or Current Location Blue */}
       {dropoff && dropoff.lat && dropoff.lon && (
-        <Marker 
-          position={[dropoff.lat, dropoff.lon]} 
+        <Marker
+          position={[dropoff.lat, dropoff.lon]}
           icon={dropoff.isCurrentLocation ? currentLocationIcon : dropoffIcon}
           key={`dropoff-${dropoff.lat}-${dropoff.lon}`}
         >
           <Popup>
             <div className="text-sm">
-              <strong className={`block mb-1 font-semibold ${dropoff.isCurrentLocation ? 'text-blue-600' : 'text-red-600'}`}>
-                {dropoff.isCurrentLocation ? '📍 You are here' : '🎯 Drop-off Location'}
+              <strong
+                className={`block mb-1 font-semibold ${dropoff.isCurrentLocation ? "text-blue-600" : "text-red-600"}`}
+              >
+                {dropoff.isCurrentLocation
+                  ? "📍 You are here"
+                  : "🎯 Drop-off Location"}
               </strong>
-              <p className="text-gray-700">{dropoff.name || 'Selected Location'}</p>
+              <p className="text-gray-700">
+                {dropoff.name || "Selected Location"}
+              </p>
               <p className="text-gray-500 text-xs mt-1">
                 {dropoff.lat.toFixed(6)}, {dropoff.lon.toFixed(6)}
               </p>
@@ -474,8 +549,8 @@ export default function RideMap({
       {routeGeometry && routeGeometry.length > 0 && (
         <>
           {/* Route shadow for depth */}
-          <Polyline 
-            positions={routeGeometry} 
+          <Polyline
+            positions={routeGeometry}
             color="#000000"
             weight={routeWeight + 2}
             opacity={0.1}
@@ -483,8 +558,8 @@ export default function RideMap({
             lineJoin="round"
           />
           {/* Main route line */}
-          <Polyline 
-            positions={routeGeometry} 
+          <Polyline
+            positions={routeGeometry}
             color={routeGeometry.length === 2 ? "#F59E0B" : routeColor} // Amber for fallback, blue for real route
             weight={routeWeight}
             opacity={routeOpacity}
@@ -497,27 +572,30 @@ export default function RideMap({
       )}
 
       {/* Route Alternatives (Optional) */}
-      {showRouteAlternatives && routeAlternatives.map((alternative, index) => (
-        <Polyline
-          key={`alternative-${index}`}
-          positions={alternative.geometry}
-          color="#9CA3AF"
-          weight={4}
-          opacity={0.6}
-          dashArray="8, 4"
-          lineCap="round"
-          lineJoin="round"
-          className="route-alternative"
-          eventHandlers={{
-            click: () => onRouteAlternativeSelect && onRouteAlternativeSelect(alternative)
-          }}
-        />
-      ))}
+      {showRouteAlternatives &&
+        routeAlternatives.map((alternative, index) => (
+          <Polyline
+            key={`alternative-${index}`}
+            positions={alternative.geometry}
+            color="#9CA3AF"
+            weight={4}
+            opacity={0.6}
+            dashArray="8, 4"
+            lineCap="round"
+            lineJoin="round"
+            className="route-alternative"
+            eventHandlers={{
+              click: () =>
+                onRouteAlternativeSelect &&
+                onRouteAlternativeSelect(alternative),
+            }}
+          />
+        ))}
 
       {/* Enhanced Animated Car Marker with Proper Rotation */}
       {carPosition && showCarAnimation && (
-        <Marker 
-          position={carPosition} 
+        <Marker
+          position={carPosition}
           icon={createRotatedCarIcon(carRotation)}
           zIndexOffset={1000}
         >
@@ -537,21 +615,25 @@ export default function RideMap({
         </Marker>
       )}
 
-      <MapEffect pickup={pickup} dropoff={dropoff} routeGeometry={routeGeometry} />
+      <MapEffect
+        pickup={pickup}
+        dropoff={dropoff}
+        routeGeometry={routeGeometry}
+      />
       <MapClickHandler onMapClick={onMapClick} />
-      
+
       {/* Route Progress Indicator */}
       {showCarAnimation && routeGeometry && routeGeometry.length > 0 && (
-        <RouteProgressIndicator 
+        <RouteProgressIndicator
           progress={animationProgress}
           isPlaying={isAnimationPlaying}
           durationMin={durationMin}
         />
       )}
-      
+
       {/* Current Location Button */}
       {showCurrentLocationButton && (
-        <CurrentLocationButton 
+        <CurrentLocationButton
           onLocationFound={onCurrentLocationFound}
           showAccuracyCircle={true}
           zoomLevel={16}

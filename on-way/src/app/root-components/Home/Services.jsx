@@ -15,6 +15,7 @@ import {
   TicketPercent,
   LocateFixed,
 } from "lucide-react";
+import AnimatedButton from "../AnimatedButton";
 
 const services = [
   {
@@ -111,7 +112,7 @@ export default function OnWayServices() {
 
   return (
     <section className="bg-[#f4f6f8] py-24 overflow-hidden">
-      
+
       {/* HEADER (boxed container) */}
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-end justify-between mb-16">
@@ -128,19 +129,13 @@ export default function OnWayServices() {
           </div>
 
           <div className="flex gap-3">
-            <button
-              onClick={() => scroll(-1)}
-              className="w-12 h-12 rounded-xl bg-primary hover:bg-black text-white flex items-center justify-center transition"
-            >
+            <AnimatedButton onClick={() => scroll(-1)}>
               <ArrowLeft size={18} />
-            </button>
+            </AnimatedButton>
 
-            <button
-              onClick={() => scroll(1)}
-              className="w-12 h-12 rounded-xl bg-primary hover:bg-black text-white flex items-center justify-center transition"
-            >
+            <AnimatedButton onClick={() => scroll(1)}>
               <ArrowRight size={18} />
-            </button>
+            </AnimatedButton>
           </div>
         </div>
       </div>

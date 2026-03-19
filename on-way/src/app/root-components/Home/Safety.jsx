@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { AlertTriangle, PhoneCall, ArrowRight, ShieldCheck, Download } from "lucide-react";
 import Container from "./Container";
 import { safetyFeatures } from "./homeData";
+import AnimatedButton from "../AnimatedButton";
+
+import { StaggerContainer, AnimatedHeading, AnimatedCard } from "../MotionWrappers";
 
 /**
  * Safety Component (V2)
@@ -17,13 +20,7 @@ export default function Safety() {
         {/* Top Grid: Content + Feature Cards */}
         <div className="grid gap-16 lg:grid-cols-12 lg:items-center mb-16">
           {/* Left: Content and Actions */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "circOut" }}
-            viewport={{ once: true }}
-            className="lg:col-span-6"
-          >
+          <AnimatedHeading className="lg:col-span-6">
             <span className="text-[#22c55e] text-sm font-bold uppercase tracking-[0.2em] block mb-4">
               Every Step of the Way
             </span>
@@ -37,40 +34,27 @@ export default function Safety() {
             </p>
 
             <div className="mt-10 flex flex-wrap gap-4">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-3 bg-[#0A1F3D] text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-[#0A1F3D]/10 hover:shadow-[#0A1F3D]/20 transition-all group/btn"
-              >
+              <AnimatedButton>
                 Talk to Support
-                <PhoneCall className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
-              </motion.button>
-              <motion.button
-                whileHover={{ backgroundColor: "rgba(0,0,0,0.03)" }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-3 bg-transparent border border-gray-200 text-[#0A1F3D] px-8 py-4 rounded-2xl font-bold transition-all group/btn"
-              >
+                <PhoneCall className="w-4 h-4" />
+              </AnimatedButton>
+              <AnimatedButton>
                 Download App
-                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-              </motion.button>
+                <ArrowRight className="w-4 h-4" />
+              </AnimatedButton>
             </div>
-          </motion.div>
+          </AnimatedHeading>
 
           {/* Right: Feature Cards */}
-          <div className="lg:col-span-6 flex flex-col gap-4">
+          <StaggerContainer className="lg:col-span-6 flex flex-col gap-4">
             {safetyFeatures.map((f, idx) => (
               <FeatureCard key={f.title} feature={f} index={idx} />
             ))}
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* Bottom: Full-width SOS Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-        >
+        <AnimatedHeading>
           <motion.div
             whileHover={{ y: -5, shadow: "0 25px 50px -12px rgba(34, 197, 94, 0.1)" }}
             className="relative overflow-hidden rounded-[2.5rem] border border-[#22c55e]/10 bg-white/70 backdrop-blur-xl p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.02)] group"
@@ -93,15 +77,12 @@ export default function Safety() {
                   </p>
                 </div>
               </div>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                className="bg-[#22c55e] text-white px-10 py-5 rounded-[1.5rem] font-black tracking-widest uppercase text-xs shadow-lg shadow-[#22c55e]/20 hover:brightness-110 transition-all"
-              >
+              <AnimatedButton>
                 Configure SOS
-              </motion.button>
+              </AnimatedButton>
             </div>
           </motion.div>
-        </motion.div>
+        </AnimatedHeading>
       </Container>
     </section>
   );
@@ -112,12 +93,12 @@ function FeatureCard({ feature, index }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.15 }}
-      viewport={{ once: true }}
-      whileHover={{ x: 10 }}
-      className="group flex items-center gap-6 p-6 md:p-8 rounded-[2rem] bg-white border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] transition-all"
+      variants={{
+        hidden: { opacity: 0, x: 20 },
+        visible: { opacity: 1, x: 0 }
+      }}
+      whileHover={{ x: 10, scale: 1.01 }}
+      className="group flex items-center gap-6 p-6 md:p-8 rounded-[2rem] bg-white border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] transition-all cursor-pointer"
     >
       <div className="w-14 h-14 rounded-2xl bg-[#f8fafc] group-hover:bg-[#22c55e]/5 flex items-center justify-center text-[#0A1F3D]/30 group-hover:text-[#22c55e] transition-all duration-300">
         <Icon className="w-6 h-6 group-hover:scale-110 transition-transform" />

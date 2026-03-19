@@ -6,6 +6,8 @@ import { Play, Clock, Wallet, Users, Star, ArrowRight, Video } from "lucide-reac
 import Container from "./Container";
 import { earnFeatures } from "./homeData";
 
+import { StaggerContainer, AnimatedHeading } from "../MotionWrappers";
+
 /**
  * Earn Component (V2)
  * High-end dual-media layout with polygon feature grid.
@@ -13,7 +15,6 @@ import { earnFeatures } from "./homeData";
  */
 export default function Earn() {
   const containerRef = useRef(null);
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
   return (
     <section id="earn" ref={containerRef} className="bg-white py-24 sm:py-32 overflow-hidden">
@@ -24,8 +25,9 @@ export default function Earn() {
           <div className="relative">
             {/* Background Decoration (Cargo Box Style) */}
             <motion.div
-              initial={{ x: -100, opacity: 0 }}
-              animate={isInView ? { x: 0, opacity: 1 } : {}}
+              initial={{ x: -60, opacity: 0 }}
+              whileInView={{ x: 0, opacity: 1 }}
+              viewport={{ once: true }}
               transition={{ duration: 1, ease: "easeOut" }}
               className="absolute -bottom-16 -left-12 w-56 h-56 bg-[#0A1F3D] rounded-3xl flex items-center justify-center -rotate-12 z-0 shadow-2xl overflow-hidden"
             >
@@ -38,8 +40,9 @@ export default function Earn() {
             {/* Main Video Card */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 1, ease: "circOut" }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, ease: "easeOut" }}
               className="relative z-10 aspect-[4/3] rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.07)] border-[12px] border-white group"
             >
               <video
@@ -56,9 +59,10 @@ export default function Earn() {
 
             {/* Overlapping Vertical Card */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, x: 50, y: 50 }}
-              animate={isInView ? { opacity: 1, scale: 1, x: 0, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              initial={{ opacity: 0, scale: 0.85, x: 30, y: 30 }}
+              whileInView={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.3 }}
               className="absolute -bottom-12 -right-6 w-[48%] aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-[0_30px_70px_rgba(34,197,94,0.1)] border-8 border-white z-20 group"
             >
               <video
@@ -88,19 +92,16 @@ export default function Earn() {
                 strokeWidth="3"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0 }}
-                animate={isInView ? { pathLength: 1, opacity: 0.6 } : {}}
-                transition={{ duration: 1.5, delay: 0.8 }}
+                whileInView={{ pathLength: 1, opacity: 0.6 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.5, delay: 0.6 }}
               />
             </svg>
           </div>
 
           {/* RIGHT: Content Section */}
           <div className="relative">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              className="mb-12"
-            >
+            <AnimatedHeading className="mb-12">
               <span className="text-[#22c55e] text-sm font-black uppercase tracking-[0.2em] block mb-4">
                 Our Solutions
               </span>
@@ -109,14 +110,14 @@ export default function Earn() {
                 outsourcing’s advantages <br />
                 <span className="text-[#0A1F3D]/40 text-3xl md:text-4xl">in 2026.</span>
               </h2>
-            </motion.div>
+            </AnimatedHeading>
 
             {/* Polygon Feature Grid */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            <StaggerContainer className="grid sm:grid-cols-2 gap-4">
               {earnFeatures.map((f, i) => (
-                <FeatureCard key={i} feature={f} index={i} isInView={isInView} />
+                <FeatureCard key={i} feature={f} index={i} />
               ))}
-            </div>
+            </StaggerContainer>
           </div>
 
         </div>
@@ -125,16 +126,17 @@ export default function Earn() {
   );
 }
 
-function FeatureCard({ feature, index, isInView }) {
+function FeatureCard({ feature, index }) {
   const Icon = feature.icon || ShieldCheck;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: 0.5 + index * 0.15 }}
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 }
+      }}
       whileHover={{ scale: 1.03, y: -5 }}
       whileTap={{ scale: 0.98 }}
-      className="group relative p-8 bg-[#F8FAFC] overflow-hidden transition-all duration-300 shadow-sm hover:shadow-[0_25px_50px_rgba(34,197,94,0.08)] border border-transparent hover:border-[#22c55e]/10"
+      className="group relative p-8 bg-[#F8FAFC] overflow-hidden transition-all duration-300 shadow-sm hover:shadow-[0_25px_50px_rgba(34,197,94,0.08)] border border-transparent hover:border-[#22c55e]/10 cursor-pointer"
       style={{
         clipPath: "polygon(0% 0%, 88% 0%, 100% 50%, 88% 100%, 0% 100%, 5% 50%)",
         borderRadius: "1rem"

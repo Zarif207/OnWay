@@ -15,11 +15,17 @@ module.exports = (ridesCollection) => {
             };
 
             const result = await ridesCollection.insertOne(rideData);
+            const insertedRide = { _id: result.insertedId, ...rideData };
+
+            // 🔹 Real-time broadcast to drivers
+            if (req.io) {
+                req.io.to("drivers").emit("new_ride_request", insertedRide);
+            }
 
             res.status(201).json({
                 success: true,
                 message: "Ride created successfully",
-                data: result.insertedId,
+                data: insertedRide,
             });
         } catch (error) {
             res.status(500).json({
@@ -107,7 +113,7 @@ module.exports = (ridesCollection) => {
         }
     });
 
-    // GET SINGLE RIDE
+    // GET SINGLE RIDE (FEATURE UPDATE: Checks both rides and bookings collections)
     router.get("/:id", async (req, res) => {
         try {
             const { id } = req.params;
@@ -115,29 +121,42 @@ module.exports = (ridesCollection) => {
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid Ride ID",
+                    message: "Invalid Ride ID format",
                 });
             }
 
-            const ride = await ridesCollection.findOne({
-                _id: new ObjectId(id),
-            });
+            const objectId = new ObjectId(id);
+
+            // 1. Check in rides collection (legacy/archive)
+            let ride = await ridesCollection.findOne({ _id: objectId });
+
+            // 2. If not found, check in bookings collection (active rides)
+            if (!ride && req.collections?.bookingsCollection) {
+                ride = await req.collections.bookingsCollection.findOne({ _id: objectId });
+            }
 
             if (!ride) {
                 return res.status(404).json({
                     success: false,
-                    message: "Ride not found",
+                    message: "Ride not found in archives or active bookings",
                 });
             }
 
+            // Ensure consistent response format for frontend
             res.json({
                 success: true,
-                data: ride,
+                ride: {
+                    ...ride,
+                    // Map common fields if mismatched
+                    status: ride.status || ride.bookingStatus,
+                    fare: ride.fare || ride.price
+                }
             });
         } catch (error) {
+            console.error("Fetch Single Ride Error:", error);
             res.status(500).json({
                 success: false,
-                message: "Failed to fetch ride",
+                message: "Failed to fetch ride details",
                 error: error.message,
             });
         }

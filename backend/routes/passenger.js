@@ -34,7 +34,6 @@ module.exports = (passengerCollection) => {
             // Return user data
             res.status(200).json(user);
         } catch (error) {
-            console.error("Find user error:", error);
             res.status(500).json({
                 success: false,
                 message: "Internal Server Error",
@@ -48,7 +47,6 @@ module.exports = (passengerCollection) => {
         try {
             const { name, email, phone, password, role, image, authProvider } = req.body;
 
-            // Validation
             if (!email || !name) {
                 return res.status(400).json({
                     success: false,
@@ -78,10 +76,18 @@ module.exports = (passengerCollection) => {
                 email,
                 phone: phone || "",
                 image: image || "",
-                role: role || "passenger",
+                role: "passenger", // Always force passenger role for this route
                 status: "Active",
                 authProvider: authProvider || "credentials",
+                address: "",
+                language: "English",
+                notifications: true,
+                rating: 5.0,
+                currentRideId: null,
+                savedLocations: [],
+                walletBalance: 0,
                 createdAt: new Date(),
+                updatedAt: new Date(),
                 lastLogin: new Date(),
             };
 
@@ -120,6 +126,7 @@ module.exports = (passengerCollection) => {
                     role: newUser.role
                 }
             });
+
         } catch (error) {
             console.error("Create user error:", error);
             res.status(500).json({

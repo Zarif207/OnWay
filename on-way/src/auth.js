@@ -85,13 +85,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     // JWT callback: only store minimal info to prevent cookie overflow
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = user.role || "passenger";
         token.email = user.email;
         token.image = user.image || null;
       }
+
+      // On every sign-in or session refresh, re-fetch role from DB
+      if (trigger === "signIn" || trigger === "update" || !token.role) {
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+          const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
+          if (res.ok) {
+            const data = await res.json();
+            const userData = data.data ? data.data : data;
+            if (userData?.role) {
+              token.role = userData.role;
+              token.id = userData._id || userData.id || token.id;
+              token.image = userData.image || token.image;
+            }
+          }
+        } catch (e) {
+          console.error("JWT role refresh error:", e);
+        }
+      }
+
       return token;
     },
 

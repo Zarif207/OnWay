@@ -388,5 +388,80 @@ module.exports = (passengerCollection) => {
         }
     });
 
+    // 12. Update Profile (PUT - Comprehensive)
+    router.put("/profile/update", async (req, res) => {
+        try {
+            const { userId, email, name, phone, address, language, notifications, image } = req.body;
+
+            // Validation
+            let filter = {};
+            if (userId && ObjectId.isValid(userId)) {
+                filter = { _id: new ObjectId(userId) };
+            } else if (email) {
+                filter = { email: email };
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid User ID or Email is required"
+                });
+            }
+
+            if (!name || !name.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Name is required"
+                });
+            }
+
+            // Prepare update data
+            const updateData = {
+                name: name.trim(),
+                phone: phone?.trim() || "",
+                address: address?.trim() || "",
+                language: language || "English",
+                notifications: notifications !== false,
+                updatedAt: new Date()
+            };
+
+            if (image) {
+                updateData.image = image;
+            }
+
+            // Update user in database
+            const updatedUser = await passengerCollection.findOneAndUpdate(
+                filter,
+                { $set: updateData },
+                { returnDocument: "after" }
+            );
+
+            if (!updatedUser) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            // Remove password from response
+            const finalUserData = updatedUser.value !== undefined ? updatedUser.value : updatedUser;
+            delete finalUserData.password;
+
+            console.log(`✅ Profile updated for user: ${userId}`);
+
+            res.status(200).json({
+                success: true,
+                message: "Profile updated successfully",
+                data: finalUserData
+            });
+
+        } catch (error) {
+            console.error("Update profile error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to update profile",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+
     return router;
 };

@@ -458,9 +458,7 @@ app.use(async (req, res, next) => {
       emergencyCollection: database.collection("emergency"),
       settingsCollection: database.collection("settings"),
       notificationsCollection: database.collection("notifications"),
-      kycCollection: database.collection("kyc"),
-      newsletterCollection: database.collection("newsletter"),
-      noticeCollection: database.collection("notice")
+      lostItemsCollection: database.collection("lostItems")
     };
     next();
   } catch (error) {
@@ -554,18 +552,11 @@ app.use("/api/search", (req, res, next) => {
   searchRoutes(req.collections)(req, res, next);
 });
 
-app.use("/api/kyc", (req, res, next) => {
-  kycRoutes(req.collections.kycCollection, req.collections.ridersCollection)(req, res, next);
+app.use("/api/lost-items", (req, res, next) => {
+  lostItemsRoutes(req.collections.lostItemsCollection)(req, res, next);
 });
 
-app.use("/api/notice", (req, res, next) => {
-  notice(req.collections.noticeCollection, req.collections.passengerCollection, transporter)(req, res, next);
-});
-
-app.use("/api/newsletter", (req, res, next) => {
-  newsletterRoute(req.collections.newsletterCollection)(req, res, next);
-});
-
+// ✅ Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({
     status: "onWay Backend running",

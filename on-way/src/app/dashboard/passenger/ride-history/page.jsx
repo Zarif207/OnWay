@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   Car,
   Search,
@@ -19,6 +20,7 @@ import autoTable from "jspdf-autotable";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function RideHistoryPage() {
+  const { data: session } = useSession();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
@@ -39,8 +41,10 @@ export default function RideHistoryPage() {
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
   useEffect(() => {
-    fetchRides();
-  }, []);
+    if (session?.user?.id) {
+      fetchRides(session.user.id);
+    }
+  }, [session]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -52,10 +56,13 @@ export default function RideHistoryPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activeHelpId]);
 
-  const fetchRides = async () => {
+  const fetchRides = async (passengerId) => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/rides`);
+      const url = passengerId
+        ? `${API_BASE}/bookings?passengerId=${passengerId}`
+        : `${API_BASE}/bookings`;
+      const res = await fetch(url);
       const data = await res.json();
 
       if (!res.ok) throw new Error("Failed to fetch rides");
@@ -198,8 +205,10 @@ export default function RideHistoryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rideId: selectedRide._id,
+          passengerId: session?.user?.id || "",
+          passengerName: session?.user?.name || "Unknown Passenger",
           itemImage: uploadedImageUrl,
-          ...formData
+          ...formData,
         }),
       });
 

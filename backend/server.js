@@ -36,6 +36,7 @@ const notificationHelper = require("./utils/notificationHelper");
 const socketStore = require("./utils/socketStore");
 const RiderSimulator = require("./services/riderSimulator");
 const { newsletterRoute, transporter } = require("./routes/newsletter");
+const lostItemsRoutes = require("./routes/lostItems");
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -570,6 +571,11 @@ app.use("/api/search", (req, res, next) => {
 });
 
 app.use("/api/lost-items", (req, res, next) => {
+  lostItemsRoutes(req.collections.lostItemsCollection)(req, res, next);
+});
+
+// Alias for the Support Agent dashboard
+app.use("/api/item-recovery", (req, res, next) => {
   lostItemsRoutes(req.collections.lostItemsCollection)(req, res, next);
 });
 

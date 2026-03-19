@@ -71,6 +71,23 @@ async function startSocketServer() {
         socket.to(roomId).emit("userStopTyping", { roomId, userId });
       });
 
+      // Mark messages as read
+      socket.on("markAsRead", async ({ roomId, userId }) => {
+        if (!roomId || !userId) return;
+        try {
+          await chatCollection.updateMany(
+            { roomId, isRead: false, senderId: { $ne: String(userId) } },
+            { $set: { isRead: true } }
+          );
+          io.to(roomId).emit("messagesSeen", { roomId, userId });
+          if (roomId.startsWith("support_")) {
+            io.to("support").emit("supportSessionUpdated", { roomId });
+          }
+        } catch (error) {
+          console.error("markAsRead error:", error);
+        }
+      });
+
       // WebRTC Signaling (Call features)
       socket.on("callUser", ({ toUserId, offer, fromUserId }) => {
         const target = onlineUsers.get(String(toUserId));
@@ -182,12 +199,52 @@ async function startSocketServer() {
           {
             $group: {
               _id: "$roomId",
+              roomId: { $first: "$roomId" },
               lastMessage: { $first: "$message" },
-              senderName: { $first: "$senderName" },
-              unreadCount: { $sum: { $cond: [{ $eq: ["$isRead", false] }, 1, 0] } },
+              lastMessageTime: { $first: "$createdAt" },
+              // passenger name — pick from a passenger-sent message
+              senderName: {
+                $first: {
+                  $cond: [{ $ne: ["$senderRole", "support"] }, "$senderName", "$$REMOVE"]
+                }
+              },
+              passengerId: { $first: "$passengerId" },
+              unreadCount: {
+                $sum: {
+                  $cond: [
+                    { $and: [{ $eq: ["$isRead", false] }, { $ne: ["$senderRole", "support"] }] },
+                    1, 0
+                  ]
+                }
+              },
               updatedAt: { $first: "$createdAt" }
             }
           },
+          // fallback: if senderName is null (all messages from support), get any name
+          {
+            $lookup: {
+              from: "chats",
+              let: { rid: "$roomId" },
+              pipeline: [
+                { $match: { $expr: { $and: [{ $eq: ["$roomId", "$$rid"] }, { $ne: ["$senderRole", "support"] }] } } },
+                { $sort: { createdAt: 1 } },
+                { $limit: 1 }
+              ],
+              as: "passengerMsg"
+            }
+          },
+          {
+            $addFields: {
+              senderName: {
+                $cond: [
+                  { $ifNull: ["$senderName", false] },
+                  "$senderName",
+                  { $arrayElemAt: ["$passengerMsg.senderName", 0] }
+                ]
+              }
+            }
+          },
+          { $project: { passengerMsg: 0 } },
           { $sort: { updatedAt: -1 } }
         ]).toArray();
         res.json(sessions);

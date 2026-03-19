@@ -72,8 +72,12 @@ export default function ChatSupportPage() {
     }, [socket, fetchSessions]);
 
     useEffect(() => {
-        if (roomId && socket) markAsRead();
-    }, [roomId, socket, messages.length, markAsRead]);
+        if (roomId && socket) {
+            markAsRead();
+            // refresh session list so unread count resets
+            setTimeout(() => fetchSessions(), 300);
+        }
+    }, [roomId, socket, messages.length, markAsRead, fetchSessions]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -164,7 +168,7 @@ export default function ChatSupportPage() {
                                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black bg-emerald-50 text-emerald-600 border-2 border-white uppercase">
                                         {(session.senderName || "?")[0]}
                                     </div>
-                                    {onlineStatus[session.passengerId] === "online" && <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white animate-pulse" />}
+                                    {onlineStatus?.[session.passengerId] === "online" && <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white animate-pulse" />}
                                 </div>
                                 <div className="flex-1 text-left min-w-0">
                                     <div className="flex justify-between items-start">
@@ -189,7 +193,7 @@ export default function ChatSupportPage() {
                                     <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center font-black text-emerald-600 border border-emerald-100 uppercase">{selectedChat.name?.[0]}</div>
                                     <div>
                                         <h3 className="text-xl font-black tracking-tighter text-gray-900 uppercase italic">{selectedChat.name}</h3>
-                                        <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">{onlineStatus[selectedChat.passengerId] === "online" ? "Online" : "Offline"}</span>
+                                        <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">{onlineStatus?.[selectedChat.passengerId] === "online" ? "Online" : "Offline"}</span>
                                     </div>
                                 </div>
 

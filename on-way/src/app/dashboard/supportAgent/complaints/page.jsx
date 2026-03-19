@@ -381,51 +381,49 @@ export default function ComplaintsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-gray-200 gap-3">
+            <div className="text-sm text-gray-600 text-center sm:text-left">
               Showing {indexOfFirstComplaint + 1} to {Math.min(indexOfLastComplaint, filteredComplaints.length)} of {filteredComplaints.length} complaints
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-1">
               <button
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 rounded-lg flex items-center gap-1 ${
+                className={`px-3 py-2 rounded-lg flex items-center gap-1 text-sm ${
                   currentPage === 1
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-[#2FCA71] text-white hover:shadow-lg transition-all"
                 }`}
               >
-                <ChevronLeft size={18} />
-                Previous
+                <ChevronLeft size={16} />
+                Prev
               </button>
 
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => goToPage(index + 1)}
-                    className={`px-3 py-2 rounded-lg ${
-                      currentPage === index + 1
-                        ? "bg-[#2FCA71] text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index + 1}
+                  onClick={() => goToPage(index + 1)}
+                  className={`w-9 h-9 rounded-lg text-sm ${
+                    currentPage === index + 1
+                      ? "bg-[#2FCA71] text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
 
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 rounded-lg flex items-center gap-1 ${
+                className={`px-3 py-2 rounded-lg flex items-center gap-1 text-sm ${
                   currentPage === totalPages
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-[#2FCA71] text-white hover:shadow-lg transition-all"
                 }`}
               >
                 Next
-                <ChevronRight size={18} />
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>

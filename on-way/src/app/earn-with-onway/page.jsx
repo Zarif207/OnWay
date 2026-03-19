@@ -19,12 +19,13 @@ import {
   Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import DriverAnimation from "../components/DriverAnimation/DriverAnimation";
+import DocumentOCR from "@/components/DocumentOCR/DocumentOCR";
 
 export default function EarnWithOnWayPage() {
   const router = useRouter();
-  const { formData, updateFormData } = useEarnRegistration();
+  const { formData, updateFormData, setFormData } = useEarnRegistration();
   console.log("data:", formData);
 
   // Initially show all categories (null) as per user request
@@ -134,6 +135,82 @@ export default function EarnWithOnWayPage() {
   const handleModelSelect = (categoryKey, modelValue) => {
     setSelectedModel(modelValue);
     setValue("vehicleType", modelValue);
+  };
+
+  const handleExtractionComplete = (results) => {
+    // Log the incoming extraction results for debugging
+    console.log("SMART OCR RESULTS:", results);
+    console.log("DOC TYPE:", results.type);
+    console.log("PARSED:", results.extractedData);
+
+    // Use setFormData directly for function-based merging
+    setFormData((prev) => {
+      // Correct Mapping for Step 3 storage & logic
+      const rawType = results.type?.toLowerCase() || "";
+      const typeKey = (rawType.includes("license") || rawType.includes("licence")) ? "license"
+        : rawType.includes("passport") ? "passport"
+          : "nid";
+
+      // User requested explicit mapping to these strings
+      const displayType = typeKey === "license" ? "Driving License"
+        : typeKey === "passport" ? "Passport"
+          : "NID";
+
+      const updates = {
+        documentType: displayType,
+        documentImage: results.image, // Base64 from DocumentOCR
+        documentFile: results.file,
+        documents: {
+          ...prev.documents,
+          [typeKey]: { uploaded: true, image: results.image } // Persistent Base64
+        },
+        documentDetails: {
+          ...prev.documentDetails,
+          ...results.extractedData,
+        },
+      };
+
+      // Atomic sync to useForm and formData
+      if (results.extractedData.firstName) {
+        setValue("firstName", results.extractedData.firstName, { shouldValidate: true });
+        updates.firstName = results.extractedData.firstName;
+      }
+      if (results.extractedData.lastName) {
+        setValue("lastName", results.extractedData.lastName, { shouldValidate: true });
+        updates.lastName = results.extractedData.lastName;
+      }
+
+      // Sync Blood Group
+      if (results.extractedData.bloodGroup) {
+        updates.bloodGroup = results.extractedData.bloodGroup;
+      }
+
+      // Map Identity Details (+ VALIDATION LAYER)
+      let idNum = results.extractedData.documentNumber;
+
+      // CRITICAL: Reject if missing or has NO numbers
+      if (!idNum || !/[0-9]/.test(idNum)) {
+        console.warn("Invalid ID detected (missing numbers):", idNum);
+        idNum = "";
+      }
+
+      if (idNum) {
+        updates.identityNumber = idNum;
+        updates.identityType = displayType;
+
+        setValue("identityType", displayType, { shouldValidate: true });
+        setValue("identityNumber", idNum, { shouldValidate: true });
+      }
+
+      if (results.extractedData.dateOfBirth) {
+        updates.dateOfBirth = results.extractedData.dateOfBirth;
+        setValue("dateOfBirth", results.extractedData.dateOfBirth, { shouldValidate: true });
+      }
+
+      const finalState = { ...prev, ...updates };
+      console.log("SMART OVERHAUL: Documents & Data Synced", finalState);
+      return finalState;
+    });
   };
 
   const onSubmit = (data) => {
@@ -261,6 +338,18 @@ after:blur-2xl after:opacity-20 after:-z-10"
                 </p>
               )}
 
+              {/* Document OCR Auto-Extraction */}
+              <div className="mb-6 pb-6 border-b border-gray-100 relative z-10">
+                <div className="flex items-center gap-2 mb-4 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
+                  <Sparkles size={14} className="text-[var(--color-primary)]" />
+                  <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Fast Track Registration</span>
+                </div>
+                <h3 className="text-lg font-bold text-[#001820] mb-1">Fill Automatically with ID</h3>
+                <p className="text-xs text-gray-500 mb-5">Upload your document to auto-fill the form using AI OCR.</p>
+
+                <DocumentOCR onExtractionComplete={handleExtractionComplete} />
+              </div>
+
               {/* Name Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
                 <div className="flex flex-col gap-2">
@@ -269,9 +358,15 @@ after:blur-2xl after:opacity-20 after:-z-10"
                   </label>
                   <input
                     type="text"
+                    value={formData.firstName || ""}
                     {...register("firstName", {
                       required: "First Name is required",
                     })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateFormData({ firstName: val });
+                      setValue("firstName", val, { shouldValidate: true });
+                    }}
                     className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
                   />
                 </div>
@@ -281,7 +376,13 @@ after:blur-2xl after:opacity-20 after:-z-10"
                   </label>
                   <input
                     type="text"
+                    value={formData.lastName || ""}
                     {...register("lastName")}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateFormData({ lastName: val });
+                      setValue("lastName", val, { shouldValidate: true });
+                    }}
                     className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
                   />
                 </div>
@@ -298,6 +399,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
                   </span>
                   <input
                     type="tel"
+                    value={formData.mobileNumber || ""}
                     {...register("mobileNumber", {
                       required: "Mobile Number is required",
                       pattern: {
@@ -305,6 +407,11 @@ after:blur-2xl after:opacity-20 after:-z-10"
                         message: "Please enter a valid number",
                       },
                     })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateFormData({ mobileNumber: val });
+                      setValue("mobileNumber", val, { shouldValidate: true });
+                    }}
                     className="w-full rounded-xl pl-16 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
                   />
                 </div>
@@ -320,6 +427,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
                   <input
                     type="email"
                     placeholder="example@email.com"
+                    value={formData.email || ""}
                     {...register("email", {
                       required: "Email is required",
                       pattern: {
@@ -327,6 +435,11 @@ after:blur-2xl after:opacity-20 after:-z-10"
                         message: "Please enter a valid email address",
                       },
                     })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateFormData({ email: val });
+                      setValue("email", val, { shouldValidate: true });
+                    }}
                     className="w-full rounded-xl pl-4 pr-4 py-3.5 text-gray-900 bg-[#f8f9fa] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
                   />
                 </div>

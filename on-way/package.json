@@ -39,7 +39,8 @@
     "recharts": "^3.7.0",
     "sweetalert2": "^11.26.21",
     "swiper": "^12.1.1",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

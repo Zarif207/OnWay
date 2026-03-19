@@ -158,15 +158,36 @@ module.exports = function (collections) {
         // 2️⃣ PERSONAL INFORMATION
         gender: gender || null,
         dateOfBirth: dateOfBirth || null,
+        bloodGroup: req.body.bloodGroup || null, // NEW: Blood Group support
         address: parsedAddress,
 
         // 3️⃣ EMERGENCY CONTACT
         emergencyContact: parsedEmergency,
 
         // 4️⃣ IDENTITY DOCUMENTS
-        identity: parsedIdentity,
-        licenseNumber: licenseNumber || null,
-        documents: parsedDocs,
+        identity: {
+          ...parsedIdentity,
+          type: req.body.identityType || parsedIdentity.type || "NID",
+          number: req.body.identityNumber || parsedIdentity.number || ""
+        },
+        licenseNumber: req.body.identityNumber || licenseNumber || null,
+
+        // Structure documents according to tracking requirements
+        documents: {
+          license: {
+            uploaded: parsedDocs.license?.uploaded || !!driverLicenseUrl,
+            image: driverLicenseUrl || parsedDocs.license?.image || ""
+          },
+          passport: {
+            uploaded: parsedDocs.passport?.uploaded || (req.body.identityType === "Passport"),
+            image: req.body.documentImage || parsedDocs.passport?.image || ""
+          },
+          nid: {
+            uploaded: parsedDocs.nid?.uploaded || !!nidImageUrl,
+            image: nidImageUrl || parsedDocs.nid?.image || ""
+          }
+        },
+        documentDetails: parseJSON(req.body.documentDetails, {}),
 
         // 5️⃣ VEHICLE
         vehicle: parsedVehicle,

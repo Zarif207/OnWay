@@ -27,11 +27,11 @@ export const useNotifications = () => {
     if (!socket) {
       console.log("🔌 Attempting Socket connection to:", SOCKET_URL);
       socket = io(SOCKET_URL, {
-        transports: ["websocket", "polling"],
+        transports: ["polling", "websocket"],
         withCredentials: true,
         reconnection: true,
         reconnectionDelay: 2000,
-        reconnectionAttempts: 10,
+        reconnectionAttempts: 5,
         // ✅ Send authentication data
         auth: {
           token: session.user.id, // In production, use actual JWT token

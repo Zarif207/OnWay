@@ -521,45 +521,51 @@ module.exports = function (collections) {
   router.get("/nearby", async (req, res) => {
     try {
       const { lat, lng, radius = 5, excludeId } = req.query;
-      let query = { status: "online", isApproved: true };
+
+      const lngNum = parseFloat(lng);
+      const latNum = parseFloat(lat);
+
+      if (isNaN(lngNum) || isNaN(latNum)) {
+        return res.status(400).json({
+          success: false,
+          message: "Valid lat and lng are required"
+        });
+      }
+
+      let query = {
+        status: "online",
+        isApproved: true,
+        location: {                        // ← location.coordinates না, শুধু location
+          $near: {
+            $geometry: {
+              type: "Point",
+              coordinates: [lngNum, latNum]   // ← [lng, lat] এই order
+            },
+            $maxDistance: parseInt(radius) * 1000
+          }
+        }
+      };
 
       if (excludeId && ObjectId.isValid(excludeId)) {
         query._id = { $ne: new ObjectId(excludeId) };
       }
 
-      const lngNum = parseFloat(lng);
-      const latNum = parseFloat(lat);
-
-      if (!isNaN(lngNum) && !isNaN(latNum)) {
-        query["location.coordinates"] = {
-          $nearSphere: {
-            $geometry: {
-              type: "Point",
-              coordinates: [lngNum, latNum]
-            },
-            $maxDistance: parseInt(radius) * 1000
-          }
-        };
-      } else {
-        return res.status(400).json({ success: false, message: "Valid lat and lng are required for nearby search" });
-      }
-
       const riders = await ridersCollection.find(query).limit(15).toArray();
+
       const formattedRiders = riders.map(r => ({
         id: r._id,
-        lat: r.location?.coordinates ? r.location.coordinates[1] : (r.location?.lat || latNum),
-        lng: r.location?.coordinates ? r.location.coordinates[0] : (r.location?.lng || lngNum),
-        name: r.firstName || r.name,
+        lat: r.location?.coordinates?.[1] || latNum,
+        lng: r.location?.coordinates?.[0] || lngNum,
+        name: r.firstName || r.name || "Driver",
         vehicle: r.vehicle || { category: "bike", type: "Motorcycle" }
       }));
 
       res.status(200).json({ success: true, data: formattedRiders });
     } catch (error) {
-      console.error("Nearby riders error:", error);
-      res.status(500).json({ success: false, message: "Failed to fetch nearby riders" });
+      console.error("Nearby riders error:", error.message);
+      res.status(500).json({ success: false, message: error.message });
     }
   });
-
 
   // 🔹 Get All Riders
   router.get("/", async (req, res) => {

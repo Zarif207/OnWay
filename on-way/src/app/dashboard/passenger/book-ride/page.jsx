@@ -302,35 +302,62 @@ function BookRideContent() {
 
     setIsBooking(true);
     try {
+      console.log("Preparing booking payload...");
       const payload = {
         passengerId,
         pickupLocation: {
-          address: pickup,
+          address: pickup || "Pickup Location",
+          name: pickup || "Pickup Location",
           lat: pickupCoords[0],
           lng: pickupCoords[1]
         },
         dropoffLocation: {
-          address: dropoff,
+          address: dropoff || "Dropoff Location",
+          name: dropoff || "Dropoff Location",
           lat: dropoffCoords[0],
           lng: dropoffCoords[1]
         },
         vehicleType: selectedVehicle.type,
+        rideType: selectedVehicle.type,
         distance: parseFloat(distance),
         duration,
         price: getFinalPrice(selectedVehicle),
+        fare: getFinalPrice(selectedVehicle),
         paymentMethod,
-        routeGeometry: [pickupCoords, dropoffCoords],
+        routeGeometry: [
+          { lat: pickupCoords[0], lng: pickupCoords[1] },
+          { lat: dropoffCoords[0], lng: dropoffCoords[1] }
+        ],
         bookingStatus: "searching"
       };
 
-      const res = await axios.post(`${API_BASE_URL}/bookings`, payload);
+      console.log("Payload ready:", payload);
 
-      if (res.data.success) {
+      const res = await fetch(`${API_BASE_URL}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      console.log("Booking response:", data);
+
+      if (res.ok && data.success) {
         toast.success("Ride requested! Searching for drivers...");
-        router.push(`/dashboard/passenger/active-ride?bookingId=${res.data.booking._id}`);
+        console.log("Registering passenger socket...");
+        const socket = getPassengerSocket(passengerId);
+        if (socket) {
+          socket.emit("registerUser", { userId: passengerId, role: "passenger" });
+        }
+        console.log("Redirecting to dashboard...");
+        router.push(`/dashboard/passenger?searching=true&bookingId=${data.booking._id}`);
+      } else {
+        console.error("Booking failed with status:", res.status, data);
+        toast.error(data.message || "Booking failed");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Booking failed");
+      console.error("Booking error:", error);
+      toast.error(error.message || "Booking failed due to a network error");
     } finally {
       setIsBooking(false);
     }

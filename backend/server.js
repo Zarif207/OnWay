@@ -272,90 +272,107 @@ io.on("connection", (socket) => {
       const ridersCollection = database.collection("riders");
       const rideSimulation = require("./services/rideSimulationService");
 
+      // Booking check
       const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
       if (!booking || booking.bookingStatus !== "searching") {
         return socket.emit("ride:rejected", { message: "Ride is no longer available." });
       }
 
-      // Fetch rider details
+      // Rider check
       const rider = await ridersCollection.findOne({ _id: new ObjectId(riderId) });
       if (!rider) {
         return socket.emit("ride:rejected", { message: "Rider not found." });
       }
 
+      // Booking update
       await bookingsCollection.updateOne(
         { _id: new ObjectId(bookingId) },
         {
           $set: {
             bookingStatus: "accepted",
             riderId: new ObjectId(riderId),
-            acceptedAt: new Date()
+            acceptedAt: new Date(),
+            updatedAt: new Date(),
           }
         }
       );
 
+      // Rider status update
       await ridersCollection.updateOne(
         { _id: new ObjectId(riderId) },
         { $set: { status: "busy", currentRideId: new ObjectId(bookingId) } }
       );
 
-      // Join ride room
-      const rideRoom = `ride:${bookingId}`;
-      socket.join(rideRoom);
+      socket.join(`ride:${bookingId}`);
 
       const driverDetails = {
         name: rider.name || "Driver",
         phone: rider.phone || "",
-        avatar: rider.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${rider.name || 'Driver'}`,
+        image: rider.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${rider.name || "Driver"}`,
+        avatar: rider.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${rider.name || "Driver"}`,
         rating: rider.rating || 4.8,
         vehicle: {
-          type: rider.vehicleType || "Car",
-          brand: rider.vehicleDetails?.brand || (rider.vehicleType === 'bike' ? "Bike" : "Prius"),
-          plate: rider.vehicleDetails?.plate || "DHK-R 1234",
-          color: rider.vehicleDetails?.color || "White"
-        }
+          type: rider.vehicle?.category || rider.vehicleType || "Car",
+          brand: rider.vehicle?.model || rider.vehicleDetails?.brand || "Car",
+          plate: rider.vehicle?.number || rider.vehicleDetails?.plate || "N/A",
+          color: rider.vehicleDetails?.color || "White",
+        },
       };
 
-      const passengerRoom = `passenger:${booking.passengerId}`;
-      // Combined event to satisfy different listeners
+      const passengerId = booking.passengerId?.toString();
+
       const acceptancePayload = {
         bookingId,
         rideId: bookingId,
         riderId,
         driverId: riderId,
-        rideRoom,
         driver: driverDetails,
-        otp: booking.otp
+        otp: booking.otp,        // ← OTP passenger কে পাঠাও
       };
 
-      io.to(passengerRoom).emit("ride:accepted", acceptancePayload);
-      io.to(passengerRoom).emit("rideAccepted", acceptancePayload);
+      // ✅ সব possible room এ emit — যেটায় passenger join করেছে সেটায় পাবে
+      io.to(`passenger:${passengerId}`).emit("ride:accepted", acceptancePayload);
+      io.to(`passenger:${passengerId}`).emit("rideAccepted", acceptancePayload);
+      io.to(`user:${passengerId}`).emit("ride:accepted", acceptancePayload);
+      io.to(`user:${passengerId}`).emit("rideAccepted", acceptancePayload);
+      io.to(`user_${passengerId}`).emit("ride:accepted", acceptancePayload);
 
-      // Start simulated movement
+      socket.emit("ride:accept:success", { bookingId });
+
+      console.log(`✅ Ride accepted: ${bookingId}`);
+      console.log(`📨 Notified passenger rooms: passenger:${passengerId}, user:${passengerId}, user_${passengerId}`);
+
+      // Simulation শুরু করো
       const serviceAreas = rider?.serviceAreas || [];
-      const pickupLat = booking.pickupLocation.lat;
-      const pickupLng = booking.pickupLocation.lng;
+      const pickupLat = booking.pickupLocation?.lat;
+      const pickupLng = booking.pickupLocation?.lng;
 
-      rideSimulation.startSimulation(
-        bookingId,
-        riderId,
-        serviceAreas,
-        pickupLat,
-        pickupLng,
-        io,
-        async (rideId, driverId) => {
-          // Callback when rider arrives
-          await bookingsCollection.updateOne(
-            { _id: new ObjectId(rideId) },
-            { $set: { bookingStatus: "arrived", arrivedAt: new Date() } }
-          );
-        }
-      );
+      if (pickupLat && pickupLng) {
+        rideSimulation.startSimulation(
+          bookingId,
+          riderId,
+          serviceAreas,
+          pickupLat,
+          pickupLng,
+          io,
+          async (rideId) => {
+            await bookingsCollection.updateOne(
+              { _id: new ObjectId(rideId) },
+              { $set: { bookingStatus: "arrived", arrivedAt: new Date() } }
+            );
 
-      console.log(`✅ Rider accepted ride: ${bookingId}, simulation started`);
+            // Passenger কে notify করো driver arrived
+            io.to(`passenger:${passengerId}`).emit("driver:arrived", { bookingId: rideId });
+            io.to(`user:${passengerId}`).emit("driver:arrived", { bookingId: rideId });
+
+            console.log(`📍 Driver arrived at pickup: ${rideId}`);
+          }
+        );
+      }
 
     } catch (error) {
       console.error("❌ Ride Acceptance Error:", error);
+      socket.emit("ride:rejected", { message: "Server error during acceptance." });
     }
   });
 

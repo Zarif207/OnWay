@@ -1,30 +1,31 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 import logoImage from "../../../public/icon2.png";
-import {
-  ChevronRight,
-  LogOut
-} from "lucide-react";
+import { ChevronRight, LogOut, Menu, X } from "lucide-react";
 
-const Sidebar = ({ role, menuItems }) => {
+const SidebarContent = ({ role, menuItems, onClose }) => {
   const pathname = usePathname();
 
-  // Logout Handler
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 flex flex-col z-50">
+    <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="p-4 flex items-center justify-start border-b border-gray-50">
+      <div className="p-4 flex items-center justify-between border-b border-gray-50">
         <Link href="/" className="transition-opacity hover:opacity-80">
           <Image src={logoImage} alt="OnWay" width={100} height={78} priority />
         </Link>
+        {onClose && (
+          <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-700">
+            <X size={22} />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -32,27 +33,28 @@ const Sidebar = ({ role, menuItems }) => {
         {menuItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
-
           return (
             <Link
               key={item.path}
               href={item.path}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                ? "bg-gray-100 text-gray-900 font-semibold"
-                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+              onClick={onClose}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group ${
+                isActive
+                  ? "bg-gray-100 text-gray-900 font-semibold"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+              }`}
             >
-              <div className="flex items-center gap-3">
-                <Icon size={20} className={isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-900"} />
-                <span className="text-sm">{item.label}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Icon size={18} className={`shrink-0 ${isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-900"}`} />
+                <span className="text-sm truncate">{item.label}</span>
               </div>
-              {isActive && <ChevronRight size={14} className="text-gray-400" />}
+              {isActive && <ChevronRight size={13} className="text-gray-400 shrink-0" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer / Logout */}
+      {/* Logout */}
       <div className="p-4 border-t border-gray-100">
         <button
           onClick={handleLogout}
@@ -62,7 +64,45 @@ const Sidebar = ({ role, menuItems }) => {
           <span className="text-sm font-medium">Log Out</span>
         </button>
       </div>
-    </aside>
+    </div>
+  );
+};
+
+const Sidebar = ({ role, menuItems }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-xl shadow border border-gray-100"
+      >
+        <Menu size={22} className="text-gray-700" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside
+        className={`lg:hidden fixed left-0 top-0 h-screen w-72 bg-white border-r border-gray-100 z-50 transform transition-transform duration-300 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <SidebarContent role={role} menuItems={menuItems} onClose={() => setMobileOpen(false)} />
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 flex-col z-50">
+        <SidebarContent role={role} menuItems={menuItems} />
+      </aside>
+    </>
   );
 };
 

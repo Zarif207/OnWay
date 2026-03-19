@@ -167,21 +167,28 @@ function setupSocket(io, collections) {
           return;
         }
 
-        const updatedBooking = result;
-        await ridersCollection.updateOne({ _id: riderOid }, { $set: { status: "busy", currentRideId: bookingOid } });
-
-        const driver = await ridersCollection.findOne({ _id: riderOid });
-        const driverDetails = {
-          name: driver.name || "Driver",
-          photo: driver.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name}`,
-          rating: driver.rating || 5.0,
-          vehicle: {
-            type: driver.vehicleType || "Car",
-            plate: driver.vehicleDetails?.plate || "N/A",
-            color: driver.vehicleDetails?.color || "N/A",
-            brand: driver.vehicleDetails?.brand || "N/A"
+      // Mark messages as read
+      socket.on("markAsRead", async ({ roomId, userId }) => {
+        if (!roomId || !userId) return;
+        try {
+          await chatCollection.updateMany(
+            { roomId, isRead: false, senderId: { $ne: String(userId) } },
+            { $set: { isRead: true } }
+          );
+          io.to(roomId).emit("messagesSeen", { roomId, userId });
+          if (roomId.startsWith("support_")) {
+            io.to("support").emit("supportSessionUpdated", { roomId });
           }
-        };
+        } catch (error) {
+          console.error("markAsRead error:", error);
+        }
+      });
+
+      // WebRTC Signaling (Call features)
+      socket.on("callUser", ({ toUserId, offer, fromUserId }) => {
+        const target = onlineUsers.get(String(toUserId));
+        if (target) io.to(target.socketId).emit("incomingCall", { fromUserId, offer });
+      });
 
         socket.join(`ride:${bookingId}`);
         const acceptancePayload = {
@@ -276,14 +283,64 @@ function setupSocket(io, collections) {
       if (!socket.authenticated) return;
       const { userId, message, type, metadata } = data;
       try {
-        const notification = {
-          userId, message, type, isRead: false, createdAt: new Date(), updatedAt: new Date(),
-          metadata: metadata || {}, sentBy: socket.userId, sentByRole: socket.userRole
-        };
-        const result = await notificationsCollection.insertOne(notification);
-        io.to(`user_${userId}`).emit("newNotification", { _id: result.insertedId, ...notification });
-        socket.emit("notificationSent", { success: true, notificationId: result.insertedId });
-      } catch (err) { console.error("Notification error:", err); }
+        const sessions = await chatCollection.aggregate([
+          { $match: { chatType: "support" } },
+          { $sort: { createdAt: -1 } },
+          {
+            $group: {
+              _id: "$roomId",
+              roomId: { $first: "$roomId" },
+              lastMessage: { $first: "$message" },
+              lastMessageTime: { $first: "$createdAt" },
+              // passenger name — pick from a passenger-sent message
+              senderName: {
+                $first: {
+                  $cond: [{ $ne: ["$senderRole", "support"] }, "$senderName", "$$REMOVE"]
+                }
+              },
+              passengerId: { $first: "$passengerId" },
+              unreadCount: {
+                $sum: {
+                  $cond: [
+                    { $and: [{ $eq: ["$isRead", false] }, { $ne: ["$senderRole", "support"] }] },
+                    1, 0
+                  ]
+                }
+              },
+              updatedAt: { $first: "$createdAt" }
+            }
+          },
+          // fallback: if senderName is null (all messages from support), get any name
+          {
+            $lookup: {
+              from: "chats",
+              let: { rid: "$roomId" },
+              pipeline: [
+                { $match: { $expr: { $and: [{ $eq: ["$roomId", "$$rid"] }, { $ne: ["$senderRole", "support"] }] } } },
+                { $sort: { createdAt: 1 } },
+                { $limit: 1 }
+              ],
+              as: "passengerMsg"
+            }
+          },
+          {
+            $addFields: {
+              senderName: {
+                $cond: [
+                  { $ifNull: ["$senderName", false] },
+                  "$senderName",
+                  { $arrayElemAt: ["$passengerMsg.senderName", 0] }
+                ]
+              }
+            }
+          },
+          { $project: { passengerMsg: 0 } },
+          { $sort: { updatedAt: -1 } }
+        ]).toArray();
+        res.json(sessions);
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch sessions" });
+      }
     });
 
     // --- Stats ---

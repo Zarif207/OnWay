@@ -56,6 +56,14 @@ export default function PassengerDashboard() {
     router.push(`/dashboard/passenger/book-ride?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 5) return "Good Night";
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
+
   // Fetch stats
   useEffect(() => {
     if (!passengerId) return;
@@ -209,7 +217,7 @@ export default function PassengerDashboard() {
           />
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-              Good afternoon, {session?.user?.name?.split(" ")[0] || "there"} 👋
+              {getGreeting()}, {session?.user?.name?.split(" ")[0] || "there"} 👋
             </h1>
             <p className="text-gray-500 text-sm md:text-base font-medium">
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}

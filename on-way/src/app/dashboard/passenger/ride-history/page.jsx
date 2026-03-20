@@ -35,6 +35,7 @@ export default function RideHistoryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [lostItemStatuses, setLostItemStatuses] = useState({});
 
   const router = useRouter();
   const API_BASE =
@@ -72,6 +73,28 @@ export default function RideHistoryPage() {
       setError("Failed to load ride history");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleHelpClick = async (rideId) => {
+    if (activeHelpId === rideId) {
+      setActiveHelpId(null);
+      return;
+    }
+    setActiveHelpId(rideId);
+    
+    if (lostItemStatuses[rideId] === undefined) {
+      try {
+        const res = await fetch(`${API_BASE}/lost-items?rideId=${rideId}&passengerId=${session?.user?.id}`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setLostItemStatuses(prev => ({ ...prev, [rideId]: data.data[0] }));
+        } else {
+          setLostItemStatuses(prev => ({ ...prev, [rideId]: null }));
+        }
+      } catch (err) {
+        console.error("Failed to check lost item status", err);
+      }
     }
   };
 
@@ -215,6 +238,7 @@ export default function RideHistoryPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(data.message || "Lost item reported successfully");
+        setLostItemStatuses((prev) => ({ ...prev, [selectedRide._id]: data.data }));
         setShowLostModal(false);
         setFormData({ itemName: "", description: "", phone: "" });
         setUploadedImageUrl("");
@@ -313,9 +337,7 @@ export default function RideHistoryPage() {
                   {/* Help Dropdown Button */}
                   <div className="relative help-dropdown-container">
                     <button
-                      onClick={() =>
-                        setActiveHelpId(activeHelpId === ride._id ? null : ride._id)
-                      }
+                      onClick={() => handleHelpClick(ride._id)}
                       className={`p-3 rounded-xl transition-all duration-300 flex items-center gap-2 ${activeHelpId === ride._id
                         ? "bg-slate-900 text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -338,20 +360,43 @@ export default function RideHistoryPage() {
                           <div className="p-2 border-b border-slate-50 bg-slate-50/50">
                             <p className="text-[10px] uppercase font-black text-slate-400 px-3 tracking-widest">Support Options</p>
                           </div>
-                          <div className="py-1">
-                            <button
-                              onClick={() => {
-                                setSelectedRide(ride);
-                                setShowLostModal(true);
-                                setActiveHelpId(null);
-                              }}
-                              className="w-full text-left px-4 py-3 hover:bg-amber-50 hover:text-amber-700 text-sm font-bold text-slate-700 flex items-center gap-3 transition-colors"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                                <Search className="w-4 h-4 text-amber-600" />
+                          <div className="py-1 px-2">
+                            {lostItemStatuses[ride._id] === undefined ? (
+                              <div className="p-4 flex justify-center">
+                                <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
                               </div>
-                              Report Lost Item
-                            </button>
+                            ) : lostItemStatuses[ride._id] ? (
+                              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Reported Item</p>
+                                <div className="space-y-1">
+                                  <p className="text-sm font-bold text-slate-700 truncate">{lostItemStatuses[ride._id].itemName}</p>
+                                  <p className="text-xs text-slate-500">{new Date(lostItemStatuses[ride._id].createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <div className="mt-3">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                    lostItemStatuses[ride._id].status === "Recovered" ? "bg-emerald-100 text-emerald-700" :
+                                    lostItemStatuses[ride._id].status === "Not Found" ? "bg-red-100 text-red-700" :
+                                    "bg-amber-100 text-amber-700"
+                                  }`}>
+                                    {lostItemStatuses[ride._id].status}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedRide(ride);
+                                  setShowLostModal(true);
+                                  setActiveHelpId(null);
+                                }}
+                                className="w-full text-left px-3 py-3 rounded-xl hover:bg-amber-50 hover:text-amber-700 text-sm font-bold text-slate-700 flex items-center gap-3 transition-colors"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                                  <Search className="w-4 h-4 text-amber-600" />
+                                </div>
+                                Report Lost Item
+                              </button>
+                            )}
                             {/* <button 
                               onClick={() => {
                                 // Logic for forgotten item

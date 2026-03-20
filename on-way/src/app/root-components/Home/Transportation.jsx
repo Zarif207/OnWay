@@ -35,11 +35,8 @@ const Transportation = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <AnimatedHeading>
-            <span className="text-[#22c55e] text-sm font-bold uppercase tracking-[0.3em]">
-              Why Choose Us
-            </span>
             <h2 className="mt-4 text-3xl md:text-5xl font-black text-[#0A1F3D] leading-tight">
-              Transportation Services We Are <br className="hidden md:block" />
+              <span className="text-[#0A1F3D]/40 bg-gradient-to-r from-[#2FCA71] to-[#259461] bg-clip-text text-transparent">Transportation Services</span> We Are <br className="hidden md:block" />
               Often Considered
             </h2>
           </AnimatedHeading>

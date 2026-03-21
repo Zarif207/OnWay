@@ -165,8 +165,18 @@ const createRotatedCarIcon = (rotation = 0) => {
 // Traffic Toggle Button (inside map)
 // ---------------------------------------------------------
 const TrafficToggleButton = ({ showTraffic, onToggle }) => {
+  const divRef = useRef(null);
+
+  useEffect(() => {
+    if (divRef.current) {
+      L.DomEvent.disableClickPropagation(divRef.current);
+      L.DomEvent.disableScrollPropagation(divRef.current);
+    }
+  }, []);
+
   return (
     <div
+      ref={divRef}
       style={{
         position: "absolute",
         top: "12px",
@@ -189,7 +199,9 @@ const TrafficToggleButton = ({ showTraffic, onToggle }) => {
           fontSize: "12px",
           fontWeight: "600",
           boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
-          background: showTraffic ? "#EF4444" : "#1F2937",
+          background: "rgba(15, 20, 30, 0.25)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
           color: "#fff",
           transition: "background 0.2s",
           whiteSpace: "nowrap",

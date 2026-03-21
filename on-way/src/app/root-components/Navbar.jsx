@@ -67,9 +67,9 @@ const DropdownItem = ({ item, onClick }) => (
   <Link
     href={item.href}
     onClick={onClick}
-    className="group flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 transition-all duration-300 cursor-pointer"
+    className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/50 transition-all duration-300 cursor-pointer"
   >
-    <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors duration-300">
+    <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-white/40 group-hover:bg-green-100/70 transition-colors duration-300">
       <item.icon size={20} className="text-gray-500 group-hover:text-green-600 transition-colors" />
     </div>
     <div>
@@ -199,8 +199,8 @@ const Navbar = () => {
                     : "opacity-0 invisible translate-y-4 scale-95 lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:scale-100"
                   }`}
               >
-                <div className="bg-white rounded-3xl shadow-xl p-4 border border-gray-100 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent pointer-events-none rounded-3xl" />
+                <div className="rounded-3xl shadow-xl p-4 border border-white/20 relative" style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent pointer-events-none rounded-3xl" />
                   <div className="relative flex flex-col gap-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2 px-3">Expertise</p>
                     {MORE_ITEMS.map((item) => (
@@ -214,8 +214,8 @@ const Navbar = () => {
                       onMouseEnter={() => setIsHelpOpen(true)}
                       onMouseLeave={() => setIsHelpOpen(false)}
                     >
-                      <div className="group flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 transition-all duration-300 cursor-pointer">
-                        <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors duration-300">
+                      <div className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/50 transition-all duration-300 cursor-pointer">
+                        <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-white/40 group-hover:bg-green-100/70 transition-colors duration-300">
                           <HelpCircle size={20} className="text-gray-500 group-hover:text-green-600 transition-colors" />
                         </div>
                         <div className="flex-1 text-left">
@@ -235,15 +235,15 @@ const Navbar = () => {
                             transition={{ duration: 0.15 }}
                             className="absolute left-full top-0 pl-2 z-[120]"
                           >
-                            <div className="bg-white rounded-2xl shadow-xl p-3 border border-gray-100 w-64 flex flex-col gap-1">
+                            <div className="rounded-2xl shadow-xl p-3 border border-white/20 w-64 flex flex-col gap-1" style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
                               {HELP_ITEMS.map((item) => (
                                 <Link
                                   key={item.href}
                                   href={item.href}
                                   onClick={() => { setIsMoreOpen(false); setIsHelpOpen(false); }}
-                                  className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-green-50 transition-all duration-200"
+                                  className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/50 transition-all duration-200"
                                 >
-                                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors">
+                                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/40 group-hover:bg-green-100/70 transition-colors">
                                     <item.icon size={16} className="text-gray-500 group-hover:text-green-600 transition-colors" />
                                   </div>
                                   <div>

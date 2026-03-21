@@ -45,6 +45,7 @@ export default function BookRidePage() {
 
   // Weather & Surge states
   const [surge, setSurge] = useState({ multiplier: 1.0, label: "Normal", icon: "☀️" });
+  const [trafficInfo, setTrafficInfo] = useState(null);
   // UI states
   const [isRouting, setIsRouting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,33 +88,21 @@ export default function BookRidePage() {
     }
 
     try {
-      // ── TomTom Traffic API ──
-      const TOMTOM_KEY = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
-      if (TOMTOM_KEY) {
-        const trafficRes = await axios.get(
-          `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json`,
-          {
-            params: {
-              point: `${lat},${lon}`,
-              unit: "KMPH",
-              key: TOMTOM_KEY,
-            },
-            validateStatus: (status) => status === 200,
-          }
-        );
+      // ── TomTom Traffic API (via backend proxy to avoid CORS) ──
+      const trafficRes = await axios.get(`${API_BASE_URL}/traffic/flow`, {
+        params: { lat, lon },
+        timeout: 5000,
+      });
 
-        if (trafficRes?.data?.flowSegmentData) {
-          const { currentSpeed, freeFlowSpeed } = trafficRes.data.flowSegmentData;
-          if (freeFlowSpeed > 0) {
-            trafficRatio = currentSpeed / freeFlowSpeed;
-            console.log(`Traffic: ${currentSpeed}km/h of ${freeFlowSpeed}km/h = ratio ${trafficRatio.toFixed(2)}`);
-          }
-        }
+      if (trafficRes?.data?.success && trafficRes.data.data) {
+        const { currentSpeed, freeFlowSpeed, ratio } = trafficRes.data.data;
+        trafficRatio = ratio;
+        console.log(`Traffic: ${currentSpeed}km/h of ${freeFlowSpeed}km/h = ratio ${ratio.toFixed(2)}`);
+        setTrafficInfo({ currentSpeed, freeFlowSpeed, ratio });
       }
     } catch (err) {
       console.warn("Traffic API unavailable for this location, skipping.");
     }
-
     const finalSurge = getDemandMultiplier({
       pickupAddress: address,
       weatherCondition,
@@ -130,6 +119,15 @@ export default function BookRidePage() {
       reasons: finalSurge.reasons,
       icon: finalSurge.value > 1.3 ? "⚡" : finalSurge.value > 1.0 ? "🌩️" : "☀️",
       isSurge: finalSurge.isSurge
+    });
+
+    // Derive traffic status from surge multiplier for display
+    // trafficRatio: 1.0 = free flow, 0.0 = standstill
+    setTrafficInfo({
+      ratio: trafficRatio,
+      currentSpeed: Math.round(40 * trafficRatio),   // estimated
+      freeFlowSpeed: 40,                              // typical city speed
+      fromSurge: true,
     });
   }, []);
 
@@ -547,6 +545,7 @@ export default function BookRidePage() {
             showCurrentLocationButton={true}
             onCurrentLocationFound={handleCurrentLocationFound}
             onlineRiders={onlineRiders}
+            trafficInfo={trafficInfo}
           />
         </div>
       </div>

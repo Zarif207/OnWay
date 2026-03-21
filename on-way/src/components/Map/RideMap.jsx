@@ -170,7 +170,8 @@ const TrafficToggleButton = ({ showTraffic, onToggle }) => {
       style={{
         position: "absolute",
         top: "12px",
-        right: "12px",
+        left: "50%",
+        transform: "translateX(-50%)",
         zIndex: 1000,
       }}
     >
@@ -181,13 +182,13 @@ const TrafficToggleButton = ({ showTraffic, onToggle }) => {
           display: "flex",
           alignItems: "center",
           gap: "6px",
-          padding: "7px 12px",
-          borderRadius: "8px",
+          padding: "7px 16px",
+          borderRadius: "20px",
           border: "none",
           cursor: "pointer",
           fontSize: "12px",
           fontWeight: "600",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
           background: showTraffic ? "#EF4444" : "#1F2937",
           color: "#fff",
           transition: "background 0.2s",

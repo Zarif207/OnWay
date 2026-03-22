@@ -89,6 +89,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isPastHero, setIsPastHero] = useState(false);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
@@ -103,10 +104,14 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
+      if (pathname.startsWith("/about")) {
+        const heroHeight = window.innerHeight * 0.7; // 70vh
+        setIsPastHero(window.scrollY > heroHeight - 80);
+      }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -150,7 +155,7 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${pathname.startsWith("/about") ? "brightness-0 invert" : "mix-blend-multiply"}`}
+                className={`object-contain transition-all duration-300 ${pathname.startsWith("/about") && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
                 priority
               />
             </div>

@@ -59,12 +59,17 @@ export const useNotifications = () => {
       });
 
       socket.on("connect_error", (error) => {
-        console.error("❌ Socket connection error:", error.message);
+        // Only log in development to avoid noise in production
+        if (process.env.NODE_ENV === "development") {
+          console.warn("⚠️ Socket connection failed (is socket server running?):", error.message);
+        }
         setConnected(false);
       });
 
       socket.on("error", (error) => {
-        console.error("❌ Socket error:", error);
+        if (process.env.NODE_ENV === "development") {
+          console.warn("⚠️ Socket error:", error);
+        }
       });
     }
 

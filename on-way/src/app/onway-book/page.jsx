@@ -45,6 +45,7 @@ export default function BookRidePage() {
 
   // Weather & Surge states
   const [surge, setSurge] = useState({ multiplier: 1.0, label: "Normal", icon: "☀️" });
+  const [trafficInfo, setTrafficInfo] = useState(null);
   // UI states
   const [isRouting, setIsRouting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,33 +88,21 @@ export default function BookRidePage() {
     }
 
     try {
-      // ── TomTom Traffic API ──
-      const TOMTOM_KEY = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
-      if (TOMTOM_KEY) {
-        const trafficRes = await axios.get(
-          `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json`,
-          {
-            params: {
-              point: `${lat},${lon}`,
-              unit: "KMPH",
-              key: TOMTOM_KEY,
-            },
-            validateStatus: (status) => status === 200,
-          }
-        );
+      // ── TomTom Traffic API (via backend proxy to avoid CORS) ──
+      const trafficRes = await axios.get(`${API_BASE_URL}/traffic/flow`, {
+        params: { lat, lon },
+        timeout: 5000,
+      });
 
-        if (trafficRes?.data?.flowSegmentData) {
-          const { currentSpeed, freeFlowSpeed } = trafficRes.data.flowSegmentData;
-          if (freeFlowSpeed > 0) {
-            trafficRatio = currentSpeed / freeFlowSpeed;
-            console.log(`Traffic: ${currentSpeed}km/h of ${freeFlowSpeed}km/h = ratio ${trafficRatio.toFixed(2)}`);
-          }
-        }
+      if (trafficRes?.data?.success && trafficRes.data.data) {
+        const { currentSpeed, freeFlowSpeed, ratio } = trafficRes.data.data;
+        trafficRatio = ratio;
+        console.log(`Traffic: ${currentSpeed}km/h of ${freeFlowSpeed}km/h = ratio ${ratio.toFixed(2)}`);
+        setTrafficInfo({ currentSpeed, freeFlowSpeed, ratio });
       }
     } catch (err) {
       console.warn("Traffic API unavailable for this location, skipping.");
     }
-
     const finalSurge = getDemandMultiplier({
       pickupAddress: address,
       weatherCondition,
@@ -130,6 +119,15 @@ export default function BookRidePage() {
       reasons: finalSurge.reasons,
       icon: finalSurge.value > 1.3 ? "⚡" : finalSurge.value > 1.0 ? "🌩️" : "☀️",
       isSurge: finalSurge.isSurge
+    });
+
+    // Derive traffic status from surge multiplier for display
+    // trafficRatio: 1.0 = free flow, 0.0 = standstill
+    setTrafficInfo({
+      ratio: trafficRatio,
+      currentSpeed: Math.round(40 * trafficRatio),   // estimated
+      freeFlowSpeed: 40,                              // typical city speed
+      fromSurge: true,
     });
   }, []);
 
@@ -379,179 +377,178 @@ export default function BookRidePage() {
   };
 
   return (
-    <div className="page-container min-h-screen bg-gray-50 pt-38 pb-20 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 pt-20 pb-10 px-3 sm:px-6 lg:px-8">
       <NetworkStatus />
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+      <div className="max-w-7xl mx-auto">
 
-        {/* LEFT SIDE: Form Section */}
-        <div className={`form-container w-full lg:w-100 xl:w-112.5 shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''}`}>
+        {/* MOBILE: map first, then form below | DESKTOP: side by side */}
+        <div className="flex flex-col lg:flex-row gap-6">
 
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
-            <p className="text-gray-500 text-sm">Demand prediction & Dynamic pricing based on weather.</p>
+          {/* MAP — top on mobile, right on desktop */}
+          <div className="order-1 lg:order-2 w-full lg:flex-1 h-[55vw] min-h-[280px] max-h-[420px] lg:max-h-none lg:min-h-[600px] rounded-2xl overflow-hidden shadow-lg border relative z-0">
+            <RideMap
+              pickup={pickupLocation}
+              dropoff={dropoffLocation}
+              routeGeometry={routeGeometry}
+              durationMin={duration}
+              onMapClick={handleMapClick}
+              showCurrentLocationButton={true}
+              onCurrentLocationFound={handleCurrentLocationFound}
+              onlineRiders={onlineRiders}
+              trafficInfo={trafficInfo}
+            />
           </div>
 
+          {/* FORM — below map on mobile, left on desktop */}
+          <div className={`order-2 lg:order-1 w-full lg:w-96 xl:w-[420px] shrink-0 flex flex-col gap-5 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''}`}>
 
-          {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              {error}
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5">Book a Ride</h1>
+              <p className="text-gray-400 text-xs">Dynamic pricing based on demand & weather.</p>
             </div>
-          )}
 
-          {/* Location Inputs */}
-          <div className="flex flex-col gap-5 relative">
-            <div className="absolute left-3.75 top-11.25 bottom-11.25 w-0.5 bg-gray-200 z-0"></div>
-            <div className="flex items-start gap-4 relative">
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                <div className="w-3 h-3 rounded-full bg-green-600"></div>
+            {error && (
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                {error}
               </div>
-              <LocationInput
-                label="Pickup Location"
-                value={pickupQuery}
-                onChange={setPickupQuery}
-                onLocationSelect={handlePickupLocationSelect}
-                type="pickup"
-                isActive={activeInput === "pickup"}
-                onFocus={() => setActiveInput("pickup")}
-                showYourLocationButton={true}
-                onYourLocationClick={(loc) => { setPickupLocation(loc); setActiveInput("dropoff"); }}
-                className="flex-1"
-              />
-            </div>
+            )}
 
-            <div className="flex items-start gap-4 relative">
-              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                <div className="w-3 h-3 rounded-full bg-red-600"></div>
-              </div>
-              <LocationInput
-                label="Drop-off Location"
-                value={dropoffQuery}
-                onChange={setDropoffQuery}
-                onLocationSelect={handleDropoffLocationSelect}
-                type="dropoff"
-                isActive={activeInput === "dropoff"}
-                onFocus={() => setActiveInput("dropoff")}
-                showYourLocationButton={true}
-                onYourLocationClick={(loc) => setDropoffLocation(loc)}
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          <div className="h-px w-full bg-gray-100 my-2"></div>
-
-          {/* Ride Types */}
-          <div className="flex flex-col gap-4">
-            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Available Rides
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {Object.entries(FARE_RATES).map(([key, data]) => (
-                <button
-                  key={key}
-                  onClick={() => setRideType(key)}
-                  className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${rideType === key
-                    ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
-                    : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
-                    }`}
-                >
-                  <span className="text-2xl mb-1">{data.icon}</span>
-                  <span className="font-semibold capitalize text-gray-900">{data.name}</span>
-                  <span className="text-xs mt-0.5">{data.perKm} ৳/km</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Dynamic Surge Badge Section */}
-          {surge.multiplier > 1.0 && (
-            <div className="flex flex-col gap-2 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-500">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-orange-500 p-2 rounded-lg text-white shadow-sm">
-                    <span className="text-lg">{surge.icon}</span>
-                  </div>
-                  <div>
-                    <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider">High Demand detected</p>
-                    <p className="text-gray-900 text-sm font-bold">{surge.label}</p>
-                  </div>
+            {/* Location Inputs */}
+            <div className="flex flex-col gap-4 relative">
+              <div className="absolute left-3.5 top-10 bottom-10 w-0.5 bg-gray-200 z-0"></div>
+              <div className="flex items-start gap-3 relative">
+                <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-600"></div>
                 </div>
-                <div className="text-right">
-                  <span className="text-orange-600 font-black text-lg">x{surge.multiplier}</span>
-                </div>
+                <LocationInput
+                  label="Pickup Location"
+                  value={pickupQuery}
+                  onChange={setPickupQuery}
+                  onLocationSelect={handlePickupLocationSelect}
+                  type="pickup"
+                  isActive={activeInput === "pickup"}
+                  onFocus={() => setActiveInput("pickup")}
+                  showYourLocationButton={true}
+                  onYourLocationClick={(loc) => { setPickupLocation(loc); setActiveInput("dropoff"); }}
+                  className="flex-1"
+                />
               </div>
+              <div className="flex items-start gap-3 relative">
+                <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-600"></div>
+                </div>
+                <LocationInput
+                  label="Drop-off Location"
+                  value={dropoffQuery}
+                  onChange={setDropoffQuery}
+                  onLocationSelect={handleDropoffLocationSelect}
+                  type="dropoff"
+                  isActive={activeInput === "dropoff"}
+                  onFocus={() => setActiveInput("dropoff")}
+                  showYourLocationButton={true}
+                  onYourLocationClick={(loc) => setDropoffLocation(loc)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
 
-              {/* All reasons as small tags */}
-              <div className="flex gap-1.5 flex-wrap border-t border-orange-200/30 pt-2 mt-1">
-                {surge.reasons?.map((reason, index) => (
-                  <span key={index} className="text-[9px] bg-white/50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200">
-                    • {reason}
-                  </span>
+            <div className="h-px w-full bg-gray-100"></div>
+
+            {/* Ride Types */}
+            <div className="flex flex-col gap-3">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2 text-sm">
+                <DollarSign className="w-4 h-4" />
+                Available Rides
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(FARE_RATES).map(([key, data]) => (
+                  <button
+                    key={key}
+                    onClick={() => setRideType(key)}
+                    className={`p-3 border-2 rounded-xl flex flex-col items-center justify-center transition-all ${rideType === key
+                      ? "border-black bg-gray-50 shadow-sm scale-[1.02]"
+                      : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
+                      }`}
+                  >
+                    <span className="text-xl mb-0.5">{data.icon}</span>
+                    <span className="font-semibold capitalize text-gray-900 text-xs">{data.name}</span>
+                    <span className="text-[10px] mt-0.5 text-gray-500">{data.perKm} ৳/km</span>
+                  </button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Pricing & Route Summary */}
-          {isRouting ? (
-            <div className="bg-gray-50 p-6 rounded-2xl mt-2 border border-gray-200 flex flex-col items-center justify-center text-center">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-              <span className="text-gray-600 font-medium">Calculating optimal route...</span>
-            </div>
-          ) : routeGeometry.length > 0 ? (
-            <div className="bg-linear-to-br from-gray-900 to-gray-800 text-white p-6 rounded-2xl mt-2 shadow-lg relative">
-              <div className="flex gap-4 mb-4 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                <div className="flex-1 flex flex-col items-center border-r border-white/20">
-                  <Clock className="w-4 h-4 text-gray-300 mb-1" />
-                  <span className="text-gray-400 text-xs font-semibold">Time</span>
-                  <span className="font-bold text-lg">{duration} min</span>
+            {/* Surge Badge */}
+            {surge.multiplier > 1.0 && (
+              <div className="flex flex-col gap-2 bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-orange-500 p-1.5 rounded-lg text-white">
+                      <span className="text-sm">{surge.icon}</span>
+                    </div>
+                    <div>
+                      <p className="text-orange-600 text-[9px] font-bold uppercase tracking-wider">High Demand</p>
+                      <p className="text-gray-900 text-xs font-bold">{surge.label}</p>
+                    </div>
+                  </div>
+                  <span className="text-orange-600 font-black text-base">x{surge.multiplier}</span>
                 </div>
-                <div className="flex-1 flex flex-col items-center">
-                  <Route className="w-4 h-4 text-gray-300 mb-1" />
-                  <span className="text-gray-400 text-xs font-semibold">Distance</span>
-                  <span className="font-bold text-lg">{distance} km</span>
+                <div className="flex gap-1 flex-wrap border-t border-orange-200/30 pt-1.5">
+                  {surge.reasons?.map((reason, i) => (
+                    <span key={i} className="text-[9px] bg-white/50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200">
+                      • {reason}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <div className="flex justify-between items-end pt-2 border-t border-white/10">
-                <span className="text-gray-300 font-medium">Estimated Fare</span>
-                <span className={`font-bold text-4xl ${surge.multiplier > 1.0 ? 'text-orange-400' : 'text-emerald-400'}`}>{fare} ৳</span>
+            )}
+
+            {/* Route Summary */}
+            {isRouting ? (
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-center gap-3">
+                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <span className="text-gray-600 text-sm font-medium">Calculating route...</span>
               </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50 p-5 rounded-2xl mt-2 border border-dashed flex items-center justify-center text-center">
-              <div className="text-gray-400 text-sm">Select locations to see fare</div>
-            </div>
-          )}
+            ) : routeGeometry.length > 0 ? (
+              <div className="bg-linear-to-br from-gray-900 to-gray-800 text-white p-4 rounded-xl shadow-lg">
+                <div className="flex gap-3 mb-3 bg-white/10 rounded-lg p-2.5">
+                  <div className="flex-1 flex flex-col items-center border-r border-white/20">
+                    <Clock className="w-3.5 h-3.5 text-gray-300 mb-0.5" />
+                    <span className="text-gray-400 text-[10px] font-semibold">Time</span>
+                    <span className="font-bold text-base">{duration} min</span>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center">
+                    <Route className="w-3.5 h-3.5 text-gray-300 mb-0.5" />
+                    <span className="text-gray-400 text-[10px] font-semibold">Distance</span>
+                    <span className="font-bold text-base">{distance} km</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-end pt-2 border-t border-white/10">
+                  <span className="text-gray-300 text-sm font-medium">Estimated Fare</span>
+                  <span className={`font-bold text-3xl ${surge.multiplier > 1.0 ? 'text-orange-400' : 'text-emerald-400'}`}>{fare} ৳</span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-4 rounded-xl border border-dashed flex items-center justify-center">
+                <div className="text-gray-400 text-sm">Select locations to see fare</div>
+              </div>
+            )}
 
-          {/* Confirm Button */}
-          <button
-            onClick={handleConfirmBooking}
-            disabled={routeGeometry.length === 0 || isSubmitting}
-            className="w-full bg-linear-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
-            {isSubmitting ? "Confirming..." : "Confirm Booking"}
-          </button>
-        </div>
+            {/* Confirm Button */}
+            <button
+              onClick={handleConfirmBooking}
+              disabled={routeGeometry.length === 0 || isSubmitting}
+              className="w-full bg-linear-to-r from-blue-600 to-blue-700 text-white py-3.5 rounded-xl font-semibold text-base hover:from-blue-700 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+              {isSubmitting ? "Confirming..." : "Confirm Booking"}
+            </button>
+          </div>
 
-        {/* RIGHT SIDE: Map View */}
-        <div className="w-full flex-1 min-h-150 rounded-3xl overflow-hidden shadow-lg border relative z-0">
-          <RideMap
-            pickup={pickupLocation}
-            dropoff={dropoffLocation}
-            routeGeometry={routeGeometry}
-            durationMin={duration}
-            onMapClick={handleMapClick}
-            showCurrentLocationButton={true}
-            onCurrentLocationFound={handleCurrentLocationFound}
-            onlineRiders={onlineRiders}
-          />
         </div>
       </div>
     </div>
-
   );
 }
 

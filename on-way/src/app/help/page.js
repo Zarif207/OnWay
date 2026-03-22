@@ -2,9 +2,23 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Bike, DollarSign, Star, FileText, AlertTriangle, Users, CreditCard, MapPin, Shield, Phone, Clock, Wrench, Info, Search, X } from "lucide-react";
 
-// ─── RIDER DATA ───────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.45, delay: i * 0.08, ease: "easeOut" } }),
+};
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.35 } },
+};
+const tabContent = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
+};
+
 const riderFaqs = [
   {
     category: "Getting Started", icon: FileText,
@@ -45,7 +59,6 @@ const riderFaqs = [
   },
 ];
 
-// ─── PASSENGER DATA ───────────────────────────────────────
 const passengerFaqs = [
   {
     category: "Getting Started", icon: Users,
@@ -86,7 +99,6 @@ const passengerFaqs = [
   },
 ];
 
-// ─── WALK-IN DATA ─────────────────────────────────────────
 const supportCenters = [
   { name: "OnWay Tangail Support Center", address: "Zubaear's House, Tangail Sadar, Tangail 1900", phone: "+880 1700-000000", hours: "9:00 AM - 8:00 PM (7 days a week)", services: ["Account Issues", "Payment Problems", "Driver Registration", "Vehicle Inspection"] },
   { name: "OnWay Bogura Branch", address: "Minhajer's House, Bogura Sadar, Bogura 5800", phone: "+880 1700-000001", hours: "10:00 AM - 7:00 PM (Closed on Fridays)", services: ["General Support", "Lost & Found", "Complaint Resolution"] },
@@ -95,7 +107,38 @@ const supportCenters = [
   { name: "OnWay Chittagong Hub", address: "Ishteak's House, Chittagong Sadar, Chittagong 4000", phone: "+880 1900-000002", hours: "9:00 AM - 9:00 PM (7 days a week)", services: ["Account Issues", "Driver Registration", "Lost & Found", "Payment Problems", "App Technical Support"] },
 ];
 
-// ─── FAQ ACCORDION ────────────────────────────────────────
+function FaqItem({ faq, id, isOpen, onToggle, showCategory }) {
+  return (
+    <div className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen ? "border-primary/30 shadow-sm" : "border-gray-100"}`}>
+      <button onClick={() => onToggle(id)} className="w-full px-6 py-4 text-left flex justify-between items-center gap-4">
+        <div>
+          {showCategory && <span className="text-[10px] font-black uppercase tracking-widest text-primary block mb-1">{faq.category}</span>}
+          <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
+        </div>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
+          <ChevronDown size={16} className="text-primary shrink-0" />
+        </motion.div>
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="answer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-5 border-t border-gray-50">
+              <p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.answer}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function FaqSection({ sections, searchQuery }) {
   const [openFaq, setOpenFaq] = useState(null);
   const toggle = (id) => setOpenFaq(openFaq === id ? null : id);
@@ -116,24 +159,15 @@ function FaqSection({ sections, searchQuery }) {
     return (
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-8">No results found. Try a different keyword.</p>
+          <motion.p variants={fadeIn} initial="hidden" animate="visible" className="text-center text-gray-400 text-sm py-8">
+            No results found. Try a different keyword.
+          </motion.p>
         ) : (
-          filtered.map((faq, i) => {
-            const id = `s-${i}`;
-            const isOpen = openFaq === id;
-            return (
-              <div key={i} className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen ? "border-primary/30 shadow-sm" : "border-gray-100"}`}>
-                <button onClick={() => toggle(id)} className="w-full px-6 py-4 text-left flex justify-between items-center gap-4">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary block mb-1">{faq.category}</span>
-                    <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
-                  </div>
-                  <ChevronDown size={16} className={`text-primary shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-                {isOpen && <div className="px-6 pb-5 border-t border-gray-50"><p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.answer}</p></div>}
-              </div>
-            );
-          })
+          filtered.map((faq, i) => (
+            <motion.div key={i} variants={fadeUp} custom={i} initial="hidden" animate="visible">
+              <FaqItem faq={faq} id={`s-${i}`} isOpen={openFaq === `s-${i}`} onToggle={toggle} showCategory={true} />
+            </motion.div>
+          ))
         )}
       </div>
     );
@@ -142,7 +176,7 @@ function FaqSection({ sections, searchQuery }) {
   return (
     <div className="space-y-6">
       {sections.map((section, si) => (
-        <div key={si}>
+        <motion.div key={si} variants={fadeUp} custom={si} initial="hidden" animate="visible">
           <div className="flex items-center gap-3 mb-3 px-1">
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
               <section.icon size={16} className="text-primary" />
@@ -152,25 +186,17 @@ function FaqSection({ sections, searchQuery }) {
           <div className="space-y-2">
             {section.questions.map((faq, qi) => {
               const id = `${si}-${qi}`;
-              const isOpen = openFaq === id;
               return (
-                <div key={qi} className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen ? "border-primary/30 shadow-sm" : "border-gray-100"}`}>
-                  <button onClick={() => toggle(id)} className="w-full px-6 py-4 text-left flex justify-between items-center gap-4">
-                    <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
-                    <ChevronDown size={16} className={`text-primary shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {isOpen && <div className="px-6 pb-5 border-t border-gray-50"><p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.answer}</p></div>}
-                </div>
+                <FaqItem key={qi} faq={faq} id={id} isOpen={openFaq === id} onToggle={toggle} showCategory={false} />
               );
             })}
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 }
 
-// ─── MAIN PAGE ────────────────────────────────────────────
 function HelpContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -179,7 +205,11 @@ function HelpContent() {
   const [centerQuery, setCenterQuery] = useState("");
 
   useEffect(() => {
-    if (tabParam) setActiveTab(tabParam);
+    if (tabParam) {
+      // defer to avoid synchronous setState in effect
+      const t = setTimeout(() => setActiveTab(tabParam), 0);
+      return () => clearTimeout(t);
+    }
   }, [tabParam]);
 
   const tabs = [
@@ -205,214 +235,242 @@ function HelpContent() {
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #259461 0%, transparent 50%), radial-gradient(circle at 80% 20%, #2cbe6b 0%, transparent 40%)" }} />
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">Help Center</h1>
-          <p className="text-lg text-gray-300 mb-8">Find answers, get support, visit us in person</p>
-          {activeTab !== "walkin" && (
-            <div className="relative max-w-2xl mx-auto">
-              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => { setQuery(e.target.value); }}
-                placeholder={activeTab === "rider" ? "Search rider help articles..." : "Search passenger help articles..."}
-                className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
-              />
-              {query && (
-                <button onClick={() => setQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
-                  <X size={18} />
-                </button>
-              )}
-            </div>
-          )}
-          {activeTab === "walkin" && (
-            <div className="relative max-w-2xl mx-auto">
-              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={centerQuery}
-                onChange={(e) => setCenterQuery(e.target.value)}
-                placeholder="Search by city, service, or center name..."
-                className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
-              />
-              {centerQuery && (
-                <button onClick={() => setCenterQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
-                  <X size={18} />
-                </button>
-              )}
-            </div>
-          )}
+          <motion.h1 variants={fadeUp} initial="hidden" animate="visible"
+            className="text-4xl md:text-5xl font-black mb-4 tracking-tight">
+            Help Center
+          </motion.h1>
+          <motion.p variants={fadeUp} custom={1} initial="hidden" animate="visible"
+            className="text-lg text-gray-300 mb-8">
+            Find answers, get support, visit us in person
+          </motion.p>
+          <motion.div variants={fadeUp} custom={2} initial="hidden" animate="visible">
+            {activeTab !== "walkin" ? (
+              <div className="relative max-w-2xl mx-auto">
+                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={activeTab === "rider" ? "Search rider help articles..." : "Search passenger help articles..."}
+                  className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
+                />
+                {query && (
+                  <button onClick={() => setQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="relative max-w-2xl mx-auto">
+                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={centerQuery}
+                  onChange={(e) => setCenterQuery(e.target.value)}
+                  placeholder="Search by city, service, or center name..."
+                  className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
+                />
+                {centerQuery && (
+                  <button onClick={() => setCenterQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="sticky top-20 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="flex">
+          <div className="flex justify-center">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setQuery(""); setCenterQuery(""); }}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-2 transition-all ${
-                  activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-400 hover:text-gray-700"
+                className={`relative flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all ${
+                  activeTab === tab.id ? "text-primary" : "text-gray-400 hover:text-gray-700"
                 }`}
               >
                 <tab.icon size={16} />
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── RIDER TAB ── */}
-      {activeTab === "rider" && (
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          {!query && (
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              {[
-                { icon: DollarSign, title: "Earnings", desc: "Payment schedules, bonuses, and cash out options" },
-                { icon: Bike, title: "Vehicle Requirements", desc: "Standards, inspections, and maintenance tips" },
-                { icon: Star, title: "Ratings & Reviews", desc: "How ratings work and tips to improve" },
-              ].map((item, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <item.icon size={22} className="text-primary" />
-                  </div>
-                  <h3 className="text-base font-bold text-secondary mb-1">{item.title}</h3>
-                  <p className="text-gray-500 text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          {query && (
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
-              Results for &quot;{query}&quot;
-            </p>
-          )}
-          <FaqSection sections={riderFaqs} searchQuery={query} />
-        </div>
-      )}
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
 
-      {/* ── PASSENGER TAB ── */}
-      {activeTab === "passenger" && (
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          {!query && (
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              {[
-                { icon: MapPin, title: "Booking Rides", desc: "Learn how to book, schedule, and manage your rides" },
-                { icon: CreditCard, title: "Payments", desc: "Payment methods, receipts, and billing questions" },
-                { icon: Users, title: "Account", desc: "Manage your profile, settings, and preferences" },
-              ].map((item, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <item.icon size={22} className="text-primary" />
-                  </div>
-                  <h3 className="text-base font-bold text-secondary mb-1">{item.title}</h3>
-                  <p className="text-gray-500 text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          {query && (
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
-              Results for &quot;{query}&quot;
-            </p>
-          )}
-          <FaqSection sections={passengerFaqs} searchQuery={query} />
-        </div>
-      )}
+        {activeTab === "rider" && (
+          <motion.div key="rider" variants={tabContent} initial="hidden" animate="visible" exit="exit"
+            className="max-w-4xl mx-auto px-6 py-12">
+            {!query && (
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                {[
+                  { icon: DollarSign, title: "Earnings", desc: "Payment schedules, bonuses, and cash out options" },
+                  { icon: Bike, title: "Vehicle Requirements", desc: "Standards, inspections, and maintenance tips" },
+                  { icon: Star, title: "Ratings & Reviews", desc: "How ratings work and tips to improve" },
+                ].map((item, i) => (
+                  <motion.div key={i} variants={fadeUp} custom={i} initial="hidden" animate="visible"
+                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group">
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                      <item.icon size={22} className="text-primary" />
+                    </div>
+                    <h3 className="text-base font-bold text-secondary mb-1">{item.title}</h3>
+                    <p className="text-gray-500 text-sm">{item.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+            {query && (
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                Results for &quot;{query}&quot;
+              </p>
+            )}
+            <FaqSection sections={riderFaqs} searchQuery={query} />
+          </motion.div>
+        )}
 
-      {/* ── WALK-IN TAB ── */}
-      {activeTab === "walkin" && (
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          {/* Info Banner */}
-          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex items-start gap-4 mb-10">
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-              <Info size={20} className="text-primary" />
-            </div>
-            <div>
-              <h3 className="font-bold text-secondary mb-2">Before You Visit</h3>
-              <ul className="text-gray-600 text-sm space-y-1">
-                <li>• Bring your government-issued ID</li>
-                <li>• Have your OnWay account details ready</li>
-                <li>• For driver registration, bring vehicle documents</li>
-                <li>• Walk-ins are welcome, but appointments are recommended for faster service</li>
-              </ul>
-            </div>
-          </div>
+        {activeTab === "passenger" && (
+          <motion.div key="passenger" variants={tabContent} initial="hidden" animate="visible" exit="exit"
+            className="max-w-4xl mx-auto px-6 py-12">
+            {!query && (
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                {[
+                  { icon: MapPin, title: "Booking Rides", desc: "Learn how to book, schedule, and manage your rides" },
+                  { icon: CreditCard, title: "Payments", desc: "Payment methods, receipts, and billing questions" },
+                  { icon: Users, title: "Account", desc: "Manage your profile, settings, and preferences" },
+                ].map((item, i) => (
+                  <motion.div key={i} variants={fadeUp} custom={i} initial="hidden" animate="visible"
+                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group">
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                      <item.icon size={22} className="text-primary" />
+                    </div>
+                    <h3 className="text-base font-bold text-secondary mb-1">{item.title}</h3>
+                    <p className="text-gray-500 text-sm">{item.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+            {query && (
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                Results for &quot;{query}&quot;
+              </p>
+            )}
+            <FaqSection sections={passengerFaqs} searchQuery={query} />
+          </motion.div>
+        )}
 
-          {filteredCenters.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-gray-400 text-sm">No centers found for &quot;{centerQuery}&quot;. Try searching by city or service.</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {filteredCenters.map((center, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all overflow-hidden">
-                  <div className="bg-secondary px-6 py-5 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
-                      <MapPin size={18} className="text-primary" />
-                    </div>
-                    <h3 className="text-white font-black text-base tracking-tight">{center.name}</h3>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-start gap-3">
-                      <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Address</p>
-                        <p className="text-sm text-gray-700">{center.address}</p>
+        {activeTab === "walkin" && (
+          <motion.div key="walkin" variants={tabContent} initial="hidden" animate="visible" exit="exit"
+            className="max-w-6xl mx-auto px-6 py-12">
+            <motion.div variants={fadeUp} initial="hidden" animate="visible"
+              className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex items-start gap-4 mb-10">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                <Info size={20} className="text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-secondary mb-2">Before You Visit</h3>
+                <ul className="text-gray-600 text-sm space-y-1">
+                  <li>• Bring your government-issued ID</li>
+                  <li>• Have your OnWay account details ready</li>
+                  <li>• For driver registration, bring vehicle documents</li>
+                  <li>• Walk-ins are welcome, but appointments are recommended for faster service</li>
+                </ul>
+              </div>
+            </motion.div>
+
+            {filteredCenters.length === 0 ? (
+              <motion.div variants={fadeIn} initial="hidden" animate="visible"
+                className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+                <p className="text-gray-400 text-sm">No centers found for &quot;{centerQuery}&quot;. Try searching by city or service.</p>
+              </motion.div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {filteredCenters.map((center, i) => (
+                  <motion.div key={i} variants={fadeUp} custom={i} initial="hidden" animate="visible"
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all overflow-hidden">
+                    <div className="bg-secondary px-6 py-5 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
+                        <MapPin size={18} className="text-primary" />
                       </div>
+                      <h3 className="text-white font-black text-base tracking-tight">{center.name}</h3>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <Phone size={16} className="text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Phone</p>
-                        <p className="text-sm text-gray-700">{center.phone}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Clock size={16} className="text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hours</p>
-                        <p className="text-sm text-gray-700">{center.hours}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Wrench size={16} className="text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Services</p>
-                        <div className="flex flex-wrap gap-2">
-                          {center.services.map((s, idx) => (
-                            <span key={idx} className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">{s}</span>
-                          ))}
+                    <div className="p-6 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Address</p>
+                          <p className="text-sm text-gray-700">{center.address}</p>
                         </div>
                       </div>
+                      <div className="flex items-start gap-3">
+                        <Phone size={16} className="text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Phone</p>
+                          <p className="text-sm text-gray-700">{center.phone}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Clock size={16} className="text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hours</p>
+                          <p className="text-sm text-gray-700">{center.hours}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Wrench size={16} className="text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Services</p>
+                          <div className="flex flex-wrap gap-2">
+                            {center.services.map((s, idx) => (
+                              <span key={idx} className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <button className="w-full mt-2 bg-secondary text-white py-3 rounded-xl text-sm font-bold hover:bg-primary transition-all active:scale-95">
+                        Get Directions
+                      </button>
                     </div>
-                    <button className="w-full mt-2 bg-secondary text-white py-3 rounded-xl text-sm font-bold hover:bg-primary transition-all active:scale-95">
-                      Get Directions
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+      </AnimatePresence>
 
       {/* Support CTA */}
-      <div className="bg-secondary py-16 mt-8">
+      <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+        className="bg-secondary py-16 mt-8">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Still Need Help?</h2>
           <p className="text-gray-400 mb-8 text-sm">Our support team is here for you 24/7</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-accent transition-all hover:scale-105 active:scale-95">Live Chat</button>
-            <button className="bg-white/10 text-white border border-white/20 px-8 py-3 rounded-2xl font-bold text-sm hover:bg-white/20 transition-all">Email Support</button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-accent transition-colors">
+              Live Chat
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              className="bg-white/10 text-white border border-white/20 px-8 py-3 rounded-2xl font-bold text-sm hover:bg-white/20 transition-colors">
+              Email Support
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
     </div>
   );

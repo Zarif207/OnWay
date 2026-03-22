@@ -104,11 +104,15 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
-      if (pathname.startsWith("/about")) {
-        const heroHeight = window.innerHeight * 0.7; // 70vh
+      if (pathname.startsWith("/about") || pathname.startsWith("/help")) {
+        const heroHeight = pathname.startsWith("/about")
+          ? window.innerHeight * 0.7  // about: 70vh
+          : 240;                       // help: py-20 hero ~240px
         setIsPastHero(window.scrollY > heroHeight - 80);
       }
     };
+    // reset on route change
+    setIsPastHero(false);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
@@ -155,7 +159,7 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${pathname.startsWith("/about") && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
+                className={`object-contain transition-all duration-300 ${(pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
                 priority
               />
             </div>

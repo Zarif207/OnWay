@@ -20,7 +20,7 @@ import {
   Zap,
   Star
 } from "lucide-react";
-import logoImage from "../../../public/icon2.png";
+import logoImage from "../../../public/onway_logo.png";
 
 // ================= CONSTANTS & DATA =================
 
@@ -62,7 +62,7 @@ const FooterHeading = ({ children }) => (
     <h4 className="text-white font-bold text-xl tracking-tight">
       {children}
     </h4>
-    <div className="absolute -bottom-2 left-0 w-12 h-1 bg-gradient-to-r from-[#2FCA71] to-blue-500 rounded-full transition-all duration-300 group-hover:w-20" />
+    <div className="absolute -bottom-2 left-0 w-12 h-1 bg-linear-to-r from-[#2FCA71] to-blue-500 rounded-full transition-all duration-300 group-hover:w-20" />
   </div>
 );
 
@@ -202,12 +202,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 pb-16 border-b border-white/5">
           {/* Brand Col */}
           <div className="lg:col-span-4 space-y-8">
-            <Link href="/" className="inline-flex items-center gap-3 group">
+            <Link href="/" className="inline-flex items-center group">
               <div className="relative">
                 <div className="absolute inset-0 bg-[#2FCA71]/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-500" />
-                <Image src={logoImage} alt="OnWay" width={48} height={48} className="relative z-10" />
+                <Image src={logoImage} alt="OnWay" width={140} height={56} className="relative z-10 brightness-0 invert" />
               </div>
-              <span className="text-3xl font-black text-white tracking-tighter">OnWay</span>
             </Link>
             <p className="text-gray-400 leading-relaxed text-sm lg:text-base pr-4">
               OnWay is reshaping city transit through smart, safe, and efficient mobility solutions. Join the network that moves you better.

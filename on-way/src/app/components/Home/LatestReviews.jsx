@@ -48,15 +48,18 @@ export default function HomeLatestReviews() {
     return (
       <section className="py-5 overflow-hidden ">
         <div className="max-w-7xl mx-auto px-6 bg-white/50">
-
           <div className="text-center mb-16">
             <AnimatedHeading>
               <h2 className="text-4xl md:text-5xl font-black text-secondary mb-5 tracking-tight">
-                What Our <span className="text-primary">Riders</span> Say
+                What Our{" "}
+                <span className="inline-block bg-gradient-to-r from-[#2FCA71] to-[#259461] bg-clip-text text-transparent">
+                  Riders
+                </span>{" "}
+                Say
               </h2>
               <p className="text-secondary/60 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
-                Real experiences from real people across the city.
-                Join thousands of satisfied riders using OnWay daily.
+                Real experiences from real people across the city. Join
+                thousands of satisfied riders using OnWay daily.
               </p>
             </AnimatedHeading>
           </div>
@@ -79,7 +82,7 @@ export default function HomeLatestReviews() {
               }}
               pagination={{
                 clickable: true,
-                dynamicBullets: true
+                dynamicBullets: true,
               }}
               modules={[EffectCoverflow, Autoplay, Pagination]}
               className="pb-20"
@@ -91,31 +94,31 @@ export default function HomeLatestReviews() {
 
         {/* Premium Carousel Logic Styles */}
         <style jsx global>{`
-                .swiper-slide {
-                    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-                    opacity: 0.4;
-                    filter: blur(4px) scale(0.85);
-                }
-                .swiper-slide-active {
-                    opacity: 1;
-                    filter: blur(0) scale(1.05);
-                    z-index: 10;
-                }
-                /* Custom Green Pagination */
-                .swiper-pagination-bullet {
-                    background: #CBD5E1 !important;
-                    opacity: 0.5 !important;
-                    transition: all 0.3s ease !important;
-                    width: 8px !important;
-                    height: 8px !important;
-                }
-                .swiper-pagination-bullet-active {
-                    background: var(--color-primary) !important;
-                    opacity: 1 !important;
-                    width: 32px !important;
-                    border-radius: 10px !important;
-                }
-            `}</style>
+          .swiper-slide {
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0.4;
+            filter: blur(4px) scale(0.85);
+          }
+          .swiper-slide-active {
+            opacity: 1;
+            filter: blur(0) scale(1.05);
+            z-index: 10;
+          }
+          /* Custom Green Pagination */
+          .swiper-pagination-bullet {
+            background: #cbd5e1 !important;
+            opacity: 0.5 !important;
+            transition: all 0.3s ease !important;
+            width: 8px !important;
+            height: 8px !important;
+          }
+          .swiper-pagination-bullet-active {
+            background: var(--color-primary) !important;
+            opacity: 1 !important;
+            width: 32px !important;
+            border-radius: 10px !important;
+          }
+        `}</style>
       </section>
     );
   }
@@ -131,8 +134,8 @@ export default function HomeLatestReviews() {
               What Our <span className="text-primary">Riders</span> Say
             </h2>
             <p className="text-secondary/60 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
-              Real experiences from real people across the city. Join thousands of
-              satisfied riders using OnWay daily.
+              Real experiences from real people across the city. Join thousands
+              of satisfied riders using OnWay daily.
             </p>
           </AnimatedHeading>
         </div>

@@ -145,11 +145,11 @@ export default function Platform() {
                         <Image
                           src={
                             {
-                              bike: "/bike-img.jpg",
+                              bike: "/bike-img.png",
                               car: "/car-img-1.jpg",
                               ambulance: "/ambulance-img-2.jpg",
                               pay: "/wallet-1.jpg",
-                            }[current.key] || "/bike-img.jpg"
+                            }[current.key] || "/bike-img.png"
                           }
                           alt={current.name}
                           fill

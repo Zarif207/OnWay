@@ -102,13 +102,10 @@ export default function Earn() {
           {/* RIGHT: Content Section */}
           <div className="relative">
             <AnimatedHeading className="mb-12">
-              <span className="text-[#22c55e] text-sm font-black uppercase tracking-[0.2em] block mb-4">
-                Our Solutions
-              </span>
               <h2 className="text-4xl md:text-5xl font-black text-[#0A1F3D] leading-[1.05] mb-6">
                 Logistics service <br />
                 outsourcing’s advantages <br />
-                <span className="text-[#0A1F3D]/40 text-3xl md:text-4xl">in 2026.</span>
+                <span className="bg-linear-to-r from-[#2FCA71] to-[#259461] bg-clip-text text-transparent">in 2026.</span>
               </h2>
             </AnimatedHeading>
 

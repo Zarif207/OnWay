@@ -166,43 +166,63 @@ const Navbar = () => {
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          <nav className="hidden lg:flex items-center gap-1 bg-gray-50/50 p-1.5 rounded-full border border-gray-100">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
-                ${isActive(item.href) ? "text-primary bg-primary/5" : "text-gray-500 hover:text-primary"}`}
-              >
-                {isActive(item.href) && <NavIndicator />}
-                {item.label}
-              </Link>
-            ))}
+          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি */}
+          {(() => {
+            const isOnHero = (pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero;
+            return (
+              <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
+                ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                    ${isActive(item.href)
+                        ? "text-primary bg-white/90"
+                        : isOnHero
+                          ? "text-white/80 hover:text-primary hover:bg-white/15"
+                          : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    {isActive(item.href) && <NavIndicator />}
+                    {item.label}
+                  </Link>
+                ))}
 
-            {session && (
-              <Link
-                href={dashboardHref}
-                className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
-                ${pathname.startsWith("/dashboard") ? "text-primary bg-primary/5" : "text-gray-500 hover:text-primary"}`}
-              >
-                {pathname.startsWith("/dashboard") && <NavIndicator />}
-                Dashboard
-              </Link>
-            )}
+                {session && (
+                  <Link
+                    href={dashboardHref}
+                    className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                    ${pathname.startsWith("/dashboard")
+                        ? "text-primary bg-white/90"
+                        : isOnHero
+                          ? "text-white/80 hover:text-primary hover:bg-white/15"
+                          : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    {pathname.startsWith("/dashboard") && <NavIndicator />}
+                    Dashboard
+                  </Link>
+                )}
 
-            {/* More Dropdown */}
-            <div className="relative group" ref={dropdownRef}>
-              <button
-                onClick={() => setIsMoreOpen(!isMoreOpen)}
-                className={`flex items-center gap-1.5 px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full lg:group-hover:bg-primary/5 lg:group-hover:text-primary
-                ${isMoreOpen ? "bg-primary/5 text-primary" : "text-gray-500 hover:text-primary"}`}
-              >
-                More{" "}
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-300 ${isMoreOpen ? "rotate-180" : ""} lg:group-hover:rotate-180`}
-                />
-              </button>
+                {/* More Dropdown */}
+                <div className="relative group" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsMoreOpen(!isMoreOpen)}
+                    className={`flex items-center gap-1.5 px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                    ${isMoreOpen
+                        ? "bg-primary/5 text-primary"
+                        : isOnHero
+                          ? "text-white/80 hover:text-primary hover:bg-white/15"
+                          : "text-gray-500 hover:text-primary lg:group-hover:bg-primary/5 lg:group-hover:text-primary"
+                    }`}
+                  >
+                    More{" "}
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-300 ${isMoreOpen ? "rotate-180" : ""} lg:group-hover:rotate-180`}
+                    />
+                  </button>
 
               <div
                 className={`absolute top-full right-0 w-85 pt-3 transition-all duration-300 ease-in-out origin-top-right z-[110]
@@ -274,6 +294,8 @@ const Navbar = () => {
               </div>
             </div>
           </nav>
+            );
+          })()}
 
           {/* ================= RIGHT: AUTH ================= */}
           <div className="absolute right-6 flex items-center gap-3">

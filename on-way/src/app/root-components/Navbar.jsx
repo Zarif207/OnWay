@@ -28,7 +28,8 @@ import {
   Users,
   MapPin
 } from "lucide-react";
-import logoImage from "../../../public/icon2.png";
+import logoImage from "../../../public/onway_logo.png"
+
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 // ================= CONSTANTS & DATA =================
@@ -88,6 +89,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isPastHero, setIsPastHero] = useState(false);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
@@ -102,10 +104,18 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
+      if (pathname.startsWith("/about") || pathname.startsWith("/help")) {
+        const heroHeight = pathname.startsWith("/about")
+          ? window.innerHeight * 0.7  // about: 70vh
+          : 240;                       // help: py-20 hero ~240px
+        setIsPastHero(window.scrollY > heroHeight - 80);
+      }
     };
+    // reset on route change
+    setIsPastHero(false);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -137,19 +147,21 @@ const Navbar = () => {
         ${isScrolled ? "translate-y-2" : "translate-y-0"}`}
       >
         <div
-          className={`w-full max-w-7xl flex items-center justify-between px-6 py-2 rounded-3xl transition-all duration-500
+          className={`w-full max-w-7xl relative flex items-center justify-center px-6 py-2 rounded-3xl transition-all duration-500
           ${isScrolled
               ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
               : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 transition-transform duration-500 group-hover:scale-110">
-              <Image src={logoImage} alt="OnWay Logo" fill className="object-contain" priority />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter text-gray-900 leading-none">OnWay</span>
-              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-primary">Premium</span>
+          <Link href="/" className="absolute left-6 flex items-center group">
+            <div className="relative h-14 w-38 transition-transform duration-500 group-hover:scale-105">
+              <Image
+                src={logoImage}
+                alt="OnWay Logo"
+                fill
+                className={`object-contain transition-all duration-300 ${(pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
+                priority
+              />
             </div>
           </Link>
 
@@ -264,7 +276,7 @@ const Navbar = () => {
           </nav>
 
           {/* ================= RIGHT: AUTH ================= */}
-          <div className="flex items-center gap-3">
+          <div className="absolute right-6 flex items-center gap-3">
             {!session ? (
               <div className="flex items-center gap-2">
                 <Link

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
-import logoImage from "../../../public/icon2.png";
+import logoImage from "../../../public/onway_logo.png";
 import { ChevronRight, LogOut, Menu, X } from "lucide-react";
 
 const SidebarContent = ({ role, menuItems, onClose }) => {
@@ -19,7 +19,7 @@ const SidebarContent = ({ role, menuItems, onClose }) => {
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-gray-50">
         <Link href="/" className="transition-opacity hover:opacity-80">
-          <Image src={logoImage} alt="OnWay" width={100} height={78} priority />
+          <Image src={logoImage} alt="OnWay" width={136} height={56} className="mix-blend-multiply" priority />
         </Link>
         {onClose && (
           <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-700">

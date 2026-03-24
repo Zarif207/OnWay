@@ -39,6 +39,8 @@ export default function EarnWithOnWayPage() {
     register,
     handleSubmit,
     setValue,
+    setError,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -133,29 +135,35 @@ export default function EarnWithOnWayPage() {
   };
 
   const handleModelSelect = (categoryKey, modelValue) => {
+    console.log(`[Vehicle Selection] Selection: ${categoryKey} -> ${modelValue}`);
     setSelectedModel(modelValue);
-    setValue("vehicleType", modelValue);
+
+    // Sync React Hook Form
+    setValue("vehicleType", modelValue, { shouldValidate: true });
+
+    // Update Single Source of Truth (Fixes the "Car -> Bike" bug)
+    updateFormData({
+      vehicleType: modelValue,
+      activeCategory: categoryKey,
+      selectedModel: modelValue
+    });
   };
 
   const handleExtractionComplete = (results) => {
-    console.log("OCR Extraction Results:", results);
-
-    // Determine typeKey from detected type
-    const typeKey = results.type?.toLowerCase().includes("license") ? "license"
-      : results.type?.toLowerCase().includes("passport") ? "passport"
-        : "nid";
+    console.log("[OCR] Extraction Results Received:", results);
 
     const extracted = results.extractedData;
+    if (!extracted || !extracted.isValid) return;
 
-    // Use setFormData directly for function-based merging
+    const typeKey = extracted.documentType.toLowerCase().includes("license") ? "license"
+      : extracted.documentType.toLowerCase().includes("passport") ? "passport"
+        : "nid";
+
+    const docType = extracted.documentType; // Use the exact string from parser
+
     setFormData((prev) => {
-      let idType = "NID";
-      if (typeKey === "nid") idType = "NID (National ID)";
-      if (typeKey === "passport") idType = "Passport";
-      if (typeKey === "license") idType = "Driving License";
-
       const updates = {
-        documentType: idType,
+        documentType: docType,
         documentFile: results.file,
         extractedData: extracted,
         documents: {
@@ -163,12 +171,12 @@ export default function EarnWithOnWayPage() {
           type: typeKey,
           [typeKey]: {
             uploaded: true,
-            image: results.image, // Base64
+            image: results.image,
             extracted: extracted,
           },
         },
         identity: {
-          type: idType,
+          type: docType,
           number: extracted.documentNumber || ""
         },
         profile: {
@@ -176,26 +184,23 @@ export default function EarnWithOnWayPage() {
           firstName: extracted.firstName || "",
           lastName: extracted.lastName || "",
           dateOfBirth: extracted.dateOfBirth || "",
-          bloodGroup: extracted.bloodGroup || null,
-        }
+        },
+        // Legacy flat fields for direct form sync
+        firstName: extracted.firstName || "",
+        lastName: extracted.lastName || "",
+        identityNumber: extracted.documentNumber || "",
+        dateOfBirth: extracted.dateOfBirth || "",
+        identityType: docType,
       };
-
-      // Keep flat values for any older components that rely on them
-      if (extracted.firstName) updates.firstName = extracted.firstName;
-      if (extracted.lastName) updates.lastName = extracted.lastName;
-      if (extracted.gender) updates.gender = extracted.gender;
-      if (extracted.bloodGroup) updates.bloodGroup = extracted.bloodGroup;
-      if (extracted.dateOfBirth) updates.dateOfBirth = extracted.dateOfBirth;
-      if (extracted.documentNumber) updates.identityNumber = extracted.documentNumber;
-      updates.identityType = idType;
 
       return { ...prev, ...updates };
     });
 
-    // Explicitly update react-hook-form fields so validation kicks in
+    // Sync React Hook Form (Strict Mapping)
     setValue("firstName", extracted.firstName || "", { shouldValidate: true });
     setValue("lastName", extracted.lastName || "", { shouldValidate: true });
     setValue("identityNumber", extracted.documentNumber || "", { shouldValidate: true });
+    setValue("identityType", docType, { shouldValidate: true });
   };
 
   const onSubmit = (data) => {
@@ -330,7 +335,12 @@ after:blur-2xl after:opacity-20 after:-z-10"
                     <h3 className="text-lg font-bold text-[#001820] mb-1">Fill Automatically with ID</h3>
                     <p className="text-xs text-gray-500 mb-5">Upload your document to auto-fill the form using AI OCR.</p>
 
-                    <DocumentOCR onExtractionComplete={handleExtractionComplete} />
+                    <DocumentOCR
+                      onExtractionComplete={handleExtractionComplete}
+                      setValue={setValue}
+                      setError={setError}
+                      reset={reset}
+                    />
                   </div>
 
                   {/* Name Fields */}

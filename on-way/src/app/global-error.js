@@ -10,7 +10,7 @@ export default function GlobalError({ error, reset }) {
             A critical error occurred. Please try refreshing the page or clearing your browser cache.
           </p>
           <button
-            onClick={() => reset()}
+            onClick={() => typeof reset === "function" && reset()}
             className="px-6 py-2 bg-primary text-black rounded-lg font-semibold hover:bg-primary transition-colors"
           >
             Try again

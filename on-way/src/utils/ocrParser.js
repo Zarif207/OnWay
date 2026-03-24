@@ -1,203 +1,178 @@
 /**
- * OCR Parser Utility
- * Extracts structured data from raw OCR text using label-anchored field parsing.
- * Hardened for strict ID validation and numeric-mandatory matching.
+ * Senior-Level Production OCR Parser
+ * PIPELINE: AUTHENTICITY GATE -> TYPE DETECTION -> ANCHOR EXTRACTION -> CLEAN -> VALIDATE
  */
+
+const GOVT_KEYWORDS = ["GOVERNMENT OF BANGLADESH", "PEOPLE'S REPUBLIC", "DRIVING LICENCE", "PASSPORT", "NATIONAL ID", "BRTA", "BANGLADESH"];
+const FORBIDDEN_WORDS = ["FATHER", "MOTHER", "HUSBAND", "GUARDIAN", "SPOUSE"];
+const GARBAGE_TOKENS = ["BAT", "MIME", "PRE", "LC", "FREN", "OUS", "BGD", "NID"];
+const NAME_PREFIXES = ["MD", "MD.", "MOHAMMAD", "MOHAMMED", "MOHAMMAD.", "LATE", "MR", "MRS"];
 
 /**
- * Normalizes various date formats (DD-MMM-YYYY, DD/MM/YYYY) to YYYY-MM-DD.
+ * 1. Document Authenticity Gate (MANDATORY)
  */
-export const normalizeDate = (dateStr) => {
-    if (!dateStr) return "";
-    let cleanStr = dateStr.replace(/[^\w\s\-\/\.]/g, "").trim();
-
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
-    // Pattern: 17-MAY-2000 or 17 MAY 2000
-    const mmmMatch = cleanStr.match(/(\d{1,2})[\s\-\/\.]?([A-Za-z]{3})[\s\-\/\.]?(\d{4})/i);
-    if (mmmMatch) {
-        const day = mmmMatch[1].padStart(2, '0');
-        const monthIndex = months.indexOf(mmmMatch[2].toUpperCase());
-        if (monthIndex !== -1) {
-            const year = mmmMatch[3];
-            return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${day}`;
-        }
-    }
-
-    // Pattern: 17/05/2000
-    const digitalMatch = cleanStr.match(/(\d{1,2})[\s\-\/\.]+(\d{1,2})[\s\-\/\.]+(\d{4})/);
-    if (digitalMatch) {
-        const day = digitalMatch[1].padStart(2, '0');
-        const month = digitalMatch[2].padStart(2, '0');
-        const year = digitalMatch[3];
-        return `${year}-${month}-${day}`;
-    }
-
-    return cleanStr;
-};
-
-/**
- * Removes OCR garbage words and symbols
- */
-export function cleanText(text) {
-    if (!text) return "";
-    let clean = text.replace(/[^A-Za-z\s]/g, " "); // Replace non-alphabets with space
-
-    // Remove specific noisy keywords
-    const noiseWords = [
-        "nationality", "bangladesh", "license", "licence", "wes", "ange",
-        "name", "blood", "group", "dob", "date of birth", "id no", "issue date", "expiry date"
-    ];
-
-    noiseWords.forEach(word => {
-        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-        clean = clean.replace(regex, "");
-    });
-
-    return clean.replace(/\s+/g, " ").trim();
+export function isDocumentAuthentic(text) {
+    if (!text) return false;
+    const t = text.toUpperCase();
+    return GOVT_KEYWORDS.some(k => t.includes(k));
 }
 
 /**
- * Label-Based Name Extraction
+ * 2. Document Type Detection
  */
-export function extractName(text) {
-    if (!text) return { firstName: "", lastName: "", fullName: "" };
+export function detectDocumentType(text) {
+    if (!text) return null;
+    const t = text.toUpperCase();
 
+    if (t.includes("PASSPORT") || t.includes("P<BGD")) return "Passport";
+    if (t.includes("DRIVING LICENCE") || t.includes("DRIVING LICENSE") || t.includes("ROAD TRANSPORT AUTHORITY")) return "Driving License";
+    if (t.includes("NATIONAL ID") || t.includes("NID")) return "NID";
+
+    return null;
+}
+
+/**
+ * 3. Ultra-Strict Name Extraction (Anchor-Based)
+ * Logic: Extract FULL NAME LINE after "Name:" or "Name :"
+ */
+export function extractFullName(text) {
+    if (!text) return null;
     const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-    let nameLine = "";
 
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].toLowerCase();
-        if (
-            line === "name" ||
-            line === "name / name" ||
-            line === "নাম" ||
-            line === "full name" ||
-            line.includes("name / name")
-        ) {
-            if (lines[i + 1]) {
-                nameLine = lines[i + 1];
-                break;
+        const line = lines[i];
+        const upLine = line.toUpperCase();
+
+        // Must contain "NAME" and NOT forbidden family words
+        if (upLine.includes("NAME") && !FORBIDDEN_WORDS.some(w => upLine.includes(w))) {
+            let rawName = line.replace(/name[:\-]?\s*/i, "").trim();
+
+            // Handle multi-line: If name is missing or too short on current line, take NEXT line
+            if (!rawName || rawName.length < 3) {
+                if (lines[i + 1]) {
+                    const nextUp = lines[i + 1].toUpperCase();
+                    // Ensure next line isn't another field label or govt text
+                    if (!FORBIDDEN_WORDS.some(w => nextUp.includes(w)) &&
+                        !GOVT_KEYWORDS.some(k => nextUp.includes(k)) &&
+                        !nextUp.includes("DATE") && !nextUp.includes("ID NO")) {
+                        rawName = lines[i + 1];
+                    }
+                }
             }
+
+            // Clean & Validate candidate
+            const cleaned = finalizeName(rawName);
+            if (validateName(cleaned)) return cleaned;
         }
     }
 
-    if (!nameLine) {
-        for (const line of lines) {
-            if (/^[A-Z\s]{8,50}$/.test(line) && !line.includes("NAME") && !line.includes("ID")) {
-                nameLine = line;
-                break;
-            }
-        }
+    // Fallback: Longest All-Caps line (that isn't govt text)
+    const candidates = lines.filter(l => {
+        const up = l.toUpperCase();
+        return l === up && l.length > 5 &&
+            !GOVT_KEYWORDS.some(k => up.includes(k)) &&
+            !FORBIDDEN_WORDS.some(w => up.includes(w));
+    });
+
+    for (let c of candidates) {
+        const cleaned = finalizeName(c);
+        if (validateName(cleaned)) return cleaned;
     }
 
-    // Clean OCR garbage from name
-    nameLine = cleanText(nameLine);
-    const parts = nameLine.split(/\s+/).filter(Boolean);
+    return null;
+}
 
-    if (parts.length === 0) return { firstName: "", lastName: "", fullName: "" };
+/**
+ * 4. Cleaning & Normalization
+ */
+function finalizeName(raw) {
+    let name = raw.toUpperCase();
 
-    const fullName = parts.join(" ");
-    if (parts.length === 1) return { firstName: parts[0], lastName: "", fullName };
+    // Remove prefixes strictly
+    NAME_PREFIXES.forEach(prefix => {
+        const regex = new RegExp(`\\b${prefix.replace(".", "\\.")}\\b`, "gi");
+        name = name.replace(regex, "");
+    });
+
+    // Remove noise, symbols, and numbers
+    name = name.replace(/[^A-Z\s]/g, "");
+
+    // Normalize spacing
+    return name.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * 5. Fail-Safe Validator
+ */
+function validateName(name) {
+    if (!name || name.length < 3) return false;
+
+    const parts = name.split(" ");
+    if (parts.length < 2) return false; // Reject single word names like "MIA"
+
+    const upName = name.toUpperCase();
+    if (GARBAGE_TOKENS.some(t => upName.includes(t))) return false;
+    if (/\d/.test(name)) return false; // No numbers allowed
+
+    return true;
+}
+
+/**
+ * 6. Date & ID Parsing
+ */
+export function extractDOB(text) {
+    const dateRegex = /(\d{1,2}[\s\-\/](?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|\d{1,2})[\s\-\/]\d{4})/i;
+    const match = text.match(dateRegex);
+    return match ? match[1].trim() : "";
+}
+
+export function extractIDNumber(text, type) {
+    if (type === "Passport") {
+        const pMatch = text.match(/Passport No[:\s]+([A-Z0-9]+)/i);
+        return pMatch ? pMatch[1] : "";
+    }
+    const nidMatch = text.match(/\b(\d{10}|\d{13}|\d{17})\b/);
+    if (nidMatch) return nidMatch[1];
+
+    const idMatch = text.match(/(?:ID NO|LICENCE NO)[:\s]+([A-Z0-9\-\s]{5,20})/i);
+    return idMatch ? idMatch[1].trim() : "";
+}
+
+/**
+ * 7. Unified Senior Parser
+ */
+export const parseDocument = (text) => {
+    if (!text) return { isValid: false, error: "Empty OCR result." };
+
+    // Stage 1: Authenticity Gate
+    if (!isDocumentAuthentic(text)) {
+        return { isValid: false, error: "Invalid document. Upload NID, License or Passport." };
+    }
+
+    // Stage 2: Type Detection
+    const docType = detectDocumentType(text);
+    if (!docType) {
+        return { isValid: false, error: "Document type unrecognized. Use NID, License or Passport." };
+    }
+
+    // Stage 3: Extraction
+    const fullName = extractFullName(text);
+    if (!fullName) {
+        return { isValid: false, error: "Could not read name clearly. Please upload a clearer image." };
+    }
+
+    const parts = fullName.split(" ");
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(" "); // Splitting: First word as firstName, rest as lastName
 
     return {
-        firstName: parts[0],
-        lastName: parts[parts.length - 1],
-        fullName
+        isValid: true,
+        documentType: docType,
+        fullName,
+        firstName,
+        lastName,
+        dateOfBirth: extractDOB(text),
+        documentNumber: extractIDNumber(text, docType),
+        isSuccess: true
     };
-}
-
-/**
- * Blood Group Extractor
- */
-export function extractBloodGroup(text) {
-    const match = text.match(/(A|B|AB|O)[+-]/i);
-    return match ? match[0].toUpperCase() : null;
-}
-
-/**
- * Robust Document Number Extractor
- * MANDATORY: Must contain at least one digit [0-9].
- * BLACKLIST: Ignores words like "PROFESSIONAL", "BANGLADESH".
- */
-export function extractDocumentNumber(text) {
-    if (!text) return "";
-
-    const blacklist = ["PROFESSIONAL", "BANGLADESH", "DRIVING", "LICENSE", "LICENCE", "NATIONAL", "AUTHORITY"];
-
-    // Find all alphanumeric sequences between 10-20 chars
-    const candidates = text.match(/[A-Z0-9]{10,20}/gi) || [];
-
-    for (const candidate of candidates) {
-        const upper = candidate.toUpperCase();
-
-        // 1. Must contain at least one number
-        if (!/[0-9]/.test(upper)) continue;
-
-        // 2. Reject if it IS in the blacklist
-        if (blacklist.includes(upper)) continue;
-
-        // 3. Reject if it is a common label or non-numeric word
-        if (upper === "GOVERNMENT") continue;
-
-        // Found a valid-looking ID
-        return upper;
-    }
-
-    return "";
-}
-
-/**
- * Detect Document Type with Proper Mapping
- */
-export const detectDocumentType = (text) => {
-    const lowerText = text.toLowerCase();
-
-    // Explicit mappings requested by user
-    if (lowerText.includes("driving") || lowerText.includes("licence")) return "Driving License";
-    if (lowerText.includes("national id") || lowerText.includes("nid") || lowerText.includes("জাতীয় পরিচয়")) return "NID";
-    if (lowerText.includes("passport")) return "Passport";
-
-    return "unknown";
-};
-
-/**
- * Main Parser
- */
-export const parseDocument = (type, text) => {
-    if (!text) return {};
-
-    const detectedType = detectDocumentType(text);
-    const finalType = (type && type !== "unknown") ? type : detectedType;
-
-    const names = extractName(text);
-    const bloodGroup = extractBloodGroup(text);
-
-    // Strict ID Extraction
-    const docNumber = extractDocumentNumber(text);
-
-    // Date Parsing
-    let dob = "";
-    const dobLabelMatch = text.match(/(?:dob|date of birth|জন্ম তারিখ)[\s\-\/\.]*(\d{1,2}[\s\-\/\.]+[A-Z]{3,9}[\s\-\/\.]+\d{4}|\d{1,2}[\s\-\/\.]+\d{1,2}[\s\-\/\.]+\d{4})/i);
-    if (dobLabelMatch) {
-        dob = normalizeDate(dobLabelMatch[1]);
-    } else {
-        const dateMatch = text.match(/\d{1,2}[\s\-\/\.][A-Z]{3,9}[\s\-\/\.]\d{4}|\d{1,2}[\s\-\/\.]\d{1,2}[\s\-\/\.]\d{4}/i);
-        if (dateMatch) dob = normalizeDate(dateMatch[0]);
-    }
-
-    const parsed = {
-        firstName: names.firstName,
-        lastName: names.lastName,
-        dateOfBirth: dob,
-        bloodGroup: bloodGroup,
-        documentNumber: docNumber,
-        documentType: finalType,
-        rawText: text
-    };
-
-    // Mandatory Debug Log
-    console.log("PARSED OBJECT:", parsed);
-
-    return parsed;
 };

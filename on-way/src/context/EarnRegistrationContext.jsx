@@ -8,8 +8,8 @@ export function EarnRegistrationProvider({ children }) {
   // Initial state structure
   const initialState = {
     // Step 1: Landing Page
-    vehicleType: "Bike",
-    activeCategory: "bike",
+    vehicleType: "",
+    activeCategory: null,
     selectedModel: "",
     firstName: "",
     lastName: "",

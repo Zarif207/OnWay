@@ -735,58 +735,85 @@ export default function PersonalInfoPage() {
                           Additional Documents Data
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          {formData.documentDetails?.fatherName && (
+                          {formData.extractedData?.fatherName && (
                             <div className="flex flex-col gap-2">
                               <label className="text-[13px] font-bold text-gray-500">Father's Name</label>
                               <input
                                 type="text"
-                                value={formData.documentDetails.fatherName}
-                                readOnly
-                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                                value={formData.extractedData.fatherName}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  extractedData: { ...prev.extractedData, fatherName: e.target.value }
+                                }))}
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-[#31ca71]/20 outline-none font-medium transition-all"
                               />
                             </div>
                           )}
-                          {formData.documentDetails?.bloodGroup && (
+                          {formData.extractedData?.bloodGroup && (
                             <div className="flex flex-col gap-2">
                               <label className="text-[13px] font-bold text-gray-500">Blood Group</label>
-                              <input
-                                type="text"
-                                value={formData.documentDetails.bloodGroup}
-                                readOnly
-                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
-                              />
+                              <select
+                                value={formData.extractedData.bloodGroup || ""}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  bloodGroup: e.target.value,
+                                  extractedData: { ...prev.extractedData, bloodGroup: e.target.value }
+                                }))}
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-[#31ca71]/20 outline-none font-medium transition-all appearance-none"
+                              >
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                              </select>
                             </div>
                           )}
-                          {formData.documentDetails?.nationality && (
+                          {formData.extractedData?.nationality && (
                             <div className="flex flex-col gap-2">
                               <label className="text-[13px] font-bold text-gray-500">Nationality</label>
                               <input
                                 type="text"
-                                value={formData.documentDetails.nationality}
-                                readOnly
-                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                                value={formData.extractedData.nationality}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  extractedData: { ...prev.extractedData, nationality: e.target.value }
+                                }))}
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-[#31ca71]/20 outline-none font-medium transition-all"
                               />
                             </div>
                           )}
-                          {formData.documentDetails?.issueDate && (
+                          {formData.extractedData?.issueDate && (
                             <div className="flex flex-col gap-2">
                               <label className="text-[13px] font-bold text-gray-500">Issue Date</label>
                               <input
                                 type="text"
-                                value={formData.documentDetails.issueDate}
-                                readOnly
-                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                                value={formData.extractedData.issueDate}
+                                placeholder="YYYY-MM-DD"
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  extractedData: { ...prev.extractedData, issueDate: e.target.value }
+                                }))}
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-[#31ca71]/20 outline-none font-medium transition-all"
                               />
                             </div>
                           )}
-                          {formData.documentDetails?.expiryDate && (
+                          {formData.extractedData?.expiryDate && (
                             <div className="flex flex-col gap-2">
                               <label className="text-[13px] font-bold text-gray-500">Expiry Date</label>
                               <input
                                 type="text"
-                                value={formData.documentDetails.expiryDate}
-                                readOnly
-                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-100 cursor-not-allowed font-medium"
+                                value={formData.extractedData.expiryDate}
+                                placeholder="YYYY-MM-DD"
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  extractedData: { ...prev.extractedData, expiryDate: e.target.value }
+                                }))}
+                                className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-[#31ca71]/20 outline-none font-medium transition-all"
                               />
                             </div>
                           )}

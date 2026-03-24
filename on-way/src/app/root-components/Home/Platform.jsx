@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { ArrowRight, CheckCircle2, Download } from "lucide-react";
 import Container from "./Container";
 import { services } from "./homeData";
@@ -27,12 +28,9 @@ export default function Platform() {
         {/* Header Section */}
         <div className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between mb-16">
           <AnimatedHeading className="max-w-2xl">
-            <span className="text-[#22c55e] text-sm font-bold uppercase tracking-[0.2em] block mb-4">
-              The OnWay Platform
-            </span>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A1F3D] leading-[1.1]">
               Everything you need, <br />
-              <span className="text-[#0A1F3D]/40">right in your pocket.</span>
+              <span className="text-[#0A1F3D]/40 bg-gradient-to-r from-[#2FCA71] to-[#259461] bg-clip-text text-transparent">right in your pocket.</span>
             </h2>
             <p className="mt-6 text-lg text-[#0A1F3D]/60 leading-relaxed max-w-lg">
               Ride, travel, and pay — OnWay brings everyday mobility services
@@ -125,6 +123,40 @@ export default function Platform() {
                         <span className="text-[#0A1F3D]/70 font-medium">{bullet}</span>
                       </motion.div>
                     ))}
+                  </AnimatePresence>
+                </div>
+
+                {/* Dynamic Image Display */}
+                <div className="mt-10 relative w-full aspect-video rounded-2xl">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={current.key}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="absolute inset-0"
+                    >
+                      <motion.div
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-full h-full relative scale-[1.05]"
+                      >
+                        <Image
+                          src={
+                            {
+                              bike: "/bike-img.png",
+                              car: "/car-img-1.jpg",
+                              ambulance: "/ambulance-img-2.jpg",
+                              pay: "/wallet-1.jpg",
+                            }[current.key] || "/bike-img.png"
+                          }
+                          alt={current.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </motion.div>
+                    </motion.div>
                   </AnimatePresence>
                 </div>
 

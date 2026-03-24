@@ -295,11 +295,12 @@ after:blur-2xl after:opacity-20 after:-z-10"
         <AnimatePresence>
           {selectedModel && (
             <motion.div
-              initial={{ opacity: 0, x: -50, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: "auto" }}
-              exit={{ opacity: 0, x: -50, width: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-12 xl:col-span-5 relative z-20 mt-0 lg:-mt-24"
+              layout
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40, width: 0 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.5 }}
+              className="lg:col-span-12 xl:col-span-5 relative z-20 mt-0 lg:-mt-24 w-full"
             >
               {/* 3D Glassmorphic Form Container */}
               <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_30px_60px_-15px_rgba(49,202,113,0.15)] p-6 md:p-8 lg:p-10 border border-white/50 relative overflow-hidden">
@@ -517,11 +518,11 @@ after:blur-2xl after:opacity-20 after:-z-10"
 
         {/* Right Column: Information */}
         <motion.div
-          layout
-          initial={{ opacity: 0, x: 30 }}
+          layout="position"
+          initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className={`flex flex-col gap-8 mt-4 lg:mt-16 xl:pl-8 transition-all duration-700 w-full ${selectedModel ? 'lg:col-span-12 xl:col-span-7' : 'lg:col-span-12 xl:col-span-12 max-w-5xl mx-auto'
+          transition={{ type: "spring", bounce: 0, duration: 0.6 }}
+          className={`flex flex-col gap-8 mt-4 lg:mt-16 w-full ${selectedModel ? 'lg:col-span-12 xl:col-span-7 xl:pl-12 2xl:pl-16' : 'lg:col-span-12 xl:col-span-12 max-w-5xl mx-auto'
             }`}
         >
           {/* category div */}
@@ -716,7 +717,7 @@ after:blur-2xl after:opacity-20 after:-z-10"
   hover:border-[var(--color-primary)]/20 
   hover:shadow-[0_20px_40px_-15px_rgba(47,202,113,0.1)] 
   transition-all duration-500 
-  max-w-5xl mx-auto lg:-ml-10 xl:-ml-20"
+  max-w-5xl mx-auto"
           >
             <h3 className="text-[26px] font-extrabold text-[#001820] mb-4 leading-snug">
               OnWay:{" "}

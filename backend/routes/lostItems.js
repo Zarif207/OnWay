@@ -57,12 +57,20 @@ module.exports = (lostItemsCollection) => {
   });
 
   // ─────────────────────────────────────────────────────────
-  // GET /api/lost-items  –  Admin / support: all lost items
+  // GET /api/lost-items  –  Get all or filter by query params
   // ─────────────────────────────────────────────────────────
   router.get("/", async (req, res) => {
     try {
+      const { rideId, passengerId } = req.query;
+      let query = {};
+
+      if (rideId && passengerId) {
+        query.rideId = safeObjectId(rideId);
+        query.passengerId = safeObjectId(passengerId);
+      }
+
       const lostItems = await lostItemsCollection
-        .find({})
+        .find(query)
         .sort({ createdAt: -1 })
         .toArray();
 

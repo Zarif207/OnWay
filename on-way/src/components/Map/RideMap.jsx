@@ -13,6 +13,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import CurrentLocationButton from "./CurrentLocationButton";
 
+const TOMTOM_KEY = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
+
 // ---------------------------------------------------------
 // Icons Setup - Custom colored markers for pickup and dropoff
 // ---------------------------------------------------------
@@ -159,7 +161,149 @@ const createRotatedCarIcon = (rotation = 0) => {
   });
 };
 
+// ---------------------------------------------------------
+// Traffic Toggle Button (inside map)
+// ---------------------------------------------------------
+const TrafficToggleButton = ({ showTraffic, onToggle }) => {
+  const divRef = useRef(null);
+
+  useEffect(() => {
+    if (divRef.current) {
+      L.DomEvent.disableClickPropagation(divRef.current);
+      L.DomEvent.disableScrollPropagation(divRef.current);
+    }
+  }, []);
+
+  return (
+    <div
+      ref={divRef}
+      style={{
+        position: "absolute",
+        top: "12px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1000,
+      }}
+    >
+      <button
+        onClick={onToggle}
+        title={showTraffic ? "Hide Traffic" : "Show Traffic"}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "7px 16px",
+          borderRadius: "20px",
+          border: "none",
+          cursor: "pointer",
+          fontSize: "12px",
+          fontWeight: "600",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+          background: "rgba(15, 20, 30, 0.25)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          color: "#fff",
+          transition: "background 0.2s",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span style={{ fontSize: "14px" }}>🚦</span>
+        {showTraffic ? "Hide Traffic" : "Live Traffic"}
+      </button>
+    </div>
+  );
+};
+
+// Traffic Status Card (shows on map when route is set)
+const TrafficStatusCard = ({ trafficInfo, durationMin }) => {
+  if (!trafficInfo) return null;
+
+  const { currentSpeed, freeFlowSpeed, ratio, fromSurge } = trafficInfo;
+
+  let status, color, bg, emoji;
+  if (ratio >= 0.8) {
+    status = "Clear Traffic"; color = "#16a34a"; bg = "#f0fdf4"; emoji = "🟢";
+  } else if (ratio >= 0.5) {
+    status = "Moderate Traffic"; color = "#d97706"; bg = "#fffbeb"; emoji = "🟡";
+  } else if (ratio >= 0.25) {
+    status = "Heavy Traffic"; color = "#ea580c"; bg = "#fff7ed"; emoji = "🟠";
+  } else {
+    status = "Standstill / Jam"; color = "#dc2626"; bg = "#fef2f2"; emoji = "🔴";
+  }
+
+  const delayMin = ratio < 0.9 ? Math.round(durationMin * (1 - ratio) * 0.5) : 0;
+
+  return (
+    <div style={{
+      position: "absolute",
+      bottom: "12px",
+      right: "12px",
+      zIndex: 1000,
+      background: bg,
+      border: `1.5px solid ${color}40`,
+      borderRadius: "10px",
+      padding: "10px 14px",
+      boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
+      minWidth: "175px",
+    }}>
+      <div style={{ fontWeight: "700", fontSize: "13px", color, marginBottom: "4px" }}>
+        {emoji} {status}
+      </div>
+      {!fromSurge ? (
+        <div style={{ fontSize: "11px", color: "#6b7280" }}>
+          Current: <b style={{ color: "#111" }}>{Math.round(currentSpeed)} km/h</b>
+          {" · "}Normal: <b style={{ color: "#111" }}>{Math.round(freeFlowSpeed)} km/h</b>
+        </div>
+      ) : (
+        <div style={{ fontSize: "11px", color: "#6b7280" }}>
+          Based on area demand & conditions
+        </div>
+      )}
+      {delayMin > 0 && (
+        <div style={{ fontSize: "11px", color, marginTop: "3px", fontWeight: "600" }}>
+          ⏱ ~{delayMin} min extra delay
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Traffic Legend
+const TrafficLegend = () => (
+  <div
+    style={{
+      position: "absolute",
+      bottom: "40px",
+      left: "12px",
+      zIndex: 1000,
+      background: "rgba(255,255,255,0.95)",
+      borderRadius: "8px",
+      padding: "8px 12px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+      fontSize: "11px",
+      fontWeight: "500",
+    }}
+  >
+    <div style={{ fontWeight: "700", marginBottom: "5px", color: "#1F2937" }}>
+      🚦 Traffic Flow
+    </div>
+    {[
+      { color: "#00AA00", label: "Free flow" },
+      { color: "#FFAA00", label: "Slow" },
+      { color: "#FF5500", label: "Heavy" },
+      { color: "#CC0000", label: "Standstill" },
+    ].map(({ color, label }) => (
+      <div key={label} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+        <div style={{ width: "20px", height: "4px", background: color, borderRadius: "2px" }} />
+        <span style={{ color: "#374151" }}>{label}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// ---------------------------------------------------------
 // Route Progress Indicator Component
+// ---------------------------------------------------------
 const RouteProgressIndicator = ({ progress, isPlaying, durationMin }) => {
   const progressPercentage = Math.round(progress * 100);
   const remainingTime = Math.max(0, Math.round(durationMin * (1 - progress)));
@@ -296,18 +440,28 @@ export default function RideMap({
   showCurrentLocationButton = true,
   onCurrentLocationFound = null,
   showCarAnimation = true,
-  routeColor = "#2563EB", // Professional blue
+  routeColor = "#2563EB",
   routeWeight = 6,
   routeOpacity = 0.8,
   showRouteAlternatives = false,
   onRouteAlternativeSelect = null,
-  onlineRiders = {}, // Default value to prevent ReferenceError
+  onlineRiders = {},
+  trafficInfo = null,
 }) {
   const defaultCenter = [23.8103, 90.4125]; // Dhaka, Bangladesh
 
   const [carPosition, setCarPosition] = useState(null);
   const [carRotation, setCarRotation] = useState(0);
   const animationRef = useRef(null);
+  const [showTraffic, setShowTraffic] = useState(false);
+
+  // Dynamic route color based on traffic
+  const dynamicRouteColor = trafficInfo
+    ? trafficInfo.ratio >= 0.8 ? "#16a34a"
+    : trafficInfo.ratio >= 0.5 ? "#d97706"
+    : trafficInfo.ratio >= 0.25 ? "#ea580c"
+    : "#dc2626"
+    : routeColor;
 
   // Convert object of riders to array
   const nearbyRidersList = useMemo(
@@ -459,6 +613,30 @@ export default function RideMap({
         attribution="Map data © Google"
       />
 
+      {/* Google Real-Time Traffic Layer */}
+      {showTraffic && (
+        <TileLayer
+          url="https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}"
+          attribution="Traffic data © Google"
+          opacity={0.9}
+          zIndex={10}
+        />
+      )}
+
+      {/* Traffic Toggle Button */}
+      <TrafficToggleButton
+        showTraffic={showTraffic}
+        onToggle={() => setShowTraffic((v) => !v)}
+      />
+
+      {/* Traffic Legend */}
+      {showTraffic && <TrafficLegend />}
+
+      {/* Traffic Status Card on route */}
+      {routeGeometry && routeGeometry.length > 0 && (
+        <TrafficStatusCard trafficInfo={trafficInfo} durationMin={durationMin} />
+      )}
+
       {/* Nearby Online Riders Markers */}
       {nearbyRidersList.map((rider) => (
         <Marker
@@ -560,10 +738,10 @@ export default function RideMap({
           {/* Main route line */}
           <Polyline
             positions={routeGeometry}
-            color={routeGeometry.length === 2 ? "#F59E0B" : routeColor} // Amber for fallback, blue for real route
+            color={routeGeometry.length === 2 ? "#F59E0B" : dynamicRouteColor}
             weight={routeWeight}
             opacity={routeOpacity}
-            dashArray={routeGeometry.length === 2 ? "10, 10" : null} // Dashed line for fallback
+            dashArray={routeGeometry.length === 2 ? "10, 10" : null}
             lineCap="round"
             lineJoin="round"
             className="route-line"

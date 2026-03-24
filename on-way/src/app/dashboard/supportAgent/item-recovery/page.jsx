@@ -21,8 +21,8 @@ import toast, { Toaster } from "react-hot-toast";
 const STATUS_OPTIONS = ["Pending", "Recovered", "Not Found"];
 
 export default function ItemRecoveryPage() {
-  const [items, setItems]           = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [updatingId, setUpdatingId] = useState(null);
@@ -93,9 +93,9 @@ export default function ItemRecoveryPage() {
 
   // ── Helpers ──────────────────────────────────────────────
   const statusConfig = {
-    Pending:   { icon: <Clock    size={13} />, cls: "bg-amber-100 text-amber-700 border-amber-200"    },
+    Pending: { icon: <Clock size={13} />, cls: "bg-amber-100 text-amber-700 border-amber-200" },
     Recovered: { icon: <CheckCircle size={13} />, cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-    "Not Found": { icon: <XCircle size={13} />, cls: "bg-red-100 text-red-600 border-red-200"        },
+    "Not Found": { icon: <XCircle size={13} />, cls: "bg-red-100 text-red-600 border-red-200" },
   };
 
   const getStatusConfig = (status) =>
@@ -108,10 +108,10 @@ export default function ItemRecoveryPage() {
 
   // ── Summary counts ───────────────────────────────────────
   const counts = {
-    all:       items.length,
-    pending:   items.filter((i) => i.status === "Pending").length,
+    all: items.length,
+    pending: items.filter((i) => i.status === "Pending").length,
     recovered: items.filter((i) => i.status === "Recovered").length,
-    notFound:  items.filter((i) => i.status === "Not Found").length,
+    notFound: items.filter((i) => i.status === "Not Found").length,
   };
 
   if (loading) return <SupportLoading />;
@@ -142,10 +142,10 @@ export default function ItemRecoveryPage() {
       {/* ── Stats row ──────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total",      value: counts.all,       color: "text-gray-700",    bg: "bg-white"          },
-          { label: "Pending",    value: counts.pending,   color: "text-amber-600",   bg: "bg-amber-50"       },
-          { label: "Recovered",  value: counts.recovered, color: "text-emerald-600", bg: "bg-emerald-50"     },
-          { label: "Not Found",  value: counts.notFound,  color: "text-red-500",     bg: "bg-red-50"         },
+          { label: "Total", value: counts.all, color: "text-gray-700", bg: "bg-white" },
+          { label: "Pending", value: counts.pending, color: "text-amber-600", bg: "bg-amber-50" },
+          { label: "Recovered", value: counts.recovered, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Not Found", value: counts.notFound, color: "text-red-500", bg: "bg-red-50" },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-4 border border-gray-100 shadow-sm`}>
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{s.label}</p>
@@ -189,8 +189,8 @@ export default function ItemRecoveryPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((item) => {
-            const sc           = getStatusConfig(item.status || "Pending");
-            const isUpdating   = updatingId === item._id;
+            const sc = getStatusConfig(item.status || "Pending");
+            const isUpdating = updatingId === item._id;
             const nextStatuses = STATUS_OPTIONS.filter((s) => s !== (item.status || "Pending"));
 
             return (
@@ -261,11 +261,10 @@ export default function ItemRecoveryPage() {
                       key={newStatus}
                       disabled={isUpdating}
                       onClick={() => handleStatusUpdate(item._id, newStatus)}
-                      className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                        newStatus === "Recovered"
+                      className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${newStatus === "Recovered"
                           ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                           : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
-                      }`}
+                        }`}
                     >
                       {isUpdating ? (
                         <Loader2 size={13} className="animate-spin" />

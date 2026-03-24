@@ -23,6 +23,8 @@ const ridersRoutes = require("./routes/riders");
 
 // const ridersRoutes = require("./routes/riders");
 const geocodingRoutes = require("./routes/geocoding");
+const trafficRoutes = require("./routes/traffic");
+const routingRoutes = require("./routes/routing");
 
 const promoCodeRoutes = require("./routes/promo");
 const emergencyRoutes = require("./routes/emergency");
@@ -541,6 +543,8 @@ app.use("/api/rider", (req, res, next) => {
   ridersRoutes(req.collections)(req, res, next);
 });
 app.use("/api/geocoding", geocodingRoutes);
+app.use("/api/traffic", trafficRoutes);
+app.use("/api/routing", routingRoutes);
 
 app.use("/api/promo", (req, res, next) => {
   promoCodeRoutes(

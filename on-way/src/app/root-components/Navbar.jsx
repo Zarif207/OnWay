@@ -28,7 +28,8 @@ import {
   Users,
   MapPin
 } from "lucide-react";
-import logoImage from "../../../public/icon2.png";
+import logoImage from "../../../public/onway_logo.png"
+
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 // ================= CONSTANTS & DATA =================
@@ -67,9 +68,9 @@ const DropdownItem = ({ item, onClick }) => (
   <Link
     href={item.href}
     onClick={onClick}
-    className="group flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 transition-all duration-300 cursor-pointer"
+    className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/50 transition-all duration-300 cursor-pointer"
   >
-    <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors duration-300">
+    <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-white/40 group-hover:bg-green-100/70 transition-colors duration-300">
       <item.icon size={20} className="text-gray-500 group-hover:text-green-600 transition-colors" />
     </div>
     <div>
@@ -88,6 +89,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isPastHero, setIsPastHero] = useState(false);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
@@ -102,10 +104,18 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
+      if (pathname.startsWith("/about") || pathname.startsWith("/help")) {
+        const heroHeight = pathname.startsWith("/about")
+          ? window.innerHeight * 0.7  // about: 70vh
+          : 240;                       // help: py-20 hero ~240px
+        setIsPastHero(window.scrollY > heroHeight - 80);
+      }
     };
+    // reset on route change
+    setIsPastHero(false);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -137,60 +147,82 @@ const Navbar = () => {
         ${isScrolled ? "translate-y-2" : "translate-y-0"}`}
       >
         <div
-          className={`w-full max-w-7xl flex items-center justify-between px-6 py-2 rounded-3xl transition-all duration-500
+          className={`w-full max-w-7xl relative flex items-center justify-center px-6 py-2 rounded-3xl transition-all duration-500
           ${isScrolled
               ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
               : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 transition-transform duration-500 group-hover:scale-110">
-              <Image src={logoImage} alt="OnWay Logo" fill className="object-contain" priority />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter text-gray-900 leading-none">OnWay</span>
-              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-primary">Premium</span>
+          <Link href="/" className="absolute left-6 flex items-center group">
+            <div className="relative h-14 w-38 transition-transform duration-500 group-hover:scale-105">
+              <Image
+                src={logoImage}
+                alt="OnWay Logo"
+                fill
+                className={`object-contain transition-all duration-300 ${(pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
+                priority
+              />
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          <nav className="hidden lg:flex items-center gap-1 bg-gray-50/50 p-1.5 rounded-full border border-gray-100">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
-                ${isActive(item.href) ? "text-primary bg-primary/5" : "text-gray-500 hover:text-primary"}`}
-              >
-                {isActive(item.href) && <NavIndicator />}
-                {item.label}
-              </Link>
-            ))}
+          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি */}
+          {(() => {
+            const isOnHero = (pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero;
+            return (
+              <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
+                ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                    ${isActive(item.href)
+                        ? "text-primary bg-white/90"
+                        : isOnHero
+                          ? "text-white/80 hover:text-primary hover:bg-white/15"
+                          : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    {isActive(item.href) && <NavIndicator />}
+                    {item.label}
+                  </Link>
+                ))}
 
-            {session && (
-              <Link
-                href={dashboardHref}
-                className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
-                ${pathname.startsWith("/dashboard") ? "text-primary bg-primary/5" : "text-gray-500 hover:text-primary"}`}
-              >
-                {pathname.startsWith("/dashboard") && <NavIndicator />}
-                Dashboard
-              </Link>
-            )}
+                {session && (
+                  <Link
+                    href={dashboardHref}
+                    className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                    ${pathname.startsWith("/dashboard")
+                        ? "text-primary bg-white/90"
+                        : isOnHero
+                          ? "text-white/80 hover:text-primary hover:bg-white/15"
+                          : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    {pathname.startsWith("/dashboard") && <NavIndicator />}
+                    Dashboard
+                  </Link>
+                )}
 
-            {/* More Dropdown */}
-            <div className="relative group" ref={dropdownRef}>
-              <button
-                onClick={() => setIsMoreOpen(!isMoreOpen)}
-                className={`flex items-center gap-1.5 px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full lg:group-hover:bg-primary/5 lg:group-hover:text-primary
-                ${isMoreOpen ? "bg-primary/5 text-primary" : "text-gray-500 hover:text-primary"}`}
-              >
-                More{" "}
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-300 ${isMoreOpen ? "rotate-180" : ""} lg:group-hover:rotate-180`}
-                />
-              </button>
+                {/* More Dropdown */}
+                <div className="relative group" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsMoreOpen(!isMoreOpen)}
+                    className={`flex items-center gap-1.5 px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
+                    ${isMoreOpen
+                        ? "bg-primary/5 text-primary"
+                        : isOnHero
+                          ? "text-white/80 hover:text-primary hover:bg-white/15"
+                          : "text-gray-500 hover:text-primary lg:group-hover:bg-primary/5 lg:group-hover:text-primary"
+                    }`}
+                  >
+                    More{" "}
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-300 ${isMoreOpen ? "rotate-180" : ""} lg:group-hover:rotate-180`}
+                    />
+                  </button>
 
               <div
                 className={`absolute top-full right-0 w-85 pt-3 transition-all duration-300 ease-in-out origin-top-right z-[110]
@@ -199,8 +231,8 @@ const Navbar = () => {
                     : "opacity-0 invisible translate-y-4 scale-95 lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:translate-y-0 lg:group-hover:scale-100"
                   }`}
               >
-                <div className="bg-white rounded-3xl shadow-xl p-4 border border-gray-100 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent pointer-events-none rounded-3xl" />
+                <div className="rounded-3xl shadow-xl p-4 border border-white/20 relative" style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent pointer-events-none rounded-3xl" />
                   <div className="relative flex flex-col gap-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2 px-3">Expertise</p>
                     {MORE_ITEMS.map((item) => (
@@ -214,8 +246,8 @@ const Navbar = () => {
                       onMouseEnter={() => setIsHelpOpen(true)}
                       onMouseLeave={() => setIsHelpOpen(false)}
                     >
-                      <div className="group flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 transition-all duration-300 cursor-pointer">
-                        <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors duration-300">
+                      <div className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/50 transition-all duration-300 cursor-pointer">
+                        <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg bg-white/40 group-hover:bg-green-100/70 transition-colors duration-300">
                           <HelpCircle size={20} className="text-gray-500 group-hover:text-green-600 transition-colors" />
                         </div>
                         <div className="flex-1 text-left">
@@ -235,15 +267,15 @@ const Navbar = () => {
                             transition={{ duration: 0.15 }}
                             className="absolute left-full top-0 pl-2 z-[120]"
                           >
-                            <div className="bg-white rounded-2xl shadow-xl p-3 border border-gray-100 w-64 flex flex-col gap-1">
+                            <div className="rounded-2xl shadow-xl p-3 border border-white/20 w-64 flex flex-col gap-1" style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
                               {HELP_ITEMS.map((item) => (
                                 <Link
                                   key={item.href}
                                   href={item.href}
                                   onClick={() => { setIsMoreOpen(false); setIsHelpOpen(false); }}
-                                  className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-green-50 transition-all duration-200"
+                                  className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/50 transition-all duration-200"
                                 >
-                                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-green-100 transition-colors">
+                                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/40 group-hover:bg-green-100/70 transition-colors">
                                     <item.icon size={16} className="text-gray-500 group-hover:text-green-600 transition-colors" />
                                   </div>
                                   <div>
@@ -262,9 +294,11 @@ const Navbar = () => {
               </div>
             </div>
           </nav>
+            );
+          })()}
 
           {/* ================= RIGHT: AUTH ================= */}
-          <div className="flex items-center gap-3">
+          <div className="absolute right-6 flex items-center gap-3">
             {!session ? (
               <div className="flex items-center gap-2">
                 <Link

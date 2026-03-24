@@ -118,13 +118,13 @@ export default function ContactRideSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
-              className="mb-4 text-sm font-black tracking-[0.3em] text-[#22c55e] uppercase drop-shadow-md"
+              className="mb-4 text-sm bg-gradient-to-r from-[#2FCA71] to-[#259461] bg-clip-text text-transparent uppercase drop-shadow-md"
             >
               Ride Tracking
             </motion.p>
 
             <h1 className="text-4xl font-black sm:text-5xl lg:text-6xl tracking-tighter leading-[1.1] drop-shadow-xl">
-              Track Your Ride <br className="sm:hidden" /> in Real-Time
+              Track Your Ride <br className="sm:hidden" /> in <span className="bg-gradient-to-r from-[#2FCA71] to-[#259461] bg-clip-text text-transparent">Real-Time</span>
             </h1>
 
             <p className="mt-6 text-base lg:text-lg font-medium text-white/80 max-w-xl mx-auto drop-shadow-md">

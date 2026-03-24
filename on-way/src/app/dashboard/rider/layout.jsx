@@ -11,7 +11,8 @@ import {
   CalendarRange,
   Bell,
   Settings,
-  HelpCircle
+  HelpCircle,
+  MessageSquareMore
 } from "lucide-react";
 
 export default function RiderLayout({ children }) {
@@ -22,6 +23,7 @@ export default function RiderLayout({ children }) {
     { label: "Ride Requests", path: "/dashboard/rider/ride-requests", icon: Search },
     { label: "Notifications", path: "/dashboard/rider/notifications", icon: Bell },
     { label: "Ride History", path: "/dashboard/rider/ride-history", icon: History },
+    { label: "Inbox", path: "/dashboard/rider/inbox", icon: MessageSquareMore },
     { label: "Earnings", path: "/dashboard/rider/earnings", icon: Wallet },
     { label: "Withdraw", path: "/dashboard/rider/withdraw", icon: Wallet },
     { label: "Settings", path: "/dashboard/rider/settings", icon: Settings },

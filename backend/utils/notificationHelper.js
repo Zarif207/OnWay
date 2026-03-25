@@ -1,70 +1,64 @@
 /**
- * Notification Helper Utility
- * Handles notification creation and real-time emission to admin users
+ * Notification Helper
+ * Saves notifications to MongoDB and forwards real-time emission
+ * to the dedicated Socket Server via HTTP POST.
  */
 
-// Socket.io instance will be set from server.js
-let io = null;
+const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL || "http://localhost:4001";
 
-/**
- * Set Socket.io instance
- * @param {Object} socketIoInstance - Socket.io server instance
- */
-function setSocketIO(socketIoInstance) {
-  io = socketIoInstance;
-  console.log("✅ Socket.io instance set in notification helper");
+// ── HTTP emit helper ──────────────────────────────────────────
+async function emitViaSocketServer(event, room, payload) {
+  try {
+    const res = await fetch(`${SOCKET_SERVER_URL}/api/emit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, room, payload }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(`⚠️  Socket server emit failed [${res.status}]: ${text}`);
+    }
+  } catch (err) {
+    // Socket server may be down — notifications are already in DB, so non-fatal
+    console.warn("⚠️  Could not reach socket server for real-time emit:", err.message);
+  }
 }
 
-/**
- * Get all admin user IDs from database
- * @param {Object} passengerCollection - MongoDB passenger collection
- * @returns {Promise<Array>} Array of admin user IDs
- */
+// ── Admin ID lookup ───────────────────────────────────────────
 async function getAdminUserIds(passengerCollection) {
   try {
     const admins = await passengerCollection
       .find({ role: { $in: ["admin", "supportAgent"] } })
       .project({ _id: 1 })
       .toArray();
-
-    return admins.map(admin => admin._id.toString());
-  } catch (error) {
-    console.error("Error fetching admin users:", error);
+    return admins.map(a => a._id.toString());
+  } catch (err) {
+    console.error("Error fetching admin users:", err);
     return [];
   }
 }
 
-/**
- * Create notification in database and emit via socket
- * @param {Object} notificationsCollection - MongoDB notifications collection
- * @param {Object} passengerCollection - MongoDB passenger collection
- * @param {Object} notificationData - Notification data
- * @returns {Promise<Object>} Created notification
- */
+// ── Core: persist + emit ──────────────────────────────────────
 async function createAndEmitNotification(
   notificationsCollection,
   passengerCollection,
-  notificationData
+  { message, type, metadata = {}, targetAdmins = "all" }
 ) {
   try {
-    const { message, type, metadata = {}, targetAdmins = "all" } = notificationData;
-
-    // Get admin user IDs
-    let adminIds = [];
-    if (targetAdmins === "all") {
-      adminIds = await getAdminUserIds(passengerCollection);
-    } else if (Array.isArray(targetAdmins)) {
-      adminIds = targetAdmins;
-    }
+    const adminIds =
+      targetAdmins === "all"
+        ? await getAdminUserIds(passengerCollection)
+        : Array.isArray(targetAdmins)
+        ? targetAdmins
+        : [];
 
     if (adminIds.length === 0) {
-      console.warn("⚠️ No admin users found to send notification");
+      console.warn("⚠️  No admin users found — notification not sent");
       return null;
     }
 
-    // Create notifications for each admin
-    const notifications = adminIds.map(adminId => ({
-      userId: adminId,
+    const docs = adminIds.map(userId => ({
+      userId,
       message,
       type,
       metadata,
@@ -75,53 +69,35 @@ async function createAndEmitNotification(
       sentByRole: "system",
     }));
 
-    // Insert notifications into database
-    const result = await notificationsCollection.insertMany(notifications);
-    console.log(`✅ Created ${result.insertedCount} notifications in database`);
+    const result = await notificationsCollection.insertMany(docs);
+    console.log(`✅ ${result.insertedCount} notification(s) saved to DB`);
 
-    // Emit notifications via Socket.io to each admin
-    if (io) {
-      adminIds.forEach((adminId, index) => {
-        const notification = {
-          _id: Object.values(result.insertedIds)[index],
-          ...notifications[index],
-        };
-
-        // Emit to admin's notification room
-        io.to(`user_${adminId}`).emit("newNotification", notification);
-        console.log(`🔔 Notification emitted to admin ${adminId}: ${type}`);
-      });
-    } else {
-      console.warn("⚠️ Socket.io not initialized. Notifications saved to DB but not emitted.");
+    // Forward to socket server for real-time delivery
+    const insertedIds = Object.values(result.insertedIds);
+    for (let i = 0; i < adminIds.length; i++) {
+      const notification = { _id: insertedIds[i], ...docs[i] };
+      await emitViaSocketServer("newNotification", `user_${adminIds[i]}`, notification);
     }
 
-    return {
-      success: true,
-      count: result.insertedCount,
-      notifications: Object.values(result.insertedIds),
-    };
-  } catch (error) {
-    console.error("❌ Error creating notification:", error);
-    throw error;
+    return { success: true, count: result.insertedCount };
+  } catch (err) {
+    console.error("❌ createAndEmitNotification error:", err);
+    throw err;
   }
 }
 
-/**
- * Notification type constants
- */
+// ── Notification type constants ───────────────────────────────
 const NOTIFICATION_TYPES = {
-  USER_REGISTRATION: "user_registration",
+  USER_REGISTRATION:  "user_registration",
   RIDER_REGISTRATION: "rider_registration",
-  BOOKING_CREATED: "booking_created",
-  BOOKING_CANCELLED: "booking_cancelled",
-  PAYMENT_RECEIVED: "payment_received",
-  EMERGENCY_ALERT: "emergency_alert",
-  SYSTEM_ALERT: "system_alert",
+  BOOKING_CREATED:    "booking_created",
+  BOOKING_CANCELLED:  "booking_cancelled",
+  PAYMENT_RECEIVED:   "payment_received",
+  EMERGENCY_ALERT:    "emergency_alert",
+  SYSTEM_ALERT:       "system_alert",
 };
 
-/**
- * Helper function: Notify new user registration
- */
+// ── Convenience helpers ───────────────────────────────────────
 async function notifyUserRegistration(collections, userData) {
   return createAndEmitNotification(
     collections.notificationsCollection,
@@ -140,15 +116,12 @@ async function notifyUserRegistration(collections, userData) {
   );
 }
 
-/**
- * Helper function: Notify new rider registration
- */
 async function notifyRiderRegistration(collections, riderData) {
   return createAndEmitNotification(
     collections.notificationsCollection,
     collections.passengerCollection,
     {
-      message: `New rider registered: ${riderData.name} - Pending approval`,
+      message: `New rider registered: ${riderData.name} — Pending approval`,
       type: NOTIFICATION_TYPES.RIDER_REGISTRATION,
       metadata: {
         riderId: riderData._id || riderData.riderId,
@@ -162,15 +135,12 @@ async function notifyRiderRegistration(collections, riderData) {
   );
 }
 
-/**
- * Helper function: Notify new booking created
- */
 async function notifyBookingCreated(collections, bookingData) {
   return createAndEmitNotification(
     collections.notificationsCollection,
     collections.passengerCollection,
     {
-      message: `New booking created: ${bookingData.pickupLocation?.address || "Unknown"} → ${bookingData.dropoffLocation?.address || "Unknown"}`,
+      message: `New booking: ${bookingData.pickupLocation?.address || "?"} → ${bookingData.dropoffLocation?.address || "?"}`,
       type: NOTIFICATION_TYPES.BOOKING_CREATED,
       metadata: {
         bookingId: bookingData._id || bookingData.bookingId,
@@ -186,15 +156,12 @@ async function notifyBookingCreated(collections, bookingData) {
   );
 }
 
-/**
- * Helper function: Notify booking cancellation
- */
 async function notifyBookingCancelled(collections, bookingData) {
   return createAndEmitNotification(
     collections.notificationsCollection,
     collections.passengerCollection,
     {
-      message: `Booking cancelled: ${bookingData.pickupLocation?.address || "Unknown"} → ${bookingData.dropoffLocation?.address || "Unknown"}`,
+      message: `Booking cancelled: ${bookingData.pickupLocation?.address || "?"} → ${bookingData.dropoffLocation?.address || "?"}`,
       type: NOTIFICATION_TYPES.BOOKING_CANCELLED,
       metadata: {
         bookingId: bookingData._id || bookingData.bookingId,
@@ -206,7 +173,6 @@ async function notifyBookingCancelled(collections, bookingData) {
 }
 
 module.exports = {
-  setSocketIO,
   getAdminUserIds,
   createAndEmitNotification,
   notifyUserRegistration,

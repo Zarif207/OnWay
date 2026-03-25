@@ -488,10 +488,23 @@ async function startChatServer() {
             res.json([...adminUsers.keys()].map(u => ({ userId: u, status: "online" })));
         });
 
-        // ── Start ────────────────────────────────────────────────
-        server.listen(PORT, () =>
-            console.log(`🚀 Chat server on port ${PORT}`)
+        app.get("/", (_, res) => res.send("Chat server is running 🚀"));
+
+        app.get("/health", (_, res) =>
+            res.json({
+                status: "ok",
+                service: "chat-server",
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
+            })
         );
+
+        // ── Start ────────────────────────────────────────────────
+        server.listen(PORT, () => {
+            console.log(`🚀 Chat server running on port ${PORT}`);
+            console.log(`   Root:   http://localhost:${PORT}/`);
+            console.log(`   Health: http://localhost:${PORT}/health`);
+        });
     } catch (err) {
         console.error("FATAL:", err);
         process.exit(1);

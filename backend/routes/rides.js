@@ -1,6 +1,8 @@
 const express = require("express");
 const { ObjectId } = require("mongodb");
 
+const SOCKET_URL = process.env.SOCKET_URL || "http://localhost:4001";
+
 module.exports = (ridesCollection) => {
     const router = express.Router();
 
@@ -17,10 +19,12 @@ module.exports = (ridesCollection) => {
             const result = await ridesCollection.insertOne(rideData);
             const insertedRide = { _id: result.insertedId, ...rideData };
 
-            // 🔹 Real-time broadcast to drivers
-            if (req.io) {
-                req.io.to("drivers").emit("new_ride_request", insertedRide);
-            }
+            // Broadcast to drivers via socket server
+            fetch(`${SOCKET_URL}/api/emit`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ event: "new_ride_request", room: "drivers", payload: insertedRide }),
+            }).catch(() => {});
 
             res.status(201).json({
                 success: true,

@@ -20,6 +20,7 @@ import { useChat } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import CallModal from "@/components/dashboard/CallModal";
 
+// ✅ নতুন chat server URL
 const CHAT_URL = process.env.NEXT_PUBLIC_CHAT_URL || "http://localhost:4002";
 
 export default function RiderInboxPage() {
@@ -37,7 +38,7 @@ export default function RiderInboxPage() {
     const typingTimeout = useRef(null);
 
     // ── Support chat entry ───────────────────────────────────────
-    // ✅ Rider-এর support room: "support_<riderId>" — rider 
+    // ✅ Rider-এর support room: "support_<riderId>" — rider হিসেবে
     const supportChat = useMemo(() => {
         if (!user?._id) return null;
         return {
@@ -45,7 +46,7 @@ export default function RiderInboxPage() {
             senderName: "Support Agent",
             type: "support",
             passengerId: null,
-            riderId: user._id,
+            riderId: user._id,   // ✅ rider হিসেবে track করো
             lastMessage: "Chat with support team",
             unreadCount: 0,
         };
@@ -89,7 +90,7 @@ export default function RiderInboxPage() {
     );
 
     // ── Fetch rider's chat list ──────────────────────────────────
-    // ✅ selected dependency loop 
+    // ✅ selected dependency loop সরানো হয়েছে
     const fetchChats = useCallback(async () => {
         if (!user?._id) return;
         try {
@@ -489,9 +490,9 @@ export default function RiderInboxPage() {
                 </main>
             </div>
 
-            {/* ✅ Incoming call — chat area*/}
+            {/* ✅ Incoming call — chat area-র বাইরে */}
             {incomingCall && !callActive && (
-                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-998 min-w-65">
+                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-[998] min-w-[260px]">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
                             {incomingCall.callType === "audio" ? "🎧" : "📹"}
@@ -529,7 +530,7 @@ export default function RiderInboxPage() {
                 localStreamRef={localStreamRef}
                 remoteStreamRef={remoteStreamRef}
                 endCall={endCall}
-                callerName={selected?.senderName || "Rider"}
+                callerName={incomingCall?.fromUserName || selected?.senderName || "Passenger"}
                 callType={incomingCall?.callType || "video"}
             />
         </div>

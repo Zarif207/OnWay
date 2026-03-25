@@ -127,7 +127,7 @@ async function startChatServer() {
             });
 
             // ── WebRTC ────────────────────────────────────────────
-            socket.on("callUser", ({ toUserId, offer, fromUserId, callType }) => {
+            socket.on("callUser", ({ toUserId, offer, fromUserId, callType, fromUserName }) => {
                 let targetSocket = null;
                 let resolvedTarget = String(toUserId);
 
@@ -143,10 +143,13 @@ async function startChatServer() {
 
                 if (targetSocket) {
                     io.to(targetSocket).emit("incomingCall", {
-                        fromUserId, offer, callType,
+                        fromUserId,
+                        fromUserName: fromUserName || "Unknown",
+                        offer,
+                        callType,
                         toUserId: resolvedTarget,
                     });
-                    console.log(`📞 ${fromUserId} → ${resolvedTarget} (${callType})`);
+                    console.log(`📞 ${fromUserName || fromUserId} → ${resolvedTarget} (${callType})`);
                 } else {
                     socket.emit("callFailed", {
                         toUserId,

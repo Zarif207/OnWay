@@ -94,7 +94,7 @@ function setupSocket(io, collections) {
           connectedAt: new Date(),
           status: "active",
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     // ── registerUser ───────────────────────────────────────
@@ -818,9 +818,13 @@ function setupRoutes(app, collections) {
     }
   });
 
-app.get("/", (req, res) => {
-  res.json({ message: "Socket server is working", method: req.method, url: req.url });
-});
+  app.get("/", (req, res) => {
+    res.json({
+      status: "Socket Server Running",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
 
   app.get("/health", (_, res) =>
     res.json({

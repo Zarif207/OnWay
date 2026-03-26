@@ -1,46 +1,155 @@
 const express = require("express");
 const { ObjectId } = require("mongodb");
-const socketStore = require("../utils/socketStore");
+const notificationHelper = require("../utils/notificationHelper");
 
-module.exports = (bookingsCollection) => {
+const SOCKET_URL = process.env.SOCKET_URL || "http://localhost:4001";
+const IS_DEV = process.env.NODE_ENV === "development";
+
+// ── Socket HTTP helpers ───────────────────────────────────────
+async function socketEmit(event, room, payload) {
+    try {
+        await fetch(`${SOCKET_URL}/api/emit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ event, room, payload }),
+        });
+    } catch (err) {
+        console.warn(`⚠️  socketEmit failed [${event} → ${room}]:`, err.message);
+    }
+}
+
+async function socketDispatch(riderIds, ridePayload) {
+    try {
+        await fetch(`${SOCKET_URL}/api/dispatch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ riderIds, ridePayload }),
+        });
+    } catch (err) {
+        console.warn("⚠️  socketDispatch failed:", err.message);
+    }
+}
+
+// ── Nearby riders with $near + Haversine fallback ─────────────
+async function findNearbyRiders(ridersCollection, lat, lng, radiusKm = 5) {
+    // Try geospatial $near first (requires 2dsphere index)
+    try {
+        return await ridersCollection.find({
+            location: {
+                $near: {
+                    $geometry: { type: "Point", coordinates: [lng, lat] },
+                    $maxDistance: radiusKm * 1000,
+                },
+            },
+            status: "online",
+        }).toArray();
+    } catch (geoErr) {
+        // Fallback: fetch all online riders and filter by Haversine distance
+        console.warn("⚠️  $near failed (index missing?), using Haversine fallback:", geoErr.message);
+        const allOnline = await ridersCollection.find({ status: "online" }).toArray();
+        return allOnline.filter((r) => {
+            const coords = r.location?.coordinates;
+            if (!coords) return false;
+            const [rLng, rLat] = coords;
+            const R = 6371;
+            const dLat = ((rLat - lat) * Math.PI) / 180;
+            const dLng = ((rLng - lng) * Math.PI) / 180;
+            const a =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos((lat * Math.PI) / 180) *
+                Math.cos((rLat * Math.PI) / 180) *
+                Math.sin(dLng / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) <= radiusKm;
+        });
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// server.js passes the full collections object:
+//   app.use("/api/bookings", (req, res, next) => bookingsRoutes(req.collections)(req, res, next));
+// So the parameter here IS the collections object.
+// ─────────────────────────────────────────────────────────────
+module.exports = (collections) => {
+    // Destructure all needed collections up front
+    const {
+        bookingsCollection,
+        ridersCollection,
+        passengerCollection,
+        notificationsCollection,
+    } = collections;
+
+    if (!bookingsCollection) {
+        throw new Error("bookingsCollection is required");
+    }
+
     const router = express.Router();
 
-    // GET /api/bookings - Get all bookings
+    // ── GET /api/bookings ─────────────────────────────────────
     router.get("/", async (req, res) => {
         try {
-            const { passengerId, status, recent } = req.query;
-            let query = {};
+            const { passengerId, riderId, status, recent, page = 1, limit = 50 } = req.query;
+            const query = {};
+
             if (passengerId) {
-                query.passengerId = passengerId;
+                // Support both string and ObjectId stored passengerId
+                query.$or = [
+                    { passengerId: passengerId },
+                    ...(ObjectId.isValid(passengerId)
+                        ? [{ passengerId: new ObjectId(passengerId) }]
+                        : []),
+                ];
             }
-            if (status) {
-                query.bookingStatus = status;
+            if (riderId) {
+                query.$or = [
+                    { riderId: riderId },
+                    ...(ObjectId.isValid(riderId)
+                        ? [{ riderId: new ObjectId(riderId) }]
+                        : []),
+                ];
             }
+            if (status) query.bookingStatus = status;
 
-            // FEATURE 1: Only show rides created within the last 60 seconds if 'recent' is true
+            // recent=true → only last 60 seconds (for live polling)
             if (recent === "true") {
-                const sixtySecondsAgo = new Date(Date.now() - 60000);
-                query.createdAt = { $gte: sixtySecondsAgo };
+                query.createdAt = { $gte: new Date(Date.now() - 60000) };
             }
 
-            const bookings = await bookingsCollection.find(query).sort({ createdAt: -1 }).toArray();
+            // Also expire stale "searching" bookings at query time
+            // (replaces the unreliable setTimeout on serverless)
+            const expiredCutoff = new Date(Date.now() - 60000);
+            await bookingsCollection.updateMany(
+                { bookingStatus: "searching", createdAt: { $lt: expiredCutoff } },
+                { $set: { bookingStatus: "expired", updatedAt: new Date() } }
+            ).catch(() => {}); // non-fatal
+
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            const bookings = await bookingsCollection
+                .find(query)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(parseInt(limit))
+                .toArray();
+
+            const total = await bookingsCollection.countDocuments(query);
 
             res.status(200).json({
                 success: true,
                 data: bookings,
-                count: bookings.length
+                count: bookings.length,
+                total,
+                page: parseInt(page),
             });
         } catch (error) {
-            console.error("Fetch Bookings Error:", error);
+            console.error("GET /bookings error:", error);
             res.status(500).json({
                 success: false,
-                message: "Internal Server Error while fetching bookings",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+                message: "Failed to fetch bookings",
+                error: IS_DEV ? error.message : undefined,
             });
         }
     });
 
-    // POST /api/bookings
+    // ── POST /api/bookings ────────────────────────────────────
     router.post("/", async (req, res) => {
         try {
             const {
@@ -51,22 +160,29 @@ module.exports = (bookingsCollection) => {
                 duration,
                 price,
                 passengerId,
-                bookingStatus
+                rideType,
+                surgeApplied,
             } = req.body;
 
-            // Validation
-            if (!pickupLocation || !dropoffLocation || !routeGeometry || distance === undefined || duration === undefined || price === undefined) {
+            if (!pickupLocation || !dropoffLocation || !routeGeometry ||
+                distance === undefined || duration === undefined || price === undefined) {
                 return res.status(400).json({
                     success: false,
-                    message: "Required fields are missing: pickupLocation, dropoffLocation, routeGeometry, distance, duration, and price are required."
+                    message: "Missing required fields: pickupLocation, dropoffLocation, routeGeometry, distance, duration, price",
                 });
             }
 
-            const { findNearbyDrivers } = require("../utils/riderMatching");
+            if (!pickupLocation.lat || !pickupLocation.lng) {
+                return res.status(400).json({
+                    success: false,
+                    message: "pickupLocation must include lat and lng",
+                });
+            }
 
-            // PART 4 — Backend Ride Matching Flow
             const bookingData = {
-                passengerId: passengerId ? new ObjectId(passengerId) : null,
+                passengerId: passengerId && ObjectId.isValid(passengerId)
+                    ? new ObjectId(passengerId)
+                    : passengerId || null,
                 riderId: null,
                 pickupLocation,
                 dropoffLocation,
@@ -74,37 +190,41 @@ module.exports = (bookingsCollection) => {
                 distance,
                 duration,
                 price,
-                bookingStatus: "searching", // PART 4 Requirement
+                rideType: rideType || "standard",
+                surgeApplied: surgeApplied || false,
+                bookingStatus: "searching",
                 otp: Math.floor(1000 + Math.random() * 9000).toString(),
                 paymentMethod: "cash",
                 paymentStatus: "pending",
                 createdAt: new Date(),
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                expiresAt: new Date(Date.now() + 60000), // used for query-time expiry
             };
 
             const result = await bookingsCollection.insertOne(bookingData);
             const bookingId = result.insertedId;
-            console.log(`✅ [PIPELINE] Passenger booking created: ${bookingId} for passenger ${passengerId || "Anonymous"}`);
+            console.log(`✅ Booking created: ${bookingId}`);
 
-            // 🔍 FAST IN-MEMORY MATCHING & DISPATCH
+            // ── Dispatch to nearby riders ─────────────────────
             try {
-                console.log(`📡 [DISPATCH] Initiating search for pickup: [${pickupLocation.lat}, ${pickupLocation.lng}] (Radius: 5km)`);
-                const nearbyDrivers = socketStore.findNearbyRiders(
+                const nearbyDrivers = await findNearbyRiders(
+                    ridersCollection,
                     pickupLocation.lat,
                     pickupLocation.lng,
-                    5 // 5km radius
+                    5
                 );
+                console.log(`📡 Found ${nearbyDrivers.length} nearby riders`);
 
-                console.log(`📡 [DISPATCH] Fast-match found ${nearbyDrivers.length} connected riders within 5km`);
-
-                if (nearbyDrivers.length > 0 && req.io) {
-                    // Fetch passenger details
+                if (nearbyDrivers.length > 0) {
                     let passengerName = "Passenger";
-                    try {
-                        const passenger = await req.collections.passengerCollection.findOne({ _id: new ObjectId(passengerId) });
-                        if (passenger && passenger.name) passengerName = passenger.name;
-                    } catch (err) {
-                        console.error("Error fetching passenger for dispatch:", err);
+                    if (passengerId && passengerCollection) {
+                        try {
+                            const query = ObjectId.isValid(passengerId)
+                                ? { _id: new ObjectId(passengerId) }
+                                : { _id: passengerId };
+                            const passenger = await passengerCollection.findOne(query);
+                            if (passenger?.name) passengerName = passenger.name;
+                        } catch (_) {}
                     }
 
                     const ridePayload = {
@@ -113,243 +233,145 @@ module.exports = (bookingsCollection) => {
                         dropLocation: dropoffLocation.address || "Drop-off Point",
                         pickupCoords: [pickupLocation.lat, pickupLocation.lng],
                         dropCoords: [dropoffLocation.lat, dropoffLocation.lng],
-                        distance,
-                        duration,
-                        price, // Ensure price is included
-                        fare: price,
+                        distance, duration, price, fare: price,
                         passengerName,
-                        createdAt: new Date()
+                        createdAt: new Date(),
                     };
 
-                    nearbyDrivers.forEach(driver => {
-                        const riderRoom = `rider:${driver._id}`;
-                        req.io.to(riderRoom).emit("new-ride-request", ridePayload);
-                        console.log(`🚀 [SOCKET] Dispatching to rider: ${driver._id} in room: ${riderRoom} (dist: ${driver.distance.toFixed(2)}km)`);
-                    });
-                } else {
-                    console.log(`⚠️ [DISPATCH] No active connected riders found within 5km for booking ${bookingId}`);
+                    const riderIds = nearbyDrivers.map((d) => d._id.toString());
+                    await socketDispatch(riderIds, ridePayload);
+                    console.log(`🚀 Dispatched to ${riderIds.length} riders`);
                 }
-            } catch (dispatchError) {
-                console.error("❌ Real-time Dispatch Error:", dispatchError);
+            } catch (dispatchErr) {
+                console.error("Dispatch error (non-fatal):", dispatchErr.message);
             }
 
-            // 🔔 Send notification to admins about new booking
-            try {
-                const notificationHelper = require("../utils/notificationHelper");
-
-                // Get all collections from request
-                const collections = {
-                    notificationsCollection: req.collections?.notificationsCollection,
-                    passengerCollection: req.collections?.passengerCollection,
-                };
-
-                if (collections.notificationsCollection && collections.passengerCollection) {
-                    await notificationHelper.notifyBookingCreated(collections, {
-                        _id: bookingId,
-                        ...bookingData,
-                    });
-                }
-            } catch (notifError) {
-                console.error("Notification error:", notifError);
+            // ── Admin notification ────────────────────────────
+            if (notificationsCollection && passengerCollection) {
+                notificationHelper.notifyBookingCreated(
+                    { notificationsCollection, passengerCollection },
+                    { _id: bookingId, ...bookingData }
+                ).catch((e) => console.error("Notification error:", e.message));
             }
 
-            // ⏱️ FEATURE 2: AUTO REMOVE AFTER 60 SECONDS
-            setTimeout(async () => {
-                try {
-                    const currentBooking = await bookingsCollection.findOne({ _id: bookingId });
-
-                    if (currentBooking && currentBooking.bookingStatus === "searching") {
-                        console.log(`⏰ [EXPIRY] Ride ${bookingId} expired. No driver accepted within 60s.`);
-
-                        await bookingsCollection.updateOne(
-                            { _id: bookingId },
-                            {
-                                $set: {
-                                    bookingStatus: "expired",
-                                    updatedAt: new Date()
-                                }
-                            }
-                        );
-
-                        // Notify passenger via socket
-                        if (req.io) {
-                            const passengerRoom = `user:${passengerId}`;
-                            req.io.to(passengerRoom).emit("ride-expired", {
-                                bookingId: bookingId.toString(),
-                                message: "No drivers accepted your ride"
-                            });
-                            console.log(`🚀 [SOCKET] Emitted ride-expired to ${passengerRoom}`);
-                        }
-                    }
-                } catch (expiryError) {
-                    console.error("❌ Expiry Logic Error:", expiryError);
-                }
-            }, 60000); // 60 seconds
+            // NOTE: Expiry is handled at query time (GET /) via expiresAt field.
+            // setTimeout is NOT used here — it does not work reliably on Vercel serverless.
 
             res.status(201).json({
                 success: true,
-                booking: {
-                    _id: bookingId,
-                    ...bookingData
-                }
+                booking: { _id: bookingId, ...bookingData },
             });
         } catch (error) {
-            console.error("Booking Error:", error);
+            console.error("POST /bookings error:", error);
             res.status(500).json({
                 success: false,
-                message: "Internal Server Error while saving booking",
-                error: error.message
+                message: "Failed to create booking",
+                error: IS_DEV ? error.message : undefined,
             });
         }
     });
 
-    // POST /api/bookings/fare-estimate
+    // ── POST /api/bookings/fare-estimate ──────────────────────
     router.post("/fare-estimate", async (req, res) => {
         try {
             const { distance, duration } = req.body;
-
             if (distance === undefined || duration === undefined) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Distance and duration are required"
-                });
+                return res.status(400).json({ success: false, message: "distance and duration are required" });
             }
 
-            // Fare constants
             const rates = {
-                bike: { base: 30, perKm: 12, perMin: 2 },
-                car: { base: 50, perKm: 25, perMin: 3 },
-                premium: { base: 100, perKm: 45, perMin: 5 }
+                bike:    { base: 30,  perKm: 12, perMin: 2 },
+                car:     { base: 50,  perKm: 25, perMin: 3 },
+                premium: { base: 100, perKm: 45, perMin: 5 },
             };
 
-            const estimates = Object.keys(rates).map(type => {
-                const rate = rates[type];
-                const price = rate.base + (distance * rate.perKm) + (duration * rate.perMin);
-                return {
-                    type,
-                    estimatedPrice: Math.round(price),
-                    currency: "BDT"
-                };
-            });
+            const estimates = Object.entries(rates).map(([type, rate]) => ({
+                type,
+                estimatedPrice: Math.round(rate.base + distance * rate.perKm + duration * rate.perMin),
+                currency: "BDT",
+            }));
 
-            res.status(200).json({
-                success: true,
-                estimates
-            });
+            res.status(200).json({ success: true, estimates });
         } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
+            res.status(500).json({ success: false, error: IS_DEV ? error.message : "Server error" });
         }
     });
 
-    // GET /api/bookings/:id
+    // ── GET /api/bookings/:id ─────────────────────────────────
     router.get("/:id", async (req, res) => {
         try {
             const { id } = req.params;
-
             if (!ObjectId.isValid(id)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid Booking ID"
-                });
+                return res.status(400).json({ success: false, message: "Invalid Booking ID" });
             }
 
-            const booking = await bookingsCollection.findOne({
-                _id: new ObjectId(id)
-            });
-
+            const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
             if (!booking) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Booking not found"
-                });
+                return res.status(404).json({ success: false, message: "Booking not found" });
             }
 
-            res.json({
-                success: true,
-                booking
-            });
+            res.json({ success: true, booking });
         } catch (error) {
-            console.error("Fetch Booking Error:", error);
+            console.error("GET /bookings/:id error:", error);
             res.status(500).json({
                 success: false,
-                message: "Internal Server Error while fetching booking",
-                error: error.message
+                message: "Failed to fetch booking",
+                error: IS_DEV ? error.message : undefined,
             });
         }
     });
 
-    // PATCH /api/bookings/:id - Update booking status
+    // ── PATCH /api/bookings/:id ───────────────────────────────
     router.patch("/:id", async (req, res) => {
         try {
             const { id } = req.params;
             const { bookingStatus } = req.body;
 
             if (!ObjectId.isValid(id)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid Booking ID"
-                });
+                return res.status(400).json({ success: false, message: "Invalid Booking ID" });
             }
 
             const result = await bookingsCollection.updateOne(
                 { _id: new ObjectId(id) },
-                {
-                    $set: {
-                        bookingStatus,
-                        updatedAt: new Date()
-                    }
-                }
+                { $set: { bookingStatus, updatedAt: new Date() } }
             );
 
             if (result.matchedCount === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Booking not found"
-                });
+                return res.status(404).json({ success: false, message: "Booking not found" });
             }
 
-            // 🔄 RESET RIDER STATUS IF COMPLETED OR CANCELLED
-            if (["completed", "cancelled"].includes(bookingStatus)) {
-                try {
-                    const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
-                    if (booking && booking.riderId) {
-                        const ridersCollection = req.collections.ridersCollection;
-                        await ridersCollection.updateOne(
-                            { _id: new ObjectId(booking.riderId) },
-                            {
-                                $set: {
-                                    status: "online",
-                                    currentRideId: null,
-                                    updatedAt: new Date()
-                                }
-                            }
-                        );
-                        console.log(`✅ [STATUS] Rider ${booking.riderId} reset to online after ride ${bookingStatus}`);
+            if (["completed", "cancelled"].includes(bookingStatus) && ridersCollection) {
+                const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
+                if (booking?.riderId && ObjectId.isValid(booking.riderId.toString())) {
+                    await ridersCollection.updateOne(
+                        { _id: new ObjectId(booking.riderId.toString()) },
+                        { $set: { status: "online", currentRideId: null, updatedAt: new Date() } }
+                    ).catch((e) => console.error("Rider reset error:", e.message));
+
+                    // Notify passenger
+                    if (booking.passengerId) {
+                        const pid = booking.passengerId.toString();
+                        await socketEmit(`ride:${bookingStatus}`, `passenger:${pid}`, { bookingId: id });
                     }
-                } catch (riderError) {
-                    console.error("❌ Error resetting rider status in bookings.js:", riderError);
                 }
             }
 
-            res.json({
-                success: true,
-                message: "Booking status updated successfully"
-            });
+            res.json({ success: true, message: "Booking updated", bookingStatus });
         } catch (error) {
-            console.error("Update Booking Error:", error);
+            console.error("PATCH /bookings/:id error:", error);
             res.status(500).json({
                 success: false,
-                message: "Internal Server Error while updating booking",
-                error: error.message
+                message: "Failed to update booking",
+                error: IS_DEV ? error.message : undefined,
             });
         }
     });
 
-    // PATCH /api/bookings/:id/status - Compatibility endpoint for dashboard
+    // ── PATCH /api/bookings/:id/status ────────────────────────
     router.patch("/:id/status", async (req, res) => {
         try {
             const { id } = req.params;
-            const { status } = req.body; // status here refers to bookingStatus (arrived, picked_up, completed)
+            const { status } = req.body;
 
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({ success: false, message: "Invalid ID" });
@@ -364,101 +386,72 @@ module.exports = (bookingsCollection) => {
                 return res.status(404).json({ success: false, message: "Booking not found" });
             }
 
-            // 🔄 RESET RIDER STATUS IF COMPLETED OR CANCELLED
-            if (["completed", "cancelled"].includes(status)) {
-                try {
-                    const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
-                    if (booking && booking.riderId) {
-                        const ridersCollection = req.collections.ridersCollection;
-                        await ridersCollection.updateOne(
-                            { _id: new ObjectId(booking.riderId) },
-                            {
-                                $set: {
-                                    status: "online",
-                                    currentRideId: null,
-                                    updatedAt: new Date()
-                                }
-                            }
-                        );
-                        console.log(`✅ [STATUS] Rider ${booking.riderId} reset to online after ride ${status}`);
-                    }
-                } catch (riderError) {
-                    console.error("❌ Error resetting rider status in bookings.js status endpoint:", riderError);
+            if (["completed", "cancelled"].includes(status) && ridersCollection) {
+                const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
+                if (booking?.riderId && ObjectId.isValid(booking.riderId.toString())) {
+                    await ridersCollection.updateOne(
+                        { _id: new ObjectId(booking.riderId.toString()) },
+                        { $set: { status: "online", currentRideId: null, updatedAt: new Date() } }
+                    ).catch((e) => console.error("Rider reset error:", e.message));
                 }
             }
 
             res.json({ success: true, bookingStatus: status });
         } catch (error) {
-            console.error("PATCH booking status error:", error);
+            console.error("PATCH /bookings/:id/status error:", error);
             res.status(500).json({ success: false, message: "Server error" });
         }
     });
 
-    // DELETE /api/bookings/:id - Delete booking
+    // ── DELETE /api/bookings/:id ──────────────────────────────
     router.delete("/:id", async (req, res) => {
         try {
             const { id } = req.params;
-
             if (!ObjectId.isValid(id)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid Booking ID"
-                });
+                return res.status(400).json({ success: false, message: "Invalid Booking ID" });
             }
 
-            const result = await bookingsCollection.deleteOne({
-                _id: new ObjectId(id)
-            });
-
+            const result = await bookingsCollection.deleteOne({ _id: new ObjectId(id) });
             if (result.deletedCount === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Booking not found"
-                });
+                return res.status(404).json({ success: false, message: "Booking not found" });
             }
 
-            res.json({
-                success: true,
-                message: "Booking deleted successfully"
-            });
+            res.json({ success: true, message: "Booking deleted" });
         } catch (error) {
-            console.error("Delete Booking Error:", error);
+            console.error("DELETE /bookings/:id error:", error);
             res.status(500).json({
                 success: false,
-                message: "Internal Server Error while deleting booking",
-                error: error.message
+                message: "Failed to delete booking",
+                error: IS_DEV ? error.message : undefined,
             });
         }
     });
 
-    // POST /api/bookings/bulk-delete - Bulk delete bookings
+    // ── POST /api/bookings/bulk-delete ────────────────────────
     router.post("/bulk-delete", async (req, res) => {
         try {
             const { ids } = req.body;
-
-            if (!ids || !Array.isArray(ids) || ids.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid or empty IDs array"
-                });
+            if (!Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({ success: false, message: "ids array is required" });
             }
 
-            const objectIds = ids.map(id => new ObjectId(id));
-            const result = await bookingsCollection.deleteMany({
-                _id: { $in: objectIds }
-            });
+            const validIds = ids.filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
+            if (validIds.length === 0) {
+                return res.status(400).json({ success: false, message: "No valid IDs provided" });
+            }
 
+            const result = await bookingsCollection.deleteMany({ _id: { $in: validIds } });
             res.json({
                 success: true,
-                message: `${result.deletedCount} bookings deleted successfully`,
-                deletedCount: result.deletedCount
+                message: `${result.deletedCount} bookings deleted`,
+                deletedCount: result.deletedCount,
             });
         } catch (error) {
-            console.error("Bulk Delete Error:", error);
+            console.error("Bulk delete error:", error);
             res.status(500).json({
                 success: false,
-                message: "Internal Server Error while bulk deleting bookings",
-                error: error.message
+                message: "Failed to bulk delete",
+                error: IS_DEV ? error.message : undefined,
             });
         }
     });

@@ -80,7 +80,7 @@ export default function PassengerChatPage() {
         sendError, clearSendError,
         callError, clearCallError, socket,
         startCall, acceptCall, endCall,
-        incomingCall, callActive, calling,
+        incomingCall, callActive, calling,   // ✅ calling নেওয়া হয়েছে
         localStreamRef, remoteStreamRef,
     } = useChat(roomId, chatType, user?._id, user?.name || "Passenger", "passenger", otherUserId);
 
@@ -94,7 +94,7 @@ export default function PassengerChatPage() {
         if (roomId && socket) markAsRead();
     }, [roomId, messages.length, socket, markAsRead]);
 
-    //  Call error toast
+    // ✅ Call error toast
     useEffect(() => {
         if (!callError) return;
         toast.error(callError, {
@@ -250,7 +250,7 @@ export default function PassengerChatPage() {
                                         </span>
                                     )}
                                 </div>
-                                {/*  Video & Audio call */}
+                                {/* ✅ Video & Audio call */}
                                 <div className="flex gap-2 shrink-0">
                                     <button
                                         onClick={() => startCall(callTargetId, { video: true, audio: true })}
@@ -332,9 +332,9 @@ export default function PassengerChatPage() {
                 </main>
             </div>
 
-            {/*  Incoming call notification */}
+            {/* ✅ Incoming call notification */}
             {incomingCall && !callActive && (
-                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-998 min-w-65">
+                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-[998] min-w-[260px]">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
                             {incomingCall.callType === "audio" ? "🎧" : "📹"}
@@ -361,14 +361,14 @@ export default function PassengerChatPage() {
                 </div>
             )}
 
-            {/*  CallModal — calling prop যোগ করা হয়েছে */}
+            {/* ✅ CallModal — calling prop যোগ করা হয়েছে */}
             <CallModal
                 callActive={callActive}
                 calling={calling}
                 localStreamRef={localStreamRef}
                 remoteStreamRef={remoteStreamRef}
                 endCall={endCall}
-                callerName={selectedChat?.senderName || "Passenger"}
+                callerName={incomingCall?.fromUserName || selectedChat?.senderName || "Rider"}
                 callType={incomingCall?.callType || "video"}
             />
         </div>

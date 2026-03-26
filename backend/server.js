@@ -5,28 +5,28 @@ const path = require("path");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
 // ── Route factories ───────────────────────────────────────────
-const passengerRoutes     = require("./routes/passenger");
-const blogRoutes          = require("./routes/blog");
-const locationRoutes      = require("./routes/location");
-const ridesRoutes         = require("./routes/rides");
-const reviewsRoutes       = require("./routes/reviews");
-const supportRoutes       = require("./routes/support");
-const supportAgentRoutes  = require("./routes/supportAgent");
-const bookingsRoutes      = require("./routes/bookings");
-const paymentRoutes       = require("./routes/payment");
-const ridersRoutes        = require("./routes/riders");
-const geocodingRoutes     = require("./routes/geocoding");
-const trafficRoutes       = require("./routes/traffic");
-const routingRoutes       = require("./routes/routing");
-const promoCodeRoutes     = require("./routes/promo");
-const emergencyRoutes     = require("./routes/emergency");
-const dashboardRoutes     = require("./routes/dashboard");
-const settingsRoutes      = require("./routes/settings");
+const passengerRoutes = require("./routes/passenger");
+const blogRoutes = require("./routes/blog");
+const locationRoutes = require("./routes/location");
+const ridesRoutes = require("./routes/rides");
+const reviewsRoutes = require("./routes/reviews");
+const supportRoutes = require("./routes/support");
+const supportAgentRoutes = require("./routes/supportAgent");
+const bookingsRoutes = require("./routes/bookings");
+const paymentRoutes = require("./routes/payment");
+const ridersRoutes = require("./routes/riders");
+const geocodingRoutes = require("./routes/geocoding");
+const trafficRoutes = require("./routes/traffic");
+const routingRoutes = require("./routes/routing");
+const promoCodeRoutes = require("./routes/promo");
+const emergencyRoutes = require("./routes/emergency");
+const dashboardRoutes = require("./routes/dashboard");
+const settingsRoutes = require("./routes/settings");
 const notificationsRoutes = require("./routes/notifications");
-const searchRoutes        = require("./routes/search");
-const kycRoutes           = require("./routes/kyc");
-const noticeRoutes        = require("./routes/notice");
-const lostItemsRoutes     = require("./routes/lostItems");
+const searchRoutes = require("./routes/search");
+const kycRoutes = require("./routes/kyc");
+const noticeRoutes = require("./routes/notice");
+const lostItemsRoutes = require("./routes/lostItems");
 const { newsletterRoute, transporter } = require("./routes/newsletter");
 
 // ── MongoDB ───────────────────────────────────────────────────
@@ -76,21 +76,21 @@ async function connectDB() {
 // ── Build collections object ──────────────────────────────────
 function buildCollections(db) {
   return {
-    passengerCollection:     db.collection("passenger"),
-    blogsCollection:         db.collection("Blogs"),
-    gpsLocationsCollection:  db.collection("gpsLocations"),
-    ridesCollection:         db.collection("rides"),
-    reviewsCollection:       db.collection("reviews"),
-    knowledgeCollection:     db.collection("knowledge"),
-    bookingsCollection:      db.collection("bookings"),
-    paymentsCollection:      db.collection("payments"),
-    ridersCollection:        db.collection("riders"),
-    complaintsCollection:    db.collection("complaints"),
-    promoCodeCollection:     db.collection("promoCode"),
-    emergencyCollection:     db.collection("emergency"),
-    settingsCollection:      db.collection("settings"),
+    passengerCollection: db.collection("passenger"),
+    blogsCollection: db.collection("Blogs"),
+    gpsLocationsCollection: db.collection("gpsLocations"),
+    ridesCollection: db.collection("rides"),
+    reviewsCollection: db.collection("reviews"),
+    knowledgeCollection: db.collection("knowledge"),
+    bookingsCollection: db.collection("bookings"),
+    paymentsCollection: db.collection("payments"),
+    ridersCollection: db.collection("riders"),
+    complaintsCollection: db.collection("complaints"),
+    promoCodeCollection: db.collection("promoCode"),
+    emergencyCollection: db.collection("emergency"),
+    settingsCollection: db.collection("settings"),
     notificationsCollection: db.collection("notifications"),
-    lostItemsCollection:     db.collection("lostItems"),
+    lostItemsCollection: db.collection("lostItems"),
   };
 }
 
@@ -144,32 +144,32 @@ app.use(async (req, res, next) => {
       const col = buildCollections(db);
 
       // Mount all routers exactly once
-      app.use("/api/passenger",     passengerRoutes(col.passengerCollection));
-      app.use("/api/blogs",         blogRoutes(col.blogsCollection, null, transporter));
-      app.use("/api/location",      locationRoutes(col.gpsLocationsCollection));
-      app.use("/api/rides",         ridesRoutes(col.ridesCollection));
-      app.use("/api/reviews",       reviewsRoutes(col.reviewsCollection));
-      app.use("/api/support",       supportRoutes(col.knowledgeCollection));
+      app.use("/api/passenger", passengerRoutes(col.passengerCollection));
+      app.use("/api/blogs", blogRoutes(col.blogsCollection, null, transporter));
+      app.use("/api/location", locationRoutes(col.gpsLocationsCollection));
+      app.use("/api/rides", ridesRoutes(col.ridesCollection));
+      app.use("/api/reviews", reviewsRoutes(col.reviewsCollection));
+      app.use("/api/support", supportRoutes(col.knowledgeCollection));
       app.use("/api/support-agent", supportAgentRoutes(col));
-      app.use("/api/bookings",      bookingsRoutes(col));
-      app.use("/api/payment",       paymentRoutes(col.paymentsCollection));
-      app.use("/api/riders",        ridersRoutes(col));
-      app.use("/api/driver",        ridersRoutes(col));
-      app.use("/api/rider",         ridersRoutes(col));
-      app.use("/api/geocoding",     geocodingRoutes);
-      app.use("/api/traffic",       trafficRoutes);
-      app.use("/api/routing",       routingRoutes);
-      app.use("/api/promo",         promoCodeRoutes(col.promoCodeCollection, null, transporter));
-      app.use("/api/emergency",     emergencyRoutes(col.emergencyCollection));
-      app.use("/api/dashboard",     dashboardRoutes(col));
-      app.use("/api/settings",      settingsRoutes(col.settingsCollection));
+      app.use("/api/bookings", bookingsRoutes(col));
+      app.use("/api/payment", paymentRoutes(col.paymentsCollection));
+      app.use("/api/riders", ridersRoutes(col));
+      app.use("/api/driver", ridersRoutes(col));
+      app.use("/api/rider", ridersRoutes(col));
+      app.use("/api/geocoding", geocodingRoutes);
+      app.use("/api/traffic", trafficRoutes);
+      app.use("/api/routing", routingRoutes);
+      app.use("/api/promo", promoCodeRoutes(col.promoCodeCollection, null, transporter));
+      app.use("/api/emergency", emergencyRoutes(col.emergencyCollection));
+      app.use("/api/dashboard", dashboardRoutes(col));
+      app.use("/api/settings", settingsRoutes(col.settingsCollection));
       app.use("/api/notifications", notificationsRoutes(col.notificationsCollection));
-      app.use("/api/search",        searchRoutes(col));
-      app.use("/api/kyc",           kycRoutes(col));
-      app.use("/api/notice",        noticeRoutes(col));
-      app.use("/api/lost-items",    lostItemsRoutes(col.lostItemsCollection));
+      app.use("/api/search", searchRoutes(col));
+      app.use("/api/kyc", kycRoutes(col));
+      app.use("/api/notice", noticeRoutes(col));
+      app.use("/api/lost-items", lostItemsRoutes(col.lostItemsCollection));
       app.use("/api/item-recovery", lostItemsRoutes(col.lostItemsCollection));
-      app.use("/api/newsletter",    newsletterRoute);
+      app.use("/api/newsletter", newsletterRoute);
 
       // Re-add 404 + error handlers AFTER all routes
       app.use((req2, res2) => {

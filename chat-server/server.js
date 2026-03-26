@@ -127,7 +127,7 @@ async function startChatServer() {
             });
 
             // ── WebRTC ────────────────────────────────────────────
-            socket.on("callUser", ({ toUserId, offer, fromUserId, callType }) => {
+            socket.on("callUser", ({ toUserId, offer, fromUserId, callType, fromUserName }) => {
                 let targetSocket = null;
                 let resolvedTarget = String(toUserId);
 
@@ -143,10 +143,13 @@ async function startChatServer() {
 
                 if (targetSocket) {
                     io.to(targetSocket).emit("incomingCall", {
-                        fromUserId, offer, callType,
+                        fromUserId,
+                        fromUserName: fromUserName || "Unknown",
+                        offer,
+                        callType,
                         toUserId: resolvedTarget,
                     });
-                    console.log(`📞 ${fromUserId} → ${resolvedTarget} (${callType})`);
+                    console.log(`📞 ${fromUserName || fromUserId} → ${resolvedTarget} (${callType})`);
                 } else {
                     socket.emit("callFailed", {
                         toUserId,
@@ -485,10 +488,19 @@ async function startChatServer() {
             res.json([...adminUsers.keys()].map(u => ({ userId: u, status: "online" })));
         });
 
+        app.get("/", (req, res) => {
+            res.json({
+                status: "Chat Server Running",
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV || 'development'
+            });
+        });
+
         // ── Start ────────────────────────────────────────────────
-        server.listen(PORT, () =>
-            console.log(`🚀 Chat server on port ${PORT}`)
-        );
+        server.listen(PORT, () => {
+            console.log(`🚀 Chat server running on port ${PORT}`);
+            console.log(`   Root:   http://localhost:${PORT}/`);
+        });
     } catch (err) {
         console.error("FATAL:", err);
         process.exit(1);

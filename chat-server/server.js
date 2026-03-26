@@ -497,9 +497,10 @@ async function startChatServer() {
         });
 
         // ── Start ────────────────────────────────────────────────
-        server.listen(PORT, () =>
-            console.log(`🚀 Chat server on port ${PORT}`)
-        );
+        server.listen(PORT, () => {
+            console.log(`🚀 Chat server running on port ${PORT}`);
+            console.log(`   Root:   http://localhost:${PORT}/`);
+        });
     } catch (err) {
         console.error("FATAL:", err);
         process.exit(1);

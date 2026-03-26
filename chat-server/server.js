@@ -488,6 +488,14 @@ async function startChatServer() {
             res.json([...adminUsers.keys()].map(u => ({ userId: u, status: "online" })));
         });
 
+        app.get("/", (req, res) => {
+            res.json({
+                status: "Chat Server Running",
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV || 'development'
+            });
+        });
+
         // ── Start ────────────────────────────────────────────────
         server.listen(PORT, () =>
             console.log(`🚀 Chat server on port ${PORT}`)

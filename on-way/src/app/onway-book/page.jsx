@@ -52,7 +52,7 @@ export default function BookRidePage() {
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState("pickup");
   const [onlineRiders, setOnlineRiders] = useState({});
-  const { data: session } = useSession(); 
+  const { data: session } = useSession();
 
 
   const router = useRouter();

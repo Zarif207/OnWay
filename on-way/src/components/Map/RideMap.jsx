@@ -458,9 +458,9 @@ export default function RideMap({
   // Dynamic route color based on traffic
   const dynamicRouteColor = trafficInfo
     ? trafficInfo.ratio >= 0.8 ? "#16a34a"
-    : trafficInfo.ratio >= 0.5 ? "#d97706"
-    : trafficInfo.ratio >= 0.25 ? "#ea580c"
-    : "#dc2626"
+      : trafficInfo.ratio >= 0.5 ? "#d97706"
+        : trafficInfo.ratio >= 0.25 ? "#ea580c"
+          : "#dc2626"
     : routeColor;
 
   // Convert object of riders to array

@@ -1,48 +1,57 @@
 import { NextResponse } from "next/server";
+import { createWorker } from "tesseract.js";
+import { parseDocument } from "@/utils/ocrParser";
 
 export async function POST(req) {
+    let worker = null;
     try {
-        const { image } = await req.json(); // image should be base64
-        const apiKey = process.env.GOOGLE_VISION_API_KEY;
+        const { image } = await req.json(); // image should be base64 (with or without prefix)
 
-        if (!apiKey || apiKey === "your_google_vision_api_key_here") {
-            return NextResponse.json({ error: "Google Vision API Key not configured" }, { status: 500 });
+        if (!image) {
+            return NextResponse.json({ error: "No image provided" }, { status: 400 });
         }
 
-        const visionUrl = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+        // Clean base64
+        const base64Data = image.includes("base64,") ? image.split(",")[1] : image;
+        const buffer = Buffer.from(base64Data, "base64");
 
-        const requestBody = {
-            requests: [
-                {
-                    image: { content: image.split(",")[1] }, // strip data:image/... base64 prefix
-                    features: [{ type: "TEXT_DETECTION" }]
-                }
-            ]
-        };
+        console.log("Initializing Tesseract Worker (eng+ben)...");
+        worker = await createWorker("eng+ben");
 
-        const response = await fetch(visionUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody)
+        await worker.setParameters({
+            tessedit_pageseg_mode: 6, // Assume a single uniform block of text
         });
 
-        const data = await response.json();
+        console.log("Running OCR...");
 
-        if (data.error) {
-            throw new Error(data.error.message || "Vision API error");
-        }
+        // Timeout protection (15 seconds limit)
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("OCR Timeout")), 15000)
+        );
 
-        const fullTextAnnotation = data.responses[0]?.fullTextAnnotation;
-        const textResults = data.responses[0]?.textAnnotations;
+        const { data: { text } } = await Promise.race([
+            worker.recognize(buffer),
+            timeout
+        ]);
+
+        await worker.terminate();
+        worker = null;
+
+        console.log("OCR Result Length:", text.length);
+
+        // Extract semi-structured data using our parser
+        const extracted = parseDocument(text);
 
         return NextResponse.json({
-            fullText: fullTextAnnotation?.text || "",
-            blocks: fullTextAnnotation?.pages[0]?.blocks || [],
-            raw: textResults || []
+            fullText: text || "",
+            name: extracted.fullName || "",
+            documentType: (extracted.documentType || "nid").toLowerCase(),
+            success: true
         });
 
     } catch (error) {
-        console.error("[Vision API Route] Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[Tesseract OCR API] Error:", error);
+        if (worker) await worker.terminate();
+        return NextResponse.json({ error: "Failed to process image: " + error.message }, { status: 500 });
     }
 }

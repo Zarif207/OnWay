@@ -146,16 +146,23 @@ const Navbar = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
-  const [isDarkPage, setIsDarkPage] = useState(false);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
-  const { data: session } = useSession();
-  const { user } = useCurrentUser();
+  const { data: session, status: sessionStatus } = useSession();
+  const { user, isLoading: userLoading } = useCurrentUser();
   const pathname = usePathname();
 
-  const role = user?.role || session?.user?.role || "passenger";
-  const dashboardHref = useMemo(() => `/dashboard/${role}`, [role]);
+  // Better role handling with loading state
+  const role = useMemo(() => {
+    if (sessionStatus === "loading") return null;
+    if (sessionStatus === "authenticated") {
+      return user?.role || session?.user?.role || (userLoading ? null : "passenger");
+    }
+    return null;
+  }, [user, session, sessionStatus, userLoading]);
+
+  const dashboardHref = useMemo(() => (role ? `/dashboard/${role}` : ""), [role]);
 
   const {
     notifications,
@@ -206,25 +213,16 @@ const Navbar = () => {
       setIsScrolled(window.scrollY > 20);
       if (pathname.startsWith("/about") || pathname.startsWith("/help")) {
         const heroHeight = pathname.startsWith("/about")
-          ? window.innerHeight * 0.7
-          : 240;
+          ? window.innerHeight * 0.7  // about: 70vh
+          : 240;                       // help: py-20 hero ~240px
         setIsPastHero(window.scrollY > heroHeight - 80);
       }
     };
+    // reset on route change
     setIsPastHero(false);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
-
-  // Detect dark-page class on body (e.g. 404 page)
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDarkPage(document.body.classList.contains("dark-page"));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    setIsDarkPage(document.body.classList.contains("dark-page"));
-    return () => observer.disconnect();
-  }, []);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -261,6 +259,7 @@ const Navbar = () => {
   }, []);
 
   const getProfilePath = (userRole) => {
+    if (!userRole) return "";
     switch (userRole?.toLowerCase()) {
       case "admin": return "/dashboard/admin/profile";
       case "rider": return "/dashboard/rider/profile";
@@ -287,9 +286,7 @@ const Navbar = () => {
         <div
           className={`w-full max-w-7xl relative flex items-center justify-center px-6 py-2 rounded-3xl transition-all duration-500
           ${isScrolled
-              ? isDarkPage
-                ? "bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
-                : "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+              ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
               : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
@@ -299,20 +296,16 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${
-                  ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
-                    ? "brightness-0 invert"
-                    : "mix-blend-multiply"
-                }`}
+                className={`object-contain transition-all duration-300 ${(pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
                 priority
               />
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি, অথবা error page (dark bg) */}
+          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি */}
           {(() => {
-            const isOnHero = ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage;
+            const isOnHero = (pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero;
             return (
               <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
                 ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>
@@ -335,7 +328,12 @@ const Navbar = () => {
 
                 {session && (
                   <Link
-                    href={dashboardHref}
+                    href={dashboardHref || "#"}
+                    onClick={(e) => {
+                      if (!dashboardHref) {
+                        e.preventDefault();
+                      }
+                    }}
                     className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
                     ${pathname.startsWith("/dashboard")
                         ? "text-primary bg-white/90"
@@ -721,8 +719,14 @@ const Navbar = () => {
                     transition={{ delay: 0.1 + NAV_ITEMS.length * 0.05 }}
                   >
                     <Link
-                      href={dashboardHref}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      href={dashboardHref || "#"}
+                      onClick={(e) => {
+                        if (!dashboardHref) {
+                          e.preventDefault();
+                        } else {
+                          setIsMobileMenuOpen(false);
+                        }
+                      }}
                       className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] text-lg font-black transition-all
                       ${pathname.startsWith("/dashboard") ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-gray-500 hover:bg-gray-50 hover:text-primary"}`}
                     >

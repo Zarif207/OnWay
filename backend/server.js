@@ -186,6 +186,10 @@ app.use(async (req, res, next) => {
 
       routersReady = true;
       console.log("✅ All routers initialized");
+
+      // Re-dispatch this first request now that routes are mounted
+      req.collections = buildCollections(db);
+      return app(req, res);
     }
 
     // Make collections available on req for any route that still uses req.collections
@@ -197,12 +201,17 @@ app.use(async (req, res, next) => {
   }
 });
 
-// ── Fallback 404 (before routers are ready) ───────────────────
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: "Route not found", path: req.path });
+// ── Fallback 404 (only reached if DB init fails before routersReady) ─────────
+app.use((req, res, next) => {
+  // If routersReady is true, the dynamic 404 handler inside the block handles it.
+  // This only fires if the DB middleware called next() before routes were mounted.
+  if (!routersReady) {
+    return res.status(503).json({ success: false, message: "Server initializing, please retry" });
+  }
+  next();
 });
 
-// ── Global error handler (before routers are ready) ──────────
+// ── Global error handler ──────────────────────────────────────
 app.use((err, req, res, _next) => {
   console.error("Global error:", err);
   res.status(err.status || 500).json({

@@ -232,7 +232,7 @@ export default function LiveSOSPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 bg-white/70 backdrop-blur-xl rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-4 gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 bg-white/70 backdrop-blur-xl rounded-4xl border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-4 gap-3">
                 <div className="text-sm text-gray-600 text-center sm:text-left">
                   Showing {indexOfFirstAlert + 1} to {Math.min(indexOfLastAlert, activeAlerts.length)} of {activeAlerts.length} alerts
                 </div>

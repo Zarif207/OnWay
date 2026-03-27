@@ -345,9 +345,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-gray-500 text-xs font-medium">
-            © {new Date().getFullYear()} OnWay Technologies Ltd.{" "}
-            <span className="mx-2 opacity-30">|</span> Made with passion for
-            mobility.
+            © {new Date().getFullYear()} OnWay <span className="mx-2 opacity-30">|</span> Made with passion for mobility.
           </div>
           <div className="flex items-center gap-8">
             <Link

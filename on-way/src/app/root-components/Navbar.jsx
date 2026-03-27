@@ -216,16 +216,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
 
-  // Detect dark-page class on body (e.g. 404 page)
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDarkPage(document.body.classList.contains("dark-page"));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    setIsDarkPage(document.body.classList.contains("dark-page"));
-    return () => observer.disconnect();
-  }, []);
-
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const profileRef = useRef(null);

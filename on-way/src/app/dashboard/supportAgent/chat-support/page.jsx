@@ -73,7 +73,7 @@ export default function ChatSupportPage() {
     }, [agentUser]);
 
     // ════════════════════════════════════════════════════════════
-    // ✅ KEY FIX: roomId, chatType, otherUserId — tab 
+    // ✅ KEY FIX: roomId, chatType, otherUserId — tab দেখে সঠিকভাবে
     // ════════════════════════════════════════════════════════════
     const roomId = useMemo(() => {
         if (activeTab === "admin") return adminRoomId;
@@ -81,10 +81,10 @@ export default function ChatSupportPage() {
         return selectedChat.roomId || null;
     }, [activeTab, selectedChat, adminRoomId]);
 
-    // ✅ chatType — rider support chat = "support" , admin = "admin"
+    // ✅ chatType — rider support chat = "support" (ride নয়!), admin = "admin"
     const chatType = useMemo(() => {
         if (activeTab === "admin") return "admin";
-        return "support"; // passengers & riders "support" chatType
+        return "support"; // passengers & riders উভয়ই "support" chatType
     }, [activeTab]);
 
     // ✅ otherUserId — riders tab-এ riderId, passengers tab-এ passengerId
@@ -104,12 +104,12 @@ export default function ChatSupportPage() {
             ? selectedChat?.riderId || null
             : selectedChat?.passengerId || null;
 
-    // ✅ chatSubRole — support agent 
+    // ✅ chatSubRole — support agent কার সাথে কথা বলছে
     const chatSubRole = activeTab === "riders" ? "rider"
         : activeTab === "passengers" ? "passenger"
             : null;
 
-    // ── useChat — role="support"  chatType tab  ──────
+    // ── useChat — role="support" কিন্তু chatType tab দেখে ──────
     const {
         messages, sendMessage, typingUser, sendTyping, stopTyping,
         socket, markAsRead, onlineStatus, loading: messagesLoading,
@@ -124,7 +124,7 @@ export default function ChatSupportPage() {
         agentUser?.name || "Support Agent",
         "support",
         otherUserId,
-        chatSubRole
+        chatSubRole   // ✅ "rider" | "passenger" | null
     );
 
     // ── Fetch passenger support sessions ─────────────────────────
@@ -137,6 +137,7 @@ export default function ChatSupportPage() {
     }, []);
 
     // ── Fetch rider support sessions (rider tab) ────────────────
+    // ✅ Rider যখন support-কে message দেয় সেগুলো দেখাবে
     const fetchRiderSessions = useCallback(async () => {
         try {
             const res = await fetch(`${CHAT_URL}/api/rider/support-sessions`);
@@ -216,7 +217,7 @@ export default function ChatSupportPage() {
                 riderId: null,
             });
         } else if (activeTab === "riders") {
-            // ✅ Rider support session — riderId  track করো
+            // ✅ Rider support session — riderId দিয়ে track করো
             setSelectedChat({
                 roomId: s.roomId,
                 name: s.senderName || "Rider",
@@ -436,6 +437,7 @@ export default function ChatSupportPage() {
                                         <h3 className="text-xl font-black tracking-tighter text-gray-900 uppercase italic truncate">
                                             {activeName}
                                         </h3>
+                                        {/* ✅ Rider tab-এ দুজনেরই online status দেখাও */}
                                         {activeTab === "riders" ? (
                                             <div className="flex gap-3">
                                                 <span className={`text-[9px] font-black tracking-widest uppercase
@@ -479,6 +481,7 @@ export default function ChatSupportPage() {
                                         const agentId = String(agentUser?._id || agentUser?.id);
                                         const isMine = m.senderId === agentId || m.senderRole === "support";
 
+                                        // ✅ Rider tab-এ sender label দেখাও
                                         const senderLabel = activeTab === "riders"
                                             ? m.senderRole === "rider"
                                                 ? "Rider"
@@ -487,6 +490,7 @@ export default function ChatSupportPage() {
                                                     : null
                                             : null;
 
+                                        // ✅ Rider tab-এ message bubble রঙ sender দেখে
                                         const bubbleClass = isMine
                                             ? ts.mine + " rounded-tr-none"
                                             : activeTab === "riders" && m.senderRole === "rider"
@@ -500,6 +504,7 @@ export default function ChatSupportPage() {
                                         return (
                                             <div key={m._id || i} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                                                 <div className="max-w-[80%] flex flex-col gap-1">
+                                                    {/* Sender label — শুধু Riders tab-এ */}
                                                     {!isMine && senderLabel && (
                                                         <span className={`text-[9px] font-black uppercase tracking-wider px-2
                                                             ${m.senderRole === "rider" ? "text-blue-600" : "text-emerald-600"}`}>
@@ -587,7 +592,7 @@ export default function ChatSupportPage() {
 
             {/* Incoming call */}
             {incomingCall && !callActive && (
-                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-998 min-w-65">
+                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-[998] min-w-[260px]">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-lg">
                             {incomingCall.callType === "audio" ? "🎧" : "📹"}
@@ -620,7 +625,7 @@ export default function ChatSupportPage() {
                 localStreamRef={localStreamRef}
                 remoteStreamRef={remoteStreamRef}
                 endCall={endCall}
-                callerName={activeName || "Support Agent"}
+                callerName={incomingCall?.fromUserName || activeName || "User"}
                 callType={incomingCall?.callType || "video"}
             />
         </div>

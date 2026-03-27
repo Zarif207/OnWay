@@ -14,7 +14,7 @@ import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle } from "lucide
 import '@/styles/location-dropdown.css';
 import { getDemandMultiplier } from "@/utils/demandService";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
@@ -325,9 +325,9 @@ export default function BookRidePage() {
 
     try {
       const bookingData = {
-        passengerId: session.user.id,                    // ← এটা add করো
+        passengerId: session.user.id,                   
         pickupLocation: {
-          address: pickupLocation.name,                // ← address field add করো
+          address: pickupLocation.name,                
           name: pickupLocation.name,
           lat: pickupLocation.lat,
           lng: pickupLocation.lon,
@@ -361,7 +361,7 @@ export default function BookRidePage() {
       const result = await response.json();
 
       if (result.success) {
-        console.log("✅ Booking created:", result.booking._id);
+        console.log("Booking created:", result.booking._id);
         router.push(
           `/dashboard/passenger?searching=true&bookingId=${result.booking._id}`
         );

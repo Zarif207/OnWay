@@ -26,7 +26,7 @@ import toast, { Toaster } from "react-hot-toast";
 
 // import OnWayLoading from "@/app/components/Loading/page";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 function Card({ children, className = "", noPadding = false }) {
   return (
@@ -122,7 +122,7 @@ export default function Profile() {
     const fetchUserData = async () => {
       if (status === "authenticated" && session?.user?.email) {
         try {
-          const res = await fetch(`${API_BASE_URL}/passenger/find?email=${session.user.email}`);
+          const res = await fetch(`http://localhost:4000/api/passenger/find?email=${session.user.email}`);
           const result = await res.json();
           const dbData = result.data || result;
 
@@ -172,7 +172,7 @@ export default function Profile() {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/passenger/profile/update`, {
+      const response = await fetch("http://localhost:4000/api/passenger/profile/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

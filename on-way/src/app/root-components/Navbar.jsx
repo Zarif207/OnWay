@@ -149,20 +149,12 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
-  const { data: session, status: sessionStatus } = useSession();
-  const { user, isLoading: userLoading } = useCurrentUser();
+  const { data: session } = useSession();
+  const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  // Better role handling with loading state
-  const role = useMemo(() => {
-    if (sessionStatus === "loading") return null;
-    if (sessionStatus === "authenticated") {
-      return user?.role || session?.user?.role || (userLoading ? null : "passenger");
-    }
-    return null;
-  }, [user, session, sessionStatus, userLoading]);
-
-  const dashboardHref = useMemo(() => (role ? `/dashboard/${role}` : ""), [role]);
+  const role = user?.role || session?.user?.role || "passenger";
+  const dashboardHref = useMemo(() => `/dashboard/${role}`, [role]);
 
   const {
     notifications,
@@ -259,7 +251,6 @@ const Navbar = () => {
   }, []);
 
   const getProfilePath = (userRole) => {
-    if (!userRole) return "";
     switch (userRole?.toLowerCase()) {
       case "admin": return "/dashboard/admin/profile";
       case "rider": return "/dashboard/rider/profile";
@@ -328,12 +319,7 @@ const Navbar = () => {
 
                 {session && (
                   <Link
-                    href={dashboardHref || "#"}
-                    onClick={(e) => {
-                      if (!dashboardHref) {
-                        e.preventDefault();
-                      }
-                    }}
+                    href={dashboardHref}
                     className={`relative px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300 rounded-full
                     ${pathname.startsWith("/dashboard")
                         ? "text-primary bg-white/90"
@@ -719,14 +705,8 @@ const Navbar = () => {
                     transition={{ delay: 0.1 + NAV_ITEMS.length * 0.05 }}
                   >
                     <Link
-                      href={dashboardHref || "#"}
-                      onClick={(e) => {
-                        if (!dashboardHref) {
-                          e.preventDefault();
-                        } else {
-                          setIsMobileMenuOpen(false);
-                        }
-                      }}
+                      href={dashboardHref}
+                      onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] text-lg font-black transition-all
                       ${pathname.startsWith("/dashboard") ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-gray-500 hover:bg-gray-50 hover:text-primary"}`}
                     >

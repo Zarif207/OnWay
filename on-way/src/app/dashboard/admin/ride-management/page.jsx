@@ -24,10 +24,9 @@ const RideManagement = () => {
       console.log("Fetching from:", API_URL);
       
       const response = await axios.get(API_URL, {
-        timeout: 20000, // 10 second timeout
+        timeout: 10000, // 10 second timeout
       });
       
-      console.log("response data",response);
       console.log("Response received:", response.data);
       
       if (response.data.success) {

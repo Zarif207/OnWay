@@ -14,11 +14,7 @@ if (!uri) {
 }
 
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: false,
-    deprecationErrors: true,
-  },
+  serverApi: { version: ServerApiVersion.v1, strict: false, deprecationErrors: true },
 });
 
 const onlineUsers = new Map(); // userId -> socketId
@@ -59,9 +55,7 @@ function setupSocket(io, collections) {
   io.on("connection", (socket) => {
     const uid = socket.userId;
     const role = socket.userRole;
-    console.log(
-      `🔌 New connection: ${socket.id} (Role: ${role || "guest"} | ID: ${uid || "?"})`,
-    );
+    console.log(`🔌 New connection: ${socket.id} (Role: ${role || "guest"} | ID: ${uid || "?"})`);
 
     // ── Auto room join on connect ──────────────────────────
     if (uid && role === "passenger") {
@@ -80,21 +74,11 @@ function setupSocket(io, collections) {
 
     // ── Admin/Role Tracking ────────────────────────────────
     if (socket.authenticated) {
-      activeConnections.set(socket.id, {
-        userId: uid,
-        role,
-        connectedAt: new Date(),
-      });
-      rideSessionsCollection
-        .insertOne({
-          socketId: socket.id,
-          userId: uid,
-          role,
-          type: "connection_log",
-          connectedAt: new Date(),
-          status: "active",
-        })
-        .catch(() => { });
+      activeConnections.set(socket.id, { userId: uid, role, connectedAt: new Date() });
+      rideSessionsCollection.insertOne({
+        socketId: socket.id, userId: uid, role,
+        type: "connection_log", connectedAt: new Date(), status: "active",
+      }).catch(() => { });
     }
 
     // ── registerUser ───────────────────────────────────────
@@ -143,26 +127,14 @@ function setupSocket(io, collections) {
     });
 
     // ── Room joins ─────────────────────────────────────────
-    socket.on("joinRoom", ({ roomId }) => {
-      socket.join(roomId);
-    });
-    socket.on("join:room", ({ room }) => {
-      socket.join(room);
-    });
-    socket.on("joinSupport", () => {
-      socket.join("support");
-    });
-    socket.on("joinRide", (rideId) => {
-      socket.join(`ride_${rideId}`);
-      socket.emit("joinedRide", { rideId });
-    });
+    socket.on("joinRoom", ({ roomId }) => { socket.join(roomId); });
+    socket.on("join:room", ({ room }) => { socket.join(room); });
+    socket.on("joinSupport", () => { socket.join("support"); });
+    socket.on("joinRide", (rideId) => { socket.join(`ride_${rideId}`); socket.emit("joinedRide", { rideId }); });
     socket.on("joinNotifications", (userId) => {
       socket.join(`user_${userId}`);
       socket.join(`user:${userId}`);
-      socket.emit("joinedNotifications", {
-        userId,
-        message: "Joined notification room",
-      });
+      socket.emit("joinedNotifications", { userId, message: "Joined notification room" });
       console.log(`🔔 Notification join: ${userId}`);
     });
 
@@ -179,38 +151,23 @@ function setupSocket(io, collections) {
             { _id: new ObjectId(riderId) },
             {
               $set: {
-                location: {
-                  type: "Point",
-                  coordinates: [parseFloat(lng), parseFloat(lat)],
-                },
+                location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
                 status: "online",
                 lastLocationUpdate: new Date(),
-              },
-            },
+              }
+            }
           );
           // Active ride থাকলে passenger কে পাঠাও
-          const rider = await ridersCollection.findOne({
-            _id: new ObjectId(riderId),
-          });
+          const rider = await ridersCollection.findOne({ _id: new ObjectId(riderId) });
           if (rider?.currentRideId) {
-            const booking = await bookingsCollection.findOne({
-              _id: rider.currentRideId,
-            });
+            const booking = await bookingsCollection.findOne({ _id: rider.currentRideId });
             if (booking?.passengerId) {
               const pid = booking.passengerId.toString();
-              io.to(`passenger:${pid}`).emit("driver:location:updated", {
-                lat,
-                lng,
-              });
-              io.to(`user:${pid}`).emit("driver:location:updated", {
-                lat,
-                lng,
-              });
+              io.to(`passenger:${pid}`).emit("driver:location:updated", { lat, lng });
+              io.to(`user:${pid}`).emit("driver:location:updated", { lat, lng });
             }
           }
-        } catch (err) {
-          console.error("Location DB error:", err.message);
-        }
+        } catch (err) { console.error("Location DB error:", err.message); }
       }
     };
 
@@ -220,34 +177,15 @@ function setupSocket(io, collections) {
     socket.on("gpsUpdate", async (data) => {
       const { rideId, driverId, latitude, longitude, speed, heading } = data;
       try {
-        const gpsData = {
-          rideId,
-          driverId,
-          latitude,
-          longitude,
-          speed: speed || 0,
-          heading: heading || 0,
-          timestamp: new Date(),
-          socketId: socket.id,
-        };
+        const gpsData = { rideId, driverId, latitude, longitude, speed: speed || 0, heading: heading || 0, timestamp: new Date(), socketId: socket.id };
         const result = await gpsLocationsCollection.insertOne(gpsData);
-        io.to(`ride_${rideId}`).emit("receiveGpsUpdate", {
-          _id: result.insertedId,
-          ...gpsData,
-        });
+        io.to(`ride_${rideId}`).emit("receiveGpsUpdate", { _id: result.insertedId, ...gpsData });
         io.to(`ride:${rideId}`).emit("riderLocationUpdate", data);
         io.to(`ride:${rideId}`).emit("driver:location:updated", data);
-        socket.emit("gpsUpdateAck", {
-          success: true,
-          rideId,
-          savedId: result.insertedId,
-        });
+        socket.emit("gpsUpdateAck", { success: true, rideId, savedId: result.insertedId });
       } catch (error) {
-        console.error(" GPS Update Error:", error);
-        socket.emit("gpsUpdateAck", {
-          success: false,
-          error: "Failed to save GPS data",
-        });
+        console.error("❌ GPS Update Error:", error);
+        socket.emit("gpsUpdateAck", { success: false, error: "Failed to save GPS data" });
       }
     });
 
@@ -261,53 +199,38 @@ function setupSocket(io, collections) {
     // ── ride:accept ────────────────────────────────────────
     socket.on("ride:accept", async (data) => {
       const { bookingId, riderId } = data;
-      console.log(
-        `\n🚗 ride:accept | booking: ${bookingId} | rider: ${riderId}`,
-      );
+      console.log(`\n🚗 ride:accept | booking: ${bookingId} | rider: ${riderId}`);
       try {
         const bookingOid = new ObjectId(bookingId);
         const riderOid = new ObjectId(riderId);
 
         const result = await bookingsCollection.findOneAndUpdate(
           { _id: bookingOid, bookingStatus: "searching" },
-          {
-            $set: {
-              bookingStatus: "accepted",
-              riderId: riderOid,
-              acceptedAt: new Date(),
-              updatedAt: new Date(),
-            },
-          },
-          { returnDocument: "after" },
+          { $set: { bookingStatus: "accepted", riderId: riderOid, acceptedAt: new Date(), updatedAt: new Date() } },
+          { returnDocument: "after" }
         );
 
         if (!result) {
-          socket.emit("ride:accept:error", {
-            message: "Ride is no longer available",
-          });
+          socket.emit("ride:accept:error", { message: "Ride is no longer available" });
           return;
         }
 
         const updatedBooking = result;
         await ridersCollection.updateOne(
           { _id: riderOid },
-          { $set: { status: "busy", currentRideId: bookingOid } },
+          { $set: { status: "busy", currentRideId: bookingOid } }
         );
 
         const driver = await ridersCollection.findOne({ _id: riderOid });
         const driverDetails = {
           name: driver?.name || driver?.firstName || "Driver",
-          image:
-            driver?.image ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver?.name || "Driver"}`,
+          image: driver?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver?.name || "Driver"}`,
           phone: driver?.phone || "",
           rating: driver?.rating || 5.0,
           vehicle: {
             type: driver?.vehicle?.category || driver?.vehicleType || "Car",
-            brand:
-              driver?.vehicle?.model || driver?.vehicleDetails?.brand || "Car",
-            plate:
-              driver?.vehicle?.number || driver?.vehicleDetails?.plate || "N/A",
+            brand: driver?.vehicle?.model || driver?.vehicleDetails?.brand || "Car",
+            plate: driver?.vehicle?.number || driver?.vehicleDetails?.plate || "N/A",
             color: driver?.vehicleDetails?.color || "White",
           },
         };
@@ -316,10 +239,8 @@ function setupSocket(io, collections) {
 
         const passengerId = updatedBooking.passengerId?.toString();
         const payload = {
-          bookingId,
-          rideId: bookingId,
-          driverId: riderId,
-          riderId,
+          bookingId, rideId: bookingId,
+          driverId: riderId, riderId,
           driver: driverDetails,
           otp: updatedBooking.otp,
         };
@@ -333,16 +254,15 @@ function setupSocket(io, collections) {
         io.to(`user_${passengerId}`).emit("rideAccepted", payload);
 
         socket.emit("ride:accept:success", { bookingId });
-        console.log(
-          `✅ ride:accepted → passenger rooms: passenger:${passengerId}, user:${passengerId}, user_${passengerId}`,
-        );
+        console.log(`✅ ride:accepted → passenger rooms: passenger:${passengerId}, user:${passengerId}, user_${passengerId}`);
 
         // Debug: সব connected socket দেখাও
         const allSockets = await io.fetchSockets();
         console.log(`   Connected sockets: ${allSockets.length}`);
-        allSockets.forEach((s) => {
+        allSockets.forEach(s => {
           console.log(`   - ${s.id} | rooms: [${[...s.rooms].join(", ")}]`);
         });
+
       } catch (error) {
         console.error("❌ Ride Accept Error:", error);
         socket.emit("ride:accept:error", { message: "Internal server error" });
@@ -353,56 +273,35 @@ function setupSocket(io, collections) {
     socket.on("send_price_offer", async (data) => {
       const { bookingId, riderId, offeredPrice } = data;
       try {
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(bookingId),
-        });
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         if (!booking) return;
         const passengerId = booking.passengerId?.toString();
-        const payload = {
-          bookingId,
-          rideId: bookingId,
-          driverId: riderId,
-          offeredPrice,
-        };
+        const payload = { bookingId, rideId: bookingId, driverId: riderId, offeredPrice };
 
         io.to(`passenger:${passengerId}`).emit("price_offer_received", payload);
         io.to(`user:${passengerId}`).emit("price_offer_received", payload);
         io.to(`user_${passengerId}`).emit("price_offer_received", payload);
-        console.log(
-          `💸 Price offer ৳${offeredPrice} → passenger: ${passengerId}`,
-        );
-      } catch (err) {
-        console.error("Price offer error:", err.message);
-      }
+        console.log(`💸 Price offer ৳${offeredPrice} → passenger: ${passengerId}`);
+      } catch (err) { console.error("Price offer error:", err.message); }
     });
 
     // ── confirm_booking ────────────────────────────────────
     socket.on("confirm_booking", async (data) => {
       const { rideId, driverId } = data;
       try {
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(rideId),
-        });
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(rideId) });
         if (!booking) return;
 
         await bookingsCollection.updateOne(
           { _id: new ObjectId(rideId) },
-          {
-            $set: {
-              bookingStatus: "accepted",
-              riderId: new ObjectId(driverId),
-              updatedAt: new Date(),
-            },
-          },
+          { $set: { bookingStatus: "accepted", riderId: new ObjectId(driverId), updatedAt: new Date() } }
         );
         await ridersCollection.updateOne(
           { _id: new ObjectId(driverId) },
-          { $set: { status: "busy", currentRideId: new ObjectId(rideId) } },
+          { $set: { status: "busy", currentRideId: new ObjectId(rideId) } }
         );
 
-        const rider = await ridersCollection.findOne({
-          _id: new ObjectId(driverId),
-        });
+        const rider = await ridersCollection.findOne({ _id: new ObjectId(driverId) });
         const passengerId = booking.passengerId?.toString();
 
         const payload = {
@@ -417,20 +316,14 @@ function setupSocket(io, collections) {
           },
         };
 
-        io.to(`rider:${driverId}`).emit("booking_confirmed_by_passenger", {
-          bookingId: rideId,
-        });
-        io.to(`driver:${driverId}`).emit("booking_confirmed_by_passenger", {
-          bookingId: rideId,
-        });
+        io.to(`rider:${driverId}`).emit("booking_confirmed_by_passenger", { bookingId: rideId });
+        io.to(`driver:${driverId}`).emit("booking_confirmed_by_passenger", { bookingId: rideId });
 
         io.to(`passenger:${passengerId}`).emit("ride:accepted", payload);
         io.to(`user:${passengerId}`).emit("ride:accepted", payload);
         io.to(`user_${passengerId}`).emit("ride:accepted", payload);
         console.log(`✅ Booking confirmed: ${rideId}`);
-      } catch (err) {
-        console.error("Confirm booking error:", err.message);
-      }
+      } catch (err) { console.error("Confirm booking error:", err.message); }
     });
 
     // ── driver:arrived ─────────────────────────────────────
@@ -439,79 +332,45 @@ function setupSocket(io, collections) {
       try {
         await bookingsCollection.updateOne(
           { _id: new ObjectId(bookingId) },
-          { $set: { bookingStatus: "arrived", arrivedAt: new Date() } },
+          { $set: { bookingStatus: "arrived", arrivedAt: new Date() } }
         );
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(bookingId),
-        });
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         const passengerId = booking?.passengerId?.toString();
 
-        const arrivedPayload = {
-          bookingId,
-          message: "Driver arrived",
-          otp: booking?.otp,
-        };
-        io.to(`passenger:${passengerId}`).emit(
-          "driver:arrived",
-          arrivedPayload,
-        );
+        const arrivedPayload = { bookingId, message: "Driver arrived", otp: booking?.otp };
+        io.to(`passenger:${passengerId}`).emit("driver:arrived", arrivedPayload);
         io.to(`user:${passengerId}`).emit("driver:arrived", arrivedPayload);
         io.to(`user_${passengerId}`).emit("driver:arrived", arrivedPayload);
-        io.to(`ride:${bookingId}`).emit("ride:status:updated", {
-          status: "arrived",
-        });
-        console.log(
-          `📍 Driver arrived, OTP: ${booking?.otp} → passenger: ${passengerId}`,
-        );
-      } catch (err) {
-        console.error("Arrived error:", err.message);
-      }
+        io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "arrived" });
+        console.log(`📍 Driver arrived, OTP: ${booking?.otp} → passenger: ${passengerId}`);
+      } catch (err) { console.error("Arrived error:", err.message); }
     });
 
     // ── verify_otp ─────────────────────────────────────────
     socket.on("verify_otp", async (data) => {
       const { rideId, enteredOtp } = data;
       try {
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(rideId),
-        });
-        if (!booking)
-          return socket.emit("otp_verified", {
-            success: false,
-            message: "Booking not found",
-          });
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(rideId) });
+        if (!booking) return socket.emit("otp_verified", { success: false, message: "Booking not found" });
 
         if (String(booking.otp) !== String(enteredOtp)) {
-          return socket.emit("otp_verified", {
-            success: false,
-            message: "Invalid OTP",
-          });
+          return socket.emit("otp_verified", { success: false, message: "Invalid OTP" });
         }
 
         await bookingsCollection.updateOne(
           { _id: new ObjectId(rideId) },
-          { $set: { bookingStatus: "picked_up", startedAt: new Date() } },
+          { $set: { bookingStatus: "picked_up", startedAt: new Date() } }
         );
 
         const passengerId = booking.passengerId?.toString();
-        io.to(`passenger:${passengerId}`).emit("trip_started", {
-          bookingId: rideId,
-        });
-        io.to(`user:${passengerId}`).emit("trip_started", {
-          bookingId: rideId,
-        });
-        io.to(`user_${passengerId}`).emit("trip_started", {
-          bookingId: rideId,
-        });
-        io.to(`ride:${rideId}`).emit("ride:status:updated", {
-          status: "picked_up",
-        });
+        io.to(`passenger:${passengerId}`).emit("trip_started", { bookingId: rideId });
+        io.to(`user:${passengerId}`).emit("trip_started", { bookingId: rideId });
+        io.to(`user_${passengerId}`).emit("trip_started", { bookingId: rideId });
+        io.to(`ride:${rideId}`).emit("ride:status:updated", { status: "picked_up" });
 
         socket.emit("otp_verified", { success: true, bookingId: rideId });
         console.log(`✅ OTP verified, trip started: ${rideId}`);
-      } catch (err) {
-        console.error("OTP verify error:", err.message);
-      }
+      } catch (err) { console.error("OTP verify error:", err.message); }
     });
 
     // ── ride:start ─────────────────────────────────────────
@@ -520,23 +379,17 @@ function setupSocket(io, collections) {
       try {
         await bookingsCollection.updateOne(
           { _id: new ObjectId(bookingId) },
-          { $set: { bookingStatus: "started", updatedAt: new Date() } },
+          { $set: { bookingStatus: "started", updatedAt: new Date() } }
         );
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(bookingId),
-        });
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         const passengerId = booking?.passengerId?.toString();
 
         io.to(`passenger:${passengerId}`).emit("ride:started", { bookingId });
         io.to(`user:${passengerId}`).emit("ride:started", { bookingId });
         io.to(`user_${passengerId}`).emit("trip_started", { bookingId });
-        io.to(`ride:${bookingId}`).emit("ride:status:updated", {
-          status: "started",
-        });
+        io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "started" });
         console.log(`🚀 Ride started: ${bookingId}`);
-      } catch (err) {
-        console.error("Start error:", err.message);
-      }
+      } catch (err) { console.error("Start error:", err.message); }
     });
 
     // ── ride:complete ──────────────────────────────────────
@@ -545,69 +398,44 @@ function setupSocket(io, collections) {
       try {
         await bookingsCollection.updateOne(
           { _id: new ObjectId(bookingId) },
-          { $set: { bookingStatus: "completed", completedAt: new Date() } },
+          { $set: { bookingStatus: "completed", completedAt: new Date() } }
         );
         await ridersCollection.updateOne(
           { _id: new ObjectId(riderId) },
-          { $set: { status: "online", currentRideId: null } },
+          { $set: { status: "online", currentRideId: null } }
         );
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(bookingId),
-        });
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         const passengerId = booking?.passengerId?.toString();
 
         io.to(`passenger:${passengerId}`).emit("ride:completed", { bookingId });
         io.to(`user:${passengerId}`).emit("ride:completed", { bookingId });
         io.to(`user_${passengerId}`).emit("ride:completed", { bookingId });
-        io.to(`ride:${bookingId}`).emit("ride:status:updated", {
-          status: "completed",
-        });
+        io.to(`ride:${bookingId}`).emit("ride:status:updated", { status: "completed" });
         console.log(`✅ Ride completed: ${bookingId}`);
-      } catch (err) {
-        console.error("Complete error:", err.message);
-      }
+      } catch (err) { console.error("Complete error:", err.message); }
     });
 
     // ── Chat ───────────────────────────────────────────────
-    socket.on("typing", ({ roomId, userId, userName }) => {
-      socket.to(roomId).emit("userTyping", { roomId, userId, userName });
-    });
-    socket.on("stopTyping", ({ roomId, userId }) => {
-      socket.to(roomId).emit("userStopTyping", { roomId, userId });
-    });
+    socket.on("typing", ({ roomId, userId, userName }) => { socket.to(roomId).emit("userTyping", { roomId, userId, userName }); });
+    socket.on("stopTyping", ({ roomId, userId }) => { socket.to(roomId).emit("userStopTyping", { roomId, userId }); });
 
     socket.on("markAsRead", async ({ roomId, userId }) => {
       if (!roomId || !userId) return;
       try {
         await chatCollection.updateMany(
           { roomId, isRead: false, senderId: { $ne: String(userId) } },
-          { $set: { isRead: true } },
+          { $set: { isRead: true } }
         );
         io.to(roomId).emit("messagesSeen", { roomId, userId });
-        if (roomId.startsWith("support_"))
-          io.to("support").emit("supportSessionUpdated", { roomId });
-      } catch (err) {
-        console.error("markAsRead error:", err);
-      }
+        if (roomId.startsWith("support_")) io.to("support").emit("supportSessionUpdated", { roomId });
+      } catch (err) { console.error("markAsRead error:", err); }
     });
 
     // ── WebRTC ─────────────────────────────────────────────
-    socket.on("callUser", ({ toUserId, offer, fromUserId }) => {
-      const t = onlineUsers.get(String(toUserId));
-      if (t) io.to(t).emit("incomingCall", { fromUserId, offer });
-    });
-    socket.on("answerCall", ({ toUserId, answer }) => {
-      const t = onlineUsers.get(String(toUserId));
-      if (t) io.to(t).emit("callAccepted", { answer });
-    });
-    socket.on("iceCandidate", ({ toUserId, candidate }) => {
-      const t = onlineUsers.get(String(toUserId));
-      if (t) io.to(t).emit("iceCandidate", { candidate });
-    });
-    socket.on("endCall", ({ toUserId }) => {
-      const t = onlineUsers.get(String(toUserId));
-      if (t) io.to(t).emit("callEnded");
-    });
+    socket.on("callUser", ({ toUserId, offer, fromUserId }) => { const t = onlineUsers.get(String(toUserId)); if (t) io.to(t).emit("incomingCall", { fromUserId, offer }); });
+    socket.on("answerCall", ({ toUserId, answer }) => { const t = onlineUsers.get(String(toUserId)); if (t) io.to(t).emit("callAccepted", { answer }); });
+    socket.on("iceCandidate", ({ toUserId, candidate }) => { const t = onlineUsers.get(String(toUserId)); if (t) io.to(t).emit("iceCandidate", { candidate }); });
+    socket.on("endCall", ({ toUserId }) => { const t = onlineUsers.get(String(toUserId)); if (t) io.to(t).emit("callEnded"); });
 
     // ── Notifications ──────────────────────────────────────
     socket.on("sendNotification", async (data) => {
@@ -615,28 +443,14 @@ function setupSocket(io, collections) {
       const { userId, message, type, metadata } = data;
       try {
         const notification = {
-          userId,
-          message,
-          type,
-          isRead: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          metadata: metadata || {},
-          sentBy: socket.userId,
-          sentByRole: socket.userRole,
+          userId, message, type, isRead: false,
+          createdAt: new Date(), updatedAt: new Date(),
+          metadata: metadata || {}, sentBy: socket.userId, sentByRole: socket.userRole,
         };
         const result = await notificationsCollection.insertOne(notification);
-        io.to(`user_${userId}`).emit("newNotification", {
-          _id: result.insertedId,
-          ...notification,
-        });
-        socket.emit("notificationSent", {
-          success: true,
-          notificationId: result.insertedId,
-        });
-      } catch (err) {
-        console.error("Notification error:", err);
-      }
+        io.to(`user_${userId}`).emit("newNotification", { _id: result.insertedId, ...notification });
+        socket.emit("notificationSent", { success: true, notificationId: result.insertedId });
+      } catch (err) { console.error("Notification error:", err); }
     });
 
     // ── Stats ──────────────────────────────────────────────
@@ -654,25 +468,14 @@ function setupSocket(io, collections) {
       console.log(`🔌 Disconnected: ${socket.id} (${reason})`);
       activeConnections.delete(socket.id);
       for (const [userId, sockId] of onlineUsers.entries()) {
-        if (sockId === socket.id) {
-          onlineUsers.delete(userId);
-          break;
-        }
+        if (sockId === socket.id) { onlineUsers.delete(userId); break; }
       }
       try {
         await rideSessionsCollection.updateOne(
           { socketId: socket.id, status: "active" },
-          {
-            $set: {
-              status: "disconnected",
-              disconnectedAt: new Date(),
-              disconnectReason: reason,
-            },
-          },
+          { $set: { status: "disconnected", disconnectedAt: new Date(), disconnectReason: reason } }
         );
-      } catch (err) {
-        /* ignore */
-      }
+      } catch (err) { /* ignore */ }
     });
   });
 }
@@ -681,30 +484,12 @@ function setupSocket(io, collections) {
 function setupRoutes(app, collections) {
   const { chatCollection } = collections;
 
-  // Emit API — backend notificationHelper calls this
-  app.post("/api/emit", (req, res) => {
-    try {
-      const { event, room, payload } = req.body;
-      if (!event || !room) {
-        return res.status(400).json({ error: "event and room are required" });
-      }
-      global.io.to(room).emit(event, payload);
-      console.log(`📡 /api/emit → room: ${room} | event: ${event}`);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Emit error:", error);
-      res.status(500).json({ error: "Failed to emit" });
-    }
-  });
-
   // Dispatch API — API server (5000) এর জন্য
   app.post("/api/dispatch", (req, res) => {
     try {
       const { riderIds, ridePayload } = req.body;
       if (!riderIds || !ridePayload) {
-        return res
-          .status(400)
-          .json({ error: "Missing riderIds or ridePayload" });
+        return res.status(400).json({ error: "Missing riderIds or ridePayload" });
       }
       riderIds.forEach((riderId) => {
         global.io.to(`rider:${riderId}`).emit("new-ride-request", ridePayload);
@@ -721,44 +506,25 @@ function setupRoutes(app, collections) {
   app.post("/api/chat/send", async (req, res) => {
     try {
       const data = req.body;
-      let {
-        chatType,
-        roomId,
-        senderId,
-        passengerId,
-        riderId,
-        senderRole,
-        message,
-        messageType,
-        fileUrl,
-      } = data;
+      let { chatType, roomId, senderId, passengerId, riderId, senderRole, message, messageType, fileUrl } = data;
       chatType = chatType === "support" ? "support" : "ride";
-      if (chatType === "ride" && !String(roomId).startsWith("ride_"))
-        roomId = `ride_${roomId}`;
-      if (chatType === "support" && !String(roomId).startsWith("support_"))
-        roomId = `support_${roomId}`;
+      if (chatType === "ride" && !String(roomId).startsWith("ride_")) roomId = `ride_${roomId}`;
+      if (chatType === "support" && !String(roomId).startsWith("support_")) roomId = `support_${roomId}`;
 
       const chatMessage = {
-        roomId: String(roomId),
-        rideId: data.rideId || null,
+        roomId: String(roomId), rideId: data.rideId || null,
         passengerId: passengerId ? String(passengerId) : null,
         riderId: riderId ? String(riderId) : null,
-        senderId: String(senderId),
-        senderName: data.senderName || null,
-        senderRole: senderRole || "passenger",
-        chatType,
-        message: message || "",
-        messageType: messageType || "text",
-        fileUrl: fileUrl || null,
-        isRead: false,
-        createdAt: new Date(),
+        senderId: String(senderId), senderName: data.senderName || null,
+        senderRole: senderRole || "passenger", chatType,
+        message: message || "", messageType: messageType || "text",
+        fileUrl: fileUrl || null, isRead: false, createdAt: new Date(),
       };
 
       const result = await chatCollection.insertOne(chatMessage);
       chatMessage._id = result.insertedId;
       global.io.to(String(roomId)).emit("receiveMessage", chatMessage);
-      if (chatType === "support")
-        global.io.to("support").emit("supportSessionUpdated", { roomId });
+      if (chatType === "support") global.io.to("support").emit("supportSessionUpdated", { roomId });
 
       res.status(201).json(chatMessage);
     } catch (error) {
@@ -769,79 +535,31 @@ function setupRoutes(app, collections) {
 
   app.get("/api/chat/history/:roomId", async (req, res) => {
     try {
-      const history = await chatCollection
-        .find({ roomId: req.params.roomId })
-        .sort({ createdAt: 1 })
-        .toArray();
+      const history = await chatCollection.find({ roomId: req.params.roomId }).sort({ createdAt: 1 }).toArray();
       res.json(history || []);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to load history" });
-    }
+    } catch (err) { res.status(500).json({ error: "Failed to load history" }); }
   });
 
   app.get("/api/support/sessions", async (req, res) => {
     try {
-      const sessions = await chatCollection
-        .aggregate([
-          { $match: { chatType: "support" } },
-          { $sort: { createdAt: -1 } },
-          {
-            $group: {
-              _id: "$roomId",
-              roomId: { $first: "$roomId" },
-              passengerId: { $first: "$passengerId" },
-              senderName: { $first: "$senderName" },
-              lastMessage: { $first: "$message" },
-              createdAt: { $first: "$createdAt" },
-              unreadCount: {
-                $sum: {
-                  $cond: [
-                    {
-                      $and: [
-                        { $eq: ["$isRead", false] },
-                        { $ne: ["$senderRole", "support"] },
-                      ],
-                    },
-                    1,
-                    0,
-                  ],
-                },
-              },
-            },
-          },
-          { $sort: { createdAt: -1 } },
-        ])
-        .toArray();
+      const sessions = await chatCollection.aggregate([
+        { $match: { chatType: "support" } },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: "$roomId", roomId: { $first: "$roomId" },
+            passengerId: { $first: "$passengerId" }, senderName: { $first: "$senderName" },
+            lastMessage: { $first: "$message" }, createdAt: { $first: "$createdAt" },
+            unreadCount: { $sum: { $cond: [{ $and: [{ $eq: ["$isRead", false] }, { $ne: ["$senderRole", "support"] }] }, 1, 0] } },
+          }
+        },
+        { $sort: { createdAt: -1 } },
+      ]).toArray();
       res.json(sessions);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to fetch sessions" });
-    }
+    } catch (err) { res.status(500).json({ error: "Failed to fetch sessions" }); }
   });
 
-  app.get("/", (req, res) => {
-    res.json({
-      status: "Socket Server Running",
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development'
-    });
-  });
-
-  app.get("/health", (_, res) =>
-    res.json({
-      status: "ok",
-      service: "socket-server",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    }),
-  );
-
-  app.get("/api/health", (_, res) =>
-    res.json({
-      status: "OnWay Socket Server Running",
-
-      timestamp: new Date(),
-    }),
-  );
+  app.get("/api/health", (_, res) => res.json({ status: "OnWay Socket Server Running", port: PORT, timestamp: new Date() }));
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -887,16 +605,12 @@ async function startServer() {
   io.use((socket, next) => {
     const { token, role, userId } = socket.handshake.auth;
     if (process.env.NODE_ENV === "development" && userId && role) {
-      socket.userId = userId;
-      socket.userRole = role;
-      socket.authenticated = true;
+      socket.userId = userId; socket.userRole = role; socket.authenticated = true;
       return next();
     }
     const verified = verifyToken(token);
     if (verified && isAdmin(role)) {
-      socket.userId = userId;
-      socket.userRole = role;
-      socket.authenticated = true;
+      socket.userId = userId; socket.userRole = role; socket.authenticated = true;
       return next();
     }
     next();
@@ -908,18 +622,12 @@ async function startServer() {
   setInterval(async () => {
     try {
       const oneDayAgo = new Date(Date.now() - 86400000);
-      await collections.gpsLocationsCollection.deleteMany({
-        timestamp: { $lt: oneDayAgo },
-      });
-    } catch (err) {
-      console.error("Cleanup error:", err);
-    }
+      await collections.gpsLocationsCollection.deleteMany({ timestamp: { $lt: oneDayAgo } });
+    } catch (err) { console.error("Cleanup error:", err); }
   }, 3600000);
 
   server.listen(PORT, () => {
     console.log(`🚀 Socket.io Server running on port ${PORT}`);
-    console.log(`   Root:   http://localhost:${PORT}/`);
-    console.log(`   Health: http://localhost:${PORT}/health`);
   });
 }
 
@@ -933,7 +641,7 @@ const shutdown = async () => {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-startServer().catch((err) => {
+startServer().catch(err => {
   console.error("Failed to start server:", err);
   process.exit(1);
 });

@@ -149,7 +149,7 @@ export default function BookRidePage() {
     }
   }, [distance, rideType, surge.multiplier]);
 
-  // console.log(distance, fare, surge.multiplier);
+  console.log(distance, fare, surge.multiplier);
 
 
   // --- 3. Route Calculation Logic ---

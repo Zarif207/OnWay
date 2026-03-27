@@ -19,49 +19,49 @@ const CHAT_URL = process.env.NEXT_PUBLIC_CHAT_URL || "http://localhost:4002";
 // Rider     → support chat (chatType: "support", riderId: set)
 // Support   → admin chat   (chatType: "admin")
 const TABS = [
-    { key: "passengers", label: "Passengers", icon: Users, color: "emerald" },
-    { key: "riders", label: "Riders", icon: Car, color: "blue" },
-    { key: "support", label: "Support", icon: Headphones, color: "purple" },
+    { key: "passengers", label: "Passengers", icon: Users,      color: "emerald" },
+    { key: "riders",     label: "Riders",     icon: Car,        color: "blue"    },
+    { key: "support",    label: "Support",    icon: Headphones, color: "purple"  },
 ];
 
 const TAB_COLOR = {
     passengers: { bg: "bg-emerald-50", text: "text-emerald-600", active: "bg-emerald-600", badge: "bg-emerald-600", mine: "bg-gray-900 text-white" },
-    riders: { bg: "bg-blue-50", text: "text-blue-600", active: "bg-blue-600", badge: "bg-blue-600", mine: "bg-gray-900 text-white" },
-    support: { bg: "bg-purple-50", text: "text-purple-600", active: "bg-purple-600", badge: "bg-purple-600", mine: "bg-gray-900 text-white" },
+    riders:     { bg: "bg-blue-50",    text: "text-blue-600",    active: "bg-blue-600",    badge: "bg-blue-600",    mine: "bg-gray-900 text-white" },
+    support:    { bg: "bg-purple-50",  text: "text-purple-600",  active: "bg-purple-600",  badge: "bg-purple-600",  mine: "bg-gray-900 text-white" },
 };
 
 export default function AdminDashboard() {
     const { user: adminUser, isLoading: authLoading } = useRequireRole("admin");
 
-    const [activeTab, setActiveTab] = useState("passengers");
-    const [sessions, setSessions] = useState([]);
-    const [selectedChat, setSelectedChat] = useState(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [input, setInput] = useState("");
-    const [isUploading, setIsUploading] = useState(false);
+    const [activeTab,      setActiveTab]      = useState("passengers");
+    const [sessions,       setSessions]       = useState([]);
+    const [selectedChat,   setSelectedChat]   = useState(null);
+    const [searchQuery,    setSearchQuery]    = useState("");
+    const [input,          setInput]          = useState("");
+    const [isUploading,    setIsUploading]    = useState(false);
     const [showMobileList, setShowMobileList] = useState(true);
-    const [stats, setStats] = useState(null);
+    const [stats,          setStats]          = useState(null);
 
-    const scrollRef = useRef(null);
-    const fileInputRef = useRef(null);
+    const scrollRef     = useRef(null);
+    const fileInputRef  = useRef(null);
     const typingTimeout = useRef(null);
-    const tc = TAB_COLOR[activeTab];
+    const tc            = TAB_COLOR[activeTab];
 
     // ── roomId ───────────────────────────────────────────────────
     const roomId = useMemo(() => selectedChat?.roomId || null, [selectedChat]);
 
     // ── chatType — support tab = "admin" (admin ↔ support agent) ─
     const chatType = useMemo(() => {
-        if (activeTab === "support") return "admin";
-        return "support";
+        if (activeTab === "support") return "admin";  // admin replies to support agent
+        return "support";                              // admin reads passenger/rider support chats
     }, [activeTab]);
 
     // ── otherUserId for calls ────────────────────────────────────
     const otherUserId = useMemo(() => {
         if (!selectedChat) return null;
         if (activeTab === "passengers") return selectedChat.passengerId || null;
-        if (activeTab === "riders") return selectedChat.riderId || null;
-        if (activeTab === "support") return selectedChat.senderId || null;
+        if (activeTab === "riders")     return selectedChat.riderId     || null;
+        if (activeTab === "support")    return selectedChat.senderId    || null;
         return null;
     }, [activeTab, selectedChat]);
 
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
             else if (activeTab === "support")
                 url = `${CHAT_URL}/api/admin/support-chats`;
 
-            const res = await fetch(url);
+            const res  = await fetch(url);
             const data = await res.json();
             setSessions(Array.isArray(data) ? data : []);
         } catch (err) { console.error("Fetch sessions error:", err); }
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
     // ── Fetch stats ──────────────────────────────────────────────
     const fetchStats = useCallback(async () => {
         try {
-            const res = await fetch(`${CHAT_URL}/api/admin/stats`);
+            const res  = await fetch(`${CHAT_URL}/api/admin/stats`);
             const data = await res.json();
             setStats(data);
         } catch (err) { console.error("Stats error:", err); }
@@ -124,15 +124,15 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (!socket) return;
         const onUpdate = () => { fetchSessions(); fetchStats(); };
-        socket.on("adminNotification", onUpdate);
-        socket.on("adminSessionUpdated", onUpdate);
+        socket.on("adminNotification",     onUpdate);
+        socket.on("adminSessionUpdated",   onUpdate);
         socket.on("supportSessionUpdated", onUpdate);
-        socket.on("receiveMessage", onUpdate);
+        socket.on("receiveMessage",        onUpdate);
         return () => {
-            socket.off("adminNotification", onUpdate);
-            socket.off("adminSessionUpdated", onUpdate);
+            socket.off("adminNotification",     onUpdate);
+            socket.off("adminSessionUpdated",   onUpdate);
             socket.off("supportSessionUpdated", onUpdate);
-            socket.off("receiveMessage", onUpdate);
+            socket.off("receiveMessage",        onUpdate);
         };
     }, [socket, fetchSessions, fetchStats]);
 
@@ -162,12 +162,12 @@ export default function AdminDashboard() {
     // ── Select chat ──────────────────────────────────────────────
     const handleSelect = (s) => {
         setSelectedChat({
-            roomId: s.roomId,
-            name: s.senderName || "Unknown",
+            roomId:      s.roomId,
+            name:        s.senderName || "Unknown",
             passengerId: s.passengerId || null,
-            riderId: s.riderId || null,
-            senderId: s.senderId || null,
-            chatType: s.chatType || "support",
+            riderId:     s.riderId     || null,
+            senderId:    s.senderId    || null,
+            chatType:    s.chatType    || "support",
         });
         setShowMobileList(false);
     };
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
         fd.append("file", file);
         fd.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "onway_preset");
         try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
+            const res  = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
             const data = await res.json();
             if (data.secure_url) handleSend("", data.secure_url, "image");
         } catch (err) { console.error("Upload failed:", err); }
@@ -206,16 +206,16 @@ export default function AdminDashboard() {
     const filteredSessions = useMemo(() => {
         const q = searchQuery.toLowerCase();
         return sessions.filter(s =>
-            (s.senderName || "").toLowerCase().includes(q) ||
+            (s.senderName  || "").toLowerCase().includes(q) ||
             (s.passengerId || "").toLowerCase().includes(q) ||
-            (s.riderId || "").toLowerCase().includes(q)
+            (s.riderId     || "").toLowerCase().includes(q)
         );
     }, [sessions, searchQuery]);
 
     // ── Online id for session list ───────────────────────────────
     const getOnlineId = (s) => {
         if (activeTab === "passengers") return s.passengerId;
-        if (activeTab === "riders") return s.riderId;
+        if (activeTab === "riders")     return s.riderId;
         return s.senderId;
     };
 
@@ -253,6 +253,22 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
+                        {/* Stats */}
+                        {stats && (
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { label: "Rides",   value: stats.totalRideChats },
+                                    { label: "Support", value: stats.totalSupportSessions },
+                                    { label: "Unread",  value: stats.totalUnread },
+                                ].map(s => (
+                                    <div key={s.label} className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100">
+                                        <p className="text-lg font-black text-gray-900">{s.value ?? 0}</p>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {/* ── 3 Tabs ── */}
                         <div className="flex gap-1 bg-gray-50 p-1 rounded-2xl border border-gray-100">
                             {TABS.map(tab => {
@@ -287,8 +303,8 @@ export default function AdminDashboard() {
                                 <p className="text-[10px] font-black uppercase">No sessions</p>
                             </div>
                         ) : filteredSessions.map((s) => {
-                            const isActive = roomId === s.roomId;
-                            const onlineId = getOnlineId(s);
+                            const isActive  = roomId === s.roomId;
+                            const onlineId  = getOnlineId(s);
                             return (
                                 <button key={s._id || s.roomId} onClick={() => handleSelect(s)}
                                     className={`w-full p-5 mb-2 flex items-center gap-4 rounded-[2.2rem] transition-all
@@ -370,13 +386,13 @@ export default function AdminDashboard() {
                                 ) : messages.length > 0 ? (
                                     messages.map((m, i) => {
                                         const adminId = String(adminUser?._id || adminUser?.id);
-                                        const isMine = m.senderId === adminId || m.senderRole === "admin";
+                                        const isMine  = m.senderId === adminId || m.senderRole === "admin";
 
                                         // Sender label — who sent this message
                                         const senderLabel =
                                             m.senderRole === "support" ? "Support Agent" :
-                                                m.senderRole === "rider" ? "Rider" :
-                                                    m.senderRole === "passenger" ? "Passenger" : null;
+                                            m.senderRole === "rider"   ? "Rider" :
+                                            m.senderRole === "passenger" ? "Passenger" : null;
 
                                         return (
                                             <div key={m._id || i} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
@@ -439,8 +455,8 @@ export default function AdminDashboard() {
                                         onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                                         placeholder={
                                             activeTab === "support" ? "Reply to support agent..." :
-                                                activeTab === "riders" ? "Reply to rider..." :
-                                                    "Reply to passenger..."
+                                            activeTab === "riders"  ? "Reply to rider..." :
+                                            "Reply to passenger..."
                                         }
                                         className="flex-1 bg-transparent py-3 outline-none font-bold text-gray-800" />
                                     <button onClick={() => handleSend()} disabled={!input.trim() && !isUploading}
@@ -456,8 +472,8 @@ export default function AdminDashboard() {
                             <h3 className="text-2xl font-black uppercase tracking-widest">Select a session</h3>
                             <p className="text-sm font-bold mt-2 uppercase tracking-wider opacity-60">
                                 {activeTab === "passengers" && "Passenger support messages"}
-                                {activeTab === "riders" && "Rider support messages"}
-                                {activeTab === "support" && "Support agent messages"}
+                                {activeTab === "riders"     && "Rider support messages"}
+                                {activeTab === "support"    && "Support agent messages"}
                             </p>
                         </div>
                     )}
@@ -466,7 +482,7 @@ export default function AdminDashboard() {
 
             {/* Incoming call */}
             {incomingCall && !callActive && (
-                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-998 min-w-65">
+                <div className="fixed bottom-8 right-8 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 z-[998] min-w-[260px]">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-lg">
                             {incomingCall.callType === "audio" ? "🎧" : "📹"}
@@ -499,7 +515,7 @@ export default function AdminDashboard() {
                 localStreamRef={localStreamRef}
                 remoteStreamRef={remoteStreamRef}
                 endCall={endCall}
-                callerName={selectedChat?.name || "Admin"}
+                callerName={incomingCall?.fromUserName || selectedChat?.name || "Unknown"}
                 callType={incomingCall?.callType || "video"}
             />
         </div>

@@ -6,17 +6,17 @@ import { io } from "socket.io-client";
 const CHAT_URL = process.env.NEXT_PUBLIC_CHAT_URL || "http://localhost:4002";
 
 // ── Shared socket instance ───────────────────────────────────
-let sharedSocket = null;
+let sharedSocket   = null;
 let socketRefCount = 0;
 
 function getSocket() {
   if (!sharedSocket || !sharedSocket.connected) {
     sharedSocket = io(CHAT_URL, {
-      autoConnect: true,
-      reconnection: true,
+      autoConnect:          true,
+      reconnection:         true,
       reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      transports: ["websocket"],
+      reconnectionDelay:    1000,
+      transports:           ["websocket"],
     });
   }
   socketRefCount++;
@@ -27,7 +27,7 @@ function releaseSocket() {
   socketRefCount--;
   if (socketRefCount <= 0 && sharedSocket) {
     sharedSocket.disconnect();
-    sharedSocket = null;
+    sharedSocket   = null;
     socketRefCount = 0;
   }
 }
@@ -37,13 +37,13 @@ const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   {
-    urls: "turn:openrelay.metered.ca:80",
-    username: "openrelayproject",
+    urls:       "turn:openrelay.metered.ca:80",
+    username:   "openrelayproject",
     credential: "openrelayproject",
   },
   {
-    urls: "turn:openrelay.metered.ca:443",
-    username: "openrelayproject",
+    urls:       "turn:openrelay.metered.ca:443",
+    username:   "openrelayproject",
     credential: "openrelayproject",
   },
 ];
@@ -58,43 +58,43 @@ export const useChat = (
   otherUserId = null,
   chatSubRole = null   // "rider" | "passenger" — support agent reply routing
 ) => {
-  const [messages, setMessages] = useState([]);
-  const [typingUser, setTypingUser] = useState(null);
+  const [messages,     setMessages]     = useState([]);
+  const [typingUser,   setTypingUser]   = useState(null);
   const [onlineStatus, setOnlineStatus] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [sendError, setSendError] = useState(null);
-  const [socket, setSocket] = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [sendError,    setSendError]    = useState(null);
+  const [socket,       setSocket]       = useState(null);
 
   // ── WebRTC state ─────────────────────────────────────────────
-  const peerRef = useRef(null);
-  const localStreamRef = useRef(null);
+  const peerRef         = useRef(null);
+  const localStreamRef  = useRef(null);
   const remoteStreamRef = useRef(null);
   const [incomingCall, setIncomingCall] = useState(null);
-  const [callActive, setCallActive] = useState(false);
-  const [calling, setCalling] = useState(false);
-  const [callError, setCallError] = useState(null);
+  const [callActive,   setCallActive]   = useState(false);
+  const [calling,      setCalling]      = useState(false);
+  const [callError,    setCallError]    = useState(null);
 
   // ── Refs (stable, no stale closures) ─────────────────────────
-  const roomIdRef = useRef(roomId);
-  const userIdRef = useRef(userId);
-  const roleRef = useRef(role);
+  const roomIdRef      = useRef(roomId);
+  const userIdRef      = useRef(userId);
+  const roleRef        = useRef(role);
   const otherUserIdRef = useRef(otherUserId);
-  const userNameRef = useRef(userName);
-  const chatTypeRef = useRef(chatType);
+  const userNameRef    = useRef(userName);
+  const chatTypeRef    = useRef(chatType);
   const chatSubRoleRef = useRef(chatSubRole);
-  const prevRoomRef = useRef(null);
-  const socketRef = useRef(null);
-  const typingTm = useRef(null);
+  const prevRoomRef    = useRef(null);
+  const socketRef      = useRef(null);
+  const typingTm       = useRef(null);
   // ✅ store call target after accept so endCall works correctly
-  const callTargetRef = useRef(null);
+  const callTargetRef  = useRef(null);
 
   useEffect(() => {
-    roomIdRef.current = roomId;
-    userIdRef.current = userId;
-    roleRef.current = role;
+    roomIdRef.current      = roomId;
+    userIdRef.current      = userId;
+    roleRef.current        = role;
     otherUserIdRef.current = otherUserId;
-    userNameRef.current = userName;
-    chatTypeRef.current = chatType;
+    userNameRef.current    = userName;
+    chatTypeRef.current    = chatType;
     chatSubRoleRef.current = chatSubRole;
   }, [roomId, userId, role, otherUserId, userName, chatType, chatSubRole]);
 
@@ -104,11 +104,11 @@ export const useChat = (
   const fetchMessages = useCallback(async (targetRoomId) => {
     const rid = targetRoomId || roomIdRef.current;
     const uid = userIdRef.current;
-    const r = roleRef.current;
+    const r   = roleRef.current;
     if (!rid || !uid) return;
     try {
       setLoading(true);
-      const res = await fetch(
+      const res  = await fetch(
         `${CHAT_URL}/api/chat/history/${rid}?userId=${uid}&role=${r}`
       );
       if (!res.ok) { setMessages([]); return; }
@@ -175,7 +175,7 @@ export const useChat = (
       peerRef.current = null;
     }
     remoteStreamRef.current = null;
-    callTargetRef.current = null;
+    callTargetRef.current   = null;
     setIncomingCall(null);
     setCallActive(false);
     setCalling(false);
@@ -190,7 +190,7 @@ export const useChat = (
     peer.onicecandidate = (e) => {
       if (!e.candidate) return;
       socketRef.current?.emit("iceCandidate", {
-        toUserId: String(targetUserId),
+        toUserId:  String(targetUserId),
         candidate: e.candidate,
       });
     };
@@ -241,7 +241,7 @@ export const useChat = (
       setCalling(true);
       callTargetRef.current = String(targetUserId);
 
-      const peer = createPeer(targetUserId);
+      const peer   = createPeer(targetUserId);
       const stream = await getMedia(options);
       localStreamRef.current = stream;
       stream.getTracks().forEach(t => peer.addTrack(t, stream));
@@ -250,10 +250,11 @@ export const useChat = (
       await peer.setLocalDescription(offer);
 
       sock.emit("callUser", {
-        toUserId: String(targetUserId),
-        fromUserId: String(userIdRef.current),
+        toUserId:     String(targetUserId),
+        fromUserId:   String(userIdRef.current),
+        fromUserName: userNameRef.current,   // ✅ caller-এর নাম পাঠাও
         offer,
-        callType: options?.video === false ? "audio" : "video",
+        callType:     options?.video === false ? "audio" : "video",
       });
     } catch (err) {
       console.error("[useChat] startCall error:", err);
@@ -272,10 +273,10 @@ export const useChat = (
       // ✅ store target BEFORE clearing incomingCall
       callTargetRef.current = String(fromUserId);
 
-      const peer = createPeer(fromUserId);
+      const peer    = createPeer(fromUserId);
       const options = callType === "audio"
         ? { video: false, audio: true }
-        : { video: true, audio: true };
+        : { video: true,  audio: true };
 
       const stream = await getMedia(options);
       localStreamRef.current = stream;
@@ -354,9 +355,9 @@ export const useChat = (
       setOnlineStatus(prev => ({ ...prev, ...map }));
     };
 
-    const onIncomingCall = ({ fromUserId, offer, callType }) => {
-      console.log("[useChat] incomingCall from:", fromUserId);
-      setIncomingCall({ fromUserId, offer, callType });
+    const onIncomingCall = ({ fromUserId, fromUserName, offer, callType }) => {
+      console.log("[useChat] incomingCall from:", fromUserId, fromUserName);
+      setIncomingCall({ fromUserId, fromUserName, offer, callType });
     };
 
     const onCallAccepted = async ({ answer }) => {
@@ -395,30 +396,30 @@ export const useChat = (
       }
     };
 
-    socket.on("receiveMessage", onMessage);
-    socket.on("userTyping", onTyping);
-    socket.on("userStopTyping", onStopTyping);
-    socket.on("messagesSeen", onSeen);
-    socket.on("userStatus", onUserStatus);
+    socket.on("receiveMessage",  onMessage);
+    socket.on("userTyping",      onTyping);
+    socket.on("userStopTyping",  onStopTyping);
+    socket.on("messagesSeen",    onSeen);
+    socket.on("userStatus",      onUserStatus);
     socket.on("onlineUsersList", onOnlineUsersList);
-    socket.on("incomingCall", onIncomingCall);
-    socket.on("callAccepted", onCallAccepted);
-    socket.on("callFailed", onCallFailed);
-    socket.on("callEnded", onCallEnded);
-    socket.on("iceCandidate", onIce);
+    socket.on("incomingCall",    onIncomingCall);
+    socket.on("callAccepted",    onCallAccepted);
+    socket.on("callFailed",      onCallFailed);
+    socket.on("callEnded",       onCallEnded);
+    socket.on("iceCandidate",    onIce);
 
     return () => {
-      socket.off("receiveMessage", onMessage);
-      socket.off("userTyping", onTyping);
-      socket.off("userStopTyping", onStopTyping);
-      socket.off("messagesSeen", onSeen);
-      socket.off("userStatus", onUserStatus);
+      socket.off("receiveMessage",  onMessage);
+      socket.off("userTyping",      onTyping);
+      socket.off("userStopTyping",  onStopTyping);
+      socket.off("messagesSeen",    onSeen);
+      socket.off("userStatus",      onUserStatus);
       socket.off("onlineUsersList", onOnlineUsersList);
-      socket.off("incomingCall", onIncomingCall);
-      socket.off("callAccepted", onCallAccepted);
-      socket.off("callFailed", onCallFailed);
-      socket.off("callEnded", onCallEnded);
-      socket.off("iceCandidate", onIce);
+      socket.off("incomingCall",    onIncomingCall);
+      socket.off("callAccepted",    onCallAccepted);
+      socket.off("callFailed",      onCallFailed);
+      socket.off("callEnded",       onCallEnded);
+      socket.off("iceCandidate",    onIce);
     };
   }, [socket, cleanupCall]);
 
@@ -427,61 +428,61 @@ export const useChat = (
   // ══════════════════════════════════════════════════════════════
   const sendMessage = useCallback(async (
     text,
-    fileUrl = null,
-    messageType = "text"
+    fileUrl      = null,
+    messageType  = "text"
   ) => {
     if (!text?.trim() && !fileUrl) return;
 
-    const currentRole = roleRef.current;
-    const currentType = chatTypeRef.current;
+    const currentRole   = roleRef.current;
+    const currentType   = chatTypeRef.current;
     const currentRoomId = roomIdRef.current;
     const currentUserId = String(userIdRef.current);
-    const currentOther = otherUserIdRef.current;
-    const subRole = chatSubRoleRef.current; // "rider"|"passenger"|null
+    const currentOther  = otherUserIdRef.current;
+    const subRole       = chatSubRoleRef.current; // "rider"|"passenger"|null
 
     let passengerId = null;
-    let riderId = null;
+    let riderId     = null;
 
     if (currentType === "ride") {
       if (currentRole === "passenger") {
         passengerId = currentUserId;
-        riderId = currentOther;
+        riderId     = currentOther;
       } else if (currentRole === "rider") {
-        riderId = currentUserId;
+        riderId     = currentUserId;
         passengerId = currentOther;
       }
     }
 
     if (currentType === "support") {
       if (currentRole === "support") {
-        //  Use chatSubRole to correctly set passengerId vs riderId
+        // ✅ Use chatSubRole to correctly set passengerId vs riderId
         const targetId = currentOther || currentRoomId?.replace("support_", "") || null;
         if (subRole === "rider") {
-          riderId = targetId;
+          riderId     = targetId;
           passengerId = null;
         } else {
           // "passenger" or null — default to passenger
           passengerId = targetId;
-          riderId = null;
+          riderId     = null;
         }
       } else if (currentRole === "rider") {
-        riderId = currentUserId;
+        riderId     = currentUserId;
         passengerId = null;
       } else {
         passengerId = currentUserId;
-        riderId = null;
+        riderId     = null;
       }
     }
 
     const payload = {
-      roomId: currentRoomId,
-      senderId: currentUserId,
+      roomId:     currentRoomId,
+      senderId:   currentUserId,
       senderName: userNameRef.current,
       senderRole: currentRole,
-      message: text || "",
+      message:    text || "",
       messageType,
       fileUrl,
-      chatType: currentType,
+      chatType:   currentType,
       passengerId,
       riderId,
     };
@@ -489,9 +490,9 @@ export const useChat = (
     try {
       setSendError(null);
       const res = await fetch(`${CHAT_URL}/api/chat/send`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body:    JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to send message");
       const saved = await res.json();
@@ -514,8 +515,8 @@ export const useChat = (
   const sendTyping = useCallback(() => {
     if (!socket) return;
     socket.emit("typing", {
-      roomId: roomIdRef.current,
-      userId: userIdRef.current,
+      roomId:   roomIdRef.current,
+      userId:   userIdRef.current,
       userName: userNameRef.current,
     });
   }, [socket]);
@@ -536,8 +537,8 @@ export const useChat = (
     });
   }, [socket]);
 
-  const clearSendError = useCallback(() => setSendError(null), []);
-  const clearCallError = useCallback(() => setCallError(null), []);
+  const clearSendError  = useCallback(() => setSendError(null), []);
+  const clearCallError  = useCallback(() => setCallError(null), []);
 
   // ══════════════════════════════════════════════════════════════
   //  RETURN

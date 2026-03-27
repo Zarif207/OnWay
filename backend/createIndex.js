@@ -1,33 +1,39 @@
-// backend/createIndex.js
-require("dotenv").config({ path: __dirname + '/.env' });
+/**
+ * Run once to create required MongoDB indexes.
+ * Usage: node createIndex.js
+ */
+require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
-const client = new MongoClient(process.env.MONGODB_URI, {
-    serverApi: { version: ServerApiVersion.v1, strict: false }
-});
+async function createIndexes() {
+    const client = new MongoClient(process.env.MONGODB_URI, {
+        serverApi: { version: ServerApiVersion.v1, strict: false, deprecationErrors: true },
+    });
 
-async function run() {
     try {
         await client.connect();
         const db = client.db("onWayDB");
 
-        console.log("Creating riders location 2dsphere index...");
-        const result1 = await db.collection("riders").createIndex(
-            { location: "2dsphere" }
-        );
-        console.log("✅ riders index created:", result1);
+        // 2dsphere index for geospatial $near queries on riders
+        await db.collection("riders").createIndex({ location: "2dsphere" });
+        console.log("✅ riders.location 2dsphere index created");
 
-        console.log("Creating bookings history index...");
-        const result2 = await db.collection("bookings").createIndex(
-            { bookingStatus: 1, createdAt: -1 }
-        );
-        console.log("✅ bookings index created:", result2);
+        // Booking expiry index (TTL not used here, but useful for queries)
+        await db.collection("bookings").createIndex({ createdAt: -1 });
+        await db.collection("bookings").createIndex({ bookingStatus: 1, createdAt: 1 });
+        await db.collection("bookings").createIndex({ passengerId: 1 });
+        await db.collection("bookings").createIndex({ riderId: 1 });
+        console.log("✅ bookings indexes created");
 
-        await client.close();
+        await db.collection("notifications").createIndex({ userId: 1, createdAt: -1 });
+        console.log("✅ notifications index created");
+
+        console.log("\n✅ All indexes created successfully");
     } catch (err) {
-        console.error("❌ Error:", err.message);
+        console.error("❌ Index creation failed:", err);
+    } finally {
         await client.close();
     }
 }
 
-run();
+createIndexes();

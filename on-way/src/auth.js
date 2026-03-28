@@ -1,3 +1,4 @@
+
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -9,13 +10,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         Google({
             clientId: process.env.AUTH_GOOGLE_ID,
             clientSecret: process.env.AUTH_GOOGLE_SECRET,
-            authorization: {
-                params: {
-                    prompt: "consent",
-                    access_type: "offline",
-                    response_type: "code"
-                }
-            }
         }),
         GitHub({
             clientId: process.env.AUTH_GITHUB_ID,
@@ -23,82 +17,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
         Credentials({
             name: "Credentials",
-            credentials: {
-                email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" }
-            },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Email and password required");
+                if (!credentials?.email || !credentials?.password) return null;
+
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${credentials.email}`);
+                const user = await res.json();
+
+                if (!user || !user.password) {
+                    throw new Error("User not found!");
                 }
 
-                try {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-                    const res = await fetch(`${apiUrl}/passenger/find?email=${credentials.email}`);
-
-                    if (!res.ok) {
-                        throw new Error("User not found");
-                    }
-
-                    const user = await res.json();
-
-                    // Handle both response formats
-                    const userData = user.data || user;
-
-                    if (!userData || !userData.password) {
-                        throw new Error("Invalid credentials");
-                    }
-
-                    const isMatch = await bcrypt.compare(credentials.password, userData.password);
-
-                    if (!isMatch) {
-                        throw new Error("Invalid password");
-                    }
-
-                    return {
-                        id: userData._id || userData.id,
-                        name: userData.name,
-                        email: userData.email,
-                        role: userData.role || "passenger"
-                    };
-                } catch (error) {
-                    console.error("Auth error:", error);
-                    throw new Error(error.message || "Authentication failed");
+                const isMatch = await bcrypt.compare(credentials.password, user.password);
+                if (!isMatch) {
+                    throw new Error("Invalid password!");
                 }
+
+                return {
+                    id: user._id || user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role === "passenger" ? "user" : (user.role || "user")
+                };
             },
         }),
     ],
 
-    session: {
-        strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-    },
-    // 🔥 COOKIE FIX FOR LOCALHOST
-    cookies: {
-        sessionToken: {
-            name: `next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: false, // 🚨 localhost এর জন্য MUST
-            },
-        },
-    },
-
-    pages: {
-        signIn: "/login",
-        error: "/login", // Redirect to login on error
-    },
-
-    // ✅ CRITICAL: Add trustHost for Vercel deployment
-    trustHost: true,
+    session: { strategy: "jwt" },
+    pages: { signIn: "/login" },
 
     events: {
         async signIn({ user }) {
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-                await fetch(`${apiUrl}/passenger/update-login`, {
+                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/update-login`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: user.email }),
@@ -110,125 +60,70 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     callbacks: {
-        async signIn({ user, account, profile }) {
-            // ✅ Handle OAuth providers (Google, GitHub)
-            if (account?.provider === "google" || account?.provider === "github") {
+        async signIn({ user, account }) {
+            if (account.provider === "google" || account.provider === "github") {
                 const { name, email, image } = user;
-                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
                 try {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${email}`);
 
-                    // Check if user exists
-                    const checkRes = await fetch(`${apiUrl}/passenger/find?email=${email}`);
-
-                    if (!checkRes.ok) {
-                        console.error("Error checking user existence:", checkRes.statusText);
-                        return true; // Allow login even if check fails
-                    }
-
-                    const existingUser = await checkRes.json();
-
-                    // If user doesn't exist, create new user
-                    if (!existingUser) {
-                        console.log(`Creating new user for ${email} via ${account.provider}`);
-
-                        const createRes = await fetch(`${apiUrl}/passenger`, {
+                    if (res.status === 404) {
+                        const saveRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
-                                name: name || email.split('@')[0], // Fallback to email username
+                                name,
                                 email,
-                                image: image || "",
-                                role: "passenger", // Default role
-                                authProvider: account.provider,
-                                createdAt: new Date().toISOString(),
-                                lastLogin: new Date().toISOString(),
+                                image,
+                                role: "passenger",
+                                authProvider: account.provider
                             }),
                         });
 
-                        if (!createRes.ok) {
-                            const errorData = await createRes.json().catch(() => ({}));
-                            console.error("Failed to create user:", errorData);
-                            // Still allow login even if DB save fails
-                        } else {
-                            console.log(`✅ User created successfully for ${email}`);
+                        if (!saveRes.ok) {
+                            console.error("Failed to save user to DB");
                         }
-                    } else {
-                        console.log(`User ${email} already exists, skipping creation`);
                     }
-
                     return true;
                 } catch (error) {
-                    console.error("Error during OAuth user sync:", error);
-                    // Allow login to proceed even if DB sync fails
+                    console.error("Error during social login sync:", error);
                     return true;
                 }
             }
-
-            // ✅ Handle Credentials provider
-            // User is already validated in authorize() function
             return true;
         },
-
-        async jwt({ token, user, account, trigger }) {
-            // Initial sign in - user object is available
+        async jwt({ token, user, account }) {
             if (user) {
                 token.id = user.id;
-                token.role = user.role || "passenger";
-                token.image = user.image;
+                token.role = user.role;
             }
 
-            // For OAuth providers, fetch latest data from database
-            if (account?.provider === "google" || account?.provider === "github") {
+            // For social logins or if role is missing, fetch it from DB
+            if (token?.email && !token?.role) {
                 try {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-                    const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
-
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${token.email}`);
                     if (res.ok) {
                         const userData = await res.json();
-                        if (userData) {
-                            token.id = userData._id || userData.id;
-                            token.role = userData.role || "passenger";
-                            token.image = userData.image || token.picture;
-                        }
+                        const rawRole = userData.role || "user";
+                        token.role = rawRole === "passenger" ? "user" : rawRole;
+                        token.id = userData._id || userData.id || token.id;
+                    } else {
+                        token.role = "user"; // Fallback
                     }
                 } catch (error) {
-                    console.error("Error fetching user data in JWT callback:", error);
-                    // Keep existing token data if fetch fails
+                    console.error("Error fetching role in JWT callback:", error);
+                    token.role = "user";
                 }
             }
-
-            // Handle session updates (when user data changes)
-            if (trigger === "update") {
-                try {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-                    const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
-
-                    if (res.ok) {
-                        const userData = await res.json();
-                        if (userData) {
-                            token.role = userData.role || token.role;
-                            token.image = userData.image || token.image;
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error updating token:", error);
-                }
-            }
-
             return token;
         },
+
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id;
-                session.user.role = token.role || "passenger";
-                session.user.image = token.image || session.user.image;
+                session.user.role = token.role;
             }
             return session;
         },
     },
-
-    // ✅ Enable debug logging in development
-    debug: process.env.NODE_ENV === 'development',
 });

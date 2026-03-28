@@ -1,15 +1,10 @@
 
 "use client";
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Car, Construction, MapPin } from "lucide-react";
 import Link from "next/link";
 
 export default function NotFound() {
-  useEffect(() => {
-    document.body.classList.add("dark-page");
-    return () => document.body.classList.remove("dark-page");
-  }, []);
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white overflow-hidden px-6">
       

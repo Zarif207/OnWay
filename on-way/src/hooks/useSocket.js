@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 
 /**
  * Custom hook for unified Socket.io management.
- * @param {string} role - 'passenger' or 'rider'
+ * @param {string} role - 'user'/'passenger' or 'rider'
  * @returns {Object} { socket, connected, emit, on, off }
  */
 export const useSocket = (role) => {
@@ -16,7 +16,7 @@ export const useSocket = (role) => {
         if (!session?.user?.id || !role) return;
 
         const userId = session.user.id;
-        const currentSocket = role === 'rider' ? getRiderSocket(userId) : getPassengerSocket(userId);
+        const currentSocket = (role === 'passenger' || role === 'user') ? getPassengerSocket(userId) : getRiderSocket(userId);
 
         setSocket(currentSocket);
 

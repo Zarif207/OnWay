@@ -138,8 +138,8 @@ export default function RefundRequestPage() {
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/30"
                 >
                   <option value="">-- Select ride type --</option>
-                  <option value="bike">🏍️ Bike</option>
-                  <option value="car">🚗 Car</option>
+                  <option value="bike">Bike</option>
+                  <option value="car">Car</option>
                 </select>
               </div>
 

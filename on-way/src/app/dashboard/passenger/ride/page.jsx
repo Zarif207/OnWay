@@ -9,7 +9,8 @@ import {
     Phone, MessageCircle, Shield, Star,
     ChevronUp, MapPin, Navigation, CheckCircle2,
     AlertCircle, XCircle, MoreVertical, Car,
-    ArrowRight, ShieldCheck, Heart
+    ArrowRight, ShieldCheck, Heart, CreditCard,
+    DollarSign, Clock, Map as MapIcon, RotateCw
 } from "lucide-react";
 
 // Dynamically import the Map component to avoid SSR issues
@@ -29,14 +30,14 @@ export default function PassengerRidePage() {
     const router = useRouter();
     const {
         rideStatus, pickup, dropoff, assignedDriver, routeGeometry,
-        otp, fare, duration, distance, rideType,
-        setArriving, setOtpPending, verifyOtp, completeRide, cancelRide
+        otp, fare, duration, distance, rideType, isPaid,
+        setArriving, setOtpPending, verifyOtp, completeRide, cancelRide, markAsPaid
     } = useRide();
 
     const [isExpanded, setIsExpanded] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-    // Transition simulations
+    // Transition simulations for the demo
     useEffect(() => {
         if (rideStatus === "accepted") {
             const timer = setTimeout(() => setArriving(), 4000);
@@ -44,12 +45,12 @@ export default function PassengerRidePage() {
         }
 
         if (rideStatus === "arriving") {
-            const timer = setTimeout(() => setOtpPending(), 12000);
+            const timer = setTimeout(() => setOtpPending(), 10000);
             return () => clearTimeout(timer);
         }
 
         if (rideStatus === "ongoing") {
-            const timer = setTimeout(() => completeRide(), 20000);
+            const timer = setTimeout(() => completeRide(), 15000);
             return () => clearTimeout(timer);
         }
     }, [rideStatus, setArriving, setOtpPending, completeRide]);
@@ -57,26 +58,47 @@ export default function PassengerRidePage() {
     // EMPTY STATE
     if (rideStatus === "idle") {
         return (
-            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center p-6 text-center">
                 <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
+                    initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="w-full max-w-sm"
+                    className="w-full max-w-md"
                 >
-                    <div className="w-48 h-48 bg-gray-50 rounded-[3rem] mx-auto mb-10 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-                        <Car size={80} className="text-primary/20 absolute -right-4 -bottom-4 rotate-12" />
-                        <Navigation size={64} className="text-primary relative z-10" />
+                    <div className="w-56 h-56 bg-white rounded-[4rem] mx-auto mb-10 flex items-center justify-center relative group shadow-2xl border border-gray-100">
+                        <div className="absolute inset-0 bg-primary/5 rounded-[4rem] group-hover:scale-110 transition-transform duration-700 blur-3xl opacity-50" />
+                        
+                        {/* Custom Vehicle Visual for Empty State */}
+                        <div className="relative z-10 w-40 h-20 group-hover:scale-110 transition-transform duration-500">
+                            <svg viewBox="0 0 100 50" className="w-full h-full drop-shadow-2xl">
+                                <rect x="15" y="5" width="70" height="40" rx="12" fill="#0F172A" />
+                                <rect x="25" y="10" width="40" height="30" rx="6" fill="#1E293B" />
+                                <rect x="35" y="15" width="20" height="20" rx="4" fill="#334155" />
+                                {/* Detail Lights */}
+                                <rect x="78" y="10" width="4" height="8" rx="2" fill="#F87171" opacity="0.8" />
+                                <rect x="78" y="32" width="4" height="8" rx="2" fill="#F87171" opacity="0.8" />
+                                <rect x="18" y="10" width="3" height="10" rx="1" fill="#FCD34D" opacity="0.6" />
+                                <rect x="18" y="30" width="3" height="10" rx="1" fill="#FCD34D" opacity="0.6" />
+                            </svg>
+                        </div>
+
+                        {/* Floating elements */}
+                        <motion.div 
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute -top-4 -right-4 w-16 h-16 bg-primary/10 rounded-2xl backdrop-blur-md border border-white flex items-center justify-center shadow-lg"
+                        >
+                            <MapIcon size={24} className="text-primary" />
+                        </motion.div>
                     </div>
-                    <h2 className="text-3xl font-black text-secondary tracking-tighter mb-4">No Active Rides</h2>
-                    <p className="text-gray-500 font-medium mb-10 px-4 leading-relaxed">
-                        Your journey's haven’t started yet. Book a ride now to explore the city with OnWay.
+                    <h2 className="text-4xl font-black text-secondary tracking-tighter mb-4">Ready for your next trip?</h2>
+                    <p className="text-gray-500 font-medium mb-10 px-8 leading-relaxed text-lg">
+                        You don’t have any active rides right now. Book a ride to experience OnWay's premium service.
                     </p>
                     <button
                         onClick={() => router.push("/onway-book")}
-                        className="w-full py-6 bg-primary text-white font-black rounded-3xl hover:bg-primary/90 transition shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95"
+                        className="group w-full py-6 bg-primary text-white font-black rounded-[2rem] hover:bg-primary/95 transition shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95"
                     >
-                        BOOK A RIDE <ArrowRight size={20} />
+                        START BOOKING <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                 </motion.div>
             </div>
@@ -88,23 +110,23 @@ export default function PassengerRidePage() {
             case "accepted": return "Driver Assigned";
             case "arriving": return "Heading to Pickup";
             case "otp_pending": return "Driver Arrived";
-            case "ongoing": return "In Transit";
-            case "completed": return "Trip Finished";
+            case "ongoing": return "Trip in Progress";
+            case "completed": return "Destination Reached";
             default: return "OnWay Ride";
         }
     };
 
-    const getStatusColor = () => {
+    const getStatusColorClass = () => {
         switch (rideStatus) {
-            case "otp_pending": return "text-amber-600 bg-amber-50 border-amber-100";
-            case "ongoing": return "text-primary bg-primary/5 border-primary/10";
-            case "completed": return "text-secondary bg-secondary/5 border-secondary/10";
-            default: return "text-primary bg-primary/5 border-primary/10";
+            case "otp_pending": return "text-amber-600 bg-amber-50 border-amber-200/50";
+            case "ongoing": return "text-primary bg-primary/5 border-primary/20";
+            case "completed": return "text-secondary bg-secondary/5 border-secondary/20";
+            default: return "text-primary bg-primary/5 border-primary/20";
         }
     };
 
     return (
-        <div className="relative h-[100dvh] w-full bg-white flex flex-col lg:flex-row overflow-hidden">
+        <div className="relative h-[calc(100vh-100px)] w-full bg-white flex flex-col lg:flex-row overflow-hidden rounded-[2.5rem] mt-4 border border-gray-100">
             {/* --- MAP SECTION --- */}
             <div className="flex-1 relative z-0">
                 <RideMap
@@ -113,19 +135,20 @@ export default function PassengerRidePage() {
                     routeGeometry={routeGeometry}
                     durationMin={duration}
                     rideStatus={rideStatus}
+                    assignedDriver={assignedDriver}
                     showCarAnimation={true}
                     showCurrentLocationButton={false}
                 />
 
-                {/* Top Floating Status (Desktop & Mobile) */}
+                {/* Top Floating Status */}
                 <div className="absolute top-6 left-6 right-6 lg:left-8 lg:right-auto lg:w-80 z-10">
                     <motion.div
                         initial={{ y: -50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        className={`p-4 rounded-[2rem] shadow-2xl backdrop-blur-xl border-2 ${getStatusColor()} flex items-center justify-between`}
+                        className={`p-4 rounded-3xl shadow-2xl backdrop-blur-xl border ${getStatusColorClass()} flex items-center justify-between`}
                     >
                         <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full animate-pulse bg-current`} />
+                            <div className="w-2 h-2 rounded-full animate-ping bg-current" />
                             <span className="font-black uppercase tracking-widest text-[10px]">{getStatusText()}</span>
                         </div>
                         <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
@@ -135,95 +158,101 @@ export default function PassengerRidePage() {
                 </div>
             </div>
 
-            {/* --- RIDE INFO PANEL (Bottom Sheet Style) --- */}
+            {/* --- RIDE INFO PANEL --- */}
             <motion.div
-                initial={{ y: 300, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+                initial={{ x: 400 }}
+                animate={{ x: 0 }}
                 className={`
-          fixed inset-x-0 bottom-0 lg:relative lg:inset-auto lg:w-[420px] 
-          bg-white shadow-[0_-20px_60px_rgba(0,0,0,0.12)] lg:shadow-none
-          transition-all duration-500 ease-in-out z-20 rounded-t-[3rem] lg:rounded-none
-          ${isExpanded ? 'h-[85vh]' : 'h-[360px]'} lg:h-full lg:border-l border-gray-100 flex flex-col
-        `}
+                    fixed inset-x-0 bottom-0 lg:relative lg:inset-auto lg:w-[450px] 
+                    bg-white shadow-[0_-20px_60px_rgba(0,0,0,0.12)] lg:shadow-none
+                    transition-all duration-500 ease-in-out z-20 rounded-t-[3.5rem] lg:rounded-none
+                    ${isExpanded ? 'h-[85vh]' : 'h-[380px]'} lg:h-full lg:border-l border-gray-100 flex flex-col
+                `}
             >
-                {/* Handle for mobile */}
+                {/* Drag Handle for Mobile */}
                 <div
-                    className="lg:hidden w-full h-10 flex items-center justify-center cursor-pointer"
+                    className="lg:hidden w-full h-12 flex items-center justify-center cursor-pointer"
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
-                    <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                    <div className="w-16 h-1.5 bg-gray-100 rounded-full" />
                 </div>
 
-                <div className="flex-1 flex flex-col p-8 lg:p-10 pt-2 lg:pt-10 overflow-y-auto scrollbar-hide">
-                    {/* Driver & Brand Header */}
-                    <div className="flex items-start justify-between mb-8">
+                <div className="flex-1 flex flex-col p-8 lg:p-10 pt-2 lg:pt-10 overflow-y-auto custom-scrollbar">
+                    {/* Driver Card */}
+                    <div className="flex items-start justify-between mb-8 group">
                         <div className="flex items-center gap-5">
                             <div className="relative">
-                                <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden border-2 border-primary/10 shadow-sm">
+                                <div className="w-18 h-18 bg-gray-50 rounded-[1.75rem] overflow-hidden border-2 border-primary/20 shadow-lg group-hover:scale-105 transition-transform">
                                     <img
-                                        src={`https://api.dicebear.com/7.x/${assignedDriver?.avatar || "avataaars/svg"}`}
+                                        src={`https://api.dicebear.com/7.x/${assignedDriver?.avatar || "avataaars/svg?seed=Felix"}`}
                                         alt="Driver"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1 rounded-lg border-2 border-white">
-                                    <Heart size={10} fill="currentColor" />
+                                <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-xl border-2 border-white shadow-sm">
+                                    <ShieldCheck size={12} fill="currentColor" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-xl font-black text-secondary tracking-tight">{assignedDriver?.name}</h2>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                    <Star size={12} fill="#F59E0B" stroke="#F59E0B" />
-                                    <span className="text-sm font-bold text-secondary">{assignedDriver?.rating}</span>
+                                <h2 className="text-2xl font-black text-secondary tracking-tighter">{assignedDriver?.name}</h2>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <Star size={14} fill="#F59E0B" stroke="#F59E0B" />
+                                    <span className="text-sm font-black text-secondary">{assignedDriver?.rating}</span>
                                     <span className="text-gray-300 mx-1">•</span>
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Gold Partner</span>
+                                    <span className="px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest rounded-full">Pro Driver</span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-sm font-black text-secondary leading-tight">{assignedDriver?.car}</p>
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5">{assignedDriver?.plate}</p>
+                            <p className="text-sm font-black text-secondary leading-tight uppercase tracking-tighter">{assignedDriver?.car}</p>
+                            <div className="inline-flex items-center px-2 py-1 bg-gray-900 text-white rounded-lg mt-1.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest">{assignedDriver?.plate}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Quick Metrics */}
-                    <div className="grid grid-cols-3 gap-3 mb-8">
-                        <div className="bg-gray-50 rounded-2xl p-4 text-center border border-gray-100">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight mb-1">Price</p>
+                    {/* Meta Info Grid */}
+                    <div className="grid grid-cols-3 gap-4 mb-8">
+                        <div className="bg-gray-50/80 rounded-3xl p-5 border border-gray-100/50 hover:bg-white hover:shadow-xl transition-all group">
+                            <DollarSign size={16} className="text-primary mb-2 opacity-50 group-hover:opacity-100" />
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Fare</p>
                             <p className="text-lg font-black text-secondary tracking-tighter">৳{fare}</p>
                         </div>
-                        <div className="bg-gray-50 rounded-2xl p-4 text-center border border-gray-100">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight mb-1">Time</p>
+                        <div className="bg-gray-50/80 rounded-3xl p-5 border border-gray-100/50 hover:bg-white hover:shadow-xl transition-all group">
+                            <Clock size={16} className="text-blue-500 mb-2 opacity-50 group-hover:opacity-100" />
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">ETA</p>
                             <p className="text-lg font-black text-secondary tracking-tighter">{duration}m</p>
                         </div>
-                        <div className="bg-gray-50 rounded-2xl p-4 text-center border border-gray-100">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight mb-1">Dist.</p>
-                            <p className="text-lg font-black text-secondary tracking-tighter">{distance}k</p>
+                        <div className="bg-gray-50/80 rounded-3xl p-5 border border-gray-100/50 hover:bg-white hover:shadow-xl transition-all group">
+                            <MapIcon size={16} className="text-amber-500 mb-2 opacity-50 group-hover:opacity-100" />
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Dist.</p>
+                            <p className="text-lg font-black text-secondary tracking-tighter">{distance}km</p>
                         </div>
                     </div>
 
-                    {/* DYNAMIC ACTION SECTION */}
+                    {/* DYNAMIC CONTENT AREA */}
                     <div className="flex-1">
                         <AnimatePresence mode="wait">
-                            {/* OTP BOX (Arriving Phase) */}
-                            {(rideStatus === "arriving" || rideStatus === "otp_pending") && (
+                            {(rideStatus === "arriving" || rideStatus === "otp_pending" || rideStatus === "accepted") && (
                                 <motion.div
-                                    key="otp"
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 1.1 }}
-                                    className="bg-secondary rounded-[2.5rem] p-8 text-white text-center shadow-2xl relative overflow-hidden"
+                                    key="security"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-secondary rounded-[3rem] p-8 text-white text-center shadow-2xl relative overflow-hidden"
                                 >
-                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-4 text-primary">Ride Security Code</p>
-                                    <div className="flex justify-center gap-3 mb-6">
+                                    <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                        <Shield size={120} />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-primary drop-shadow-sm">Ride Security PIN</p>
+                                    <div className="flex justify-center gap-4 mb-8">
                                         {otp?.split("").map((digit, i) => (
-                                            <div key={i} className="w-12 h-16 bg-white/5 backdrop-blur-md rounded-xl flex items-center justify-center text-3xl font-black border border-white/10">
+                                            <div key={i} className="w-14 h-20 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center text-4xl font-black border border-white/20 shadow-inner">
                                                 {digit}
                                             </div>
                                         ))}
                                     </div>
-                                    <p className="text-xs font-medium text-gray-400 leading-relaxed px-4">
-                                        Give this code to {assignedDriver?.name} to start your ride securelee.
+                                    <p className="text-sm font-medium text-gray-300 leading-relaxed px-4">
+                                        Share this code with your driver to start the trip safely.
                                     </p>
 
                                     {rideStatus === "otp_pending" && (
@@ -231,91 +260,151 @@ export default function PassengerRidePage() {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={verifyOtp}
-                                            className="mt-8 w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-tighter"
+                                            className="mt-8 w-full py-6 bg-primary text-white font-black rounded-[1.75rem] shadow-2xl flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
                                         >
-                                            <CheckCircle2 size={24} /> Confirm Ride Start
+                                            <CheckCircle2 size={22} /> VERIFY & START TRIP
                                         </motion.button>
                                     )}
                                 </motion.div>
                             )}
 
-                            {/* TRIP IN PROGRESS */}
                             {rideStatus === "ongoing" && (
                                 <motion.div
-                                    key="ongoing"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="bg-primary/10 rounded-[2.5rem] p-8 border-2 border-primary/10 text-center py-12"
+                                    key="tracking"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-primary/5 rounded-[3rem] p-10 border-2 border-primary/20 text-center relative overflow-hidden group"
                                 >
-                                    <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
-                                        <Navigation className="text-primary w-10 h-10 animate-pulse" />
+                                    <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                                        <Navigation className="text-primary w-12 h-12 group-hover:rotate-45 transition-transform" />
                                         <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-25" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-secondary mb-2 tracking-tighter">Your Trip is Live</h3>
-                                    <p className="text-gray-500 font-medium text-sm">OnWay is tracking your journey for safety.</p>
-                                </motion.div>
-                            )}
-
-                            {/* RIDE COMPLETED */}
-                            {rideStatus === "completed" && (
-                                <motion.div
-                                    key="completed"
-                                    initial={{ opacity: 0, y: 100 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="fixed inset-0 z-[100] bg-white flex flex-col p-8 text-center"
-                                >
-                                    <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
-                                        <div className="w-32 h-32 bg-primary/10 rounded-[3rem] flex items-center justify-center mb-8">
-                                            <CheckCircle2 className="text-primary w-16 h-16" />
-                                        </div>
-                                        <h2 className="text-4xl font-black text-secondary tracking-tighter mb-4">You've Arrived!</h2>
-                                        <p className="text-gray-500 font-medium mb-12">Trip completed safely. Thank you for riding with OnWay.</p>
-
-                                        <div className="w-full bg-gray-50 rounded-[2.5rem] p-10 border border-gray-100 flex flex-col gap-6 mb-12">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Total Fare</span>
-                                                <span className="text-4xl font-black text-secondary tracking-tighter">৳{fare}</span>
-                                            </div>
-                                            <div className="w-full h-px bg-gray-200" />
-                                            <div className="flex justify-between items-center text-sm font-bold">
-                                                <span className="text-gray-400">Distance Travelled</span>
-                                                <span className="text-secondary">{distance} km</span>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => { cancelRide(); router.push("/onway-book"); }}
-                                            className="w-full py-6 bg-secondary text-white font-black rounded-[2rem] hover:opacity-90 transition active:scale-95 shadow-2xl uppercase tracking-tighter"
-                                        >
-                                            RETURN TO HOME
-                                        </button>
-                                    </div>
+                                    <h3 className="text-3xl font-black text-secondary mb-3 tracking-tighter">On Your Way</h3>
+                                    <p className="text-gray-500 font-medium text-lg leading-snug px-6">
+                                        Enjoy the premium ride. We're tracking for your safety.
+                                    </p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    {/* Footer Controls */}
-                    {rideStatus !== "completed" && (
-                        <div className="mt-8 flex gap-4 pt-6 border-t border-gray-100">
-                            <button className="flex-1 py-5 bg-secondary text-white font-black rounded-3xl hover:opacity-95 transition flex items-center justify-center gap-3 shadow-xl">
-                                <Phone size={20} /> CALL
+                    {/* Action Bar */}
+                    <div className="mt-10 flex gap-4 pt-8 border-t border-gray-100">
+                        <button className="flex-1 py-6 bg-secondary text-white font-black rounded-3xl hover:bg-secondary/95 transition flex items-center justify-center gap-4 shadow-xl active:scale-95 group">
+                            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Phone size={20} />
+                            </div>
+                            <span className="uppercase tracking-widest text-xs">Call Driver</span>
+                        </button>
+                        <div className="flex gap-4">
+                            <button className="w-20 h-20 bg-gray-50 text-secondary rounded-3xl hover:bg-gray-100 transition flex items-center justify-center shadow-sm border border-gray-100 active:scale-95">
+                                <MessageCircle size={28} />
                             </button>
-                            <div className="flex gap-3">
-                                <button className="p-5 bg-gray-100 text-secondary rounded-3xl hover:bg-gray-200 transition">
-                                    <MessageCircle size={24} />
+                            <button
+                                onClick={() => setShowCancelConfirm(true)}
+                                className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl hover:bg-red-100 transition flex items-center justify-center shadow-sm border border-red-100 active:scale-95"
+                            >
+                                <XCircle size={28} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* --- COMPLETION OVERLAY --- */}
+            <AnimatePresence>
+                {rideStatus === "completed" && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="fixed inset-0 z-[100] bg-white flex flex-col p-8 overflow-y-auto"
+                    >
+                        <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full py-12">
+                            <motion.div
+                                initial={{ scale: 0.5, y: 50 }}
+                                animate={{ scale: 1, y: 0 }}
+                                className="w-40 h-40 bg-primary/10 rounded-[4rem] flex items-center justify-center mb-10 relative"
+                            >
+                                <div className="absolute inset-0 bg-primary/20 rounded-full scale-150 blur-3xl opacity-30" />
+                                <CheckCircle2 className="text-primary w-20 h-20 relative z-10" />
+                            </motion.div>
+
+                            <h2 className="text-5xl font-black text-secondary tracking-tighter mb-4 text-center">Trip Well Done!</h2>
+                            <p className="text-gray-400 font-medium text-xl mb-12 text-center px-10">We hope you enjoyed your ride with {assignedDriver?.name}.</p>
+
+                            <div className="w-full grid lg:grid-cols-2 gap-8 mb-12">
+                                {/* Bill Summary */}
+                                <div className="bg-gray-50 rounded-[3rem] p-10 border border-gray-100 shadow-sm relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-8 opacity-5">
+                                        <DollarSign size={100} />
+                                    </div>
+                                    <p className="text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8">Payment Details</p>
+                                    <div className="flex justify-between items-end mb-8">
+                                        <span className="text-lg font-bold text-gray-500">Total Fare Paid</span>
+                                        <span className="text-5xl font-black text-secondary tracking-tighter">৳{fare}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {isPaid ? (
+                                            <div className="px-5 py-2.5 bg-green-500 text-white rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-green-500/30">
+                                                <CreditCard size={16} /> Paid Successfully
+                                            </div>
+                                        ) : (
+                                            <div className="px-5 py-2.5 bg-amber-500 text-white rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-amber-500/30">
+                                                <AlertCircle size={16} /> Payment Pending
+                                            </div>
+                                        )}
+                                        {!isPaid && (
+                                            <button 
+                                                onClick={markAsPaid}
+                                                className="px-5 py-2.5 bg-secondary text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition"
+                                            >
+                                                Pay Now
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Stats Summary */}
+                                <div className="bg-secondary text-white rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+                                     <div className="absolute inset-0 bg-primary/5 opacity-20" />
+                                     <p className="text-primary font-black uppercase tracking-widest text-[10px] mb-8">Journey Stats</p>
+                                     <div className="space-y-6">
+                                         <div className="flex justify-between items-center group">
+                                             <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Distance</span>
+                                             <span className="text-2xl font-black tracking-tighter">{distance} km</span>
+                                         </div>
+                                         <div className="w-full h-px bg-white/10" />
+                                         <div className="flex justify-between items-center group">
+                                             <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Time Spent</span>
+                                             <span className="text-2xl font-black tracking-tighter">{duration} mins</span>
+                                         </div>
+                                         <div className="w-full h-px bg-white/10" />
+                                         <div className="flex justify-between items-center group">
+                                             <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Vehicle ID</span>
+                                             <span className="text-lg font-black uppercase tracking-widest text-primary">{assignedDriver?.plate}</span>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-4 w-full">
+                                <button
+                                    onClick={() => { cancelRide(); router.push("/onway-book"); }}
+                                    className="flex-1 py-7 bg-primary text-white font-black rounded-[2.5rem] hover:bg-primary/95 transition shadow-2xl shadow-primary/20 active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-4 group"
+                                >
+                                    BOOK AGAIN <RotateCw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
                                 </button>
                                 <button
-                                    onClick={() => setShowCancelConfirm(true)}
-                                    className="p-5 bg-red-50 text-red-500 rounded-3xl hover:bg-red-100 transition"
+                                    onClick={() => { cancelRide(); router.push("/dashboard/passenger"); }}
+                                    className="flex-1 py-7 bg-secondary text-white font-black rounded-[2.5rem] hover:opacity-90 transition shadow-2xl active:scale-95 uppercase tracking-widest text-sm"
                                 >
-                                    <XCircle size={24} />
+                                    BACK TO DASHBOARD
                                 </button>
                             </div>
                         </div>
-                    )}
-                </div>
-            </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* --- CANCELLATION DIALOG --- */}
             <AnimatePresence>
@@ -324,35 +413,35 @@ export default function PassengerRidePage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-secondary/40 backdrop-blur-md"
+                        className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-secondary/60 backdrop-blur-xl"
                     >
                         <motion.div
-                            initial={{ scale: 0.8, y: 50, opacity: 0 }}
+                            initial={{ scale: 0.9, y: 50, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
-                            exit={{ scale: 0.8, y: 50, opacity: 0 }}
-                            className="bg-white w-full max-w-sm rounded-[3.5rem] p-10 text-center shadow-2xl"
+                            exit={{ scale: 0.9, y: 50, opacity: 0 }}
+                            className="bg-white w-full max-w-sm rounded-[3.5rem] p-12 text-center shadow-3xl border border-gray-100"
                         >
-                            <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                                <AlertCircle size={48} />
+                            <div className="w-28 h-28 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mx-auto mb-10 rotate-12">
+                                <AlertCircle size={56} />
                             </div>
-                            <h3 className="text-3xl font-black text-secondary mb-4 tracking-tighter leading-tight">Cancel your journey?</h3>
-                            <p className="text-gray-400 font-medium text-sm mb-10 px-4">Drivers work hard to reach you. Cancellation fees might apply.</p>
+                            <h3 className="text-4xl font-black text-secondary mb-4 tracking-tighter leading-[0.9]">Cancel Journey?</h3>
+                            <p className="text-gray-400 font-medium text-sm mb-12 px-2">Your driver is already en route. Frequent cancellations may affect your rating.</p>
 
-                            <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-5">
                                 <button
                                     onClick={() => {
                                         cancelRide();
                                         router.push("/onway-book");
                                     }}
-                                    className="w-full py-5 bg-red-500 text-white font-black rounded-2xl shadow-xl shadow-red-500/20 active:scale-95 transition"
+                                    className="w-full py-6 bg-red-500 text-white font-black rounded-[2rem] shadow-2xl shadow-red-500/30 active:scale-95 transition uppercase tracking-widest text-xs"
                                 >
-                                    YES, CANCEL RIDE
+                                    CONFIRM CANCELLATION
                                 </button>
                                 <button
                                     onClick={() => setShowCancelConfirm(false)}
-                                    className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-gray-100 active:scale-95 transition"
+                                    className="w-full py-5 text-gray-400 font-black rounded-2xl hover:bg-gray-50 active:scale-95 transition uppercase tracking-widest text-[10px]"
                                 >
-                                    NO, KEEP GOING
+                                    CONTINUE TRIP
                                 </button>
                             </div>
                         </motion.div>

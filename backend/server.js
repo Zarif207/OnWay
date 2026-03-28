@@ -478,7 +478,8 @@ app.use(async (req, res, next) => {
       emergencyCollection: database.collection("emergency"),
       settingsCollection: database.collection("settings"),
       notificationsCollection: database.collection("notifications"),
-      lostItemsCollection: database.collection("lostItems")
+      lostItemsCollection: database.collection("lostItems"),
+      refundsCollection: database.collection("refunds"),
     };
     next();
   } catch (error) {
@@ -525,6 +526,10 @@ app.use("/api/support-agent", (req, res, next) => {
 
 app.use("/api/bookings", (req, res, next) => {
   bookingsRoutes(req.collections)(req, res, next);
+});
+
+app.use("/api/refunds", (req, res, next) => {
+  require("./routes/refunds")(req.collections)(req, res, next);
 });
 
 app.use("/api/payment", (req, res, next) => {

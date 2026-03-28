@@ -46,7 +46,7 @@ const NAV_ITEMS = [
 
 const HELP_ITEMS = [
   { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
-  { label: "User Help Center", href: "/help?tab=user", icon: Users, desc: "Help for users" },
+  { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
   { label: "Walk-In Support Centers", href: "/help?tab=walkin", icon: MapPin, desc: "Find a support center" },
 ];
 
@@ -146,6 +146,7 @@ const Navbar = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
+  const [isDarkPage, setIsDarkPage] = useState(false);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
@@ -153,15 +154,8 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  const rawRole = user?.role || session?.user?.role || "user";
-  const role = useMemo(() => rawRole === "passenger" ? "user" : rawRole, [rawRole]); 
-
-  const dashboardHref = useMemo(() => {
-    const href = `/dashboard/${role}`;
-    console.log("ROLE:", role); // Debug log
-    console.log("DASHBOARD URL:", href); // Debug log
-    return href;
-  }, [role]);
+  const role = user?.role || session?.user?.role || "passenger";
+  const dashboardHref = useMemo(() => `/dashboard/${role}`, [role]);
 
   const {
     notifications,
@@ -212,16 +206,25 @@ const Navbar = () => {
       setIsScrolled(window.scrollY > 20);
       if (pathname.startsWith("/about") || pathname.startsWith("/help")) {
         const heroHeight = pathname.startsWith("/about")
-          ? window.innerHeight * 0.7  // about: 70vh
-          : 240;                       // help: py-20 hero ~240px
+          ? window.innerHeight * 0.7
+          : 240;
         setIsPastHero(window.scrollY > heroHeight - 80);
       }
     };
-    // reset on route change
     setIsPastHero(false);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
+
+  // Detect dark-page class on body (e.g. 404 page)
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkPage(document.body.classList.contains("dark-page"));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    setIsDarkPage(document.body.classList.contains("dark-page"));
+    return () => observer.disconnect();
+  }, []);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -261,8 +264,7 @@ const Navbar = () => {
     switch (userRole?.toLowerCase()) {
       case "admin": return "/dashboard/admin/profile";
       case "rider": return "/dashboard/rider/profile";
-      case "passenger":
-      case "user": return "/dashboard/user/profile";
+      case "passenger": return "/dashboard/user/profile";
       case "supportagent":
       case "support": return "/dashboard/support/profile";
       default: return "/dashboard/user/profile";
@@ -285,7 +287,9 @@ const Navbar = () => {
         <div
           className={`w-full max-w-7xl relative flex items-center justify-center px-6 py-2 rounded-3xl transition-all duration-500
           ${isScrolled
-              ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+              ? isDarkPage
+                ? "bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+                : "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
               : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
@@ -295,16 +299,20 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${(pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero ? "brightness-0 invert" : "mix-blend-multiply"}`}
+                className={`object-contain transition-all duration-300 ${
+                  ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
+                    ? "brightness-0 invert"
+                    : "mix-blend-multiply"
+                }`}
                 priority
               />
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি */}
+          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি, অথবা error page (dark bg) */}
           {(() => {
-            const isOnHero = (pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero;
+            const isOnHero = ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage;
             return (
               <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
                 ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>

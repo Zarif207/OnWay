@@ -46,7 +46,7 @@ const NAV_ITEMS = [
 
 const HELP_ITEMS = [
   { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
-  { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
+  { label: "User Help Center", href: "/help?tab=user", icon: Users, desc: "Help for users" },
   { label: "Walk-In Support Centers", href: "/help?tab=walkin", icon: MapPin, desc: "Find a support center" },
 ];
 
@@ -153,8 +153,15 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  const role = user?.role || session?.user?.role || "passenger";
-  const dashboardHref = useMemo(() => `/dashboard/${role}`, [role]);
+  const rawRole = user?.role || session?.user?.role || "user";
+  const role = useMemo(() => rawRole === "passenger" ? "user" : rawRole, [rawRole]); 
+
+  const dashboardHref = useMemo(() => {
+    const href = `/dashboard/${role}`;
+    console.log("ROLE:", role); // Debug log
+    console.log("DASHBOARD URL:", href); // Debug log
+    return href;
+  }, [role]);
 
   const {
     notifications,
@@ -254,7 +261,8 @@ const Navbar = () => {
     switch (userRole?.toLowerCase()) {
       case "admin": return "/dashboard/admin/profile";
       case "rider": return "/dashboard/rider/profile";
-      case "passenger": return "/dashboard/user/profile";
+      case "passenger":
+      case "user": return "/dashboard/user/profile";
       case "supportagent":
       case "support": return "/dashboard/support/profile";
       default: return "/dashboard/user/profile";

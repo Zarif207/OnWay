@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 const ROLE_ROUTES = {
   admin: "/dashboard/admin",
   rider: "/dashboard/rider",
-  passenger: "/dashboard/passenger",
+  user: "/dashboard/user",
   supportAgent: "/dashboard/supportAgent",
 };
 
@@ -14,7 +14,7 @@ const ROLE_ROUTES = {
 const PROTECTED_ROUTES = [
   { path: "/dashboard/admin", allowedRoles: ["admin"] },
   { path: "/dashboard/rider", allowedRoles: ["rider"] },
-  { path: "/dashboard/passenger", allowedRoles: ["passenger"] },
+  { path: "/dashboard/user", allowedRoles: ["user", "passenger"] },
   { path: "/dashboard/supportAgent", allowedRoles: ["supportAgent"] },
 ];
 

@@ -40,7 +40,7 @@ const UserManagement = () => {
         `<input id="n-phone" class="swal2-input" placeholder="Phone Number">` +
         `<input id="n-pass" type="password" class="swal2-input" placeholder="Password">` +
         `<select id="n-role" class="swal2-input">
-            <option value="passenger">Passenger</option>
+            <option value="user">User</option>
             <option value="rider">Rider</option>
             <option value="supportAgent">Support Agent</option>
             <option value="admin">Admin</option>
@@ -169,7 +169,7 @@ const UserManagement = () => {
         `<input id="swal-phone" class="swal2-input" placeholder="Phone" value="${user.phone || ''}">` +
         `<select id="swal-role" class="swal2-input">
             <option value="rider" ${user.role === 'rider' ? 'selected' : ''}>Rider</option>
-            <option value="passenger" ${user.role === 'passenger' ? 'selected' : ''}>Passenger</option>
+            <option value="user" ${user.role === 'user' || user.role === 'passenger' ? 'selected' : ''}>User</option>
             <option value="supportAgent" ${user.role === 'supportAgent' ? 'selected' : ''}>Support Agent</option>
             <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
          </select>`,

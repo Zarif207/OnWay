@@ -9,23 +9,28 @@ export const useCurrentUser = () => {
 
     useEffect(() => {
         const fetchUserData = async () => {
+            if (status === "loading") return;
+            
             if (status === "authenticated" && session?.user?.email) {
                 try {
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${session.user.email}`);
-                    const data = await res.json();
-                    setUser(data);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUser(data);
+                    }
                 } catch (error) {
                     console.error("Error loading user data:", error);
                 } finally {
                     setIsLoading(false);
                 }
             } else if (status === "unauthenticated") {
+                setUser(null);
                 setIsLoading(false);
             }
         };
 
         fetchUserData();
-    }, [session, status]);
+    }, [session?.user?.email, status]);
 
     return { user, isLoading, status };
 };

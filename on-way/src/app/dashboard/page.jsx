@@ -20,12 +20,13 @@ export default function DashboardPage() {
           try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${user.email}`);
             const userData = await res.json();
-            const role = userData?.role || "passenger";
-            console.log("User role from DB:", role); // Debug log
+            const role = (userData?.role === "passenger" ? "user" : userData?.role) || "user";
+            console.log("User role from DB (normalized):", role); // Debug log
             router.replace(`/dashboard/${role}`);
           } catch (error) {
             console.error("Error fetching user role:", error);
-            const role = user?.role || "passenger";
+            const rawRole = user?.role || "user";
+            const role = rawRole === "passenger" ? "user" : rawRole;
             router.replace(`/dashboard/${role}`);
           }
         }

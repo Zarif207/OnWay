@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Tesseract from "tesseract.js";
+import React, { useState, useEffect, useRef } from "react";
+import { createWorker } from "tesseract.js";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, X, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { parseDocument } from "@/utils/ocrParser";
+import { detectDocumentType, processOCR } from "@/utils/ocrParser";
 import { useEarnRegistration } from "@/context/EarnRegistrationContext";
 
 export default function DocumentOCR({ onExtractionComplete }) {
@@ -13,6 +13,7 @@ export default function DocumentOCR({ onExtractionComplete }) {
     const [preview, setPreview] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [statusText, setStatusText] = useState("");
     const [error, setError] = useState(null);
     const [isComplete, setIsComplete] = useState(false);
     const [detectedType, setDetectedType] = useState(null);
@@ -37,91 +38,227 @@ export default function DocumentOCR({ onExtractionComplete }) {
 
     // Removed manual documentTypes array
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith("image/")) {
                 setError("Please upload an image file (JPG, PNG).");
                 return;
             }
+            if (file.size > 2 * 1024 * 1024) {
+               console.log("File > 2MB, will auto-compress during preprocessing.");
+            }
             setImage(file);
             setPreview(URL.createObjectURL(file));
             setError(null);
             setIsComplete(false);
             setProgress(0);
+            setStatusText("Uploading...");
             setDetectedType(null);
         }
     };
 
     const preprocessImage = async (file) => {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            if (!file) return reject(new Error("No file provided"));
+            if (!(file instanceof File) && !(file instanceof Blob) && typeof file !== "string") {
+                return reject(new Error("Invalid file type passed to preprocessImage"));
+            }
+
             const img = new Image();
             img.src = typeof file === 'string' ? file : URL.createObjectURL(file);
+            img.onerror = () => reject(new Error("Failed to load image for preprocessing"));
             img.onload = () => {
                 const canvas = document.createElement("canvas");
                 const ctx = canvas.getContext("2d");
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
 
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const MAX_WIDTH = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height = Math.round((height * MAX_WIDTH) / width);
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const imageData = ctx.getImageData(0, 0, width, height);
                 const data = imageData.data;
                 for (let i = 0; i < data.length; i += 4) {
                     const r = data[i], g = data[i + 1], b = data[i + 2];
                     let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                    const factor = 1.5;
-                    gray = factor * (gray - 128) + 128;
-                    gray = Math.max(0, Math.min(255, gray));
+                    
+                    // Simple thresholding (black and white) to force contrast
+                    gray = gray < 130 ? 0 : 255;
+                    
                     data[i] = data[i + 1] = data[i + 2] = gray;
                 }
                 ctx.putImageData(imageData, 0, 0);
-                resolve(canvas.toDataURL("image/jpeg", 0.9));
+
+                // Return BOTH a safe Blob URL (for Tesseract) and Base64 (for UI preview)
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) return reject(new Error("Failed to create blob from canvas"));
+                        const blobUrl = URL.createObjectURL(blob);
+                        const base64 = canvas.toDataURL("image/jpeg", 0.6);
+                        resolve({ blobUrl, base64 });
+                    },
+                    "image/jpeg",
+                    0.6 // Compress quality
+                );
             };
         });
     };
 
-    const runOCR = async () => {
-        if (!image) return;
+    const runOCR = async (e) => {
+        // Prevent accidental event passing (Fix for DataCloneError)
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
+
+        const fileToOcr = image; // ALWAYS use the state File, never the event
+        if (!fileToOcr) return;
 
         setIsProcessing(true);
         setError(null);
         setProgress(0);
+        setStatusText("Preprocessing...");
+
+        let worker = null;
+        let timeoutId;
+        let failsafeInterval;
+        let OCRBlobUrl = null;
 
         try {
             console.log("PREPROCESSING IMAGE...");
-            const processedBase64 = await preprocessImage(image);
+            const { blobUrl, base64 } = await preprocessImage(fileToOcr);
+            OCRBlobUrl = blobUrl;
+            
+            setStatusText("Loading engine...");
+            
+            let lastProgressTime = Date.now();
 
-            console.log("STARTING TESSERACT OCR...");
-            const { data: { text } } = await Tesseract.recognize(
-                processedBase64,
-                "eng+ben",
-                {
-                    logger: (m) => {
-                        if (m.status === "recognizing text") {
-                            setProgress(Math.floor(m.progress * 100));
-                        }
-                    },
-                    tessedit_pageseg_mode: "6"
+            worker = await createWorker('eng+ben', 3, {
+                logger: (m) => {
+                    // console.log removed to prevent DataCloneError logging overhead
+                    if (m && m.status === "recognizing text") {
+                        setProgress(Math.floor(m.progress * 100));
+                        lastProgressTime = Date.now();
+                        setStatusText("Extracting text...");
+                    } else if (m && m.status) {
+                        setStatusText(m.status);
+                    }
                 }
-            );
+            });
+            
+            await worker.setParameters({
+                preserve_interword_spaces: '1',
+                tessedit_pageseg_mode: '6'
+                // Removed raw A-Z whitelist to preserve Bengali & Numbers
+            });
 
-            console.log("OCR Result:", text);
-            // Run without specific type to auto-detect
-            const extracted = parseDocument("unknown", text);
+            // FAILSAFE: Restart worker if stuck for 5 seconds
+            failsafeInterval = setInterval(() => {
+                if (Date.now() - lastProgressTime > 5000) {
+                    console.warn("OCR stalled. Aborting.");
+                    clearInterval(failsafeInterval);
+                    if (worker) worker.terminate();
+                    throw new Error("OCR stalled");
+                }
+            }, 1000);
 
-            setDetectedType(extracted.documentType);
+            // HARD TIMEOUT: 15 seconds max as requested
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    reject(new Error("OCR timeout, try clearer image"));
+                }, 15000); 
+            });
+
+            // STRICTLY PASS THE string URL to avert DataCloneError!
+            const { data: { text } } = await Promise.race([
+                worker.recognize(blobUrl), 
+                timeoutPromise
+            ]);
+
+            clearInterval(failsafeInterval);
+            clearTimeout(timeoutId);
+            await worker.terminate();
+            worker = null;
+            if (OCRBlobUrl) {
+                URL.revokeObjectURL(OCRBlobUrl);
+                OCRBlobUrl = null;
+            }
+
+            const result = processOCR(text);
+
+            console.log("----- ADVANCED OCR EXTRACTION SYSTEM -----");
+            console.log("RAW TEXT:\n", text);
+            console.log("CLEANED TEXT:\n", result.cleanedText);
+            console.log("CANDIDATES & SCORES:", result.debug);
+            console.log("CONFIDENCE:", result.confidenceScore);
+            
+            const finalPayload = {
+                fullName: result.fullName,
+                firstName: result.firstName,
+                lastName: result.lastName,
+                dateOfBirth: result.dateOfBirth,
+                bloodGroup: result.bloodGroup
+            };
+            
+            console.log("FINAL EXTRACTED DATA:", finalPayload);
+            console.log("------------------------------------------");
+
+            const { fullName, firstName, lastName, dateOfBirth, bloodGroup } = finalPayload;
+
+            setFormData(prev => ({
+                ...prev,
+                firstName,
+                lastName,
+                dateOfBirth,
+                bloodGroup
+            }));
+
+            // Fallback for doc type
+            const docType = detectDocumentType(text) || "nid";
+
+            setDetectedType(docType);
             setIsComplete(true);
+            setProgress(100);
+            setStatusText("Data extracted successfully"); // UX Success Message requested
 
             onExtractionComplete({
-                type: extracted.documentType,
-                file: image,      // Raw File object for upload
-                image: processedBase64,   // Base64 for Persistence!
-                extractedData: extracted,
-                rawText: text
+                type: docType,
+                file: fileToOcr,
+                image: base64,
+                extractedData: {
+                    fullName,
+                    firstName,
+                    lastName,
+                    dateOfBirth,
+                    bloodGroup,
+                    documentType: docType
+                },
+                rawText: text || ""
             });
+
         } catch (err) {
+            clearInterval(failsafeInterval);
+            clearTimeout(timeoutId);
+            if (worker) await worker.terminate();
+            if (OCRBlobUrl) URL.revokeObjectURL(OCRBlobUrl);
+            
             console.error("OCR Error:", err);
-            setError("Failed to extract text. Please try a clearer image.");
+            setStatusText("Failed ❌");
+            
+            if (err.message.includes("stalled") || err.message.includes("timeout")) {
+                setError("OCR timeout, try clearer image");
+            } else {
+                setError(err.message || "Failed to extract text. Please try again.");
+            }
+            setProgress(0);
         } finally {
             setIsProcessing(false);
         }
@@ -132,6 +269,7 @@ export default function DocumentOCR({ onExtractionComplete }) {
         setPreview(null);
         setIsProcessing(false);
         setProgress(0);
+        setStatusText("");
         setError(null);
         setIsComplete(false);
         setDetectedType(null);
@@ -250,7 +388,7 @@ export default function DocumentOCR({ onExtractionComplete }) {
                         {isProcessing && (
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
                                 <Loader2 className="w-10 h-10 text-[#2FCA71] animate-spin mb-4" />
-                                <p className="text-white font-bold mb-2">Analyzing Document...</p>
+                                <p className="text-white font-bold mb-2">{statusText || "Analyzing Document..."}</p>
                                 <div className="w-full max-w-xs bg-white/20 h-2 rounded-full overflow-hidden">
                                     <motion.div
                                         initial={{ width: 0 }}
@@ -267,7 +405,10 @@ export default function DocumentOCR({ onExtractionComplete }) {
                         <button
                             type="button"
                             onClick={runOCR}
-                            className="w-full py-4 bg-[#2FCA71] text-white font-bold rounded-2xl hover:bg-[#28ad60] transition-all shadow-[0_10px_20px_-10px_rgba(49,202,113,0.5)] flex items-center justify-center gap-2"
+                            disabled={isProcessing}
+                            className={`w-full py-4 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 ${
+                                isProcessing ? "bg-gray-400 cursor-not-allowed" : "bg-[#2FCA71] hover:bg-[#28ad60] shadow-[0_10px_20px_-10px_rgba(49,202,113,0.5)]"
+                            }`}
                         >
                             <FileText size={20} />
                             Extract & Verify Data Automatically

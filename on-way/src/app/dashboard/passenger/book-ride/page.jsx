@@ -338,7 +338,7 @@ function BookRideContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      
+
       const data = await res.json();
       console.log("Booking response:", data);
 
@@ -350,7 +350,7 @@ function BookRideContent() {
           socket.emit("registerUser", { userId: passengerId, role: "passenger" });
         }
         console.log("Redirecting to dashboard...");
-        router.push(`/dashboard/passenger?searching=true&bookingId=${data.booking._id}`);
+        router.push(`/dashboard/user?searching=true&bookingId=${data.booking._id}`);
       } else {
         console.error("Booking failed with status:", res.status, data);
         toast.error(data.message || "Booking failed");

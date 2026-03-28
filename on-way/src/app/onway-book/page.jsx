@@ -88,7 +88,7 @@ export default function BookRidePage() {
     try {
       // ── Weather API ──
       const res = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lsat}&lon=${lon}&appid=${API_KEY}&units=metric`
       );
 
       weatherCondition = res.data.weather[0].main;
@@ -674,7 +674,7 @@ export default function BookRidePage() {
 
                 <div className="space-y-3">
                   <button
-                    onClick={() => router.push("/dashboard/user/ride")}
+                    onClick={() => router.push("/dashboard/passenger/ride")}
                     className="w-full py-5 bg-primary text-white font-black rounded-2xl hover:bg-primary/95 transition active:scale-[0.98] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-tighter"
                   >
                     Track My Ride <ArrowRight size={20} />
@@ -698,14 +698,14 @@ export default function BookRidePage() {
 // Icon helper for payment
 function CreditCard({ size }) {
   return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
     >
       <rect width="20" height="14" x="2" y="5" rx="2" />

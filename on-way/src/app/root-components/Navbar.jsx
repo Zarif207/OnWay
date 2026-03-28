@@ -146,7 +146,7 @@ const Navbar = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
-  const [isDarkPage, setIsDarkPage] = useState(false);
+  const [localImage, setLocalImage] = useState(null);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
@@ -154,8 +154,28 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  const role = user?.role || session?.user?.role || "passenger";
-  const dashboardHref = useMemo(() => `/dashboard/${role}`, [role]);
+  // Listen for profile image updates from any dashboard
+  useEffect(() => {
+    const saved = localStorage.getItem("navbar:profileImage");
+    if (saved) setLocalImage(saved);
+
+    const handler = (e) => {
+      const img = e.detail?.image || localStorage.getItem("navbar:profileImage");
+      if (img) setLocalImage(img);
+    };
+    window.addEventListener("profile:updated", handler);
+    return () => window.removeEventListener("profile:updated", handler);
+  }, []);
+
+  const rawRole = user?.role || session?.user?.role || "user";
+  const role = useMemo(() => rawRole === "passenger" ? "user" : rawRole, [rawRole]); 
+
+  const dashboardHref = useMemo(() => {
+    const href = `/dashboard/${role}`;
+    console.log("ROLE:", role); // Debug log
+    console.log("DASHBOARD URL:", href); // Debug log
+    return href;
+  }, [role]);
 
   const {
     notifications,
@@ -266,7 +286,7 @@ const Navbar = () => {
       case "rider": return "/dashboard/rider/profile";
       case "passenger": return "/dashboard/user/profile";
       case "supportagent":
-      case "support": return "/dashboard/support/profile";
+      case "support": return "/dashboard/supportAgent/settings";
       default: return "/dashboard/user/profile";
     }
   };
@@ -555,9 +575,9 @@ const Navbar = () => {
                     className={`flex items-center gap-2 p-1 rounded-full transition-all ${isProfileOpen ? "bg-gray-100" : "hover:bg-gray-50"}`}
                   >
                     <div className="relative w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-primary/10 flex items-center justify-center group">
-                      {user?.profileImage || session?.user?.image ? (
+                      {localImage || user?.profileImage || session?.user?.image ? (
                         <Image
-                          src={user?.profileImage || session?.user?.image}
+                          src={localImage || user?.profileImage || session?.user?.image}
                           alt={user?.name || session?.user?.name || "User"}
                           fill
                           className="object-cover"
@@ -583,9 +603,9 @@ const Navbar = () => {
                         <div className="p-6 pb-4 border-b border-gray-50 bg-gray-50/30">
                           <div className="flex items-center gap-3 mb-3">
                             <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center border-2 border-white shadow-sm">
-                              {user?.profileImage || session?.user?.image ? (
+                              {localImage || user?.profileImage || session?.user?.image ? (
                                 <Image
-                                  src={user?.profileImage || session?.user?.image}
+                                  src={localImage || user?.profileImage || session?.user?.image}
                                   alt={user?.name || session?.user?.name}
                                   fill
                                   className="object-cover"
@@ -815,9 +835,9 @@ const Navbar = () => {
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-4 p-4 rounded-3xl bg-gray-50/50 border border-gray-100 mb-4">
                       <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center border-2 border-white shadow-sm">
-                        {user?.profileImage || session?.user?.image ? (
+                        {localImage || user?.profileImage || session?.user?.image ? (
                           <Image
-                            src={user?.profileImage || session?.user?.image}
+                            src={localImage || user?.profileImage || session?.user?.image}
                             alt={user?.name || session?.user?.name}
                             fill
                             className="object-cover"

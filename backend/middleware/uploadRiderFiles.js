@@ -8,6 +8,7 @@ const storage = new CloudinaryStorage({
         let folderName = 'onway/riders/misc';
 
         switch (file.fieldname) {
+            case 'riderImage':
             case 'profileImage':
                 folderName = 'onway/riders/profiles';
                 break;

@@ -16,22 +16,10 @@ module.exports = (knowledgeCollection) => {
             const config = await knowledgeCollection.findOne({ type: "instruction" });
             const systemPrompt = config?.content || "You are OnWay Support AI, a ride-sharing platform assistant.";
 
-            // $text requires a text index — fall back to regex if index is missing
-            let knowledgeData = [];
-            try {
-                knowledgeData = await knowledgeCollection
-                    .find({ $text: { $search: message } })
-                    .limit(3)
-                    .toArray();
-            } catch (_) {
-                // Text index not yet created — use regex fallback
-                const words = message.trim().split(/\s+/).slice(0, 3);
-                const regex = new RegExp(words.join("|"), "i");
-                knowledgeData = await knowledgeCollection
-                    .find({ $or: [{ question: regex }, { answer: regex }] })
-                    .limit(3)
-                    .toArray();
-            }
+            const knowledgeData = await knowledgeCollection
+                .find({ $text: { $search: message } })
+                .limit(3)
+                .toArray();
 
             const hasKnowledge = knowledgeData.length > 0;
             const knowledgeText = hasKnowledge

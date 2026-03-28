@@ -44,7 +44,7 @@ function PaymentSuccessContent() {
 
         <div className="space-y-3">
           <Link
-            href="/dashboard/passenger"
+            href="/dashboard/user"
             className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-all"
           >
             Go to Dashboard

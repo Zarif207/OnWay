@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import axios from "axios";
@@ -10,9 +10,19 @@ import { reverseGeocode } from "@/utils/geocodingService";
 import { useRouter } from "next/navigation";
 import LocationInput from "@/components/LocationInput";
 import NetworkStatus from "@/components/NetworkStatus";
-import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle, Car } from "lucide-react";
 import '@/styles/location-dropdown.css';
 import { getDemandMultiplier } from "@/utils/demandService";
+import { useRide } from "@/context/RideContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star, Phone, MessageCircle, XCircle, ArrowRight, ShieldCheck } from "lucide-react";
+
+const MOCK_DRIVERS = [
+  { id: 1, name: "Rahim", car: "Toyota Axio", plate: "DHK-12-3456", rating: 4.8, eta: "3 min", phone: "+8801700000001", avatar: "adventurer/svg?seed=Felix", vehicleType: "car" },
+  { id: 2, name: "Karim", car: "Honda Fit", plate: "DHK-56-7890", rating: 4.7, eta: "2 min", phone: "+8801700000002", avatar: "adventurer/svg?seed=Aneka", vehicleType: "suv" },
+  { id: 3, name: "Sakib", car: "Nissan Sunny", plate: "DHK-23-4567", rating: 4.9, eta: "4 min", phone: "+8801700000003", avatar: "adventurer/svg?seed=Jack", vehicleType: "bike" },
+  { id: 4, name: "Dr. Asif", car: "Emergency Unit", plate: "AMB-99-1122", rating: 5.0, eta: "5 min", phone: "+8801700000004", avatar: "adventurer/svg?seed=Doc", vehicleType: "ambulance" }
+];
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -40,7 +50,7 @@ export default function BookRidePage() {
   const [routeGeometry, setRouteGeometry] = useState([]);
   const [distance, setDistance] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [rideType, setRideType] = useState("standard");
+  const [rideType, setRideType] = useState("classic");
   const [fare, setFare] = useState(0);
 
   // Weather & Surge states
@@ -52,6 +62,12 @@ export default function BookRidePage() {
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState("pickup");
   const [onlineRiders, setOnlineRiders] = useState({});
+  const {
+    rideStatus, pickup, dropoff, assignedDriver, routeGeometry: contextRoute, isPaid,
+    startSearching, setMatched, cancelRide, markAsPaid
+  } = useRide();
+
+  const searchTimeoutRef = useRef(null);
   const { data: session } = useSession();
 
 
@@ -149,7 +165,7 @@ export default function BookRidePage() {
     }
   }, [distance, rideType, surge.multiplier]);
 
-  // console.log(distance, fare, surge.multiplier);
+
 
 
   // --- 3. Route Calculation Logic ---
@@ -211,15 +227,15 @@ export default function BookRidePage() {
     setFare(calculateFare(distance, rideType));
   }, [distance, rideType]);
 
-  // Fetch nearby riders
+  // Fetch nearby riders (with small delay to prevent rapid-fire on location changes)
   useEffect(() => {
+    let timeout;
     const fetchNearbyRiders = async () => {
       if (!pickupLocation) return;
       try {
         const res = await fetch(`${API_BASE_URL}/riders/nearby?lat=${pickupLocation.lat}&lng=${pickupLocation.lon}&radius=5`);
         const result = await res.json();
         if (result.success && Array.isArray(result.data)) {
-          // Convert array to object indexed by id for RideMap
           const ridersObj = {};
           result.data.forEach(rider => {
             ridersObj[rider.id] = rider;
@@ -231,9 +247,15 @@ export default function BookRidePage() {
       }
     };
 
-    fetchNearbyRiders();
-    const interval = setInterval(fetchNearbyRiders, 10000); // Refresh every 10s
-    return () => clearInterval(interval);
+    if (pickupLocation) {
+      timeout = setTimeout(fetchNearbyRiders, 500); // 500ms debounce for rider polling
+    }
+
+    const interval = setInterval(fetchNearbyRiders, 15000); // Refresh every 15s instead of 10s
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [pickupLocation]);
 
   const resetRouteState = () => {
@@ -323,58 +345,41 @@ export default function BookRidePage() {
     setIsSubmitting(true);
     setError("");
 
-    try {
-      const bookingData = {
-        passengerId: session.user.id,                    // ← এটা add করো
-        pickupLocation: {
-          address: pickupLocation.name,                // ← address field add করো
-          name: pickupLocation.name,
-          lat: pickupLocation.lat,
-          lng: pickupLocation.lon,
-        },
-        dropoffLocation: {
-          address: dropoffLocation.name,               // ← address field add করো
-          name: dropoffLocation.name,
-          lat: dropoffLocation.lat,
-          lng: dropoffLocation.lon,
-        },
-        routeGeometry: routeGeometry.map((coord) => ({
-          lat: coord[0],
-          lng: coord[1],
-        })),
-        distance,
-        duration,
-        price: fare,
-        rideType,
-        surgeApplied: surge.multiplier > 1.0,
-      };
+    // Select driver based on ride type
+    const mappedType = rideType === "classic" ? "car" : rideType;
+    const selectedDriver = MOCK_DRIVERS.find(d => d.vehicleType === mappedType) || MOCK_DRIVERS[0];
 
-      console.log("📤 Submitting booking:", bookingData);
+    // Use global context to start searching
+    startSearching({
+      pickup: pickupLocation,
+      dropoff: dropoffLocation,
+      routeGeometry: routeGeometry,
+      fare: fare,
+      duration: duration,
+      distance: distance,
+      rideType: rideType
+    });
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-      const response = await fetch(`${apiUrl}/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        console.log("✅ Booking created:", result.booking._id);
-        router.push(
-          `/dashboard/passenger?searching=true&bookingId=${result.booking._id}`
-        );
-      } else {
-        setError(result.message || "Failed to confirm booking.");
-      }
-    } catch (err) {
-      console.error("Booking error:", err);
-      setError("An error occurred while confirming your booking.");
-    } finally {
+    // 1. Simulate "Searching" delay
+    searchTimeoutRef.current = setTimeout(() => {
+      // 2. Trigger match in context with the specific driver
+      setMatched(selectedDriver);
       setIsSubmitting(false);
-    }
+    }, 4500); // 4.5s delay for realism
   };
+
+  const handleCancelBooking = () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    cancelRide();
+    setIsSubmitting(false);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-10 px-3 sm:px-6 lg:px-8">
@@ -396,6 +401,7 @@ export default function BookRidePage() {
               onCurrentLocationFound={handleCurrentLocationFound}
               onlineRiders={onlineRiders}
               trafficInfo={trafficInfo}
+              rideStatus={rideStatus}
             />
           </div>
 
@@ -507,7 +513,7 @@ export default function BookRidePage() {
             {/* Route Summary */}
             {isRouting ? (
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-center gap-3">
-                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 <span className="text-gray-600 text-sm font-medium">Calculating route...</span>
               </div>
             ) : routeGeometry.length > 0 ? (
@@ -539,7 +545,7 @@ export default function BookRidePage() {
             <button
               onClick={handleConfirmBooking}
               disabled={routeGeometry.length === 0 || isSubmitting}
-              className="w-full bg-linear-to-r from-blue-600 to-blue-700 text-white py-3.5 rounded-xl font-semibold text-base hover:from-blue-700 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full bg-linear-to-r from-primary to-blue-700 text-white py-3.5 rounded-xl font-semibold text-base hover:from-blue-700 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
               {isSubmitting ? "Confirming..." : "Confirm Booking"}
@@ -548,498 +554,162 @@ export default function BookRidePage() {
 
         </div>
       </div>
+
+      {/* --- BRANDED SEARCHING MODAL --- */}
+      <AnimatePresence>
+        {rideStatus === "searching" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-secondary/40 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white p-12 rounded-[3.5rem] shadow-2xl flex flex-col items-center text-center max-w-sm"
+            >
+              <div className="relative mb-10">
+                <div className="w-24 h-24 border-8 border-primary/10 rounded-full border-t-primary animate-spin" />
+                <div className="absolute inset-0 w-24 h-24 border-8 border-primary/20 rounded-full animate-pulse blur-sm" />
+                <div className="absolute inset-4 bg-primary/5 rounded-full flex items-center justify-center">
+                  <Car className="text-primary animate-bounce pt-1" size={24} />
+                </div>
+              </div>
+              <h3 className="text-2xl font-black text-secondary tracking-tighter mb-3 leading-tight">Finding Your Driver</h3>
+              <p className="text-gray-400 font-medium text-sm leading-relaxed mb-10 px-4">
+                We're connecting you with premium OnWay riders near your pickup point.
+              </p>
+              <button
+                onClick={handleCancelBooking}
+                className="w-full py-4 bg-red-50 text-red-500 font-black rounded-2xl hover:bg-red-100 transition active:scale-95 text-xs uppercase tracking-widest"
+              >
+                Cancel Search
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- DRIVER ASSIGNED MODAL (Transition to tracking) --- */}
+      <AnimatePresence>
+        {rideStatus === "accepted" && assignedDriver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl relative"
+            >
+              {/* Header Visual */}
+              <div className="bg-gradient-to-br from-primary to-indigo-700 p-8 text-white text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path d="M0 0 L100 100 M100 0 L0 100" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <div className="w-24 h-24 bg-white/10 rounded-3xl mx-auto mb-4 overflow-hidden shadow-xl p-1 border-4 border-white/20">
+                    <img
+                      src={`https://api.dicebear.com/7.x/${assignedDriver.avatar || "avataaars/svg"}`}
+                      alt="Driver"
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  </div>
+                  <h3 className="text-2xl font-black tracking-tighter">Driver Assigned!</h3>
+                  <div className="flex items-center justify-center gap-2 mt-1 text-primary-content opacity-80 font-medium text-xs">
+                    <ShieldCheck size={14} />
+                    <span>Background Checked</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Driver Specs */}
+              <div className="p-8 space-y-6">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-secondary tracking-tight">{assignedDriver.name}</p>
+                  <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">{assignedDriver.car} • {assignedDriver.plate}</p>
+                </div>
+
+                <div className="flex items-center justify-between bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-inner">
+                  <div className="text-center flex-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Rating</p>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-lg font-black text-secondary">{assignedDriver.rating}</span>
+                      <Star size={16} fill="#F59E0B" stroke="#F59E0B" />
+                    </div>
+                  </div>
+                  <div className="w-px h-8 bg-gray-200"></div>
+                  <div className="text-center flex-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">ETA</p>
+                    <p className="text-lg font-black text-primary">{assignedDriver.eta}</p>
+                  </div>
+                </div>
+
+                {/* Payment Options */}
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+                  <div className="flex justify-between items-center text-sm font-bold text-secondary">
+                    <span>Estimated Fare</span>
+                    <span className="text-xl font-black text-primary">৳{fare}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => { markAsPaid(); router.push("/dashboard/user/ride"); }}
+                      className="py-3 bg-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <CreditCard size={14} /> Pay Now
+                    </button>
+                    <button
+                      onClick={() => router.push("/dashboard/user/ride")}
+                      className="py-3 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition active:scale-95"
+                    >
+                      Pay Later
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => router.push("/dashboard/user/ride")}
+                    className="w-full py-5 bg-primary text-white font-black rounded-2xl hover:bg-primary/95 transition active:scale-[0.98] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-tighter"
+                  >
+                    Track My Ride <ArrowRight size={20} />
+                  </button>
+                  <button
+                    onClick={handleCancelBooking}
+                    className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-gray-100 hover:text-red-500 transition active:scale-[0.98] text-sm uppercase tracking-widest"
+                  >
+                    Cancel Booking
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-
-// "use client";
-
-// import { useState, useEffect } from "react";
-// import dynamic from "next/dynamic";
-// import { getDrivingRoute } from "@/utils/routingService";
-// import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
-// import { reverseGeocode } from "@/utils/geocodingService";
-// import { useRouter } from "next/navigation";
-// import LocationInput from "@/components/LocationInput";
-// import NetworkStatus from "@/components/NetworkStatus";
-// import { MapPin, Clock, Route, DollarSign, Loader2 } from "lucide-react";
-// import '@/styles/location-dropdown.css';
-
-// // Dynamically import the Leaflet map (disables SSR)
-// const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
-//   ssr: false,
-//   loading: () => (
-//     <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl animate-pulse">
-//       <div className="text-center">
-//         <Loader2 className="w-8 h-8 animate-spin text-gray-500 mx-auto mb-2" />
-//         <span className="text-gray-500 font-medium tracking-wide">Loading Route Map...</span>
-//       </div>
-//     </div>
-//   ),
-// });
-
-// export default function BookRidePage() {
-//   // Location states
-//   const [pickupQuery, setPickupQuery] = useState("");
-//   const [dropoffQuery, setDropoffQuery] = useState("");
-//   const [pickupLocation, setPickupLocation] = useState(null);
-//   const [dropoffLocation, setDropoffLocation] = useState(null);
-
-//   // Route and fare states
-//   const [routeGeometry, setRouteGeometry] = useState([]);
-//   const [distance, setDistance] = useState(0);
-//   const [duration, setDuration] = useState(0);
-//   const [rideType, setRideType] = useState("standard");
-//   const [fare, setFare] = useState(0);
-
-//   // UI states
-//   const [isRouting, setIsRouting] = useState(false);
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-//   const [error, setError] = useState("");
-//   const [activeInput, setActiveInput] = useState("pickup");
-
-//   const router = useRouter();
-
-//   // 1. State add koro
-//   const [surge, setSurge] = useState({ multiplier: 1.0, label: "Normal", icon: "☀️" });
-
-//   // 2. Weather check korar function
-//   const checkWeatherSurge = async (lat, lon) => {
-//     const data = await getSurgeData(lat, lon);
-//     setSurge(data);
-//   };
-
-//   // 3. useEffect logic update (pickupLocation thakle weather check hobe)
-//   useEffect(() => {
-//     if (pickupLocation) {
-//       checkWeatherSurge(pickupLocation.lat, pickupLocation.lon);
-//     }
-//   }, [pickupLocation]);
-
-//   // 4. Fare Calculation-e surge multiplier add koro
-//   useEffect(() => {
-//     const baseFare = calculateFare(distance, rideType);
-//     setFare(Math.round(baseFare * surge.multiplier));
-//   }, [distance, rideType, surge.multiplier]);
-
-//   // Fetch route when both locations are available
-//   useEffect(() => {
-//     const fetchRoute = async () => {
-//       if (pickupLocation && dropoffLocation) {
-//         setIsRouting(true);
-//         setError("");
-//         try {
-//           console.log("🔄 Calculating route...", { pickup: pickupLocation, dropoff: dropoffLocation });
-//           const routeData = await getDrivingRoute(pickupLocation, dropoffLocation);
-//           if (routeData) {
-//             setDistance(routeData.distanceKm);
-//             setDuration(routeData.durationMin);
-//             setRouteGeometry(routeData.geometry);
-
-//             // Show different messages for fallback vs real routes
-//             if (routeData.routeInfo?.isFallback) {
-//               setError("⚠️ Using estimated route (network issues detected). Distance and time are approximate.");
-//             } else {
-//               console.log("✅ Route calculated successfully using:", routeData.routeInfo?.endpoint);
-//             }
-//           } else {
-//             setError("Could not find a driving route between these locations.");
-//             resetRouteState();
-//           }
-//         } catch (err) {
-//           console.error("❌ Route calculation failed:", err);
-
-//           // Handle specific network errors
-//           if (err.message.includes('Network Error') || err.code === 'ERR_NETWORK') {
-//             setError("⚠️ Network connection issue. Using estimated route calculation.");
-
-//             // Create a fallback route manually
-//             try {
-//               const { createFallbackRoute } = await import('@/utils/routingService');
-//               const fallbackRoute = createFallbackRoute(pickupLocation, dropoffLocation);
-//               setDistance(fallbackRoute.distanceKm);
-//               setDuration(fallbackRoute.durationMin);
-//               setRouteGeometry(fallbackRoute.geometry);
-//             } catch (fallbackErr) {
-//               console.error("Failed to create fallback route:", fallbackErr);
-//               resetRouteState();
-//             }
-//           } else {
-//             setError(`Route calculation failed: ${err.message}`);
-//             resetRouteState();
-//           }
-//         } finally {
-//           setIsRouting(false);
-//         }
-//       } else {
-//         resetRouteState();
-//       }
-//     };
-
-//     fetchRoute();
-//   }, [pickupLocation, dropoffLocation]);
-
-//   // Update fare when distance or ride type changes
-//   useEffect(() => {
-//     setFare(calculateFare(distance, rideType));
-//   }, [distance, rideType]);
-
-//   const resetRouteState = () => {
-//     setDistance(0);
-//     setDuration(0);
-//     setRouteGeometry([]);
-//     setFare(0);
-//   };
-
-//   // Handle location selection from LocationInput component
-//   const handlePickupLocationSelect = (location) => {
-//     setPickupLocation(location);
-//     setActiveInput("dropoff");
-//   };
-
-//   const handleDropoffLocationSelect = (location) => {
-//     setDropoffLocation(location);
-//   };
-
-//   // Handle map click for location selection
-//   const handleMapClick = async (coords) => {
-//     setError("");
-//     try {
-//       const addressData = await reverseGeocode(coords.lat, coords.lon);
-
-//       const newLocationObj = {
-//         lat: coords.lat,
-//         lon: coords.lon,
-//         name: addressData.name,
-//         address: addressData.address || {}
-//       };
-
-//       if (activeInput === "pickup") {
-//         setPickupLocation(newLocationObj);
-//         setPickupQuery(addressData.name);
-//         setActiveInput("dropoff");
-//       } else {
-//         setDropoffLocation(newLocationObj);
-//         setDropoffQuery(addressData.name);
-//       }
-//     } catch (err) {
-//       setError("Failed to get address for selected location.");
-//     }
-//   };
-
-//   // Handle "Your Location" button clicks
-//   const handlePickupYourLocation = (locationData) => {
-//     setPickupLocation(locationData);
-//     setActiveInput("dropoff");
-
-//     // Also trigger map update if we have a map reference
-//     // The RideMap component will handle centering and marker placement
-//   };
-
-//   const handleDropoffYourLocation = (locationData) => {
-//     setDropoffLocation(locationData);
-
-//     // The RideMap component will handle centering and marker placement
-//   };
-//   // Handle current location from map button
-//   const handleCurrentLocationFound = (locationData) => {
-//     const { lat, lng } = locationData;
-
-//     // Use the enhanced reverse geocoding
-//     reverseGeocode(lat, lng).then(addressData => {
-//       const newLocationObj = {
-//         lat,
-//         lon: lng,
-//         name: addressData.name,
-//         address: addressData.address || {}
-//       };
-
-//       if (activeInput === "pickup") {
-//         setPickupLocation(newLocationObj);
-//         setPickupQuery(addressData.name);
-//         setActiveInput("dropoff");
-//       } else {
-//         setDropoffLocation(newLocationObj);
-//         setDropoffQuery(addressData.name);
-//       }
-//     }).catch(err => {
-//       console.error("Failed to get address for current location:", err);
-//       // Still set the location with coordinates
-//       const newLocationObj = {
-//         lat,
-//         lon: lng,
-//         name: `Current Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
-//         address: {}
-//       };
-
-//       if (activeInput === "pickup") {
-//         setPickupLocation(newLocationObj);
-//         setPickupQuery(newLocationObj.name);
-//         setActiveInput("dropoff");
-//       } else {
-//         setDropoffLocation(newLocationObj);
-//         setDropoffQuery(newLocationObj.name);
-//       }
-//     });
-//   };
-
-//   // Handle booking confirmation
-//   const handleConfirmBooking = async () => {
-//     if (!pickupLocation || !dropoffLocation || routeGeometry.length === 0) {
-//       setError("Please select both pickup and drop-off locations.");
-//       return;
-//     }
-
-//     setIsSubmitting(true);
-//     setError("");
-
-//     try {
-//       const bookingData = {
-//         pickupLocation: {
-//           name: pickupLocation.name,
-//           lat: pickupLocation.lat,
-//           lng: pickupLocation.lon,
-//         },
-//         dropoffLocation: {
-//           name: dropoffLocation.name,
-//           lat: dropoffLocation.lat,
-//           lng: dropoffLocation.lon,
-//         },
-//         routeGeometry: routeGeometry.map((coord) => ({
-//           lat: coord[0],
-//           lng: coord[1],
-//         })),
-//         distance,
-//         duration,
-//         price: fare,
-//         rideType,
-//         bookingStatus: "pending",
-//       };
-
-//       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-//       const response = await fetch(`${apiUrl}/bookings`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(bookingData),
-//       });
-
-//       const result = await response.json();
-
-//       if (result.success) {
-//         router.push(`/dashboard/passenger/book-ride?bookingId=${result.booking._id}`);
-//       } else {
-//         setError(result.message || "Failed to confirm booking. Please try again.");
-//       }
-//     } catch (err) {
-//       console.error("Booking submission error:", err);
-//       setError("An error occurred while confirming your booking. Please try again.");
-//     } finally {
-//       setIsSubmitting(false);
-//     }
-//   };
-
-//   return (
-//     <div className="page-container min-h-screen bg-gray-50 pt-38 pb-20 px-4 sm:px-6 lg:px-8">
-//       <NetworkStatus />
-//       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
-
-//         {/* LEFT SIDE: Enhanced Form Section */}
-//         <div className={`form-container w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 flex flex-col gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 h-fit ${(activeInput === "pickup" || activeInput === "dropoff") ? 'has-active-dropdown' : ''
-//           }`}>
-
-//           <div>
-//             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Book a Ride</h1>
-//             <p className="text-gray-500 text-sm">Real-time navigation & dynamic pricing with accurate location mapping.</p>
-//           </div>
-
-//           {/* Global Error Display */}
-//           {error && (
-//             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
-//               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-//                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-//               </svg>
-//               {error}
-//             </div>
-//           )}
-
-//           {/* Enhanced Location Inputs */}
-//           <div className="flex flex-col gap-5 relative">
-//             <div className="absolute left-[15px] top-[45px] bottom-[45px] w-[2px] bg-gray-200 z-0"></div>
-
-//             {/* Pickup Location Input */}
-//             <div className="flex items-start gap-4 relative">
-//               <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-//                 <div className="w-3 h-3 rounded-full bg-green-600"></div>
-//               </div>
-//               <LocationInput
-//                 label="Pickup Location"
-//                 placeholder="E.g., Dhanmondi, Dhaka"
-//                 value={pickupQuery}
-//                 onChange={setPickupQuery}
-//                 onLocationSelect={handlePickupLocationSelect}
-//                 type="pickup"
-//                 isActive={activeInput === "pickup"}
-//                 onFocus={() => setActiveInput("pickup")}
-//                 className="flex-1"
-//                 showYourLocationButton={true}
-//                 onYourLocationClick={handlePickupYourLocation}
-//               />
-//             </div>
-
-//             {/* Drop-off Location Input */}
-//             <div className="flex items-start gap-4 relative">
-//               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-//                 <div className="w-3 h-3 rounded-full bg-red-600"></div>
-//               </div>
-//               <LocationInput
-//                 label="Drop-off Location"
-//                 placeholder="E.g., Gulshan 2, Dhaka"
-//                 value={dropoffQuery}
-//                 onChange={setDropoffQuery}
-//                 onLocationSelect={handleDropoffLocationSelect}
-//                 type="dropoff"
-//                 isActive={activeInput === "dropoff"}
-//                 onFocus={() => setActiveInput("dropoff")}
-//                 className="flex-1"
-//                 showYourLocationButton={true}
-//                 onYourLocationClick={handleDropoffYourLocation}
-//               />
-//             </div>
-//           </div>
-
-//           <div className="h-[1px] w-full bg-gray-100 my-2"></div>
-
-//           {/* Ride Types */}
-//           <div className="flex flex-col gap-4">
-//             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-//               <DollarSign className="w-5 h-5" />
-//               Available Rides
-//             </h3>
-//             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-//               {Object.entries(FARE_RATES).map(([key, data]) => (
-//                 <button
-//                   key={key}
-//                   onClick={() => setRideType(key)}
-//                   className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all ${rideType === key
-//                     ? "border-black bg-gray-50 shadow-sm transform scale-[1.02]"
-//                     : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
-//                     }`}
-//                 >
-//                   <span className="text-2xl mb-1">{data.icon}</span>
-//                   <span className={`font-semibold capitalize ${rideType === key ? "text-gray-900" : "text-gray-700"}`}>{data.name}</span>
-//                   <span className="text-xs text-gray-500 mt-0.5">{data.perKm} ৳/km</span>
-//                 </button>
-//               ))}
-//             </div>
-//           </div>
-
-//           {/* Enhanced Pricing & Route Summary */}
-//           {isRouting ? (
-//             <div className="bg-gray-50 p-6 rounded-2xl mt-2 border border-gray-200 flex flex-col items-center justify-center text-center">
-//               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-//               <span className="text-gray-600 font-medium">Calculating optimal route...</span>
-//               <span className="text-gray-500 text-sm mt-1">This may take a few seconds</span>
-//             </div>
-//           ) : routeGeometry && routeGeometry.length > 0 ? (
-//             <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 rounded-2xl mt-2 shadow-lg relative overflow-hidden">
-//               <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
-
-//               <div className="flex gap-4 mb-4 relative z-10 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-//                 <div className="flex-1 flex flex-col items-center justify-center border-r border-white/20">
-//                   <Clock className="w-4 h-4 text-gray-300 mb-1" />
-//                   <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Time</span>
-//                   <span className="font-bold text-lg">{duration} <span className="text-sm font-normal">min</span></span>
-//                 </div>
-//                 <div className="flex-1 flex flex-col items-center justify-center">
-//                   <Route className="w-4 h-4 text-gray-300 mb-1" />
-//                   <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Distance</span>
-//                   <span className="font-bold text-lg">{distance} <span className="text-sm font-normal">km</span></span>
-//                 </div>
-//               </div>
-
-//               <div className="flex justify-between items-end relative z-10 pt-2 border-t border-white/10">
-//                 <span className="text-gray-300 font-medium">Estimated Fare</span>
-//                 <span className="font-bold text-4xl text-emerald-400">{fare} <span className="text-2xl">৳</span></span>
-//               </div>
-//             </div>
-//           ) : (
-//             <div className="bg-gray-50 p-5 rounded-2xl mt-2 border border-gray-100 border-dashed flex items-center justify-center text-center px-8">
-//               <div className="text-center">
-//                 <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-//                 <span className="text-gray-400 text-sm">Select both locations to calculate distance and fare</span>
-//               </div>
-//             </div>
-//           )}
-
-//           {surge.multiplier > 1.0 && (
-//             <div className="mb-4 flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl animate-in fade-in slide-in-from-top-2 duration-500">
-//               <div className="bg-orange-500 p-2 rounded-lg text-white">
-//                 <span className="text-lg">{surge.icon}</span>
-//               </div>
-//               <div>
-//                 <p className="text-orange-400 text-[10px] font-bold uppercase tracking-wider">Demand is high</p>
-//                 <p className="text-white text-sm font-semibold">{surge.label} Applied (x{surge.multiplier})</p>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Enhanced Confirm Button */}
-//           <button
-//             onClick={handleConfirmBooking}
-//             disabled={!routeGeometry || routeGeometry.length === 0 || isSubmitting}
-//             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:hover:from-blue-600 disabled:hover:to-blue-700 shadow-[0_4px_14px_0_rgb(37,99,235,0.39)] disabled:shadow-none mt-2 active:scale-[0.98] flex items-center justify-center gap-2"
-//           >
-//             {isSubmitting ? (
-//               <>
-//                 <Loader2 className="w-5 h-5 animate-spin" />
-//                 Confirming Booking...
-//               </>
-//             ) : (
-//               <>
-//                 <MapPin className="w-5 h-5" />
-//                 Confirm Booking
-//               </>
-//             )}
-//           </button>
-//         </div>
-
-//         {/* RIGHT SIDE: Enhanced Map View */}
-//         <div className="w-full flex-1 h-[500px] lg:h-auto min-h-[600px] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-200 relative z-0">
-//           <RideMap
-//             pickup={pickupLocation}
-//             dropoff={dropoffLocation}
-//             routeGeometry={routeGeometry}
-//             durationMin={duration}
-//             onMapClick={handleMapClick}
-//             showCurrentLocationButton={true}
-//             onCurrentLocationFound={handleCurrentLocationFound}
-//           />
-
-//           {/* Map Status Indicator */}
-//           {(pickupLocation || dropoffLocation) && (
-//             <div className="absolute top-3 left-3 z-[1000] bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-sm border border-gray-200">
-//               <div className="flex items-center gap-2 text-sm">
-//                 {pickupLocation && (
-//                   <div className="flex items-center gap-1">
-//                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-//                     <span className="text-gray-600">Pickup</span>
-//                   </div>
-//                 )}
-//                 {dropoffLocation && (
-//                   <div className="flex items-center gap-1">
-//                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-//                     <span className="text-gray-600">Drop-off</span>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-//           )}
-//         </div>
-
-//       </div>
-//     </div>
-//   );
-// }
+// Icon helper for payment
+function CreditCard({ size }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}

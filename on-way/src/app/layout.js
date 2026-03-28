@@ -9,6 +9,7 @@ import { Toaster } from "react-hot-toast";
 import { usePathname } from "next/navigation";
 import ChatSupport from "./components/ChatBot/ChatSupport";
 import FloatingSOSButton from "@/components/FloatingSOSButton";
+import { RideProvider } from "@/context/RideContext";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -27,11 +28,13 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             {!hideNavbarFooter && <Navbar />}
 
-            <main>
-              {children}
-              <ChatSupport />
-              <FloatingSOSButton />
-            </main>
+            <RideProvider>
+              <main>
+                {children}
+                <ChatSupport />
+                <FloatingSOSButton />
+              </main>
+            </RideProvider>
 
             <Toaster position="top-center" reverseOrder={false} />
 

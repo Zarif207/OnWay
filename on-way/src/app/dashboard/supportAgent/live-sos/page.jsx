@@ -12,6 +12,7 @@ export default function LiveSOSPage() {
     responding: 0,
     resolvedToday: 0
   });
+  
 
   const alertsPerPage = 10;
 

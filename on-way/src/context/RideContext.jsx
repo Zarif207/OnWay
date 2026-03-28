@@ -68,11 +68,16 @@ export const RideProvider = ({ children }) => {
     setIsPaid(false);
   };
 
-  const setMatched = (driver) => {
-    setAssignedDriver(driver || MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)]);
+  const setMatched = (driverData) => {
+    const driver = driverData || MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)];
+    setAssignedDriver(driver);
     setRideStatus("accepted");
-    // Generate mock OTP
-    setOtp(Math.floor(1000 + Math.random() * 9000).toString());
+    // Use driver's OTP if provided, otherwise generate one
+    if (driver.otp) {
+      setOtp(driver.otp);
+    } else {
+      setOtp(Math.floor(1000 + Math.random() * 9000).toString());
+    }
   };
 
   const setArriving = () => setRideStatus("arriving");

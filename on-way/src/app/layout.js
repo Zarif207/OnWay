@@ -14,7 +14,8 @@ import { RideProvider } from "@/context/RideContext";
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 
-  const hideNavbarFooter = pathname === "/login" || pathname === "/register" || pathname.startsWith("/dashboard");
+  const hideNavbar = pathname === "/login" || pathname === "/register" || pathname.startsWith("/dashboard");
+  const hideFooter = hideNavbar || pathname === "/onway-book";
 
   return (
     <html lang="en" data-theme="onwaytheme">
@@ -26,7 +27,7 @@ export default function RootLayout({ children }) {
       <body>
         <QueryProvider>
           <AuthProvider>
-            {!hideNavbarFooter && <Navbar />}
+            {!hideNavbar && <Navbar />}
 
             <RideProvider>
               <main>
@@ -38,7 +39,7 @@ export default function RootLayout({ children }) {
 
             <Toaster position="top-center" reverseOrder={false} />
 
-            {!hideNavbarFooter && <Footer />}
+            {!hideFooter && <Footer />}
           </AuthProvider>
         </QueryProvider>
       </body>

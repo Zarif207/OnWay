@@ -49,7 +49,7 @@ function ActiveRideContent() {
   // 1. Fetch Booking Initial State
   useEffect(() => {
     if (!bookingId) {
-      router.push("/dashboard/user/book-ride");
+      router.push("/dashboard/passenger/book-ride");
       return;
     }
 
@@ -238,7 +238,7 @@ function ActiveRideContent() {
         </div>
         <h2 className="text-4xl font-black text-secondary mb-4 tracking-tighter">No Drivers Found</h2>
         <p className="text-gray-500 font-medium mb-8 max-w-md">We couldn't find a driver for your request within 60 seconds. Please try again or choose a different vehicle type.</p>
-        <button onClick={() => router.push('/dashboard/user/book-ride')} className="px-10 py-5 bg-[#011421] text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-colors shadow-2xl">
+        <button onClick={() => router.push('/dashboard/passenger/book-ride')} className="px-10 py-5 bg-[#011421] text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-colors shadow-2xl">
           Try Again
         </button>
       </div>
@@ -253,7 +253,7 @@ function ActiveRideContent() {
         </div>
         <h2 className="text-4xl font-black text-secondary mb-4 tracking-tighter">Ride Finished!</h2>
         <p className="text-gray-500 font-medium mb-8 max-w-md">How was your trip with Michael Johnson? Your feedback helps us improve.</p>
-        <button onClick={() => router.push('/dashboard/user/ride-history')} className="px-10 py-5 bg-secondary text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-[#011421] transition-colors shadow-2xl">
+        <button onClick={() => router.push('/dashboard/passenger/ride-history')} className="px-10 py-5 bg-secondary text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-[#011421] transition-colors shadow-2xl">
           Rate & Review
         </button>
       </div>

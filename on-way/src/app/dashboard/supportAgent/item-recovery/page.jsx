@@ -28,6 +28,10 @@ export default function ItemRecoveryPage() {
   const [updatingId, setUpdatingId] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
 
+  // ✅ Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemRecoveryPerPage = 10;
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
   // ── Fetch all lost-item reports ──────────────────────────
@@ -114,6 +118,13 @@ export default function ItemRecoveryPage() {
     notFound: items.filter((i) => i.status === "Not Found").length,
   };
 
+  const totalPages = Math.ceil(filtered.length / itemRecoveryPerPage);
+
+  const paginatedItems = filtered.slice(
+    (currentPage - 1) * itemRecoveryPerPage,
+    currentPage * itemRecoveryPerPage
+  );
+
   if (loading) return <SupportLoading />;
 
   return (
@@ -188,7 +199,7 @@ export default function ItemRecoveryPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((item) => {
+          {paginatedItems.map((item) => {
             const sc = getStatusConfig(item.status || "Pending");
             const isUpdating = updatingId === item._id;
             const nextStatuses = STATUS_OPTIONS.filter((s) => s !== (item.status || "Pending"));
@@ -262,8 +273,8 @@ export default function ItemRecoveryPage() {
                       disabled={isUpdating}
                       onClick={() => handleStatusUpdate(item._id, newStatus)}
                       className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${newStatus === "Recovered"
-                          ? "bg-emerald-500 hover:bg-emerald-600 text-white"
-                          : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
+                        ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                        : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
                         }`}
                     >
                       {isUpdating ? (
@@ -292,6 +303,43 @@ export default function ItemRecoveryPage() {
           })}
         </div>
       )}
+      <div className="flex justify-end mt-8">
+        <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-2xl">
+
+          {/* Prev Button */}
+          <button
+            onClick={() => setCurrentPage(prev => prev - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-gray-500 font-medium rounded-xl hover:bg-gray-200 disabled:opacity-40 flex items-center gap-1"
+          >
+            ‹ Prev
+          </button>
+
+          {/* Page Numbers */}
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl font-semibold transition-all
+                    ${currentPage === i + 1
+                  ? "bg-green-500 text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-200"
+                }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-white bg-green-500 rounded-xl font-medium hover:bg-green-600 disabled:opacity-40 flex items-center gap-1"
+          >
+            Next ›
+          </button>
+        </div>
+      </div>
 
       {/* ── Image Preview Modal ─────────────────────────── */}
       {previewImage && (

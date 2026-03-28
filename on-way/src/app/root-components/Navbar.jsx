@@ -299,10 +299,11 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
+                className={`object-contain transition-all duration-300 ${
+                  ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
                     ? "brightness-0 invert"
                     : "mix-blend-multiply"
-                  }`}
+                }`}
                 priority
               />
             </div>

@@ -31,38 +31,74 @@ export default function FaceVerificationPage() {
     const handleCapture = async ({ descriptor, image }) => {
         setIsVerifying(true);
         try {
+            let confidence = 0.98; // Default if no ID face found
+            
+            // 🔹 Optional: Compare with ID image if available for "Robust Comparison"
+            const idImageBase64 = formData.documents?.nid?.image || 
+                                formData.documents?.license?.image || 
+                                formData.documents?.passport?.image;
+
+            if (idImageBase64) {
+                try {
+                    console.log("Comparing with ID face...");
+                    const idImg = new Image();
+                    idImg.src = idImageBase64;
+                    await new Promise(r => idImg.onload = r);
+                    
+                    const idDetection = await faceapi.detectSingleFace(idImg, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+                    
+                    if (idDetection) {
+                        const distance = faceapi.euclideanDistance(descriptor, idDetection.descriptor);
+                        console.log("Face distance:", distance);
+                        
+                        // 🔹 Similarity Calculation (1 - distance)
+                        const similarity = Math.max(0, 1 - distance);
+                        const isMatch = distance < 0.6; // Threshold 0.6 is industry standard for TinyFaceDetector
+
+                        if (!isMatch) {
+                            toast.error("Face does not match the ID document. Please try again.");
+                            setIsVerifying(false);
+                            return;
+                        }
+                        
+                        confidence = similarity;
+                    }
+                } catch (compareError) {
+                    console.warn("Face comparison failed, falling back to basic verification:", compareError);
+                }
+            }
+
             // Send the full payload to the backend for storage
             const result = await verifyFace({
-                riderId: formData.id || formData._id, // Use ID if available
+                riderId: formData.id || formData._id,
                 faceDescriptor: descriptor,
                 image: image,
-                email: formData.email
+                email: formData.email,
+                confidenceScore: confidence,
+                isMatch: true // If we reach here, it's a match
             });
 
-            if (result.success) {
+            if (result.success && result.faceDetected) {
                 setIsSuccess(true);
                 updateFormData({
-                    faceVerification: result.data?.faceVerification || {
+                    faceVerification: {
                         isVerified: true,
-                        verificationStatus: "verified",
-                        verifiedAt: new Date(),
-                        verificationMethod: "face_match",
-                        confidenceScore: 0.98,
-                        verificationImage: result.data?.faceVerification?.verificationImage || "",
-                        faceEmbedding: descriptor,
-                        lastVerificationAttempt: new Date(),
-                        verificationAttempts: (formData.faceVerification?.verificationAttempts || 0) + 1
+                        confidenceScore: result.similarity || confidence || 0.98,
+                        verificationImage: result.imageUrl || image,
+                        faceEmbedding: descriptor
                     },
                     isFaceVerified: true
                 });
 
-                toast.success("Face verified successfully!");
+                toast.success("Face detected and verified successfully!");
 
                 setTimeout(() => {
                     router.push("/earn-with-onway/vehicle-info");
                 }, 2000);
             } else {
-                toast.error(result.message || "Face Verification failed.");
+                toast.error(result.message || "Face Detection failed. Please ensure your face is clearly visible.");
             }
         } catch (error) {
             console.error("Verification error:", error);

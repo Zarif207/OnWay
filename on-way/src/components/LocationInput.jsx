@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Loader2, AlertCircle, Navigation } from 'lucide-react';
+import { MapPin, Loader2, AlertCircle, Navigation, Car } from 'lucide-react';
+import axios from 'axios';
 import { geocodeAddress, getLocationSuggestions } from '@/utils/geocodingService';
 import { useDebounce } from '@/hooks/useDebounce';
 import '@/styles/location-dropdown.css';
@@ -31,9 +32,10 @@ const LocationInput = ({
   const suggestionsRef = useRef(null);
   const abortControllerRef = useRef(null);
   const lastSearchRef = useRef('');
-  
-  // Increased debounce delay to reduce API calls
-  const debouncedInputValue = useDebounce(inputValue, 800);
+  const cacheRef = useRef({}); // Simple in-memory cache for suggestions
+
+  // Increased debounce delay to 1000ms for heavy geocoding protection
+  const debouncedInputValue = useDebounce(inputValue, 1000);
 
   // Color scheme based on type
   const colorScheme = {
@@ -64,7 +66,7 @@ const LocationInput = ({
     }
   }, [value]);
 
-  // Handle debounced search with improved rate limiting
+  // Handle debounced search with improved rate limiting and caching
   useEffect(() => {
     const searchLocations = async () => {
       // Cancel previous request if exists
@@ -79,6 +81,15 @@ const LocationInput = ({
         return;
       }
 
+      // Check cache first
+      if (cacheRef.current[debouncedInputValue]) {
+        setSuggestions(cacheRef.current[debouncedInputValue]);
+        setShowSuggestions(cacheRef.current[debouncedInputValue].length > 0);
+        setError('');
+        setIsLoading(false);
+        return;
+      }
+
       if (debouncedInputValue === value || debouncedInputValue === lastSearchRef.current) {
         return; // Don't search if it's the same as current location or last search
       }
@@ -87,30 +98,42 @@ const LocationInput = ({
       setError('');
 
       // Create new abort controller for this request
-      abortControllerRef.current = new AbortController();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       try {
-        const results = await getLocationSuggestions(debouncedInputValue, 'BD');
-        
-        // Only update if this is still the current search
-        if (debouncedInputValue === inputValue) {
+        const results = await getLocationSuggestions(debouncedInputValue, 'BD', controller.signal);
+
+        // Cache the results
+        cacheRef.current[debouncedInputValue] = results;
+
+        // Only update if this is still the current search and not aborted
+        if (!controller.signal.aborted) {
           setSuggestions(results);
-          setShowSuggestions(results.length > 0);
+          setShowSuggestions(true); // Always show if we have results or want to show empty state
           setSelectedIndex(-1);
           lastSearchRef.current = debouncedInputValue;
         }
       } catch (err) {
+        if (axios.isCancel(err) || err.name === 'AbortError') {
+          return; // Ignore aborted requests
+        }
+
+        console.error('Search error:', err);
+
         // Handle rate limiting error specifically
-        if (err.response?.status === 429) {
+        if (err.response?.status === 429 || err.message?.includes('429')) {
           setError('Too many requests. Please wait a moment and try again.');
-          console.warn('Rate limit hit, waiting before next request');
-        } else if (err.name !== 'AbortError' && err.name !== 'CanceledError') {
+          console.warn('Rate limit hit, showing error to user');
+        } else {
           setError(err.message || 'Failed to search locations');
         }
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -122,7 +145,7 @@ const LocationInput = ({
         abortControllerRef.current.abort();
       }
     };
-  }, [debouncedInputValue, value, inputValue]);
+  }, [debouncedInputValue, value]); // Removed inputValue to prevent triggers on every keystroke
 
   // Handle input change
   const handleInputChange = (e) => {
@@ -434,30 +457,36 @@ const LocationInput = ({
       )}
 
       {/* Suggestions Dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && (
         <div
           ref={suggestionsRef}
           className="location-dropdown"
         >
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={`${suggestion.lat}-${suggestion.lon}-${index}`}
-              onClick={() => handleSuggestionSelect(suggestion)}
-              className={`dropdown-item ${index === selectedIndex ? 'selected' : ''}`}
-            >
-              <div className="flex items-start gap-3">
-                <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${colors.text}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {suggestion.address?.road || suggestion.address?.name || 'Unknown Location'}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {suggestion.name}
-                  </p>
+          {suggestions.length > 0 ? (
+            suggestions.map((suggestion, index) => (
+              <button
+                key={`${suggestion.lat}-${suggestion.lon}-${index}`}
+                onClick={() => handleSuggestionSelect(suggestion)}
+                className={`dropdown-item ${index === selectedIndex ? 'selected' : ''}`}
+              >
+                <div className="flex items-start gap-3">
+                  <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${colors.text}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {suggestion.address?.road || suggestion.address?.name || 'Unknown Location'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {suggestion.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          ) : !isLoading && !error && debouncedInputValue.length >= 3 && (
+            <div className="p-4 text-center text-gray-500 text-sm">
+              No results found for "{debouncedInputValue}"
+            </div>
+          )}
         </div>
       )}
     </div>

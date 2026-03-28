@@ -214,7 +214,7 @@ function HelpContent() {
 
   const tabs = [
     { id: "rider", label: "Rider Help Center", icon: Bike },
-    { id: "passenger", label: "Passenger Help Center", icon: Users },
+    { id: "user", label: "User Help Center", icon: Users },
     { id: "walkin", label: "Walk-In Support Centers", icon: MapPin },
   ];
 
@@ -251,7 +251,7 @@ function HelpContent() {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder={activeTab === "rider" ? "Search rider help articles..." : "Search passenger help articles..."}
+                  placeholder={activeTab === "rider" ? "Search rider help articles..." : "Search user help articles..."}
                   className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white/15 transition-all text-sm"
                 />
                 {query && (
@@ -342,8 +342,8 @@ function HelpContent() {
           </motion.div>
         )}
 
-        {activeTab === "passenger" && (
-          <motion.div key="passenger" variants={tabContent} initial="hidden" animate="visible" exit="exit"
+        {activeTab === "user" && (
+          <motion.div key="user" variants={tabContent} initial="hidden" animate="visible" exit="exit"
             className="max-w-4xl mx-auto px-6 py-12">
             {!query && (
               <div className="grid md:grid-cols-3 gap-6 mb-12">

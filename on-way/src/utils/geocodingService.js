@@ -16,7 +16,7 @@ const GEOCODING_API = `${API_BASE_URL}/geocoding`;
  * @param {string} countryCode - Optional country code (e.g., 'BD' for Bangladesh)
  * @returns {Promise<Object|null>} Location object with lat, lon, name, and additional details
  */
-export const geocodeAddress = async (query, countryCode = 'BD') => {
+export const geocodeAddress = async (query, countryCode = 'BD', signal = null) => {
   if (!query || query.trim().length < 3) {
     throw new Error("Please enter at least 3 characters");
   }
@@ -28,7 +28,8 @@ export const geocodeAddress = async (query, countryCode = 'BD') => {
         countryCode: countryCode,
         limit: 5
       },
-      timeout: 10000
+      timeout: 10000,
+      signal: signal
     });
 
     if (!response.data || !response.data.success || response.data.data.length === 0) {
@@ -37,7 +38,7 @@ export const geocodeAddress = async (query, countryCode = 'BD') => {
 
     // Get the best result (first one is usually most relevant)
     const result = response.data.data[0];
-    
+
     // Validate coordinates
     const lat = parseFloat(result.lat);
     const lon = parseFloat(result.lon);
@@ -135,7 +136,7 @@ export const reverseGeocode = async (lat, lon) => {
  * @param {string} countryCode - Country code
  * @returns {Promise<Array>} Array of location suggestions
  */
-export const getLocationSuggestions = async (query, countryCode = 'BD') => {
+export const getLocationSuggestions = async (query, countryCode = 'BD', signal = null) => {
   if (!query || query.trim().length < 2) {
     return [];
   }
@@ -147,7 +148,8 @@ export const getLocationSuggestions = async (query, countryCode = 'BD') => {
         countryCode: countryCode,
         limit: 8
       },
-      timeout: 8000
+      timeout: 8000,
+      signal: signal
     });
 
     if (!response.data || !response.data.success) return [];
@@ -161,7 +163,10 @@ export const getLocationSuggestions = async (query, countryCode = 'BD') => {
     })).filter(item => !isNaN(item.lat) && !isNaN(item.lon));
 
   } catch (error) {
+    if (axios.isCancel(error)) {
+      throw error; // Let the caller handle cancellation silently
+    }
     console.error("Failed to get location suggestions:", error);
-    return [];
+    throw error; // Re-throw so caller can handle 429 etc.
   }
 };

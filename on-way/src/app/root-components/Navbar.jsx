@@ -147,6 +147,7 @@ const Navbar = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
   const [localImage, setLocalImage] = useState(null);
+  const [isDarkPage, setIsDarkPage] = useState(false);
   const dropdownRef = useRef(null);
   const helpRef = useRef(null);
 
@@ -168,7 +169,7 @@ const Navbar = () => {
   }, []);
 
   const rawRole = user?.role || session?.user?.role || "user";
-  const role = useMemo(() => rawRole === "passenger" ? "user" : rawRole, [rawRole]); 
+  const role = useMemo(() => rawRole, [rawRole]);
 
   const dashboardHref = useMemo(() => {
     const href = `/dashboard/${role}`;
@@ -284,10 +285,11 @@ const Navbar = () => {
     switch (userRole?.toLowerCase()) {
       case "admin": return "/dashboard/admin/profile";
       case "rider": return "/dashboard/rider/profile";
-      case "passenger": return "/dashboard/user/profile";
+      case "passenger":
+      case "user": return "/dashboard/passenger/profile";
       case "supportagent":
       case "support": return "/dashboard/supportAgent/settings";
-      default: return "/dashboard/user/profile";
+      default: return "/dashboard/passenger/profile";
     }
   };
 
@@ -301,8 +303,8 @@ const Navbar = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-[100] h-20 transition-all duration-500 flex items-center justify-center px-4 sm:px-8 
-        ${isScrolled ? "translate-y-2" : "translate-y-0"}`}
+        className={`sticky top-0 left-0 right-0 z-50 h-20 transition-all duration-500 flex items-center justify-center px-4 sm:px-8 
+        ${isScrolled ? "translate-y-2 text-primary" : "translate-y-0 text-gray-500"}`}
       >
         <div
           className={`w-full max-w-7xl relative flex items-center justify-center px-6 py-2 rounded-3xl transition-all duration-500
@@ -319,11 +321,10 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${
-                  ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
+                className={`object-contain transition-all duration-300 ${((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
                     ? "brightness-0 invert"
                     : "mix-blend-multiply"
-                }`}
+                  }`}
                 priority
               />
             </div>

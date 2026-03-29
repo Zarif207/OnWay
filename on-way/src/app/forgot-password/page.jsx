@@ -35,16 +35,15 @@ const ForgotPasswordContent = () => {
 
             toast.loading("Sending OTP to your email...", { id: toastId });
 
-            const generatedOTP = Math.floor(100000 + Math.random() * 900000);
-
             const response = await fetch('/api/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp: generatedOTP }),
+                body: JSON.stringify({ email }),
             });
 
             if (response.ok) {
-                localStorage.setItem("resetData", JSON.stringify({ email, otp: generatedOTP }));
+                const result = await response.json();
+                localStorage.setItem("resetData", JSON.stringify({ email, otp: result.otp }));  // ✅
                 toast.success("Reset OTP sent to your email!", { id: toastId });
                 router.push("/reset-password");
             } else {

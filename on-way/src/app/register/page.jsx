@@ -17,7 +17,7 @@ const Register = () => {
   const { findUser } = useUsers();
 
   console.log(findUser);
-  
+
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/");
@@ -26,28 +26,30 @@ const Register = () => {
 
   const { register, handleSubmit, formState: { errors } } = useForm();
 
+  // Register.jsx - onSubmit function
   const onSubmit = async (data) => {
     setLoading(true);
     const toastId = toast.loading("Checking details...");
     try {
       const userExists = await findUser(data.email);
-
       if (userExists) {
         toast.error("Email already registered! Please login.", { id: toastId });
         setLoading(false);
         return;
       }
 
-      const generatedOTP = Math.floor(100000 + Math.random() * 900000);
-
       const response = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.email, otp: generatedOTP }),
+        body: JSON.stringify({ email: data.email }),
       });
 
       if (response.ok) {
-        localStorage.setItem("tempUser", JSON.stringify({ ...data, otp: generatedOTP }));
+        const result = await response.json();
+        localStorage.setItem("tempUser", JSON.stringify({
+          ...data,
+          otp: result.otp
+        }));
         toast.success("OTP Sent to Email!", { id: toastId });
         router.push("/verify-email");
       } else {

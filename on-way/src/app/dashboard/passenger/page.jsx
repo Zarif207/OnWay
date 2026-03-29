@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 const StatusBadge = ({ status }) => {
   if (status === "completed")
@@ -53,7 +53,7 @@ export default function UserDashboard() {
       toast.error("Please enter both pickup and destination");
       return;
     }
-    router.push(`/dashboard/user/book-ride?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
+    router.push(`/dashboard/passenger/book-ride?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
   };
 
   const getGreeting = () => {
@@ -99,7 +99,7 @@ export default function UserDashboard() {
     socketRef.current = socket;
 
     // Passenger room এ join করো
-    socket.emit("registerUser", { userId: passengerId, role: "user" });
+    socket.emit("registerUser", { userId: passengerId, role: "passenger" });
     socket.emit("joinNotifications", passengerId);
 
     console.log("🔌 Passenger socket connected, id:", passengerId);
@@ -109,7 +109,7 @@ export default function UserDashboard() {
     if (urlParams.get("searching") === "true") {
       setIsSearching(true);
       // URL clean করো
-      window.history.replaceState({}, "", "/dashboard/user");
+      window.history.replaceState({}, "", "/dashboard/passenger");
     }
 
     const handleRideAccepted = (data) => {
@@ -133,7 +133,7 @@ export default function UserDashboard() {
         style: { borderRadius: "15px", background: "#011421", color: "#fff" },
       });
       if (bookingId) {
-        router.push(`/dashboard/user/active-ride?bookingId=${bookingId}`);
+        router.push(`/dashboard/passenger/active-ride?bookingId=${bookingId}`);
       }
     };
 
@@ -211,7 +211,7 @@ export default function UserDashboard() {
       <div className="flex items-center justify-between border-b border-gray-100 pb-6">
         <div className="flex items-center gap-4">
           <img
-            src={session?.user?.image || `https://ui-avatars.com/api/?name=${session?.user?.name || "User"}&background=2FCA71&color=fff&size=128`}
+            src={session?.user?.image || `https://ui-avatars.com/api/?name=${session?.user?.name || "passenger"}&background=2FCA71&color=fff&size=128`}
             alt="Profile"
             className="w-16 h-16 rounded-full border-2 border-white shadow-sm"
           />
@@ -329,7 +329,7 @@ export default function UserDashboard() {
               <div className="flex items-center gap-2 text-gray-300 font-medium">
                 <Wallet size={18} className="text-[#2FCA71]" /> Wallet Balance
               </div>
-              <Link href="/dashboard/user/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition">
+              <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition">
                 <MoreHorizontal size={18} />
               </Link>
             </div>
@@ -338,10 +338,10 @@ export default function UserDashboard() {
               <div className="text-sm text-gray-400 mt-1 bg-gray-800 inline-block px-2.5 py-1 rounded-md">Includes ৳350 Ride Credits</div>
             </div>
             <div className="flex gap-2 relative z-10">
-              <Link href="/dashboard/user/wallet" className="flex-1 bg-[#2FCA71] hover:bg-[#25A65B] text-white text-center font-bold py-2.5 rounded-xl transition">Add Money</Link>
-              <Link href="/dashboard/user/wallet" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-center font-bold py-2.5 rounded-xl transition">History</Link>
+              <Link href="/dashboard/passenger/wallet" className="flex-1 bg-[#2FCA71] hover:bg-[#25A65B] text-white text-center font-bold py-2.5 rounded-xl transition">Add Money</Link>
+              <Link href="/dashboard/passenger/wallet" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-center font-bold py-2.5 rounded-xl transition">History</Link>
             </div>
-            <Link href="/dashboard/user/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"><MoreHorizontal size={18} /></Link>
+            <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"><MoreHorizontal size={18} /></Link>
           </div>
 
           <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
@@ -382,7 +382,7 @@ export default function UserDashboard() {
               <span className="inline-block px-2.5 py-1 bg-white/20 rounded-md text-xs font-bold uppercase tracking-wider mb-3">Limited Offer</span>
               <h3 className="text-xl font-bold leading-tight mb-2">Get 20% off your next ride</h3>
               <p className="text-blue-100 text-sm mb-4">Use code <span className="font-mono bg-white/20 px-1 py-0.5 rounded">ONWAY20</span> at checkout</p>
-              <Link href="/dashboard/user/wallet" className="w-full inline-block text-center bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
+              <Link href="/dashboard/passenger/wallet" className="w-full inline-block text-center bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
                 Apply Promo
               </Link>
             </div>
@@ -481,7 +481,7 @@ export default function UserDashboard() {
                     Call Driver
                   </button>
                   <button
-                    onClick={() => router.push(`/dashboard/user/active-ride?bookingId=${matchedDriver.bookingId || matchedDriver.rideId}`)}
+                    onClick={() => router.push(`/dashboard/passenger/active-ride?bookingId=${matchedDriver.bookingId || matchedDriver.rideId}`)}
                     className="flex-1 py-4 bg-[#2FCA71] text-white font-bold rounded-2xl hover:bg-[#25A65B] transition shadow-lg"
                   >
                     Track Ride

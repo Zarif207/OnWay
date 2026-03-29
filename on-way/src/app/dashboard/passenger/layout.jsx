@@ -16,14 +16,14 @@ export default function PassengerLayout({ children }) {
   const { rideStatus } = useRide();
 
   const menuItems = [
-    { label: "Dashboard", path: "/dashboard/user", icon: LayoutDashboard },
+    { label: "Dashboard", path: "/dashboard/passenger", icon: LayoutDashboard },
     { label: "Book a Ride", path: "/onway-book", icon: MapPin },
-    ...(rideStatus !== "idle" ? [{ label: "Active Ride", path: "/dashboard/user/ride", icon: Car }] : []),
-    { label: "Ride History", path: "/dashboard/user/ride-history", icon: History },
-    { label: "Refund Request", path: "/dashboard/user/refund", icon: RotateCcw },
-    { label: "Inbox", path: "/dashboard/user/chat", icon: MessageSquareMore },
-    { label: "Profile", path: "/dashboard/user/profile", icon: User },
-    { label: "Wallet", path: "/dashboard/user/wallet", icon: Wallet },
+    ...(rideStatus !== "idle" ? [{ label: "Active Ride", path: "/dashboard/passenger/ride", icon: Car }] : []),
+    { label: "Ride History", path: "/dashboard/passenger/ride-history", icon: History },
+    { label: "Refund Request", path: "/dashboard/passenger/refund", icon: RotateCcw },
+    { label: "Inbox", path: "/dashboard/passenger/chat", icon: MessageSquareMore },
+    { label: "Profile", path: "/dashboard/passenger/profile", icon: User },
+    { label: "Wallet", path: "/dashboard/passenger/wallet", icon: Wallet },
   ];
 
   return (

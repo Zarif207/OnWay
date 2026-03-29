@@ -32,9 +32,10 @@ const VerifyEmail = () => {
         const newOtp = [...otp.map((d, idx) => (idx === index ? element.value : d))];
         setOtp(newOtp);
 
-        if (element.nextSibling && element.value !== "") {
-            element.nextSibling.focus();
+        if (index < 5 && element.value !== "") {
+            inputRefs.current[index + 1].focus();
         }
+
     };
 
     const handleKeyDown = (e, index) => {
@@ -52,7 +53,7 @@ const VerifyEmail = () => {
         const toastId = toast.loading("Verifying & Creating Account...");
 
         try {
-            if (parseInt(enteredOtp) === tempUser.otp) {
+            if (enteredOtp === String(tempUser.otp)) {
 
                 const userData = {
                     name: tempUser.name,
@@ -79,6 +80,15 @@ const VerifyEmail = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData("text").trim();
+        if (!/^\d{6}$/.test(pasteData)) return toast.error("Please paste a valid 6-digit OTP");
+        const newOtp = pasteData.split("");
+        setOtp(newOtp);
+        inputRefs.current[5].focus();
     };
 
     return (
@@ -114,6 +124,7 @@ const VerifyEmail = () => {
                                 value={data}
                                 onChange={(e) => handleChange(e.target, index)}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
+                                onPaste={handlePaste}
                                 className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-black bg-base-100 border-2 border-gray-100 rounded-xl focus:border-primary focus:outline-none transition-all text-neutral"
                             />
                         ))}

@@ -873,6 +873,7 @@ async function startServer() {
         "http://localhost:4000",
         "http://localhost:5000",
         "https://on-way-neon.vercel.app",
+        "https://onway-5g8a.onrender.com",
         process.env.FRONTEND_URL,
       ].filter(Boolean),
       methods: ["GET", "POST"],

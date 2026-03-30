@@ -49,7 +49,7 @@ function ActiveRideContent() {
   // 1. Fetch Booking Initial State
   useEffect(() => {
     if (!bookingId) {
-      router.push("/onway-book");
+      router.push("/dashboard/passenger/ride");
       return;
     }
 

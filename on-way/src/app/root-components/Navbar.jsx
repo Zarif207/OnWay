@@ -168,8 +168,8 @@ const Navbar = () => {
     return () => window.removeEventListener("profile:updated", handler);
   }, []);
 
-  const rawRole = user?.role || session?.user?.role || "user";
-  const role = useMemo(() => rawRole, [rawRole]);
+  const rawRole = user?.role || session?.user?.role || "passenger";
+  const role = useMemo(() => rawRole === "user" ? "passenger" : rawRole, [rawRole]);
 
   const dashboardHref = useMemo(() => {
     const href = `/dashboard/${role}`;

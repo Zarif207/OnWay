@@ -23,6 +23,7 @@ export const RideProvider = ({ children }) => {
   const [distance, setDistance] = useState(0);
   const [rideType, setRideType] = useState("classic");
   const [isPaid, setIsPaid] = useState(false);
+  const [bookingId, setBookingId] = useState(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -40,6 +41,7 @@ export const RideProvider = ({ children }) => {
       setDistance(data.distance);
       setRideType(data.rideType || "classic");
       setIsPaid(data.isPaid || false);
+      setBookingId(data.bookingId || null);
     }
   }, []);
 
@@ -48,13 +50,13 @@ export const RideProvider = ({ children }) => {
     if (rideStatus !== "idle") {
       const rideData = {
         rideStatus, pickup, dropoff, assignedDriver,
-        routeGeometry, otp, fare, duration, distance, rideType, isPaid
+        routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
       };
       localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
     } else {
       localStorage.removeItem("onway_current_ride");
     }
-  }, [rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid]);
+  }, [rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId]);
 
   const startSearching = (details) => {
     setPickup(details.pickup);
@@ -64,6 +66,7 @@ export const RideProvider = ({ children }) => {
     setDuration(details.duration);
     setDistance(details.distance);
     setRideType(details.rideType);
+    setBookingId(details.bookingId || null);
     setRideStatus("searching");
     setIsPaid(false);
   };
@@ -83,7 +86,15 @@ export const RideProvider = ({ children }) => {
 
   const completeRide = () => setRideStatus("completed");
 
-  const markAsPaid = () => setIsPaid(true);
+  const markAsPaid = () => {
+    // Clear ride state immediately
+    localStorage.removeItem("onway_current_ride");
+    // Redirect to payment gateway with booking amount
+    const params = new URLSearchParams();
+    if (bookingId) params.set("bookingId", bookingId);
+    if (fare) params.set("amount", fare);
+    window.location.href = `/payment?${params.toString()}`;
+  };
 
   const cancelRide = () => {
     setRideStatus("idle");
@@ -98,7 +109,7 @@ export const RideProvider = ({ children }) => {
 
   return (
     <RideContext.Provider value={{
-      rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid,
+      rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
       startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide,
       MOCK_DRIVERS
     }}>

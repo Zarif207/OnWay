@@ -1,17 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
-export default function PaymentPage() {
+function PaymentContent() {
+  const searchParams = useSearchParams();
+  const amountFromUrl = searchParams.get("amount");
+  const bookingIdFromUrl = searchParams.get("bookingId");
+
   const [paymentData, setPaymentData] = useState({
-    amount: "",
+    amount: amountFromUrl || "",
     customerName: "",
     customerEmail: "",
     customerPhone: "",
     productName: "Ride Payment",
   });
+
+  useEffect(() => {
+    if (amountFromUrl) {
+      setPaymentData(prev => ({ ...prev, amount: amountFromUrl }));
+    }
+  }, [amountFromUrl]);
 
   const [cardDetails, setCardDetails] = useState({
     cardNumber: "",
@@ -417,5 +428,17 @@ export default function PaymentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    }>
+      <PaymentContent />
+    </Suspense>
   );
 }

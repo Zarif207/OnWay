@@ -350,11 +350,12 @@ export default function BookRidePage() {
     const selectedDriver = MOCK_DRIVERS.find(d => d.vehicleType === mappedType) || MOCK_DRIVERS[0];
 
     // Use global context to start searching
+    const currentFare = fare > 0 ? fare : calculateFare(distance, rideType, surge.multiplier);
     startSearching({
       pickup: pickupLocation,
       dropoff: dropoffLocation,
       routeGeometry: routeGeometry,
-      fare: fare,
+      fare: currentFare,
       duration: duration,
       distance: distance,
       rideType: rideType
@@ -379,6 +380,19 @@ export default function BookRidePage() {
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
+  }, []);
+
+  // If payment was done or localStorage cleared, reset ride state
+  useEffect(() => {
+    const saved = localStorage.getItem("onway_current_ride");
+    if (!saved && rideStatus !== "idle") {
+      cancelRide();
+    }
+    // If paid, always reset
+    if (isPaid) {
+      cancelRide();
+      localStorage.removeItem("onway_current_ride");
+    }
   }, []);
 
   return (
@@ -673,12 +687,6 @@ export default function BookRidePage() {
                 </div>
 
                 <div className="space-y-3">
-                  <button
-                    onClick={() => router.push("/dashboard/passenger/ride")}
-                    className="w-full py-5 bg-primary text-white font-black rounded-2xl hover:bg-primary/95 transition active:scale-[0.98] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-tighter"
-                  >
-                    Track My Ride <ArrowRight size={20} />
-                  </button>
                   <button
                     onClick={handleCancelBooking}
                     className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-gray-100 hover:text-red-500 transition active:scale-[0.98] text-sm uppercase tracking-widest"

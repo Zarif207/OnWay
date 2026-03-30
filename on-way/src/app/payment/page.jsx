@@ -111,6 +111,7 @@ function PaymentContent() {
           customerPhone: paymentData.customerPhone,
           productName: paymentData.productName,
           paymentMethod: paymentMethod,
+          bookingId: bookingIdFromUrl,
           ...(paymentMethod === "card" && { cardDetails }),
         }),
       });

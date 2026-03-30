@@ -10,6 +10,12 @@ import axios from "axios";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 const GEOCODING_API = `${API_BASE_URL}/geocoding`;
 
+// Global suggestions cache to prevent redundant API calls
+const suggestionCache = new Map();
+// Global Promise queue to strictly serialize all geocoding requests (ratelimit protection)
+let globalRequestQueue = Promise.resolve();
+const SERIAL_DELAY = 1200; // 1.2s gap between API hits
+
 /**
  * Geocode an address to coordinates with enhanced accuracy
  * @param {string} query - The address or location name to search
@@ -141,32 +147,62 @@ export const getLocationSuggestions = async (query, countryCode = 'BD', signal =
     return [];
   }
 
-  try {
-    const response = await axios.get(`${GEOCODING_API}/search`, {
-      params: {
-        q: query.trim(),
-        countryCode: countryCode,
-        limit: 8
-      },
-      timeout: 8000,
-      signal: signal
-    });
-
-    if (!response.data || !response.data.success) return [];
-
-    return response.data.data.map(result => ({
-      lat: parseFloat(result.lat),
-      lon: parseFloat(result.lon),
-      name: result.name,
-      address: result.address || {},
-      type: result.type || 'unknown'
-    })).filter(item => !isNaN(item.lat) && !isNaN(item.lon));
-
-  } catch (error) {
-    if (axios.isCancel(error)) {
-      throw error; // Let the caller handle cancellation silently
-    }
-    console.error("Failed to get location suggestions:", error);
-    throw error; // Re-throw so caller can handle 429 etc.
+  const cacheKey = `${query.trim()}_${countryCode}`;
+  if (suggestionCache.has(cacheKey)) {
+    return suggestionCache.get(cacheKey);
   }
+
+  // Chain this request to the global queue
+  globalRequestQueue = globalRequestQueue.then(async () => {
+    // 1. Check if already aborted before starting
+    if (signal?.aborted) return;
+
+    // 2. Wait for the mandatory gap
+    await new Promise(resolve => setTimeout(resolve, SERIAL_DELAY));
+
+    // 3. Check again after waiting
+    if (signal?.aborted) return;
+
+    try {
+      const response = await axios.get(`${GEOCODING_API}/search`, {
+        params: {
+          q: query.trim(),
+          countryCode: countryCode, 
+          limit: 8
+        },
+        timeout: 8000,
+        signal: signal
+      });
+
+      if (!response.data || !response.data.success) return [];
+
+      const results = response.data.data.map(result => ({
+        lat: parseFloat(result.lat),
+        lon: parseFloat(result.lon),
+        name: result.name,
+        address: result.address || {},
+        type: result.type || 'unknown'
+      })).filter(item => !isNaN(item.lat) && !isNaN(item.lon));
+
+      // Cache the results
+      suggestionCache.set(cacheKey, results);
+      if (suggestionCache.size > 100) {
+        const firstKey = suggestionCache.keys().next().value;
+        suggestionCache.delete(firstKey);
+      }
+
+      return results;
+    } catch (error) {
+      if (axios.isCancel(error) || error.name === 'AbortError') return [];
+      console.error("Geocoding queue error:", error);
+      // Return empty array instead of throwing to keep the chain "healthy" for the next request
+      return [];
+    }
+  }).catch(err => {
+    // Top-level catch for the chain link to ensure globalRequestQueue persists as a resolved promise
+    console.error("Critical queue failure:", err);
+    return [];
+  });
+
+  return globalRequestQueue;
 };

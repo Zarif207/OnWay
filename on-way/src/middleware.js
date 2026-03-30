@@ -6,16 +6,15 @@ import { auth } from "@/auth";
 const ROLE_ROUTES = {
   admin: "/dashboard/admin",
   rider: "/dashboard/rider",
-  user: "/dashboard/passenger",
   passenger: "/dashboard/passenger",
+  user: "/dashboard/passenger",
   supportAgent: "/dashboard/supportAgent",
 };
 
 const PROTECTED_ROUTES = [
   { path: "/dashboard/admin", allowedRoles: ["admin"] },
   { path: "/dashboard/rider", allowedRoles: ["rider"] },
-  { path: "/dashboard/passenger", allowedRoles: ["user", "passenger"] },
-  { path: "/dashboard/user", allowedRoles: ["user", "passenger"] },
+  { path: "/dashboard/passenger", allowedRoles: ["passenger", "user"] },
   { path: "/dashboard/supportAgent", allowedRoles: ["supportAgent"] },
 ];
 

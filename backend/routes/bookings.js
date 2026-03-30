@@ -282,7 +282,7 @@ module.exports = (bookingsCollection) => {
     router.patch("/:id", async (req, res) => {
         try {
             const { id } = req.params;
-            const { bookingStatus } = req.body;
+            const { bookingStatus, riderId, paymentStatus } = req.body;
 
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
@@ -291,14 +291,14 @@ module.exports = (bookingsCollection) => {
                 });
             }
 
+            const updateData = { updatedAt: new Date() };
+            if (bookingStatus) updateData.bookingStatus = bookingStatus;
+            if (paymentStatus) updateData.paymentStatus = paymentStatus;
+            if (riderId) updateData.riderId = ObjectId.isValid(riderId) ? new ObjectId(riderId) : riderId;
+
             const result = await bookingsCollection.updateOne(
                 { _id: new ObjectId(id) },
-                {
-                    $set: {
-                        bookingStatus,
-                        updatedAt: new Date()
-                    }
-                }
+                { $set: updateData }
             );
 
             if (result.matchedCount === 0) {

@@ -155,21 +155,10 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  // Listen for profile image updates from any dashboard
-  useEffect(() => {
-    const saved = localStorage.getItem("navbar:profileImage");
-    if (saved) setLocalImage(saved);
-
-    const handler = (e) => {
-      const img = e.detail?.image || localStorage.getItem("navbar:profileImage");
-      if (img) setLocalImage(img);
-    };
-    window.addEventListener("profile:updated", handler);
-    return () => window.removeEventListener("profile:updated", handler);
-  }, []);
-
-  const rawRole = user?.role || session?.user?.role || "passenger";
-  const role = useMemo(() => rawRole === "user" ? "passenger" : rawRole, [rawRole]);
+  const rawRole = user?.role || session?.user?.role || "user";
+  const role = useMemo(() => {
+    return rawRole?.toLowerCase() === "user" ? "passenger" : rawRole;
+  }, [rawRole]); 
 
   const dashboardHref = useMemo(() => {
     const href = `/dashboard/${role}`;
@@ -288,7 +277,7 @@ const Navbar = () => {
       case "passenger":
       case "user": return "/dashboard/passenger/profile";
       case "supportagent":
-      case "support": return "/dashboard/supportAgent/settings";
+      case "support": return "/dashboard/support/profile";
       default: return "/dashboard/passenger/profile";
     }
   };

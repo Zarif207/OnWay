@@ -16,14 +16,15 @@ function PaymentSuccessContent() {
       icon: "🎉",
     });
 
-    const bookingId = localStorage.getItem("onway_pending_bookingId");
-    localStorage.removeItem("onway_pending_bookingId");
+    const urlBookingId = searchParams.get("bookingId");
+    const localBookingId = localStorage.getItem("onway_pending_bookingId");
+    const targetBookingId = urlBookingId || localBookingId;
 
     const timer = setTimeout(() => {
-      if (bookingId) {
-        router.push(`/dashboard/passenger/active-ride?bookingId=${bookingId}`);
+      if (targetBookingId) {
+        window.location.href = `/dashboard/passenger/ride?bookingId=${targetBookingId}`;
       } else {
-        router.push("/dashboard/passenger/active-ride");
+        window.location.href = "/dashboard/passenger/ride";
       }
     }, 2000);
 

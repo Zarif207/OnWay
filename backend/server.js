@@ -533,7 +533,7 @@ app.use("/api/refunds", (req, res, next) => {
 });
 
 app.use("/api/payment", (req, res, next) => {
-  paymentRoutes(req.collections.paymentsCollection)(req, res, next);
+  paymentRoutes(req.collections)(req, res, next);
 });
 
 app.use("/api/riders", (req, res, next) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import axios from "axios";
 
 const RideContext = createContext();
 
@@ -25,7 +26,7 @@ export const RideProvider = ({ children }) => {
   const [isPaid, setIsPaid] = useState(false);
   const [bookingId, setBookingId] = useState(null);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount & AUTO-SYNC with Backend
   useEffect(() => {
     const savedRide = localStorage.getItem("onway_current_ride");
     if (savedRide) {
@@ -42,6 +43,11 @@ export const RideProvider = ({ children }) => {
       setRideType(data.rideType || "classic");
       setIsPaid(data.isPaid || false);
       setBookingId(data.bookingId || null);
+
+      // --- AUTO-SYNC: If ride is not marked as paid, check backend immediately ---
+      if (data.bookingId && !data.isPaid) {
+        checkPaymentStatus(data.bookingId);
+      }
     }
   }, []);
 
@@ -50,6 +56,13 @@ export const RideProvider = ({ children }) => {
     if (rideStatus !== "idle") {
       const rideData = {
         rideStatus, pickup, dropoff, assignedDriver,
+        routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
+      };
+      localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
+    } else if (isPaid === false && bookingId) {
+      // Keep context if unpaid but ride cleared (important for dashboard enforcement)
+      const rideData = {
+        rideStatus: "completed", pickup, dropoff, assignedDriver,
         routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
       };
       localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
@@ -71,11 +84,16 @@ export const RideProvider = ({ children }) => {
     setIsPaid(false);
   };
 
-  const setMatched = (driver) => {
-    setAssignedDriver(driver || MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)]);
+  const setMatched = (driverData) => {
+    const driver = driverData || MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)];
+    setAssignedDriver(driver);
     setRideStatus("accepted");
-    // Generate mock OTP
-    setOtp(Math.floor(1000 + Math.random() * 9000).toString());
+    // Use driver's OTP if provided, otherwise generate one
+    if (driver.otp) {
+      setOtp(driver.otp);
+    } else {
+      setOtp(Math.floor(1000 + Math.random() * 9000).toString());
+    }
   };
 
   const setArriving = () => setRideStatus("arriving");
@@ -95,6 +113,33 @@ export const RideProvider = ({ children }) => {
     window.location.href = `/payment?${params.toString()}`;
   };
 
+  const checkPaymentStatus = async (id) => {
+    const checkId = id || bookingId;
+    if (!checkId) return null;
+
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+      const res = await axios.get(`${API_BASE_URL}/bookings/${checkId}`);
+      if (res.data.success && res.data.booking) {
+        const backendStatus = res.data.booking.paymentStatus;
+        if (backendStatus === "paid") {
+          setIsPaid(true);
+          // Sync localStorage immediately so other components/layouts see it
+          const saved = localStorage.getItem("onway_current_ride");
+          if (saved) {
+            const data = JSON.parse(saved);
+            data.isPaid = true;
+            localStorage.setItem("onway_current_ride", JSON.stringify(data));
+          }
+        }
+        return backendStatus;
+      }
+    } catch (err) {
+      console.error("Error checking payment status:", err);
+    }
+    return null;
+  };
+
   const cancelRide = () => {
     setRideStatus("idle");
     setPickup(null);
@@ -110,7 +155,7 @@ export const RideProvider = ({ children }) => {
     <RideContext.Provider value={{
       rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
       startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide, setIsPaid,
-      MOCK_DRIVERS
+      checkPaymentStatus, MOCK_DRIVERS
     }}>
       {children}
     </RideContext.Provider>

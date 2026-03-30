@@ -15,20 +15,25 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const StatusBadge = ({ status }) => {
-  if (status === "completed")
-    return <span className="px-2.5 py-1 bg-[#2FCA71]/10 text-[#2FCA71] text-xs font-bold uppercase tracking-wider rounded-md">Completed</span>;
-  if (status === "cancelled")
-    return <span className="px-2.5 py-1 bg-red-100 text-red-600 text-xs font-bold uppercase tracking-wider rounded-md">Cancelled</span>;
-  if (status === "searching")
-    return <span className="px-2.5 py-1 bg-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-md">Searching</span>;
-  return <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-bold uppercase tracking-wider rounded-md">{status}</span>;
+  const configs = {
+    completed: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    cancelled: "bg-red-50 text-red-600 border-red-100",
+    searching: "bg-blue-50 text-blue-600 border-blue-100",
+    arriving: "bg-amber-50 text-amber-600 border-amber-100",
+  };
+  const config = configs[status] || "bg-slate-50 text-slate-600 border-slate-100";
+  return (
+    <span className={`px-3 py-1 border rounded-lg text-[10px] font-black uppercase tracking-widest ${config}`}>
+      {status}
+    </span>
+  );
 };
 
 const SCHEDULED_RIDES = [
-  { id: 1, pickup: "Navana Tower, Gulshan Ave", dropoff: "Hazrat Shahjalal Int. Airport", date: "Tomorrow, 8:00 AM" },
+  { id: 1, pickup: "Navana Tower, Gulshan Ave", dropoff: "Hazrat Shahjalal Int. Airport", date: "Tomorrow, 08:30 AM" },
 ];
 
 export default function UserDashboard() {
@@ -53,15 +58,15 @@ export default function UserDashboard() {
       toast.error("Please enter both pickup and destination");
       return;
     }
-    router.push(`/dashboard/passenger/book-ride?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
+    router.push(`/onway-book?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
   };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 5) return "Good Night";
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
+    if (hour < 5) return "Good night";
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
   };
 
   // Fetch stats
@@ -72,14 +77,13 @@ export default function UserDashboard() {
         const res = await axios.get(`${API_BASE_URL}/bookings?passengerId=${passengerId}`);
         const rides = res.data.data || [];
         const completed = rides.filter(r => r.bookingStatus === "completed").length;
-        const cancelled = rides.filter(r => r.bookingStatus === "cancelled").length;
         const totalDist = rides.reduce((acc, r) => acc + (r.distance || 0), 0);
 
         setStats([
-          { label: "Total Rides", value: rides.length, icon: Car, color: "text-blue-500", bg: "bg-blue-50" },
-          { label: "Completed", value: completed, icon: CheckCircle2, color: "text-[#2FCA71]", bg: "bg-[#2FCA71]/10" },
-          { label: "Cancelled", value: cancelled, icon: XCircle, color: "text-red-500", bg: "bg-red-50" },
-          { label: "Distance", value: `${totalDist.toFixed(1)} km`, icon: Route, color: "text-purple-500", bg: "bg-purple-50" },
+          { label: "Bookings", value: rides.length, icon: Car, color: "text-emerald-500", bg: "bg-emerald-50" },
+          { label: "Done", value: completed, icon: CheckCircle2, color: "text-blue-500", bg: "bg-blue-50" },
+          { label: "Miles", value: `${totalDist.toFixed(1)}k`, icon: Route, color: "text-slate-900", bg: "bg-slate-100" },
+          { label: "Rating", value: "4.9", icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
         ]);
         setRecentRides(rides.slice(0, 3));
       } catch (err) {
@@ -98,100 +102,35 @@ export default function UserDashboard() {
     const socket = getPassengerSocket(passengerId);
     socketRef.current = socket;
 
-    // Passenger room এ join করো
-    socket.emit("registerUser", { userId: passengerId, role: "passenger" });
+    socket.emit("registerUser", { userId: passengerId, role: "user" });
     socket.emit("joinNotifications", passengerId);
 
-    console.log("🔌 Passenger socket connected, id:", passengerId);
-
-    // URL থেকে searching state নাও
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("searching") === "true") {
       setIsSearching(true);
-      // URL clean করো
       window.history.replaceState({}, "", "/dashboard/passenger");
     }
 
     const handleRideAccepted = (data) => {
-      console.log("✅ ride:accepted received:", JSON.stringify(data));
       setIsSearching(false);
       setMatchedDriver(data);
       setRideStatus("accepted");
-      toast.success("Driver Found! Your ride is on the way.", {
-        icon: "🚗",
-        style: { borderRadius: "15px", background: "#011421", color: "#fff" },
-        duration: 5000,
-      });
+      toast.success("Driver Found! Your ride is on the way.");
     };
 
     const handleTripStarted = (data) => {
       const bookingId = data?.bookingId || data?.rideId;
-      console.log("🚀 Trip started:", bookingId);
       setRideStatus("ongoing");
-      toast.success("Trip Started!", {
-        icon: "🛣️",
-        style: { borderRadius: "15px", background: "#011421", color: "#fff" },
-      });
       if (bookingId) {
         router.push(`/dashboard/passenger/active-ride?bookingId=${bookingId}`);
       }
     };
 
     const handleRideExpired = () => {
-      console.log("⏰ Ride expired");
       setIsSearching(false);
       setRideStatus("expired");
-      toast.error("No drivers found nearby. Please try again.", {
-        style: { borderRadius: "15px" },
-        duration: 5000,
-      });
+      toast.error("No drivers found nearby.");
     };
-
-    const handleDriverArrived = (data) => {
-      console.log("📍 Driver arrived:", data);
-      toast.success("Driver has arrived at your pickup point!", {
-        icon: "📍",
-        style: { borderRadius: "15px", background: "#011421", color: "#fff" },
-        duration: 6000,
-      });
-    };
-
-    const handlePriceOffer = (data) => {
-      console.log("💸 Price offer received:", data);
-      toast((t) => (
-        <div className="flex flex-col gap-2">
-          <p className="font-bold">Driver offered ৳{data.offeredPrice}</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                socket.emit("confirm_booking", {
-                  rideId: data.rideId || data.bookingId,
-                  driverId: data.driverId,
-                });
-                toast.dismiss(t.id);
-              }}
-              className="flex-1 bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold"
-            >
-              Accept
-            </button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-bold"
-            >
-              Decline
-            </button>
-          </div>
-        </div>
-      ), { duration: 15000, style: { borderRadius: "15px" } });
-    };
-
-    socket.on("ride:accepted", handleRideAccepted);
-    socket.on("rideAccepted", handleRideAccepted);
-    socket.on("trip_started", handleTripStarted);
-    socket.on("ride:started", handleTripStarted);
-    socket.on("ride-expired", handleRideExpired);
-    socket.on("driver:arrived", handleDriverArrived);
-    socket.on("price_offer_received", handlePriceOffer);
 
     return () => {
       socket.off("ride:accepted", handleRideAccepted);
@@ -199,193 +138,212 @@ export default function UserDashboard() {
       socket.off("trip_started", handleTripStarted);
       socket.off("ride:started", handleTripStarted);
       socket.off("ride-expired", handleRideExpired);
-      socket.off("driver:arrived", handleDriverArrived);
-      socket.off("price_offer_received", handlePriceOffer);
     };
   }, [passengerId, router]);
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 space-y-6 md:space-y-8">
-
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 pb-6">
-        <div className="flex items-center gap-4">
-          <img
-            src={session?.user?.image || `https://ui-avatars.com/api/?name=${session?.user?.name || "passenger"}&background=2FCA71&color=fff&size=128`}
-            alt="Profile"
-            className="w-16 h-16 rounded-full border-2 border-white shadow-sm"
-          />
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-              {getGreeting()}, {session?.user?.name?.split(" ")[0] || "there"} 👋
-            </h1>
-            <p className="text-gray-500 text-sm md:text-base font-medium">
-              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-            </p>
+    <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-12 pb-24">
+      {/* Immersive Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-12 border-b border-slate-100">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Identity Verified</span>
           </div>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">
+            {getGreeting()}, <span className="text-emerald-500">{session?.user?.name?.split(" ")[0]}</span>.
+          </h1>
+          <p className="text-slate-400 font-bold text-lg tracking-tight">Ready for a premium journey today?</p>
         </div>
-        <button className="p-3 bg-gray-50 text-gray-600 hover:text-[#2FCA71] hover:bg-[#2FCA71]/10 rounded-full transition relative">
-          <Bell size={24} />
-          <span className="absolute top-2.5 right-3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
-        </button>
+        <div className="flex items-center gap-4">
+           <div className="text-right hidden sm:block">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Local Time</p>
+              <p className="text-sm font-black text-slate-900">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+           </div>
+           <button className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center hover:scale-105 transition-all shadow-xl shadow-slate-900/10">
+              <Bell size={24} />
+           </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Main Content Area */}
+        <div className="lg:col-span-8 space-y-10">
+          
+          {/* Hero Search Section */}
+          <div className="bg-slate-900 rounded-[3.5rem] p-10 md:p-14 text-white relative overflow-hidden shadow-2xl">
+            <div className="absolute right-[-10%] top-[-10%] opacity-10 rotate-12">
+               <MapPin size={400} />
+            </div>
+            
+            <div className="relative z-10 max-w-lg">
+              <h2 className="text-3xl font-black mb-10 tracking-tighter">Your next destination awaits.</h2>
+              
+              <div className="space-y-4 mb-10">
+                <div className="group relative">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 group-focus-within:scale-110 transition-transform">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Where from?" 
+                    value={pickup} 
+                    onChange={(e) => setPickup(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 pl-16 pr-8 text-white font-black placeholder:text-slate-500 focus:bg-white/10 focus:border-emerald-500/50 outline-none transition-all"
+                  />
+                </div>
 
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6 text-gray-900">
+                <div className="group relative">
+                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 group-focus-within:scale-110 transition-transform">
+                    <MapPin size={20} />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Where to?" 
+                    value={dropoff} 
+                    onChange={(e) => setDropoff(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 pl-16 pr-8 text-white font-black placeholder:text-slate-500 focus:bg-white/10 focus:border-emerald-500/50 outline-none transition-all"
+                  />
+                </div>
+              </div>
 
-          {/* Quick Ride */}
-          <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm relative overflow-hidden">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#2FCA71]/10 rounded-full blur-3xl pointer-events-none" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Where do you want to go today?</h2>
-            <div className="flex flex-col gap-4 relative z-10">
-              <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100 focus-within:border-[#2FCA71] focus-within:ring-1 focus-within:ring-[#2FCA71] transition">
-                <div className="p-2 bg-white text-gray-500 rounded-xl shadow-sm"><MapPin size={20} /></div>
-                <input type="text" placeholder="Enter pickup location" value={pickup} onChange={(e) => setPickup(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none px-2 font-medium placeholder:font-normal" />
-              </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100 focus-within:border-[#2FCA71] focus-within:ring-1 focus-within:ring-[#2FCA71] transition">
-                <div className="p-2 bg-white text-gray-500 rounded-xl shadow-sm"><MapPin size={20} className="text-[#2FCA71]" /></div>
-                <input type="text" placeholder="Enter destination" value={dropoff} onChange={(e) => setDropoff(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none px-2 font-medium placeholder:font-normal" />
-              </div>
-              <button onClick={handleRequestRide}
-                className="mt-2 w-full bg-[#2FCA71] hover:bg-[#25A65B] text-white font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#2FCA71]/20 hover:-translate-y-0.5">
-                Book Ride <ArrowRight size={20} />
+              <button 
+                onClick={handleRequestRide}
+                className="w-full py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl flex items-center justify-center gap-4 transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-[0.2em] text-xs"
+              >
+                Find Drivers <ArrowRight size={20} />
               </button>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Stats Dashboard */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {loadingStats ? (
-              [...Array(4)].map((_, i) => <div key={i} className="bg-white p-5 rounded-2xl border border-gray-200 animate-pulse h-32" />)
+              [...Array(4)].map((_, i) => <div key={i} className="bg-slate-50 rounded-3xl h-32 animate-pulse" />)
             ) : (
               stats.map((stat, idx) => (
-                <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition group flex flex-col items-center text-center">
-                  <div className={`p-3 rounded-xl mb-3 ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
-                    <stat.icon size={24} />
+                <div key={idx} className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-emerald-100 transition-colors">
+                  <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <stat.icon size={22} />
                   </div>
-                  <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{stat.value}</span>
-                  <span className="text-sm font-semibold text-gray-500 mt-1">{stat.label}</span>
+                  <span className="text-2xl font-black text-slate-900 tracking-tighter">{stat.value}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{stat.label}</span>
                 </div>
               ))
             )}
           </div>
 
-          {/* Recent Rides */}
-          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800">Recent Rides</h2>
-              <button className="text-sm font-bold text-[#2FCA71] hover:text-[#25A65B] flex items-center gap-1">
-                View All <ChevronRight size={16} />
+          {/* Recent History */}
+          <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Recent Journeys</h2>
+              <button className="px-5 py-2 bg-slate-50 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition">
+                Full Log
               </button>
             </div>
+            
             <div className="space-y-4">
               {recentRides.length > 0 ? recentRides.map((ride) => (
-                <div key={ride._id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-mono font-bold text-gray-400">#{String(ride._id).slice(-6).toUpperCase()}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300" />
-                      <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
-                        <Clock size={12} /> {new Date(ride.createdAt).toLocaleDateString()}
-                      </span>
+                <div key={ride._id} className="group flex items-center justify-between p-6 bg-slate-50/50 rounded-3xl border border-transparent hover:border-slate-100 hover:bg-white transition-all cursor-pointer">
+                  <div className="flex items-center gap-6">
+                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                       <Car size={24} />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-2 h-2 rounded-full bg-gray-800" />
-                        <div className="w-0.5 h-6 bg-gray-300" />
-                        <div className="w-2 h-2 rounded-sm bg-[#2FCA71]" />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <span className="font-bold text-gray-900 text-sm leading-none line-clamp-1">
-                          {ride.pickupLocation?.address || ride.pickupLocation?.name || "Pickup"}
-                        </span>
-                        <span className="font-bold text-gray-900 text-sm leading-none line-clamp-1">
-                          {ride.dropoffLocation?.address || ride.dropoffLocation?.name || "Destination"}
-                        </span>
-                      </div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{String(ride._id).slice(-6)}</span>
+                           <span className="w-1 h-1 rounded-full bg-slate-200" />
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(ride.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="font-black text-slate-900 tracking-tight line-clamp-1">{ride.dropoffLocation?.address || "Destination set"}</p>
                     </div>
                   </div>
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6 shrink-0">
-                    <span className="font-extrabold text-gray-900 text-lg mb-0 md:mb-2">৳{ride.price || ride.fare || 0}</span>
-                    <StatusBadge status={ride.bookingStatus} />
+                  <div className="text-right flex flex-col items-end gap-2">
+                     <p className="text-xl font-black text-slate-900 tracking-tighter">৳{ride.price || ride.fare}</p>
+                     <StatusBadge status={ride.bookingStatus} />
                   </div>
                 </div>
               )) : (
-                <div className="py-10 text-center text-gray-400 font-medium">No recent rides found.</div>
+                <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No travel history discovered</div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-gray-900 text-white rounded-3xl p-6 relative overflow-hidden shadow-lg">
-            <div className="absolute right-0 bottom-0 w-32 h-32 bg-[#2FCA71]/20 rounded-full blur-3xl" />
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-2 text-gray-300 font-medium">
-                <Wallet size={18} className="text-[#2FCA71]" /> Wallet Balance
-              </div>
-              <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition">
-                <MoreHorizontal size={18} />
-              </Link>
-            </div>
-            <div className="mb-6 relative z-10">
-              <span className="text-4xl font-extrabold tracking-tight">৳1,250</span>
-              <div className="text-sm text-gray-400 mt-1 bg-gray-800 inline-block px-2.5 py-1 rounded-md">Includes ৳350 Ride Credits</div>
-            </div>
-            <div className="flex gap-2 relative z-10">
-              <Link href="/dashboard/passenger/wallet" className="flex-1 bg-[#2FCA71] hover:bg-[#25A65B] text-white text-center font-bold py-2.5 rounded-xl transition">Add Money</Link>
-              <Link href="/dashboard/passenger/wallet" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-center font-bold py-2.5 rounded-xl transition">History</Link>
-            </div>
-            <Link href="/dashboard/passenger/wallet" className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"><MoreHorizontal size={18} /></Link>
+        {/* Sidebar Panel */}
+        <div className="lg:col-span-4 space-y-8">
+          
+          {/* Wallet Card */}
+          <div className="bg-emerald-600 rounded-[3rem] p-10 text-white shadow-2xl shadow-emerald-600/20 relative overflow-hidden">
+             <div className="absolute -right-10 -top-10 opacity-10">
+                <Wallet size={150} />
+             </div>
+             <div className="relative z-10">
+                <div className="flex items-center justify-between mb-8">
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80">Secure Credit</p>
+                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                      <Wallet size={20} />
+                   </div>
+                </div>
+                <div className="space-y-1 mb-10">
+                   <p className="text-5xl font-black tracking-tighter">৳1,420</p>
+                   <p className="text-xs font-bold text-emerald-100/60 uppercase tracking-widest italic">Instant Payouts Enabled</p>
+                </div>
+                <div className="flex gap-3">
+                   <button className="flex-1 py-4 bg-white text-emerald-600 font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-emerald-50 transition active:scale-95">Top Up</button>
+                   <button className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center hover:bg-emerald-400 transition">
+                      <MoreHorizontal size={24} />
+                   </button>
+                </div>
+             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Clock size={20} className="text-[#2FCA71]" /> Scheduled
-            </h2>
-            {SCHEDULED_RIDES.length > 0 ? (
-              <div className="space-y-4">
-                {SCHEDULED_RIDES.map((ride) => (
-                  <div key={ride.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div className="font-bold text-[#2FCA71] mb-2">{ride.date}</div>
-                    <div className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400" /> {ride.pickup}
-                    </div>
-                    <div className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#2FCA71]" /> {ride.dropoff}
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="flex-1 bg-white border border-gray-200 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition">View Details</button>
-                      <button className="flex-1 bg-red-50 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-100 transition">Cancel</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-center">
-                <span className="text-gray-400 font-medium">No upcoming rides scheduled.</span>
-              </div>
-            )}
+          {/* Scheduled Rips */}
+          <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm">
+             <div className="flex items-center justify-between mb-8">
+                <h3 className="font-black text-slate-900 tracking-tight flex items-center gap-2">
+                   <Clock size={20} className="text-emerald-500" /> Planned
+                </h3>
+             </div>
+             {SCHEDULED_RIDES.map(ride => (
+                <div key={ride.id} className="space-y-6">
+                   <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100/50">
+                      <p className="text-emerald-600 font-black text-sm mb-4 tracking-tighter">{ride.date}</p>
+                      <div className="space-y-4">
+                         <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-slate-300" />
+                            <p className="text-xs font-black text-slate-900 leading-none truncate">{ride.pickup}</p>
+                         </div>
+                         <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <p className="text-xs font-black text-slate-900 leading-none truncate">{ride.dropoff}</p>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="flex gap-3">
+                      <button className="flex-1 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition">Details</button>
+                      <button className="flex-1 py-3 bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition">Abort</button>
+                   </div>
+                </div>
+             ))}
           </div>
 
-          <motion.div whileHover={{ scale: 1.02 }}
-            className="bg-blue-600 text-white rounded-3xl p-6 border border-blue-500 shadow-xl relative overflow-hidden">
-            <div className="absolute right-[-20px] top-[-20px] text-blue-500 opacity-50 rotate-12">
-              <TicketPercent size={120} />
-            </div>
-            <div className="relative z-10">
-              <span className="inline-block px-2.5 py-1 bg-white/20 rounded-md text-xs font-bold uppercase tracking-wider mb-3">Limited Offer</span>
-              <h3 className="text-xl font-bold leading-tight mb-2">Get 20% off your next ride</h3>
-              <p className="text-blue-100 text-sm mb-4">Use code <span className="font-mono bg-white/20 px-1 py-0.5 rounded">ONWAY20</span> at checkout</p>
-              <Link href="/dashboard/passenger/wallet" className="w-full inline-block text-center bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
-                Apply Promo
-              </Link>
-            </div>
+          {/* Promo Card */}
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl"
+          >
+             <div className="absolute -right-10 -bottom-10 opacity-5 rotate-12">
+                <TicketPercent size={180} />
+             </div>
+             <div className="relative z-10">
+                <span className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest mb-6 inline-block">Flash Offer</span>
+                <h3 className="text-3xl font-black tracking-tighter leading-none mb-4">Elite discount unlocked.</h3>
+                <p className="text-slate-400 text-sm font-bold mb-8 tracking-tight">Enjoy 25% off every premium booking for 48 hours.</p>
+                <button className="w-full py-5 bg-white text-slate-900 font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-emerald-50 transition active:scale-95 shadow-xl">Activate Now</button>
+             </div>
           </motion.div>
         </div>
       </div>
@@ -394,20 +352,20 @@ export default function UserDashboard() {
       <AnimatePresence>
         {isSearching && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2FCA71]/10 backdrop-blur-md">
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl">
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-              className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl border-4 border-[#2FCA71] text-center">
+              className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center">
               <div className="relative w-32 h-32 mx-auto mb-8">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 border-t-4 border-r-4 border-[#2FCA71] rounded-full" />
-                <div className="absolute inset-0 flex items-center justify-center text-[#2FCA71]">
+                  className="absolute inset-0 border-t-4 border-r-4 border-emerald-500 rounded-full" />
+                <div className="absolute inset-0 flex items-center justify-center text-emerald-500">
                   <Car size={48} className="animate-bounce" />
                 </div>
               </div>
-              <h3 className="text-2xl font-black text-gray-900 mb-2">Finding your ride</h3>
-              <p className="text-gray-500 font-medium mb-8">Connecting with nearby drivers...</p>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Finding your ride</h3>
+              <p className="text-slate-400 font-bold mb-8">Connecting with nearby drivers...</p>
               <button onClick={() => setIsSearching(false)}
-                className="w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition">
+                className="w-full py-4 bg-slate-100 text-slate-900 font-black rounded-2xl hover:bg-slate-200 transition">
                 Cancel Search
               </button>
             </motion.div>
@@ -419,18 +377,17 @@ export default function UserDashboard() {
       <AnimatePresence>
         {matchedDriver && rideStatus === "accepted" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-xl">
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl">
             <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-              className="bg-white w-full max-w-md rounded-[3rem] overflow-hidden shadow-2xl border-4 border-[#2FCA71]">
-              <div className="bg-[#2FCA71] p-8 text-white text-center relative">
+              className="bg-white w-full max-w-md rounded-[3rem] overflow-hidden shadow-2xl">
+              <div className="bg-emerald-500 p-8 text-white text-center relative">
                 <button className="absolute top-4 right-4 bg-white/20 p-2 rounded-full hover:bg-white/30 transition"
                   onClick={() => { setMatchedDriver(null); setRideStatus(null); }}>
                   <XCircle size={20} />
                 </button>
                 <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4 border-4 border-white/30 overflow-hidden">
                   <img
-                    src={matchedDriver.driver?.image || matchedDriver.driver?.avatar ||
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${matchedDriver.driver?.name || "Driver"}`}
+                    src={matchedDriver.driver?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${matchedDriver.driver?.name || "Driver"}`}
                     alt="Driver" className="w-full h-full object-cover"
                   />
                 </div>
@@ -439,73 +396,35 @@ export default function UserDashboard() {
               </div>
 
               <div className="p-8 space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                   <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Driver</p>
-                    <p className="text-xl font-bold text-gray-900">{matchedDriver.driver?.name || "Driver"}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Driver</p>
+                    <p className="text-xl font-bold text-slate-900">{matchedDriver.driver?.name || "Driver"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle</p>
-                    <p className="text-xl font-bold text-gray-900">
-                      {matchedDriver.driver?.vehicle?.color || ""} {matchedDriver.driver?.vehicle?.brand || matchedDriver.driver?.vehicle?.type || "Car"}
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vehicle</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {matchedDriver.driver?.vehicle?.brand || "Car"}
                     </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-amber-100 text-amber-600 p-2 rounded-xl">
-                      <Star size={20} fill="currentColor" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-black text-gray-900 leading-none">{matchedDriver.driver?.rating || "5.0"}</p>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rating</p>
-                    </div>
-                  </div>
-
-                  {/* OTP Display */}
-                  <div className="bg-gray-50 px-6 py-4 rounded-2xl border-2 border-[#2FCA71]/30 text-center">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Your OTP</p>
-                    <p className="text-3xl font-black text-[#2FCA71] tracking-[0.3em]">
-                      {matchedDriver.otp || "----"}
-                    </p>
-                    <p className="text-[9px] text-gray-400 mt-1">Share with driver</p>
                   </div>
                 </div>
 
                 <div className="pt-4 flex gap-2">
                   <button
-                    className="flex-1 py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition"
+                    className="flex-1 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-black transition"
                     onClick={() => window.open(`tel:${matchedDriver.driver?.phone}`, "_self")}
                   >
                     Call Driver
                   </button>
                   <button
                     onClick={() => router.push(`/dashboard/passenger/active-ride?bookingId=${matchedDriver.bookingId || matchedDriver.rideId}`)}
-                    className="flex-1 py-4 bg-[#2FCA71] text-white font-bold rounded-2xl hover:bg-[#25A65B] transition shadow-lg"
+                    className="flex-1 py-4 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition shadow-lg"
                   >
                     Track Ride
                   </button>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Expired Banner */}
-      <AnimatePresence>
-        {rideStatus === "expired" && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[120] bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4"
-          >
-            <XCircle size={20} />
-            <span className="font-bold">No drivers found nearby. Please try again.</span>
-            <button onClick={() => setRideStatus(null)}
-              className="ml-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl font-bold text-sm transition">
-              Dismiss
-            </button>
           </motion.div>
         )}
       </AnimatePresence>

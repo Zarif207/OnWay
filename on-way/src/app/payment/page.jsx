@@ -53,12 +53,7 @@ function PaymentContent() {
       icon: "💰",
       color: "from-orange-500 to-orange-600",
     },
-    {
-      id: "cash",
-      name: "Cash",
-      icon: "💵",
-      color: "from-green-500 to-green-600",
-    },
+    
   ];
 
   const handleChange = (e) => {
@@ -309,7 +304,7 @@ function PaymentContent() {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your name"
+                    placeholder="Your Name"
                   />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -324,7 +319,7 @@ function PaymentContent() {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="your@email.com"
+                      placeholder="Email"
                     />
                   </div>
                   <div>
@@ -338,7 +333,7 @@ function PaymentContent() {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="+880 1XXX-XXXXXX"
+                      placeholder="Number"
                     />
                   </div>
                 </div>
@@ -421,7 +416,7 @@ function PaymentContent() {
               <p className="text-xs text-gray-500 text-center mt-4">
                 {paymentMethod === "cash"
                   ? "💵 Pay when service is provided"
-                  : "🔒 Secured by SSLCommerz"}
+                  : "🔒 Secured by OnWay"}
               </p>
             </div>
           </div>

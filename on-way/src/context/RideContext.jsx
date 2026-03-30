@@ -87,9 +87,8 @@ export const RideProvider = ({ children }) => {
   const completeRide = () => setRideStatus("completed");
 
   const markAsPaid = () => {
-    // Clear ride state immediately
-    localStorage.removeItem("onway_current_ride");
-    // Redirect to payment gateway with booking amount
+    // Save bookingId so payment success page can redirect to active-ride
+    if (bookingId) localStorage.setItem("onway_pending_bookingId", bookingId);
     const params = new URLSearchParams();
     if (bookingId) params.set("bookingId", bookingId);
     if (fare) params.set("amount", fare);
@@ -110,7 +109,7 @@ export const RideProvider = ({ children }) => {
   return (
     <RideContext.Provider value={{
       rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
-      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide,
+      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide, setIsPaid,
       MOCK_DRIVERS
     }}>
       {children}

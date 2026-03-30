@@ -184,7 +184,7 @@ const FaceVerificationCamera = ({ onFaceDetected, onCapture }) => {
             ctx.scale(-1, 1);
             ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-            const base64Image = canvas.toDataURL("image/png");
+            const base64Image = canvas.toDataURL("image/jpeg");
 
             const fullDetection = await faceapi
                 .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())

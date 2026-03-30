@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import HowItWorks from "./components/Home/HowItWorks";
 import HomeLatestReviews from "./components/Home/LatestReviews";
-import ScrollProgress from "./components/ScrollProgress";
 import Contact from "./root-components/Home/Contact";
 import Earn from "./root-components/Home/Earn";
 import Hero from "./root-components/Home/Hero";
@@ -16,7 +15,7 @@ import Transportation from "./root-components/Home/Transportation";
 
 export default function Home() {
   return (
-    <ScrollProgress>
+    <>
       <HomeClientEffects />
       <main className="bg-white">
         {/* <MainHero /> */}
@@ -42,6 +41,6 @@ export default function Home() {
           <Contact />
         </motion.div>
       </main>
-    </ScrollProgress>
+    </>
   );
 }

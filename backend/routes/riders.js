@@ -78,6 +78,8 @@ module.exports = function (collections) {
     { name: 'faceImage', maxCount: 1 },
     { name: 'drivingLicenseFile', maxCount: 1 },
     { name: 'nidImage', maxCount: 1 },
+    { name: 'nidFile', maxCount: 1 },
+    { name: 'passportFile', maxCount: 1 },
     { name: 'vehicleRegistrationFile', maxCount: 1 },
     { name: 'driverLicense', maxCount: 1 },
     { name: 'vehicleDocument', maxCount: 1 }
@@ -139,7 +141,8 @@ module.exports = function (collections) {
       const profileImageUrl = req.files?.profileImage?.[0]?.path || image || null;
       const faceImageUrl = req.files?.faceImage?.[0]?.path || (faceVerification?.verificationImage || req.body.faceImage) || "";
       const driverLicenseUrl = req.files?.drivingLicenseFile?.[0]?.path || req.files?.driverLicense?.[0]?.path || documents?.drivingLicenseFile || "";
-      const nidImageUrl = req.files?.nidImage?.[0]?.path || identity?.image || "";
+      const nidImageUrl = req.files?.nidImage?.[0]?.path || req.files?.nidFile?.[0]?.path || identity?.image || "";
+      const passportUrl = req.files?.passportFile?.[0]?.path || "";
       const vehicleDocumentUrl = req.files?.vehicleRegistrationFile?.[0]?.path || req.files?.vehicleDocument?.[0]?.path || documents?.vehicleRegistrationFile || "";
 
       // Construct parsing logic for potentially stringified objects
@@ -228,8 +231,8 @@ module.exports = function (collections) {
             verified: kycStatus === "verified"
           },
           passport: {
-            uploaded: parsedDocs.files?.passport === "pending_upload" || (req.body.identityType === "Passport") || parsedDocs.passport?.uploaded || submittedDocType === "passport",
-            image: req.body.documentImage || parsedDocs.passport?.image || "",
+            uploaded: parsedDocs.files?.passport === "pending_upload" || !!passportUrl || (req.body.identityType === "Passport") || parsedDocs.passport?.uploaded || submittedDocType === "passport",
+            image: passportUrl || req.body.documentImage || parsedDocs.passport?.image || "",
             extracted: submittedDocType === "passport" ? extractedDataPayload : {},
             verified: kycStatus === "verified"
           },
@@ -933,75 +936,106 @@ module.exports = function (collections) {
   // 🔹 API: Face Verification
   router.post("/face-verification", async (req, res) => {
     try {
-      const { riderId, faceDescriptor, email, image } = req.body;
+      console.log("Incoming Body:", req.body);
+      console.log("Image type:", typeof req.body.image);
+      console.log("Image preview:", req.body.image?.slice(0, 50));
+      console.log("Image length:", req.body.image?.length);
 
-      if (!faceDescriptor || !Array.isArray(faceDescriptor)) {
-        return res.status(400).json({ success: false, message: "Invalid face descriptor." });
+      if (!req.body.image || typeof req.body.image !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or missing image"
+        });
       }
 
-      let imagePath = "";
-      if (image && image.includes("base64")) {
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-        const imageBuffer = Buffer.from(base64Data, "base64");
-        const fileName = `face-${riderId || "reg"}-${Date.now()}.png`;
-        const dir = path.join(__dirname, "../uploads/riders/faces");
-
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-        imagePath = `/uploads/riders/faces/${fileName}`;
-        fs.writeFileSync(path.join(dir, fileName), imageBuffer);
+      let base64Data = req.body.image;
+      if (!base64Data.startsWith("data:image")) {
+        base64Data = `data:image/jpeg;base64,${base64Data}`;
       }
 
-      // Find the existing rider to check for previous verification attempts
-      let existingRider = null;
-      if (riderId) {
-        existingRider = await ridersCollection.findOne({ _id: new ObjectId(riderId) });
-      } else if (email) {
-        existingRider = await ridersCollection.findOne({ email });
+      const { riderId, email, faceDescriptor } = req.body;
+      
+      const cloudinary = require("cloudinary").v2;
+
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+
+      console.log("ENV CHECK:", {
+        cloud: process.env.CLOUDINARY_CLOUD_NAME,
+        key: process.env.CLOUDINARY_API_KEY ? "OK" : "MISSING",
+        secret: process.env.CLOUDINARY_API_SECRET ? "OK" : "MISSING",
+      });
+
+      console.log(`Processing face verification for: ${riderId || email}`);
+
+      let imageUrl = "";
+
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(base64Data, {
+          folder: "onway/riders/faces",
+        });
+
+        console.log("Cloudinary response:", uploadResponse);
+
+        imageUrl = uploadResponse.secure_url;
+
+      } catch (err) {
+        console.error("❌ CLOUDINARY FULL ERROR:", err);
+
+        return res.status(500).json({
+          success: false,
+          message: "Cloudinary upload failed",
+          error: err.message,
+        });
       }
 
-      const currentAttempts = (existingRider?.faceVerification?.verificationAttempts || 0) + 1;
+      if (!imageUrl) {
+        return res.status(500).json({
+          success: false,
+          message: "No image URL returned from Cloudinary"
+        });
+      }
 
+      // 2. Detection (Server-side check)
+      const faceDetected = !!faceDescriptor;
+
+      // 3. Update Rider Record (if exists)
       const faceVerificationData = {
-        isVerified: true,
-        verificationStatus: "verified",
-        verifiedAt: new Date(),
-        verificationMethod: "face_match",
-        confidenceScore: 0.98, // Face-api.js doesn't provide a consolidated score easily here, using a high default
-        verificationImage: imagePath,
-        faceEmbedding: faceDescriptor,
-        lastVerificationAttempt: new Date(),
-        verificationAttempts: currentAttempts
+        isVerified: faceDetected,
+        verificationStatus: faceDetected ? "verified" : "failed",
+        verificationImage: imageUrl,
+        faceEmbedding: faceDescriptor || [],
+        verifiedAt: faceDetected ? new Date() : null,
+        verificationAttempts: 1
       };
 
-      // Find by ID if available, otherwise fallback to email for pending registrations
-      let result;
-      if (riderId) {
-        result = await ridersCollection.findOneAndUpdate(
+      if (riderId && ObjectId.isValid(riderId)) {
+        await ridersCollection.updateOne(
           { _id: new ObjectId(riderId) },
-          { $set: { faceVerification: faceVerificationData, isFaceVerified: true } },
-          { returnDocument: "after" }
+          { $set: { faceVerification: faceVerificationData, isFaceVerified: faceDetected, faceImage: imageUrl } }
         );
       } else if (email) {
-        result = await ridersCollection.findOneAndUpdate(
+        await ridersCollection.updateOne(
           { email },
-          { $set: { faceVerification: faceVerificationData, isFaceVerified: true } },
-          { upsert: true, returnDocument: "after" }
+          { $set: { faceVerification: faceVerificationData, isFaceVerified: faceDetected, faceImage: imageUrl } }
         );
-      } else {
-        return res.status(400).json({ success: false, message: "Rider ID or Email required." });
       }
 
-      console.log(`✅ Face verification completed for: ${riderId || email} (Attempt ${currentAttempts})`);
+      console.log("✅ Face verification processed successfully.");
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-        message: "Face verification completed",
-        data: result.value || result
+        faceDetected: faceDetected,
+        imageUrl: imageUrl,
+        message: faceDetected ? "Face detected and stored" : "No face detected"
       });
+
     } catch (error) {
-      console.error("Face verification error:", error);
-      res.status(500).json({ success: false, message: "Internal server error during verification." });
+      console.error("FULL ERROR:", error.message, error.stack);
+      return res.status(500).json({ success: false, message: "Internal server error during verification: " + error.message });
     }
   });
 

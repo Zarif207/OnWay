@@ -4,6 +4,9 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const {setServers}  = require("node:dns/promises");
+
+setServers(["1.1.1.1", "8.8.8.8"]);
 
 const PORT = process.env.SOCKET_PORT || 4001;
 const uri = process.env.MONGODB_URI;
@@ -873,6 +876,7 @@ async function startServer() {
         "http://localhost:4000",
         "http://localhost:5000",
         "https://on-way-neon.vercel.app",
+        "https://onway-5g8a.onrender.com",
         process.env.FRONTEND_URL,
       ].filter(Boolean),
       methods: ["GET", "POST"],

@@ -10,14 +10,14 @@ import { reverseGeocode } from "@/utils/geocodingService";
 import { useRouter } from "next/navigation";
 import LocationInput from "@/components/LocationInput";
 import NetworkStatus from "@/components/NetworkStatus";
-import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle, Car, Star, Phone, MessageCircle, XCircle, ArrowRight, ShieldCheck, User, Wallet, Navigation } from "lucide-react";
+import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle, Car, Star, Phone, MessageCircle, XCircle, ArrowRight, ShieldCheck, User, Wallet, Navigation, CreditCard } from "lucide-react";
 import '@/styles/location-dropdown.css';
 import { getDemandMultiplier } from "@/utils/demandService";
 import { useRide } from "@/context/RideContext";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/app/root-components/Navbar";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 // Dynamically import the Leaflet map (disables SSR)
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
@@ -49,14 +49,14 @@ export default function BookRidePage() {
   // Weather & Surge states
   const [surge, setSurge] = useState({ multiplier: 1.0, label: "Normal", icon: "☀️" });
   const [trafficInfo, setTrafficInfo] = useState(null);
-  
+
   // UI states
   const [isRouting, setIsRouting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState("pickup");
   const [onlineRiders, setOnlineRiders] = useState({});
-  
+
   const {
     rideStatus, pickup, dropoff, assignedDriver, routeGeometry: contextRoute, isPaid,
     startSearching, setMatched, cancelRide, markAsPaid
@@ -256,21 +256,70 @@ export default function BookRidePage() {
       return;
     }
     if (!session?.user?.id) {
-      setError("Please login.");
+      setError("Please login to book a ride.");
+      alert("Please login to book a ride.");
+      router.push("/login?callbackUrl=/onway-book");
+      return;
+    }
+    if (rideStatus !== "idle" && !isPaid) {
+      const msg = "You have a pending payment for your previous ride. Please complete it before booking a new ride.";
+      setError(msg);
+      alert(msg);
       return;
     }
     setIsSubmitting(true);
     setError("");
-    // Ensure we are in searching state
-    startSearching({
-      pickup: pickupLocation,
-      dropoff: dropoffLocation,
-      routeGeometry: routeGeometry,
-      fare: fare,
-      duration: duration,
-      distance: distance,
-      rideType: rideType
-    });
+    const currentFare = fare > 0 ? fare : calculateFare(distance, rideType, surge.multiplier);
+    
+    let bookingId = null;
+    try {
+      const bookingData = {
+        pickupLocation: { 
+          lat: pickupLocation.lat, 
+          lng: pickupLocation.lon, 
+          address: pickupQuery || pickupLocation.address || "Pickup Point" 
+        },
+        dropoffLocation: { 
+          lat: dropoffLocation.lat, 
+          lng: dropoffLocation.lon, 
+          address: dropoffQuery || dropoffLocation.address || "Drop-off Point" 
+        },
+        routeGeometry,
+        distance,
+        duration,
+        price: currentFare,
+        passengerId: session.user.id,
+        rideType: rideType,
+        surgeApplied: surge.multiplier > 1.0
+      };
+
+      const bookingRes = await axios.post(`${API_BASE_URL}/bookings`, bookingData);
+      
+      if (bookingRes.data.success) {
+        bookingId = bookingRes.data.booking._id;
+        
+        // ONLY start searching if booking was created
+        startSearching({
+          pickup: pickupLocation,
+          dropoff: dropoffLocation,
+          routeGeometry: routeGeometry,
+          fare: currentFare,
+          duration: duration,
+          distance: distance,
+          rideType: rideType,
+          bookingId: bookingId
+        });
+      } else {
+        throw new Error(bookingRes.data.message || "Failed to create booking");
+      }
+    } catch (err) {
+      console.error("Booking creation failed:", err);
+      const errorMsg = err.response?.data?.message || err.message || "Something went wrong. Please try again.";
+      setError(errorMsg);
+      alert(errorMsg);
+      setIsSubmitting(false);
+      return; // Stop flow
+    }
     const delay = Math.floor(Math.random() * 3000) + 2000;
     searchTimeoutRef.current = setTimeout(async () => {
       try {
@@ -298,6 +347,19 @@ export default function BookRidePage() {
           otp: Math.floor(1000 + Math.random() * 9000).toString()
         };
         setMatched(driver);
+        
+        // Update booking in backend with riderId and accepted status
+        if (bookingId) {
+          try {
+            await axios.patch(`${API_BASE_URL}/bookings/${bookingId}`, {
+              riderId: driver.id,
+              bookingStatus: "accepted"
+            });
+          } catch (patchErr) {
+            console.error("Failed to update booking with rider:", patchErr);
+          }
+        }
+        
         setIsSubmitting(false);
       } catch (err) {
         setError("Matching failed.");
@@ -323,10 +385,23 @@ export default function BookRidePage() {
     };
   }, []);
 
+  // If payment was done or localStorage cleared, reset ride state
+  useEffect(() => {
+    const saved = localStorage.getItem("onway_current_ride");
+    if (!saved && rideStatus !== "idle") {
+      cancelRide();
+    }
+    // If paid, always reset
+    if (isPaid) {
+      cancelRide();
+      localStorage.removeItem("onway_current_ride");
+    }
+  }, []);
+
   return (
     <>
       <main className="flex flex-col lg:flex-row h-[calc(100vh-80px)] overflow-hidden relative bg-white selection:bg-blue-100">
-        
+
         {/* LEFT PANEL: Booking Sidebar (Responsive Width, Internal Scroll) */}
         <aside className="w-full lg:w-[420px] h-auto lg:h-full flex-shrink-0 bg-white border-r border-gray-100 flex flex-col z-20 relative shadow-sm">
           <div className="flex-1 overflow-y-auto no-scrollbar p-6 lg:p-8 space-y-8">
@@ -336,7 +411,7 @@ export default function BookRidePage() {
             </header>
 
             {error && (
-              <motion.div initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} className="p-5 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center gap-3">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 shrink-0" />
                 {error}
               </motion.div>
@@ -376,11 +451,10 @@ export default function BookRidePage() {
                   <button
                     key={key}
                     onClick={() => setRideType(key)}
-                    className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center justify-center gap-3 aspect-square group ${
-                      rideType === key 
-                        ? "border-blue-600 bg-blue-50/20 text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02]" 
+                    className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center justify-center gap-3 aspect-square group ${rideType === key
+                        ? "border-blue-600 bg-blue-50/20 text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02]"
                         : "border-gray-50 bg-gray-50/50 hover:bg-gray-100 text-gray-400"
-                    }`}
+                      }`}
                   >
                     <span className="text-5xl mb-1 transform group-hover:scale-110 transition-transform">{data.icon}</span>
                     <div className="text-center">
@@ -394,7 +468,7 @@ export default function BookRidePage() {
 
             <AnimatePresence>
               {surge.multiplier > 1.0 && (
-                <motion.div initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}} className="bg-orange-50/50 border border-orange-100 rounded-2xl p-5 flex items-center justify-between">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-orange-50/50 border border-orange-100 rounded-2xl p-5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-11 h-11 bg-orange-500 text-white rounded-[1rem] flex items-center justify-center text-xl shadow-lg shadow-orange-500/20">⚡</div>
                     <div>
@@ -408,33 +482,39 @@ export default function BookRidePage() {
             </AnimatePresence>
 
             <AnimatePresence>
-               {distance > 0 && (
-                 <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="bg-[#1E293B] rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
-                    <div className="grid grid-cols-2 gap-4 mb-8 relative z-10">
-                       <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                          <Clock className="w-4 h-4 mx-auto mb-2 text-blue-400" />
-                          <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Duration</p>
-                          <p className="text-sm font-black tracking-tight">{duration} min</p>
-                       </div>
-                       <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                          <Route className="w-4 h-4 mx-auto mb-2 text-emerald-400" />
-                          <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Distance</p>
-                          <p className="text-sm font-black tracking-tight">{distance} km</p>
-                       </div>
+              {distance > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[#1E293B] rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                  <div className="grid grid-cols-2 gap-4 mb-8 relative z-10">
+                    <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                      <Clock className="w-4 h-4 mx-auto mb-2 text-blue-400" />
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Duration</p>
+                      <p className="text-sm font-black tracking-tight">{duration} min</p>
                     </div>
-                    <div className="flex items-center justify-between pt-6 border-t border-white/10 relative z-10">
-                       <p className="text-xs font-black text-white/40 uppercase tracking-[0.3em]">Estimated Fare</p>
-                       <p className="text-4xl font-black tracking-tighter text-blue-400 flex items-center gap-1">
-                          {fare}<span className="text-base opacity-40 ml-1">৳</span>
-                       </p>
+                    <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                      <Route className="w-4 h-4 mx-auto mb-2 text-emerald-400" />
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Distance</p>
+                      <p className="text-sm font-black tracking-tight">{distance} km</p>
                     </div>
-                 </motion.div>
-               )}
+                  </div>
+                  <div className="flex items-center justify-between pt-6 border-t border-white/10 relative z-10">
+                    <p className="text-xs font-black text-white/40 uppercase tracking-[0.3em]">Estimated Fare</p>
+                    <p className="text-4xl font-black tracking-tighter text-blue-400 flex items-center gap-1">
+                      {fare}<span className="text-base opacity-40 ml-1">৳</span>
+                    </p>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
 
-          <div className="p-6 lg:p-8 border-t border-gray-100 bg-white shadow-inner">
+          <div className="p-6 lg:p-8 border-t border-gray-100 bg-white shadow-inner space-y-4">
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                {error}
+              </div>
+            )}
             <button
               onClick={handleConfirmBooking}
               disabled={(!pickupLocation || !dropoffLocation) || isSubmitting}
@@ -530,7 +610,7 @@ export default function BookRidePage() {
                 assignedDriver && (
                   <div className="flex flex-col">
                     <div className="p-10 text-center bg-gray-50/50 border-b border-gray-100">
-                      <motion.div 
+                      <motion.div
                         initial={{ scale: 0.5 }}
                         animate={{ scale: 1 }}
                         className="w-24 h-24 mx-auto mb-6 rounded-[2rem] overflow-hidden shadow-xl ring-8 ring-white relative"
@@ -577,15 +657,21 @@ export default function BookRidePage() {
 
                       <div className="flex flex-col gap-3 pt-2">
                         <button 
-                          onClick={() => router.push("/dashboard/passenger/ride")} 
-                          className="w-full py-5 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition shadow-xl text-xs uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center gap-3"
+                          onClick={markAsPaid}
+                          className="w-full py-5 bg-[#2FCA71] text-white font-black rounded-2xl hover:bg-[#28b363] transition shadow-xl text-xs uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center gap-3"
                         >
-                          <Navigation className="w-5 h-5" />
-                          Track Journey
+                          <CreditCard className="w-5 h-5" />
+                          Pay Now
+                        </button>
+                        <button 
+                          onClick={() => router.push("/dashboard/passenger/ride")}
+                          className="w-full py-4 bg-white text-gray-400 font-bold rounded-2xl border-2 border-gray-100 hover:bg-gray-50 transition text-[10px] uppercase tracking-widest"
+                        >
+                          Pay Later
                         </button>
                         <button 
                           onClick={handleCancelBooking}
-                          className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-gray-100 transition text-[10px] uppercase tracking-widest"
+                          className="w-full py-3 text-gray-400 font-medium text-[9px] uppercase tracking-widest hover:text-red-500 transition-colors"
                         >
                           Cancel Trip
                         </button>

@@ -62,7 +62,7 @@ function setupSocket(io, collections) {
   } = collections;
 
   io.on("connection", (socket) => {
-    console.log(`🔌 New connection: ${socket.id} (Role: ${socket.userRole || 'guest'})`);
+    console.log(`New connection: ${socket.id} (Role: ${socket.userRole || 'guest'})`);
 
     // --- Admin/Role Tracking ---
     if (socket.authenticated) {

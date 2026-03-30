@@ -49,7 +49,11 @@ function ActiveRideContent() {
   // 1. Fetch Booking Initial State
   useEffect(() => {
     if (!bookingId) {
+<<<<<<< HEAD:on-way/src/app/dashboard/passenger/active-ride/page.jsx
       router.push("/dashboard/passenger/book-ride");
+=======
+      router.push("/dashboard/passenger/ride");
+>>>>>>> f95678475929a58d981179e2def1611e4352e560:on-way/src/app/dashboard/passenger/active-ride/page.jsx
       return;
     }
 
@@ -238,7 +242,11 @@ function ActiveRideContent() {
         </div>
         <h2 className="text-4xl font-black text-secondary mb-4 tracking-tighter">No Drivers Found</h2>
         <p className="text-gray-500 font-medium mb-8 max-w-md">We couldn't find a driver for your request within 60 seconds. Please try again or choose a different vehicle type.</p>
+<<<<<<< HEAD:on-way/src/app/dashboard/passenger/active-ride/page.jsx
         <button onClick={() => router.push('/dashboard/passenger/book-ride')} className="px-10 py-5 bg-[#011421] text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-colors shadow-2xl">
+=======
+        <button onClick={() => router.push('/onway-book')} className="px-10 py-5 bg-[#011421] text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-colors shadow-2xl">
+>>>>>>> f95678475929a58d981179e2def1611e4352e560:on-way/src/app/dashboard/passenger/active-ride/page.jsx
           Try Again
         </button>
       </div>

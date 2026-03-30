@@ -7,14 +7,14 @@ const ROLE_ROUTES = {
   admin: "/dashboard/admin",
   rider: "/dashboard/rider",
   passenger: "/dashboard/passenger",
+  user: "/dashboard/passenger",
   supportAgent: "/dashboard/supportAgent",
 };
 
-// Define protected route patterns
 const PROTECTED_ROUTES = [
   { path: "/dashboard/admin", allowedRoles: ["admin"] },
   { path: "/dashboard/rider", allowedRoles: ["rider"] },
-  { path: "/dashboard/passenger", allowedRoles: ["passenger"] },
+  { path: "/dashboard/passenger", allowedRoles: ["passenger", "user"] },
   { path: "/dashboard/supportAgent", allowedRoles: ["supportAgent"] },
 ];
 

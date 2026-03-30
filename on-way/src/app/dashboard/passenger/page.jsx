@@ -132,12 +132,6 @@ export default function UserDashboard() {
       toast.error("No drivers found nearby.");
     };
 
-    socket.on("ride:accepted", handleRideAccepted);
-    socket.on("rideAccepted", handleRideAccepted);
-    socket.on("trip_started", handleTripStarted);
-    socket.on("ride:started", handleTripStarted);
-    socket.on("ride-expired", handleRideExpired);
-
     return () => {
       socket.off("ride:accepted", handleRideAccepted);
       socket.off("rideAccepted", handleRideAccepted);

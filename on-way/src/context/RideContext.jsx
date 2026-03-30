@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import axios from "axios";
 
 const RideContext = createContext();
 
@@ -23,8 +24,9 @@ export const RideProvider = ({ children }) => {
   const [distance, setDistance] = useState(0);
   const [rideType, setRideType] = useState("classic");
   const [isPaid, setIsPaid] = useState(false);
+  const [bookingId, setBookingId] = useState(null);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount & AUTO-SYNC with Backend
   useEffect(() => {
     const savedRide = localStorage.getItem("onway_current_ride");
     if (savedRide) {
@@ -40,6 +42,12 @@ export const RideProvider = ({ children }) => {
       setDistance(data.distance);
       setRideType(data.rideType || "classic");
       setIsPaid(data.isPaid || false);
+      setBookingId(data.bookingId || null);
+
+      // --- AUTO-SYNC: If ride is not marked as paid, check backend immediately ---
+      if (data.bookingId && !data.isPaid) {
+        checkPaymentStatus(data.bookingId);
+      }
     }
   }, []);
 
@@ -48,13 +56,20 @@ export const RideProvider = ({ children }) => {
     if (rideStatus !== "idle") {
       const rideData = {
         rideStatus, pickup, dropoff, assignedDriver,
-        routeGeometry, otp, fare, duration, distance, rideType, isPaid
+        routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
+      };
+      localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
+    } else if (isPaid === false && bookingId) {
+      // Keep context if unpaid but ride cleared (important for dashboard enforcement)
+      const rideData = {
+        rideStatus: "completed", pickup, dropoff, assignedDriver,
+        routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
       };
       localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
     } else {
       localStorage.removeItem("onway_current_ride");
     }
-  }, [rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid]);
+  }, [rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId]);
 
   const startSearching = (details) => {
     setPickup(details.pickup);
@@ -64,6 +79,7 @@ export const RideProvider = ({ children }) => {
     setDuration(details.duration);
     setDistance(details.distance);
     setRideType(details.rideType);
+    setBookingId(details.bookingId || null);
     setRideStatus("searching");
     setIsPaid(false);
   };
@@ -88,7 +104,41 @@ export const RideProvider = ({ children }) => {
 
   const completeRide = () => setRideStatus("completed");
 
-  const markAsPaid = () => setIsPaid(true);
+  const markAsPaid = () => {
+    // Save bookingId so payment success page can redirect to active-ride
+    if (bookingId) localStorage.setItem("onway_pending_bookingId", bookingId);
+    const params = new URLSearchParams();
+    if (bookingId) params.set("bookingId", bookingId);
+    if (fare) params.set("amount", fare);
+    window.location.href = `/payment?${params.toString()}`;
+  };
+
+  const checkPaymentStatus = async (id) => {
+    const checkId = id || bookingId;
+    if (!checkId) return null;
+
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+      const res = await axios.get(`${API_BASE_URL}/bookings/${checkId}`);
+      if (res.data.success && res.data.booking) {
+        const backendStatus = res.data.booking.paymentStatus;
+        if (backendStatus === "paid") {
+          setIsPaid(true);
+          // Sync localStorage immediately so other components/layouts see it
+          const saved = localStorage.getItem("onway_current_ride");
+          if (saved) {
+            const data = JSON.parse(saved);
+            data.isPaid = true;
+            localStorage.setItem("onway_current_ride", JSON.stringify(data));
+          }
+        }
+        return backendStatus;
+      }
+    } catch (err) {
+      console.error("Error checking payment status:", err);
+    }
+    return null;
+  };
 
   const cancelRide = () => {
     setRideStatus("idle");
@@ -103,9 +153,9 @@ export const RideProvider = ({ children }) => {
 
   return (
     <RideContext.Provider value={{
-      rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid,
-      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide,
-      MOCK_DRIVERS
+      rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
+      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide, setIsPaid,
+      checkPaymentStatus, MOCK_DRIVERS
     }}>
       {children}
     </RideContext.Provider>

@@ -1,17 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
-export default function PaymentPage() {
+function PaymentContent() {
+  const searchParams = useSearchParams();
+  const amountFromUrl = searchParams.get("amount");
+  const bookingIdFromUrl = searchParams.get("bookingId");
+
   const [paymentData, setPaymentData] = useState({
-    amount: "",
+    amount: amountFromUrl || "",
     customerName: "",
     customerEmail: "",
     customerPhone: "",
     productName: "Ride Payment",
   });
+
+  useEffect(() => {
+    if (amountFromUrl) {
+      setPaymentData(prev => ({ ...prev, amount: amountFromUrl }));
+    }
+  }, [amountFromUrl]);
 
   const [cardDetails, setCardDetails] = useState({
     cardNumber: "",
@@ -42,12 +53,7 @@ export default function PaymentPage() {
       icon: "💰",
       color: "from-orange-500 to-orange-600",
     },
-    {
-      id: "cash",
-      name: "Cash",
-      icon: "💵",
-      color: "from-green-500 to-green-600",
-    },
+    
   ];
 
   const handleChange = (e) => {
@@ -105,6 +111,7 @@ export default function PaymentPage() {
           customerPhone: paymentData.customerPhone,
           productName: paymentData.productName,
           paymentMethod: paymentMethod,
+          bookingId: bookingIdFromUrl,
           ...(paymentMethod === "card" && { cardDetails }),
         }),
       });
@@ -298,7 +305,7 @@ export default function PaymentPage() {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your name"
+                    placeholder="Your Name"
                   />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -313,7 +320,7 @@ export default function PaymentPage() {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="your@email.com"
+                      placeholder="Email"
                     />
                   </div>
                   <div>
@@ -327,7 +334,7 @@ export default function PaymentPage() {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="+880 1XXX-XXXXXX"
+                      placeholder="Number"
                     />
                   </div>
                 </div>
@@ -410,12 +417,24 @@ export default function PaymentPage() {
               <p className="text-xs text-gray-500 text-center mt-4">
                 {paymentMethod === "cash"
                   ? "💵 Pay when service is provided"
-                  : "🔒 Secured by SSLCommerz"}
+                  : "🔒 Secured by OnWay"}
               </p>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    }>
+      <PaymentContent />
+    </Suspense>
   );
 }

@@ -2,12 +2,14 @@
 import React from "react";
 import { Settings, Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import NotificationDropdown from "./NotificationDropdown";
 import GlobalSearch from "./GlobalSearch";
 
 const Navbar = () => {
   const { user, isLoading } = useCurrentUser();
+  const { data: session } = useSession();
   const currentDate = new Date();
   const day = currentDate.getDate();
   const month = currentDate.toLocaleDateString('en-US', { month: 'long' });
@@ -48,15 +50,15 @@ const Navbar = () => {
             <>
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-sm font-semibold text-gray-900 group-hover:text-black">
-                  {user?.name || "Guest User"}
+                  {user?.name || session?.user?.name || "Guest User"}
                 </span>
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter bg-gray-100 px-1.5 py-0.5 rounded">
-                  {user?.role || "User"}
+                  {user?.role === "user" ? "Passenger" : user?.role || session?.user?.role || "Passenger"}
                 </span>
               </div>
               <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full border-2 border-white shadow-sm overflow-hidden shrink-0 bg-gray-200">
                 <img
-                  src={user?.image || "https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg"}
+                  src={user?.image || user?.profileImage || session?.user?.image || "https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg"}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />

@@ -672,13 +672,13 @@ export default function BookRidePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => { markAsPaid(); router.push("/dashboard/user/ride"); }}
+                      onClick={() => { markAsPaid(); router.push("/dashboard/passenger/ride"); }}
                       className="py-3 bg-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition active:scale-95 flex items-center justify-center gap-2"
                     >
                       <CreditCard size={14} /> Pay Now
                     </button>
                     <button
-                      onClick={() => router.push("/dashboard/user/ride")}
+                      onClick={() => router.push("/dashboard/passenger/ride")}
                       className="py-3 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition active:scale-95"
                     >
                       Pay Later

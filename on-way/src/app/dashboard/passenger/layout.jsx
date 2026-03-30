@@ -9,7 +9,8 @@ import {
   Wallet,
   MessageSquareMore,
   Car,
-  RotateCcw
+  RotateCcw,
+  Settings
 } from "lucide-react";
 
 export default function PassengerLayout({ children }) {
@@ -22,8 +23,9 @@ export default function PassengerLayout({ children }) {
     { label: "Ride History", path: "/dashboard/passenger/ride-history", icon: History },
     { label: "Refund Request", path: "/dashboard/passenger/refund", icon: RotateCcw },
     { label: "Inbox", path: "/dashboard/passenger/chat", icon: MessageSquareMore },
-    { label: "Profile", path: "/dashboard/passenger/profile", icon: User },
     { label: "Wallet", path: "/dashboard/passenger/wallet", icon: Wallet },
+    { label: "Profile", path: "/dashboard/passenger/profile", icon: User },
+    { label: "Settings", path: "/dashboard/passenger/settings", icon: Settings },
   ];
 
   return (

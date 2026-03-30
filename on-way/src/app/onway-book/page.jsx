@@ -688,12 +688,6 @@ export default function BookRidePage() {
 
                 <div className="space-y-3">
                   <button
-                    onClick={() => router.push("/dashboard/passenger/ride")}
-                    className="w-full py-5 bg-primary text-white font-black rounded-2xl hover:bg-primary/95 transition active:scale-[0.98] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-tighter"
-                  >
-                    Track My Ride <ArrowRight size={20} />
-                  </button>
-                  <button
                     onClick={handleCancelBooking}
                     className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-gray-100 hover:text-red-500 transition active:scale-[0.98] text-sm uppercase tracking-widest"
                   >

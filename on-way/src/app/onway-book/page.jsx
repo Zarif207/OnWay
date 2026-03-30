@@ -350,11 +350,12 @@ export default function BookRidePage() {
     const selectedDriver = MOCK_DRIVERS.find(d => d.vehicleType === mappedType) || MOCK_DRIVERS[0];
 
     // Use global context to start searching
+    const currentFare = fare > 0 ? fare : calculateFare(distance, rideType, surge.multiplier);
     startSearching({
       pickup: pickupLocation,
       dropoff: dropoffLocation,
       routeGeometry: routeGeometry,
-      fare: fare,
+      fare: currentFare,
       duration: duration,
       distance: distance,
       rideType: rideType
@@ -379,6 +380,19 @@ export default function BookRidePage() {
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
+  }, []);
+
+  // If payment was done or localStorage cleared, reset ride state
+  useEffect(() => {
+    const saved = localStorage.getItem("onway_current_ride");
+    if (!saved && rideStatus !== "idle") {
+      cancelRide();
+    }
+    // If paid, always reset
+    if (isPaid) {
+      cancelRide();
+      localStorage.removeItem("onway_current_ride");
+    }
   }, []);
 
   return (

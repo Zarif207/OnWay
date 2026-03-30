@@ -1,5 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const cors = require("cors");
+
+// SSLCommerz callback routes need to allow all origins (POST from SSLCommerz servers)
+const sslCors = cors({ origin: "*", methods: ["POST", "GET"] });
 
 module.exports = function (paymentsCollection) {
 
@@ -43,9 +47,9 @@ module.exports = function (paymentsCollection) {
         total_amount: amount,
         currency: "BDT",
         tran_id: transactionId,
-        success_url: `${process.env.BACKEND_URL}/api/payment/success`,
-        fail_url: `${process.env.BACKEND_URL}/api/payment/fail`,
-        cancel_url: `${process.env.BACKEND_URL}/api/payment/cancel`,
+        success_url: `${process.env.FRONTEND_URL}/api/payment/success`,
+        fail_url: `${process.env.FRONTEND_URL}/api/payment/fail`,
+        cancel_url: `${process.env.FRONTEND_URL}/api/payment/cancel`,
         ipn_url: `${process.env.BACKEND_URL}/api/payment/ipn`,
         product_name: productName,
         product_category: "Service",
@@ -108,7 +112,7 @@ module.exports = function (paymentsCollection) {
   });
 
   // Payment success callback
-  router.post("/success", async (req, res) => {
+  router.post("/success", sslCors, async (req, res) => {
     try {
       const { tran_id } = req.body;
 
@@ -125,7 +129,7 @@ module.exports = function (paymentsCollection) {
   });
 
   // Payment fail callback
-  router.post("/fail", async (req, res) => {
+  router.post("/fail", sslCors, async (req, res) => {
     try {
       const { tran_id } = req.body;
 
@@ -142,7 +146,7 @@ module.exports = function (paymentsCollection) {
   });
 
   // Payment cancel callback
-  router.post("/cancel", async (req, res) => {
+  router.post("/cancel", sslCors, async (req, res) => {
     try {
       const { tran_id } = req.body;
 

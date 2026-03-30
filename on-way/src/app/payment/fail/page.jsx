@@ -1,14 +1,25 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import toast, { Toaster } from "react-hot-toast";
+
 function PaymentFailContent() {
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transaction");
 
+  useEffect(() => {
+    toast.error("Payment Failed! Please try again.", {
+      duration: 5000,
+      style: { borderRadius: "15px", background: "#011421", color: "#fff" },
+      icon: "❌",
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-linear-to-br from-red-50 to-rose-100 flex items-center justify-center px-4">
+      <Toaster position="top-center" />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg

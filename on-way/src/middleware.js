@@ -6,14 +6,15 @@ import { auth } from "@/auth";
 const ROLE_ROUTES = {
   admin: "/dashboard/admin",
   rider: "/dashboard/rider",
-  user: "/dashboard/user",
+  user: "/dashboard/passenger",
+  passenger: "/dashboard/passenger",
   supportAgent: "/dashboard/supportAgent",
 };
 
-// Define protected route patterns
 const PROTECTED_ROUTES = [
   { path: "/dashboard/admin", allowedRoles: ["admin"] },
   { path: "/dashboard/rider", allowedRoles: ["rider"] },
+  { path: "/dashboard/passenger", allowedRoles: ["user", "passenger"] },
   { path: "/dashboard/user", allowedRoles: ["user", "passenger"] },
   { path: "/dashboard/supportAgent", allowedRoles: ["supportAgent"] },
 ];

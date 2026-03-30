@@ -104,11 +104,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${token.email}`);
                     if (res.ok) {
                         const userData = await res.json();
-                        const rawRole = userData.role || "user";
-                        token.role = rawRole === "passenger" ? "user" : rawRole;
+                        const rawRole = userData.role || "passenger";
+                        token.role = rawRole === "user" ? "passenger" : rawRole;
                         token.id = userData._id || userData.id || token.id;
                     } else {
-                        token.role = "user"; // Fallback
+                        token.role = "passenger"; // Fallback
                     }
                 } catch (error) {
                     console.error("Error fetching role in JWT callback:", error);

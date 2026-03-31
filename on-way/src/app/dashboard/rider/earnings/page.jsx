@@ -46,8 +46,26 @@ const EarningsAnalytics = () => {
         queryKey: ["riderEarnings", riderId, period],
         queryFn: async () => {
             if (!riderId) return null;
-            const res = await axios.get(`${API_BASE_URL}/riders/earnings?period=${period}&driverId=${riderId}`);
-            return res.data.data;
+            // Mock data — practice project
+            const days = period === "daily" ? 1 : period === "weekly" ? 7 : 30;
+            const earnings = Array.from({ length: days }, (_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (days - 1 - i));
+                const base = Math.floor(Math.random() * 800) + 200;
+                const commission = Math.floor(base * 0.15);
+                return {
+                    date: d.toLocaleDateString("en-BD", { month: "short", day: "numeric" }),
+                    rides: Math.floor(Math.random() * 8) + 1,
+                    baseEarnings: base,
+                    commission,
+                    netEarnings: base - commission,
+                };
+            });
+            return {
+                earnings,
+                totalCommission: earnings.reduce((s, e) => s + e.commission, 0),
+                totalBonus: Math.floor(Math.random() * 500) + 100,
+            };
         },
         enabled: !!riderId,
     });
@@ -57,8 +75,8 @@ const EarningsAnalytics = () => {
         queryKey: ["riderBalance", riderId],
         queryFn: async () => {
             if (!riderId) return null;
-            const res = await axios.get(`${API_BASE_URL}/riders/balance?driverId=${riderId}`);
-            return res.data.data;
+            // Mock balance
+            return { availableBalance: 3250 };
         },
         enabled: !!riderId,
     });

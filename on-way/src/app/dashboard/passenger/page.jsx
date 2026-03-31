@@ -51,7 +51,8 @@ export default function PassengerDashboard() {
   const [loadingStats, setLoadingStats] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [matchedDriver, setMatchedDriver] = useState(null);
-  const [rideStatus, setRideStatus] = useState(null);
+  const [rideStatus,    setRideStatus]    = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
   const socketRef = useRef(null);
 
   const passengerId = session?.user?.id;
@@ -74,10 +75,25 @@ export default function PassengerDashboard() {
     );
   };
 
+  // Load wallet balance from localStorage
+  useEffect(() => {
+    if (!passengerId) return;
+    const saved = localStorage.getItem(`wallet_balance_${passengerId}`);
+    if (saved) setWalletBalance(parseInt(saved));
+
+    // Listen for changes from wallet page
+    const onStorage = (e) => {
+      if (e.key === `wallet_balance_${passengerId}`) {
+        setWalletBalance(parseInt(e.newValue || "0"));
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [passengerId]);
+
   // Fetch stats
   useEffect(() => {
     if (!passengerId) return;
-    // Only query if it's a valid MongoDB ObjectId
     if (!/^[a-f\d]{24}$/i.test(passengerId)) { setLoadingStats(false); return; }
     (async () => {
       try {
@@ -327,9 +343,9 @@ export default function PassengerDashboard() {
               </Link>
             </div>
             <div className="mb-5 relative z-10">
-              <span className="text-3xl font-extrabold tracking-tight">৳1,250</span>
+              <span className="text-3xl font-extrabold tracking-tight">৳{walletBalance.toLocaleString()}</span>
               <div className="text-xs text-gray-400 mt-1 bg-gray-800 inline-block px-2 py-0.5 rounded-md">
-                Includes ৳350 Ride Credits
+                Available Balance
               </div>
             </div>
             <div className="flex gap-2 relative z-10">

@@ -25,6 +25,7 @@ export default function UnifiedDashboardLayout({ children }) {
       { label: "Profile", path: "/dashboard/passenger/profile", icon: User },
       { label: "Wallet", path: "/dashboard/passenger/wallet", icon: Wallet },
       { label: "Lost Items", path: "/dashboard/passenger/lost-items", icon: PackageSearch },
+      { label: "Settings", path: "/dashboard/passenger/settings", icon: Settings },
     ],
     rider: [
       { label: "Dashboard", path: "/dashboard/rider", icon: LayoutDashboard },

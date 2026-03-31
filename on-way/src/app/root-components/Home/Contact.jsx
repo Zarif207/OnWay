@@ -6,6 +6,8 @@ import { motion, AnimatePresence, useInView, animate } from "framer-motion";
 import { AnimatedHeading } from "../MotionWrappers";
 import AnimatedButton from "../AnimatedButton";
 import { stats } from "./homeData";
+import toast from "react-hot-toast";
+import Link from "next/link";
 
 // Reusable Scroll-Triggered Animated Counter Component
 const CounterItem = ({ value, label, delayIndex }) => {
@@ -57,12 +59,16 @@ export default function ContactRideSection() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
   const onSubmit = (data) => {
     console.log("OnWay Form:", data);
+    toast.success("Message send to the admin")
+    reset()
   };
+
 
   // Performance Enhancement: Pause video when completely out of viewport
   useEffect(() => {
@@ -288,9 +294,11 @@ export default function ContactRideSection() {
                     className="w-full bg-transparent px-4 py-3 text-sm outline-none font-semibold text-[#0A1F3D]"
                   />
                   <div className="shrink-0 flex items-center">
+                    <Link href={"dashboard/passenger/ride"}>
                     <AnimatedButton>
                       Track Now
                     </AnimatedButton>
+                    </Link>
                   </div>
                 </div>
               </motion.div>

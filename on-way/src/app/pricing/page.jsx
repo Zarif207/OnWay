@@ -11,10 +11,10 @@ import {
     ArrowRight
 } from "lucide-react";
 import Image from "next/image";
+import PageBanner from "../components/PageBanner";
 
 /**
  * Pricing Page Component
- * Exactly matches the reference design layout with OnWay branding.
  */
 export default function PricingPage() {
     const containerVariants = {
@@ -74,7 +74,13 @@ export default function PricingPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] py-24 sm:py-32">
+        <div className="min-h-screen bg-[#F8FAFC]">
+            <PageBanner
+                tag="OnWay Plans"
+                title="Fare & Pricing"
+                subtitle="Transparent, fair pricing for every ride type. No hidden fees, ever."
+            />
+            <div className="py-16 sm:py-20">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
                 <motion.div
@@ -206,6 +212,7 @@ export default function PricingPage() {
                     <Car size={160} className="text-[#22c55e]" strokeWidth={0.5} />
                 </motion.div>
 
+            </div>
             </div>
         </div>
     );

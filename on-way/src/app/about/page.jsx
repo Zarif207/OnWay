@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ScrollProgress from "../components/ScrollProgress";
+import PageBanner from "../components/PageBanner";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -34,28 +35,12 @@ const AboutUs = () => {
     <ScrollProgress>
       <div className="bg-white text-gray-900 font-sans">
 
-        {/* 1. HERO */}
-        <section className="relative h-[70vh] overflow-hidden">
-          <motion.img
-            src="/onway.png"
-            alt="OnWay Bangladesh"
-            className="w-full h-full object-cover"
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.4, ease: "easeOut" }}
-          />
-          <div className="absolute inset-0 bg-black/20" />
-          <motion.div
-            className="absolute bottom-10 left-10"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-          >
-            <span className="bg-[#2FCA71] text-white text-sm font-bold px-5 py-2 rounded-full">
-              About us
-            </span>
-          </motion.div>
-        </section>
+        {/* SHARED BANNER */}
+        <PageBanner
+          tag="Who We Are"
+          title="About OnWay"
+          subtitle="Reimagining urban mobility across Bangladesh — one safe, smart ride at a time."
+        />
 
         {/* 2. MISSION STATEMENT */}
         <section className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">

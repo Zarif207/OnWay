@@ -26,19 +26,19 @@ import logoImage from "../../../public/onway_logo.png";
 
 const QUICK_LINKS = [
   { label: "About Us", href: "/about" },
-  { label: "Our Services", href: "/onway-book" },
-  { label: "Project", href: "/earn-with-onway" },
+  { label: "Our Services", href: "/services" },
+  { label: "Project", href: "/project" },
   { label: "FAQ's", href: "/faq" },
   { label: "Our Blog", href: "/blog" },
   { label: "Contact Us", href: "/contact" },
 ];
 
 const SERVICE_LINKS = [
-  { label: "OnWay Ride Share", href: "/onway-book" },
-  { label: "Ride Categories", href: "/earn-with-onway" },
+  { label: "OnWay Ride Share", href: "/ride-share" },
+  { label: "Ride Categories", href: "/ride-categories" },
   { label: "Fare & Pricing", href: "/pricing" },
   { label: "Safety Center", href: "/Safety-Coverage" },
-  { label: "Driver Registration", href: "/earn-with-onway" },
+  { label: "Driver Registration", href: "/driver-register" },
   { label: "Support & Help", href: "/help" },
 ];
 

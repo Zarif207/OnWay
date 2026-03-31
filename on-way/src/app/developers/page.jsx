@@ -51,10 +51,10 @@ const DEVELOPERS = [
     role: "MERN Stack",
     avatar: `https://ui-avatars.com/api/?name=Shourov+Hasan&background=1a0a2e&color=e879f9&size=128&bold=true&format=svg`,
     socials: {
-      github:    "https://github.com",
-      linkedin:  "https://linkedin.com",
-      facebook:  "https://facebook.com",
-      portfolio: "https://example.com",
+      github:    "https://github.com/shouravhasanshurjo8201",
+      linkedin:  "https://www.linkedin.com/in/shourav-hasan-22b948396/",
+      facebook:  "https://web.facebook.com/profile.php?id=100080296736228&_rdc=10&_rdr#",
+      portfolio: "https://portfolio-shourav-hasan.netlify.app/",
     },
   },
   {

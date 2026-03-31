@@ -13,7 +13,7 @@ import {
     ArrowRight, ShieldCheck, Heart, CreditCard,
     DollarSign, Clock, Map as MapIcon, RotateCw
 } from "lucide-react";
-
+    
 // Dynamically import the Map component to avoid SSR issues
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
     ssr: false,

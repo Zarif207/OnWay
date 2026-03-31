@@ -185,7 +185,7 @@ export default function WalletPage() {
 
             <div>
               <p className="text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-2">Available Balance</p>
-              <h2 className="text-6xl font-black tracking-tighter">
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tighter break-all">
                 ৳{(user?.walletBalance || 0).toLocaleString()}
               </h2>
             </div>

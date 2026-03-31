@@ -60,21 +60,17 @@ const bookingController = (collections) => {
 
                 // Zone check
                 const ALLOWED_ZONES = [
-                    { name: "Dhaka", minLat: 23.60, maxLat: 24.05, minLng: 90.20, maxLng: 90.60 },
-                    { name: "Chittagong", minLat: 22.00, maxLat: 22.60, minLng: 91.50, maxLng: 92.10 },
-                    { name: "Sylhet", minLat: 24.70, maxLat: 25.10, minLng: 91.60, maxLng: 92.20 },
-                    { name: "Rajshahi", minLat: 24.15, maxLat: 24.60, minLng: 88.30, maxLng: 88.80 },
+                    { name: "Dhaka", minLat: 23.70, maxLat: 23.90, minLng: 90.35, maxLng: 90.50 },
+                    { name: "Chittagong", minLat: 22.28, maxLat: 22.45, minLng: 91.75, maxLng: 91.90 },
+                    { name: "Sylhet", minLat: 24.85, maxLat: 24.95, minLng: 91.82, maxLng: 91.92 },
+                    { name: "Rajshahi", minLat: 24.35, maxLat: 24.42, minLng: 88.55, maxLng: 88.65 },
                 ];
 
-                const inZone = ALLOWED_ZONES.some((z) => {
-                    const pLat = pickupLocation.lat;
-                    const pLng = pickupLocation.lng || pickupLocation.lon; // Handle both mapping styles
-                    
-                    return (
-                        pLat >= z.minLat && pLat <= z.maxLat &&
-                        pLng >= z.minLng && pLng <= z.maxLng
-                    );
-                });
+                const inZone = ALLOWED_ZONES.some(
+                    (z) =>
+                        pickupLocation.lat >= z.minLat && pickupLocation.lat <= z.maxLat &&
+                        pickupLocation.lng >= z.minLng && pickupLocation.lng <= z.maxLng
+                );
 
                 if (!inZone) {
                     return res.status(400).json({

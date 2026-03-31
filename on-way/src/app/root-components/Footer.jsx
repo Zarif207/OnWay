@@ -369,7 +369,7 @@ export default function Footer() {
               Safety Coverage
             </Link>
             <Link
-              href="#"
+              href="/developers"
               className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors"
             >
               The Developers

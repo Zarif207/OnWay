@@ -32,7 +32,7 @@ export default function Home() {
             <Hero />
             <Transportation />
             <Platform />
-            <div className="pb-10">
+            <div>
               <Stats />
             </div>
             <Safety />

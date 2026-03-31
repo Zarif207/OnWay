@@ -332,10 +332,9 @@ io.on("connection", (socket) => {
         riderId,
         driverId: riderId,
         driver: driverDetails,
-        otp: booking.otp,        // ← OTP passenger কে পাঠাও
+        otp: booking.otp,       
       };
 
-      // ✅ সব possible room এ emit — যেটায় passenger join করেছে সেটায় পাবে
       io.to(`passenger:${passengerId}`).emit("ride:accepted", acceptancePayload);
       io.to(`passenger:${passengerId}`).emit("rideAccepted", acceptancePayload);
       io.to(`user:${passengerId}`).emit("ride:accepted", acceptancePayload);
@@ -347,7 +346,7 @@ io.on("connection", (socket) => {
       console.log(`✅ Ride accepted: ${bookingId}`);
       console.log(`📨 Notified passenger rooms: passenger:${passengerId}, user:${passengerId}, user_${passengerId}`);
 
-      // Simulation শুরু করো
+      // Simulation 
       const serviceAreas = rider?.serviceAreas || [];
       const pickupLat = booking.pickupLocation?.lat;
       const pickupLng = booking.pickupLocation?.lng;
@@ -482,6 +481,7 @@ app.use(async (req, res, next) => {
       notificationsCollection: database.collection("notifications"),
       lostItemsCollection: database.collection("lostItems"),
       refundsCollection: database.collection("refunds"),
+      noticeCollection: database.collection("notice"),
     };
     next();
   } catch (error) {
@@ -575,6 +575,14 @@ app.use("/api/settings", (req, res, next) => {
 
 app.use("/api/notifications", (req, res, next) => {
   notificationsRoutes(req.collections.notificationsCollection)(req, res, next);
+});
+
+app.use("/api/notice", (req, res, next) => {
+  notice(
+    req.collections.noticeCollection, 
+    req.collections.passengerCollection,
+    transporter
+  )(req, res, next);
 });
 
 app.use("/api/search", (req, res, next) => {

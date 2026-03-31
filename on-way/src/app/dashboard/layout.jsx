@@ -5,7 +5,7 @@ import { useRide } from "@/context/RideContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import {
   LayoutDashboard, MapPin, History, User, Wallet, MessageSquareMore, Car,
-  Search, CalendarRange, Bell, Settings, HelpCircle, Users, Ticket, 
+  Search, CalendarRange, Bell, Settings, HelpCircle, Users, Ticket,
   BarChart3, UserCheck, Brain, Star, UserCircle, Newspaper, Mailbox,
   FileText, ShieldAlert, DollarSign, MessageSquare, LifeBuoy, PackageSearch,
   BellMinus
@@ -34,6 +34,7 @@ export default function UnifiedDashboardLayout({ children }) {
       { label: "Ride Requests", path: "/dashboard/rider/ride-requests", icon: Search },
       { label: "Notifications", path: "/dashboard/rider/notifications", icon: Bell },
       { label: "Ride History", path: "/dashboard/rider/ride-history", icon: History },
+      { label: "Inbox", path: "/dashboard/rider/inbox", icon: MessageSquareMore },
       { label: "Earnings", path: "/dashboard/rider/earnings", icon: Wallet },
       { label: "Withdraw", path: "/dashboard/rider/withdraw", icon: Wallet },
       { label: "Settings", path: "/dashboard/rider/settings", icon: Settings },
@@ -47,6 +48,7 @@ export default function UnifiedDashboardLayout({ children }) {
       { label: "Promo Codes", path: "/dashboard/admin/promo-codes", icon: Ticket },
       { label: "Reports & Safety", path: "/dashboard/admin/reports-safety", icon: BarChart3 },
       { label: "Blog Manager", path: "/dashboard/admin/blogManager", icon: Newspaper },
+      { label: "Inbox", path: "/dashboard/admin/inbox", icon: MessageSquareMore },
       { label: "Newsletter", path: "/dashboard/admin/newsletter", icon: Mailbox },
       { label: "AI Brain", path: "/dashboard/admin/aIBrainConfig", icon: Brain },
       { label: "Reviews", path: "/dashboard/admin/reviews", icon: Star },
@@ -76,8 +78,8 @@ export default function UnifiedDashboardLayout({ children }) {
   }
 
   const userRole = user?.role || "passenger";
-  const roleLabel = userRole === "supportAgent" ? "Support" : 
-                    userRole.charAt(0).toUpperCase() + userRole.slice(1);
+  const roleLabel = userRole === "supportAgent" ? "Support" :
+    userRole.charAt(0).toUpperCase() + userRole.slice(1);
   const menuItems = menuConfig[userRole] || menuConfig.passenger;
 
   return (

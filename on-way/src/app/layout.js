@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 import ChatSupport from "./components/ChatBot/ChatSupport";
 import FloatingSOSButton from "@/components/FloatingSOSButton";
 import ScrollProgress from "./components/ScrollProgress";
-import HomeClientEffects from "./root-components/Home/HomeClientEffects";
+import { RideProvider } from "@/context/RideContext";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -27,20 +27,20 @@ export default function RootLayout({ children }) {
       <body>
         <QueryProvider>
           <AuthProvider>
-            <ScrollProgress>
-              <HomeClientEffects />
+            <RideProvider>
+              <ScrollProgress>
+                {!hideNavbarFooter && <Navbar />}
+                <main>
+                  {children}
+                  <ChatSupport />
+                  <FloatingSOSButton />
+                </main>
 
-              {!hideNavbarFooter && <Navbar />}
-              <main>
-                {children}
-                <ChatSupport />
-                <FloatingSOSButton />
-              </main>
+                <Toaster position="top-center" reverseOrder={false} />
 
-              <Toaster position="top-center" reverseOrder={false} />
-
-              {!hideNavbarFooter && <Footer />}
-            </ScrollProgress>
+                {!hideNavbarFooter && <Footer />}
+              </ScrollProgress>
+            </RideProvider>
           </AuthProvider>
         </QueryProvider>
       </body>

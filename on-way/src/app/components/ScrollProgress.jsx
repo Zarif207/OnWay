@@ -1,33 +1,16 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import Lenis from "@studio-freight/lenis";
 
 const ScrollProgress = ({ children }) => {
     const [progress, setProgress] = useState(0);
     const [scrolling, setScrolling] = useState(false);
     const scrollTimeout = useRef(null);
-    const lenisRef = useRef(null);
 
     useEffect(() => {
-        const lenis = new Lenis({
-            duration: 1.5,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            smoothWheel: true,
-            lerp: 0.5,
-            wheelMultiplier: 1.1,
-            touchMultiplier: 1.5,
-        });
-
-        lenisRef.current = lenis;
-
-        function raf(time) {
-            lenis.raf(time);
-            requestAnimationFrame(raf);
-        }
-        requestAnimationFrame(raf);
-
-        lenis.on("scroll", ({ scroll, limit }) => {
-            const percent = limit > 0 ? (scroll / limit) * 100 : 0;
+        const handleScroll = () => {
+            const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const currentPosition = window.scrollY;
+            const percent = totalHeight > 0 ? (currentPosition / totalHeight) * 100 : 0;
             setProgress(percent);
 
             setScrolling(true);
@@ -35,16 +18,17 @@ const ScrollProgress = ({ children }) => {
             scrollTimeout.current = setTimeout(() => {
                 setScrolling(false);
             }, 500);
-        });
+        };
 
+        window.addEventListener("scroll", handleScroll);
         return () => {
-            lenis.destroy();
+            window.removeEventListener("scroll", handleScroll);
             if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
         };
     }, []);
 
     const scrollToTop = () => {
-        lenisRef.current?.scrollTo(0, { duration: 1.5 });
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     return (

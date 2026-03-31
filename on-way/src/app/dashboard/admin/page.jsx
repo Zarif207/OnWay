@@ -88,6 +88,7 @@ export default function DashboardOverview() {
 
   const { overview, today, week, month, growth, charts, recent } = stats;
 
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -297,47 +298,7 @@ export default function DashboardOverview() {
               <Clock className="w-5 h-5 text-[#2FCA71]" />
               Recent Bookings
             </h3>
-            <div className="space-y-3">
-              {recent.bookings.slice(0, 5).map((booking, index) => (
-                <div
-                  key={booking._id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#2FCA71] bg-opacity-10 rounded-full flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-[#2FCA71]" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm text-gray-900">
-                        {(() => {
-                          const loc = booking.pickupLocation;
-                          const addr = loc?.name || loc?.address?.road || loc?.address?.suburb || loc?.address?.city || "N/A";
-                          return typeof addr === "string" ? addr.substring(0, 30) + (addr.length > 30 ? "..." : "") : "N/A";
-                        })()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(booking.createdAt).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-[#2FCA71]">
-                      ${booking.price?.toFixed(2) || "0.00"}
-                    </p>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${booking.bookingStatus === "completed"
-                        ? "bg-green-100 text-green-700"
-                        : booking.bookingStatus === "ongoing"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-yellow-100 text-yellow-700"
-                        }`}
-                    >
-                      {booking.bookingStatus}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+           
           </div>
 
           {/* Quick Stats */}

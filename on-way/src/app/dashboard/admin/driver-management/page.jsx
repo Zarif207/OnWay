@@ -14,6 +14,8 @@ const DriverManagement = () => {
   const [vehicleFilter, setVehicleFilter] = useState('All Vehicles');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [selectedDrivers, setSelectedDrivers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const driverManagementPage = 10;
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/riders`;
 
@@ -182,11 +184,18 @@ const DriverManagement = () => {
   const toggleSelect = (id) => {
     setSelectedDrivers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
-   if (loading) {
-      return (
-        <OnWayLoading></OnWayLoading>   
-      );
-    }
+
+  // Pagination logic
+  const itemsPerPage = driverManagementPage;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDrivers = filteredDrivers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredDrivers.length / itemsPerPage);
+  if (loading) {
+    return (
+      <OnWayLoading></OnWayLoading>
+    );
+  }
 
   return (
     <div className="min-h-screen p-2">
@@ -276,7 +285,7 @@ const DriverManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDrivers.map((driver) => (
+                  {currentDrivers.map((driver) => (
                     <tr key={driver._id} className={`border-b border-gray-200 hover:bg-gray-50 transition ${selectedDrivers.includes(driver._id) ? 'bg-green-50/50' : ''}`}>
                       <td className="p-4 text-center">
                         <input type="checkbox" checked={selectedDrivers.includes(driver._id)} onChange={() => toggleSelect(driver._id)} />
@@ -320,6 +329,47 @@ const DriverManagement = () => {
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              {!loading && filteredDrivers.length > 0 && (
+                <div className="flex justify-center mt-8 pb-6">
+                  <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-2xl">
+                    {/* Prev Button */}
+                    <button
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 text-gray-500 font-medium rounded-xl hover:bg-gray-200 disabled:opacity-40 flex items-center gap-1"
+                    >
+                      ‹ Prev
+                    </button>
+
+                    {/* Page Numbers */}
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl font-semibold transition-all ${
+                          currentPage === i + 1
+                            ? "bg-green-500 text-white shadow-md"
+                            : "text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 text-white bg-green-500 rounded-xl font-medium hover:bg-green-600 disabled:opacity-40 flex items-center gap-1"
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {!loading && filteredDrivers.length === 0 && (
                 <div className="p-10 text-center text-gray-500">No riders found.</div>
               )}

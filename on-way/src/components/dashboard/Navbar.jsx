@@ -15,9 +15,9 @@ const Navbar = () => {
   const month = currentDate.toLocaleDateString('en-US', { month: 'long' });
 
   return (
-    <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-6 lg:px-8 sticky top-0 z-40">
-      {/* Left side: Date & Search */}
-      <div className="flex items-center gap-4 lg:gap-8 flex-1 pl-10 lg:pl-0">
+    <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-6 lg:px-8 sticky top-0 z-30 w-full">
+      {/* pl-12 on mobile clears the hamburger button (fixed top-4 left-4) */}
+      <div className="flex items-center gap-4 lg:gap-8 flex-1 pl-12 lg:pl-0">
         <div className="hidden lg:flex flex-col">
           <span className="text-2xl font-bold text-gray-900">{day}</span>
           <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">

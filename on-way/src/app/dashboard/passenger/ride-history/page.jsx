@@ -60,16 +60,35 @@ export default function RideHistoryPage() {
   const fetchRides = async (passengerId) => {
     try {
       setLoading(true);
+      setError(null);
+
+      // Guard: skip if not a valid MongoDB ObjectId
+      if (passengerId && !/^[a-f\d]{24}$/i.test(passengerId)) {
+        setRides([]);
+        return;
+      }
+
       const url = passengerId
         ? `${API_BASE}/bookings?passengerId=${passengerId}`
         : `${API_BASE}/bookings`;
-      const res = await fetch(url);
-      const data = await res.json();
 
-      if (!res.ok) throw new Error("Failed to fetch rides");
+      const res = await fetch(url);
+
+      // Parse JSON safely
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(`Server error (${res.status})`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.message || `Request failed (${res.status})`);
+      }
 
       setRides(data?.data || []);
     } catch (err) {
+      console.error("fetchRides error:", err);
       setError("Failed to load ride history");
     } finally {
       setLoading(false);
@@ -252,12 +271,24 @@ export default function RideHistoryPage() {
     }
   };
 
-  // if (loading) return <OnWayloa />;
-
   if (error)
     return (
-      <div className="text-center py-20 text-red-500 font-bold">
-        {error}
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <AlertCircle className="w-10 h-10 text-red-400" />
+        <p className="text-red-500 font-bold">{error}</p>
+        <button
+          onClick={() => session?.user?.id && fetchRides(session.user.id)}
+          className="px-5 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
       </div>
     );
 

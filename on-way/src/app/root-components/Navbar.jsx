@@ -43,7 +43,6 @@ const NAV_ITEMS = [
   { label: "About", href: "/about", icon: Info },
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
-
 const HELP_ITEMS = [
   { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
   { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
@@ -155,10 +154,21 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  const rawRole = user?.role || session?.user?.role || "user";
-  const role = useMemo(() => {
-    return rawRole?.toLowerCase() === "user" ? "passenger" : rawRole;
-  }, [rawRole]); 
+
+  useEffect(() => {
+    const saved = localStorage.getItem("navbar:profileImage");
+    if (saved) setLocalImage(saved);
+
+    const handler = (e) => {
+      const img = e.detail?.image || localStorage.getItem("navbar:profileImage");
+      if (img) setLocalImage(img);
+    };
+    window.addEventListener("profile:updated", handler);
+    return () => window.removeEventListener("profile:updated", handler);
+  }, []);
+
+  const rawRole = user?.role || session?.user?.role || "passenger";
+  const role = useMemo(() => rawRole === "user" ? "passenger" : rawRole, [rawRole]);
 
   const dashboardHref = useMemo(() => {
     const href = `/dashboard/${role}`;
@@ -277,7 +287,7 @@ const Navbar = () => {
       case "passenger":
       case "user": return "/dashboard/passenger/profile";
       case "supportagent":
-      case "support": return "/dashboard/support/profile";
+      case "support": return "/dashboard/supportAgent/settings";
       default: return "/dashboard/passenger/profile";
     }
   };

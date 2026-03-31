@@ -10,26 +10,21 @@ function PaymentSuccessContent() {
   const router = useRouter();
 
   useEffect(() => {
-    toast.success("Payment Successful! Your ride is confirmed.", {
+    toast.success("Payment Successful! Redirecting to your dashboard.", {
       duration: 3000,
       style: { borderRadius: "15px", background: "#011421", color: "#fff" },
       icon: "🎉",
     });
 
-    const urlBookingId = searchParams.get("bookingId");
-    const localBookingId = localStorage.getItem("onway_pending_bookingId");
-    const targetBookingId = urlBookingId || localBookingId;
+    // Clean up any pending booking reference
+    localStorage.removeItem("onway_pending_bookingId");
 
     const timer = setTimeout(() => {
-      if (targetBookingId) {
-        window.location.href = `/dashboard/passenger/ride?bookingId=${targetBookingId}`;
-      } else {
-        window.location.href = "/dashboard/passenger/ride";
-      }
-    }, 2000);
+      router.push("/dashboard/passenger");
+    }, 2500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4">
@@ -51,7 +46,7 @@ function PaymentSuccessContent() {
           </div>
         )}
 
-        <p className="text-sm text-gray-400 animate-pulse">Redirecting to your ride...</p>
+        <p className="text-sm text-gray-400 animate-pulse">Redirecting to your dashboard...</p>
       </div>
     </div>
   );

@@ -6,15 +6,17 @@ module.exports = (collections) => {
     const router = express.Router();
     const controller = bookingController(collections);
 
-    // Static routes আগে — specific paths
+    // Static routes first
     router.get("/", controller.getBookings);
     router.post("/", controller.createBooking);
-    router.post("/verify-otp", controller.verifyOTP);  // ← /:id এর আগে রাখো
+    router.get("/unpaid-check", controller.checkUnpaidBooking);
+    router.post("/verify-otp", controller.verifyOTP);
 
-    // Dynamic routes পরে — :id routes
+    // Dynamic :id routes
     router.get("/:id", controller.getBookingById);
     router.patch("/:id/status", controller.updateStatus);
     router.post("/:id/accept", controller.acceptRide);
+    router.post("/:id/start-trip", controller.startTrip);
 
     return router;
 };

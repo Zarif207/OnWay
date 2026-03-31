@@ -1,34 +1,5 @@
-"use client";
-import React from "react";
-import RoleLayout from "@/components/dashboard/RoleLayout";
-import {
-  LayoutDashboard,
-  FileText,
-  ShieldAlert,
-  DollarSign,
-  MessageSquare,
-  Settings,
-  PackageSearch,
-  Newspaper,
-  BellMinus
-} from "lucide-react";
-
+// SupportAgent pages are wrapped by the root dashboard/layout.jsx which provides
+// RoleLayout (sidebar + navbar). No extra wrapping needed here.
 export default function SupportLayout({ children }) {
-  const menuItems = [
-    { label: "Dashboard", path: "/dashboard/supportAgent", icon: LayoutDashboard },
-    { label: "Complaints", path: "/dashboard/supportAgent/complaints", icon: FileText },
-    { label: "Live SOS", path: "/dashboard/supportAgent/live-sos", icon: ShieldAlert },
-    { label: "Refunds", path: "/dashboard/supportAgent/refunds", icon: DollarSign },
-    { label: "Chat Support", path: "/dashboard/supportAgent/chat-support", icon: MessageSquare },
-    { label: "Blog Manager", path: "/dashboard/supportAgent/blogManager", icon: Newspaper },
-    { label: "Item Recovery", path: "/dashboard/supportAgent/item-recovery", icon: PackageSearch },
-    { label: "Notice Manager", path: "/dashboard/supportAgent/noticeManager", icon: BellMinus },
-    { label: "Settings", path: "/dashboard/supportAgent/settings", icon: Settings },
-  ];
-
-  return (
-    <RoleLayout role="Support" menuItems={menuItems}>
-      {children}
-    </RoleLayout>
-  );
+  return children;
 }

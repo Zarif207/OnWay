@@ -43,11 +43,7 @@ export const RideProvider = ({ children }) => {
       setRideType(data.rideType || "classic");
       setIsPaid(data.isPaid || false);
       setBookingId(data.bookingId || null);
-
-      // --- AUTO-SYNC: If ride is not marked as paid, check backend immediately ---
-      if (data.bookingId && !data.isPaid) {
-        checkPaymentStatus(data.bookingId);
-      }
+      
     }
   }, []);
 
@@ -56,13 +52,6 @@ export const RideProvider = ({ children }) => {
     if (rideStatus !== "idle") {
       const rideData = {
         rideStatus, pickup, dropoff, assignedDriver,
-        routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
-      };
-      localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
-    } else if (isPaid === false && bookingId) {
-      // Keep context if unpaid but ride cleared (important for dashboard enforcement)
-      const rideData = {
-        rideStatus: "completed", pickup, dropoff, assignedDriver,
         routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
       };
       localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
@@ -100,7 +89,19 @@ export const RideProvider = ({ children }) => {
 
   const setOtpPending = () => setRideStatus("otp_pending");
 
-  const verifyOtp = () => setRideStatus("ongoing");
+  const verifyOtp = async () => {
+    // Call backend to persist trip start + enrich booking with rider/passenger details
+    if (bookingId) {
+      try {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        await axios.post(`${API_BASE_URL}/bookings/${bookingId}/start-trip`);
+      } catch (err) {
+        console.error("Failed to persist trip start:", err.message);
+        // Don't block the UI — trip still starts locally
+      }
+    }
+    setRideStatus("ongoing");
+  };
 
   const completeRide = () => setRideStatus("completed");
 
@@ -111,33 +112,6 @@ export const RideProvider = ({ children }) => {
     if (bookingId) params.set("bookingId", bookingId);
     if (fare) params.set("amount", fare);
     window.location.href = `/payment?${params.toString()}`;
-  };
-
-  const checkPaymentStatus = async (id) => {
-    const checkId = id || bookingId;
-    if (!checkId) return null;
-
-    try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-      const res = await axios.get(`${API_BASE_URL}/bookings/${checkId}`);
-      if (res.data.success && res.data.booking) {
-        const backendStatus = res.data.booking.paymentStatus;
-        if (backendStatus === "paid") {
-          setIsPaid(true);
-          // Sync localStorage immediately so other components/layouts see it
-          const saved = localStorage.getItem("onway_current_ride");
-          if (saved) {
-            const data = JSON.parse(saved);
-            data.isPaid = true;
-            localStorage.setItem("onway_current_ride", JSON.stringify(data));
-          }
-        }
-        return backendStatus;
-      }
-    } catch (err) {
-      console.error("Error checking payment status:", err);
-    }
-    return null;
   };
 
   const cancelRide = () => {
@@ -155,7 +129,7 @@ export const RideProvider = ({ children }) => {
     <RideContext.Provider value={{
       rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
       startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide, setIsPaid,
-      checkPaymentStatus, MOCK_DRIVERS
+      MOCK_DRIVERS
     }}>
       {children}
     </RideContext.Provider>

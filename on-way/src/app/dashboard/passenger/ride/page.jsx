@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import { useRide } from "@/context/RideContext";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +13,7 @@ import {
     ArrowRight, ShieldCheck, Heart, CreditCard,
     DollarSign, Clock, Map as MapIcon, RotateCw
 } from "lucide-react";
-
+    
 // Dynamically import the Map component to avoid SSR issues
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
     ssr: false,
@@ -27,6 +28,18 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
 });
 
 export default function PassengerRidePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            </div>
+        }>
+            <PassengerRideContent />
+        </Suspense>
+    );
+}
+
+function PassengerRideContent() {
     const router = useRouter();
     const {
         rideStatus, pickup, dropoff, assignedDriver, routeGeometry,
@@ -105,56 +118,55 @@ export default function PassengerRidePage() {
         );
     }
 
-    // EMPTY STATE
-    if (rideStatus === "idle") {
+    // NO ACTIVE RIDE — covers both idle and completed states
+    if (rideStatus === "idle" || rideStatus === "completed") {
+        const showPaymentButton = rideStatus === "completed" && booking?.paymentStatus !== "paid" && !isPaid;
+
         return (
-            <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="w-full max-w-md"
+                    className="w-full max-w-sm"
                 >
-                    <div className="w-56 h-56 bg-white rounded-[4rem] mx-auto mb-10 flex items-center justify-center relative group shadow-2xl border border-gray-100">
-                        <div className="absolute inset-0 bg-primary/5 rounded-[4rem] group-hover:scale-110 transition-transform duration-700 blur-3xl opacity-50" />
-
-                        {/* Custom Vehicle Visual for Empty State */}
-                        <div className="relative z-10 w-40 h-20 group-hover:scale-110 transition-transform duration-500">
-                            <svg viewBox="0 0 100 50" className="w-full h-full drop-shadow-2xl">
-                                <rect x="15" y="5" width="70" height="40" rx="12" fill="#0F172A" />
-                                <rect x="25" y="10" width="40" height="30" rx="6" fill="#1E293B" />
-                                <rect x="35" y="15" width="20" height="20" rx="4" fill="#334155" />
-                                {/* Detail Lights */}
-                                <rect x="78" y="10" width="4" height="8" rx="2" fill="#F87171" opacity="0.8" />
-                                <rect x="78" y="32" width="4" height="8" rx="2" fill="#F87171" opacity="0.8" />
-                                <rect x="18" y="10" width="3" height="10" rx="1" fill="#FCD34D" opacity="0.6" />
-                                <rect x="18" y="30" width="3" height="10" rx="1" fill="#FCD34D" opacity="0.6" />
-                            </svg>
-                        </div>
-
-                        {/* Floating elements */}
-                        <motion.div
-                            animate={{ y: [0, -10, 0] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className="absolute -top-4 -right-4 w-16 h-16 bg-primary/10 rounded-2xl backdrop-blur-md border border-white flex items-center justify-center shadow-lg"
-                        >
-                            <MapIcon size={24} className="text-primary" />
-                        </motion.div>
+                    <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8">
+                        <Car size={52} className="text-primary" />
                     </div>
-                    <h2 className="text-4xl font-black text-secondary tracking-tighter mb-4">Ready for your next trip?</h2>
-                    <p className="text-gray-500 font-medium mb-10 px-8 leading-relaxed text-lg">
-                        You don’t have any active rides right now. Book a ride to experience OnWay's premium service.
+
+                    <h2 className="text-3xl font-black text-secondary tracking-tighter mb-3">
+                        No active ride right now.
+                    </h2>
+                    <p className="text-gray-400 font-medium mb-10 leading-relaxed">
+                        You don&apos;t have any ongoing ride. Book a new ride to get started.
                     </p>
-                    <button
-                        onClick={() => router.push("/onway-book")}
-                        className="group w-full py-6 bg-primary text-white font-black rounded-[2rem] hover:bg-primary/95 transition shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95"
-                    >
-                        START BOOKING <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
+
+                    {showPaymentButton && (
+                        <button
+                            onClick={markAsPaid}
+                            className="w-full mb-4 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs shadow-lg shadow-amber-500/20"
+                        >
+                            <CreditCard size={18} /> Complete Pending Payment
+                        </button>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                            onClick={() => router.push("/onway-book")}
+                            className="flex-1 py-4 bg-primary hover:bg-accent text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
+                        >
+                            <MapPin size={16} /> Go OnWay-Book
+                        </button>
+                        <button
+                            onClick={() => router.push("/dashboard/passenger")}
+                            className="flex-1 py-4 bg-secondary hover:bg-secondary/90 text-white font-black rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-xs"
+                        >
+                            Dashboard Home
+                        </button>
+                    </div>
                 </motion.div>
             </div>
         );
     }
-
     const getStatusText = () => {
         switch (rideStatus) {
             case "accepted": return "Driver Assigned";

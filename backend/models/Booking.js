@@ -40,6 +40,28 @@ class Booking {
         );
     }
 
+    async updatePaymentStatus(id, paymentStatus) {
+        if (!ObjectId.isValid(id)) return null;
+        return await this.collection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { paymentStatus, updatedAt: new Date() } }
+        );
+    }
+
+    /**
+     * Check if a passenger has any booking where payment is not yet completed.
+     * Excludes cancelled/expired/failed bookings that are terminal states.
+     */
+    async hasUnpaidBooking(passengerId) {
+        if (!ObjectId.isValid(passengerId)) return false;
+        const booking = await this.collection.findOne({
+            passengerId: new ObjectId(passengerId),
+            paymentStatus: { $in: ["pending", "failed"] },
+            bookingStatus: { $nin: ["cancelled", "expired"] },
+        });
+        return booking || null; // return the booking so caller can show its ID
+    }
+
     async verifyOTP(id, otp) {
         if (!ObjectId.isValid(id)) return false;
         const booking = await this.findById(id);

@@ -13,19 +13,19 @@ import DeveloperCard from "./_components/DeveloperCard";
 const DEVELOPERS = [
   {
     name: "Zubaear Hasan",
-    role: "Leader & Frontend",
+    role: "Frontend Developer",
     isLeader: true,
     avatar: "/Devs/JUBAEAR.jpeg",
     socials: {
-      github:    "https://github.com",
-      linkedin:  "https://linkedin.com",
-      facebook:  "https://facebook.com",
-      portfolio: "https://example.com",
+      github:    "https://github.com/Xubaear",
+      linkedin:  "https://www.linkedin.com/in/zubaear/",
+      facebook:  "https://www.facebook.com/share/1P7KbH4qBa/",
+      portfolio: "https://xubaears-portfolio.netlify.app/",
     },
   },
   {
     name: "Minhaj Islam",
-    role: "Co-Leader & Fullstack",
+    role: "Fullstack Developer",
     isCoLeader: true,
     avatar: "/Devs/MINHAJ.jpeg",
     socials: {
@@ -48,7 +48,7 @@ const DEVELOPERS = [
   },
   {
     name: "Shourov Hasan",
-    role: "MERN Stack",
+    role: "MERN Stack Developer",
     avatar: "/Devs/SHOUROV.jpg",
     socials: {
       github:    "https://github.com/shouravhasanshurjo8201",
@@ -59,13 +59,13 @@ const DEVELOPERS = [
   },
   {
     name: "Isthiak Ahmed",
-    role: "Frontend",
+    role: "Frontend Developer",
     avatar: "/Devs/ISTHIAK.jpeg",
     socials: {
-      github:    "https://github.com",
-      linkedin:  "https://linkedin.com",
-      facebook:  "https://facebook.com",
-      portfolio: "https://example.com",
+      github:    "https://github.com/Istheaksayem",
+      linkedin:  "https://www.linkedin.com/in/istheak-ahmed-557471392",
+      facebook:  "https://www.facebook.com/share/1AxPHcdWri/",
+      portfolio: "https://shiny-meerkat-dd94be.netlify.app",
     },
   },
 ];

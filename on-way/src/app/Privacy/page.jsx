@@ -1,4 +1,5 @@
 import React from "react";
+import PageBanner from "../components/PageBanner";
 
 export const metadata = {
   title: "Privacy Policy | OnWay Ride",
@@ -7,8 +8,13 @@ export const metadata = {
 const Privacy = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F6] text-[#1F1F1F] font-sans">
+      <PageBanner
+        tag="Legal Center"
+        title="Privacy Policy"
+        subtitle="We are committed to protecting your personal data. Your privacy is our priority."
+      />
 
-      <div className="max-w-[1200px] mx-auto py-12 px-6 md:py-20 flex flex-col md:flex-row gap-16">
+      <div className="max-w-[1200px] mx-auto py-12 px-6 md:py-16 flex flex-col md:flex-row gap-16">
         
         {/* Sidebar - Pathao Style Bold Nav */}
         <aside className="md:w-1/4">

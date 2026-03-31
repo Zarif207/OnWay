@@ -75,8 +75,6 @@ export default function DeveloperCard({ developer, index }) {
               {name.charAt(0)}
             </div>
           </div>
-          {/* Online indicator */}
-          <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[#2FCA71] rounded-full border-2 border-white shadow-sm" />
         </div>
 
         {/* Name */}

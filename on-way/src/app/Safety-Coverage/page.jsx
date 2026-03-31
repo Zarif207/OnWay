@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { ShieldCheck, HeartPulse, HardHat, Car, Smartphone, CheckCircle2, ShieldAlert } from 'lucide-react';
 import AOS from 'aos';
+import PageBanner from '../components/PageBanner';
 
 const coverageDetails = [
     {
@@ -30,8 +31,13 @@ const OnWaySafetyCoverage = () => {
     }, []);
 
     return (
-        <section className="py-20 bg-base-100 overflow-hidden">
-            <div className="max-w-6xl mx-auto px-4">
+        <section className="bg-[#f4f6f9] overflow-hidden">
+            <PageBanner
+                tag="Your Protection"
+                title="Safety Coverage"
+                subtitle="Every OnWay trip is backed by comprehensive safety systems and insurance coverage."
+            />
+            <div className="max-w-6xl mx-auto px-4 py-20">
                 
                 {/* --- UNIQUE SECTION HEADER START --- */}
                 <div className="relative mb-20 text-center md:text-left" data-aos="fade-right">

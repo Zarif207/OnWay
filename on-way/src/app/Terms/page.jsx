@@ -2,18 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  ShieldCheck,
-  Scale,
-  Eye,
-  HelpCircle,
-  FileSignature,
-  AlertCircle,
-  Download,
-  Wallet,
-  ShieldAlert,
+  ShieldCheck, Scale, Eye, HelpCircle,
+  AlertCircle, Download, Wallet, ShieldAlert,
 } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import PageBanner from "../components/PageBanner";
 
 const Terms = () => {
   const [activeTab, setActiveTab] = useState("acceptance");
@@ -98,22 +92,13 @@ const Terms = () => {
   };
 
   return (
-    <section className="min-h-screen bg-[#f2f2f2] py-16 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-14" data-aos="fade-down">
-          <p className="text-sm text-gray-500 uppercase tracking-widest mb-3">
-            Legal Center
-          </p>
-          <h1 className="text-4xl md:text-5xl font-semibold text-gray-900">
-            Terms of Service
-          </h1>
-          <p className="mt-4 text-gray-600 max-w-2xl">
-            Please read these terms carefully before using our platform. Your
-            access to and use of the service is conditioned upon your acceptance
-            of these terms.
-          </p>
-        </div>
+    <section className="min-h-screen bg-[#f4f6f9]">
+      <PageBanner
+        tag="Legal Center"
+        title="Terms of Service"
+        subtitle="Please read these terms carefully before using our platform."
+      />
+      <div className="max-w-6xl mx-auto px-4 py-16">
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Sidebar */}

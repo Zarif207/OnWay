@@ -1,111 +1,141 @@
 "use client";
-import React from "react";
-import { Phone, Mail, MapPin, MessageSquare } from "lucide-react";
 
-const ContactUs = () => {
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Phone, Mail, MapPin, Send, Clock, MessageCircle } from "lucide-react";
+import PageBanner from "../components/PageBanner";
+
+const INFO = [
+  { icon: Phone,   label: "Phone",    value: "+880 1234-567890",    sub: "Available 24/7" },
+  { icon: Mail,    label: "Email",    value: "support@onway.com",   sub: "Response within 24h" },
+  { icon: MapPin,  label: "Location", value: "Chattogram, Bangladesh", sub: "Headquarters" },
+  { icon: Clock,   label: "Hours",    value: "Sun–Thu: 9am–7pm",    sub: "Fri: Emergency only" },
+];
+
+export default function ContactPage() {
+  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSent(true);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
+    <main className="bg-[#f4f6f9] min-h-screen">
+      <PageBanner
+        tag="Get in Touch"
+        title="Contact Us"
+        subtitle="Have a question, feedback, or safety concern? Our team is here to help — always."
+      />
 
-      {/* Header */}
-      <div className="text-center mb-12" data-aos="fade-up">
-        <h1 className="text-4xl font-bold text-primary mb-4">
-          Contact Us
-        </h1>
-        <p className="text-gray-600 max-w-xl mx-auto">
-          Need help with your ride? Have questions, feedback, or safety concerns? 
-          Our support team is available 24/7 to assist you.
-        </p>
-      </div>
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="grid lg:grid-cols-5 gap-8 items-start">
 
-      <div className="grid md:grid-cols-2 gap-10">
+          {/* Form — 3 cols */}
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-3 p-8 rounded-2xl bg-white border border-gray-100 shadow-sm"
+          >
+            {sent ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-[#2FCA71]/10 flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="w-8 h-8 text-[#2FCA71]" />
+                </div>
+                <h3 className="text-2xl font-black text-[#011421] mb-2">Message Sent!</h3>
+                <p className="text-gray-500">We'll get back to you within 24 hours.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#2FCA71] mb-2">Send a Message</p>
+                <h2 className="text-2xl font-black text-[#011421] mb-6">We'd love to hear from you</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {[
+                      { name: "name",    placeholder: "Your Name",    type: "text" },
+                      { name: "email",   placeholder: "Your Email",   type: "email" },
+                    ].map((f) => (
+                      <input
+                        key={f.name}
+                        type={f.type}
+                        placeholder={f.placeholder}
+                        required
+                        value={form[f.name]}
+                        onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
+                        className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-[#011421] text-sm placeholder-gray-400 outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 transition-all"
+                      />
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Subject"
+                    required
+                    value={form.subject}
+                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-[#011421] text-sm placeholder-gray-400 outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 transition-all"
+                  />
+                  <textarea
+                    rows={5}
+                    placeholder="Your message..."
+                    required
+                    value={form.message}
+                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-[#011421] text-sm placeholder-gray-400 outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 transition-all resize-none"
+                  />
+                  <button type="submit" className="w-full bg-[#2FCA71] text-[#011421] font-black text-sm uppercase tracking-widest py-4 rounded-2xl hover:bg-[#26b861] transition-colors shadow-lg shadow-[#2FCA71]/20 flex items-center justify-center gap-2">
+                    Send Message <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </>
+            )}
+          </motion.div>
 
-        {/* Contact Form */}
-        <div 
-          className="glossy-card spotlight-hover rounded-2xl p-6 shadow-lg relative"
-          data-aos="fade-right"
-        >
-          <h2 className="text-2xl font-semibold mb-4">Send a Message</h2>
+          {/* Info panel — 2 cols */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-2 space-y-4"
+          >
+            {INFO.map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className="flex items-start gap-4 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#2FCA71]/10 flex items-center justify-center shrink-0">
+                  <item.icon className="w-4 h-4 text-[#2FCA71]" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{item.label}</p>
+                  <p className="font-black text-[#011421] text-sm">{item.value}</p>
+                  <p className="text-gray-400 text-xs">{item.sub}</p>
+                </div>
+              </motion.div>
+            ))}
 
-          <form className="space-y-4">
-
-            <input
-              type="text"
-              placeholder="Your Name"
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-
-            <input
-              type="email"
-              placeholder="Your Email"
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-
-            <textarea
-              rows="5"
-              placeholder="Your Message"
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            ></textarea>
-
-            <button
-              type="submit"
-              className="animated-btn w-full py-2 rounded-lg flex items-center justify-center gap-2"
-            >
-              Send Message
-              <span className="circle"></span>
-            </button>
-          </form>
+            {/* Dark card */}
+            <div className="relative p-6 rounded-2xl bg-[#011421] overflow-hidden">
+              <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-[#2FCA71]/10 blur-[50px] rounded-full pointer-events-none" />
+              <div className="relative z-10">
+                <MessageCircle className="w-7 h-7 text-[#2FCA71] mb-3" />
+                <p className="font-black text-white mb-1">Live Chat</p>
+                <p className="text-gray-400 text-xs mb-4">Average response time: 2 minutes</p>
+                <button className="w-full bg-[#2FCA71] text-[#011421] font-black text-xs uppercase tracking-widest py-3 rounded-xl hover:bg-[#26b861] transition-colors">
+                  Start Chat
+                </button>
+              </div>
+            </div>
+          </motion.div>
         </div>
-
-        {/* Contact Info */}
-        <div className="space-y-6" data-aos="fade-left">
-
-          {/* Phone */}
-          <div className="glossy-card flex items-center gap-4 p-4 rounded-xl shadow">
-            <Phone className="text-primary" />
-            <div>
-              <p className="font-semibold">Phone</p>
-              <p className="text-gray-600">+880 1234-567890</p>
-            </div>
-          </div>
-
-          {/* Email */}
-          <div className="glossy-card flex items-center gap-4 p-4 rounded-xl shadow">
-            <Mail className="text-primary" />
-            <div>
-              <p className="font-semibold">Email</p>
-              <p className="text-gray-600">support@onway.com</p>
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="glossy-card flex items-center gap-4 p-4 rounded-xl shadow">
-            <MapPin className="text-primary" />
-            <div>
-              <p className="font-semibold">Location</p>
-              <p className="text-gray-600">Chattogram, Bangladesh</p>
-            </div>
-          </div>
-
-          {/* Quick Help */}
-          <div className="bg-primary/10 p-6 rounded-2xl">
-            <div className="flex items-center gap-3 mb-2">
-              <MessageSquare className="text-primary" />
-              <h3 className="text-lg font-semibold">Need Quick Help?</h3>
-            </div>
-            <p className="text-gray-600 mb-3">
-              Our live support team is available 24/7. If you face any ride issues, 
-              payment problems, or safety concerns, contact us immediately.
-            </p>
-            <button className="animated-btn px-4 py-2 rounded-lg">
-              Live Chat
-              <span className="circle"></span>
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
-};
-
-export default ContactUs;
+}

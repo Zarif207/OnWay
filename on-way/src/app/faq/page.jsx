@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, Search, MessageCircle, Mail, Phone, HelpCircle, CheckCircle, Shield, User, CreditCard, MapPin } from 'lucide-react';
+import { ChevronDown, Search, MessageCircle, Mail, Phone, HelpCircle, Shield, User, CreditCard, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PageBanner from '../components/PageBanner';
 
 const FAQ = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -166,60 +167,32 @@ const FAQ = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-100 to-base-200">
-            {/* Hero Section */}
-            <motion.section
-                className="relative pt-20 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-            >
-                {/* Background decoration */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl -z-10"></div>
-                <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10"></div>
-
-                <div className="max-w-4xl mx-auto text-center">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="mb-6 inline-block"
-                    >
-                        <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                            <HelpCircle className="w-10 h-10 text-white" />
-                        </div>
-                    </motion.div>
-
-                    <h1 className="text-4xl sm:text-5xl font-bold text-color-neutral mb-4">
-                        Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Questions</span>
-                    </h1>
-                    <p className="text-lg text-color-neutral/70 mb-8 max-w-2xl mx-auto">
-                        Find answers to common questions about our ride-sharing service. Can't find what you're looking for? Contact our support team.
-                    </p>
-
-                    {/* Search Bar */}
-                    <motion.div
-                        className="max-w-2xl mx-auto"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                    >
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-color-neutral/50 group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Search FAQs..."
-                                value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setActiveCategory('general'); // Reset to general when searching
-                                }}
-                                className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-transparent bg-white text-color-neutral placeholder-color-neutral/40 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-lg hover:shadow-xl transition-all"
-                            />
-                        </div>
-                    </motion.div>
-                </div>
-            </motion.section>
+        <div className="min-h-screen bg-[#f4f6f9]">
+            <PageBanner
+                tag="OnWay Support"
+                title="FAQ"
+                subtitle="Find answers to common questions about our ride-sharing service."
+            />
+            {/* Hero Section — replaced by banner above, keep search */}
+            <div className="max-w-4xl mx-auto px-6 pt-12 pb-4">
+                <motion.div
+                    className="max-w-2xl mx-auto"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                >
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#2FCA71] transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Search FAQs..."
+                            value={searchQuery}
+                            onChange={(e) => { setSearchQuery(e.target.value); setActiveCategory('general'); }}
+                            className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-200 bg-white text-[#011421] placeholder-gray-400 focus:outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 shadow-sm transition-all"
+                        />
+                    </div>
+                </motion.div>
+            </div>
 
             {/* Main Content */}
             <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">

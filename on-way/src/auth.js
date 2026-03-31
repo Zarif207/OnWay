@@ -47,8 +47,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     events: {
         async signIn({ user }) {
+            const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
             try {
-                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/update-login`, {
+                await fetch(`${apiUrl}/passenger/update-login`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: user.email }),
@@ -63,12 +64,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async signIn({ user, account }) {
             if (account.provider === "google" || account.provider === "github") {
                 const { name, email, image } = user;
+                // Use server-side API URL — NEXT_PUBLIC_ vars may be undefined in server callbacks
+                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
                 try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${email}`);
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${email}`);
+                    const existing = await res.json();
 
-                    if (res.status === 404) {
-                        const saveRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger`, {
+                    // /passenger/find returns 200 + null when user doesn't exist
+                    if (!existing) {
+                        const saveRes = await fetch(`${apiUrl}/passenger`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -76,18 +81,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 email,
                                 image,
                                 role: "passenger",
-                                authProvider: account.provider
+                                authProvider: account.provider,
                             }),
                         });
 
                         if (!saveRes.ok) {
-                            console.error("Failed to save user to DB");
+                            const errBody = await saveRes.text();
+                            console.error("Failed to save social user to DB:", saveRes.status, errBody);
+                        } else {
+                            console.log(`✅ New social user saved: ${email} (${account.provider})`);
                         }
                     }
                     return true;
                 } catch (error) {
                     console.error("Error during social login sync:", error);
-                    return true;
+                    return true; // still allow sign-in even if DB save fails
                 }
             }
             return true;
@@ -100,19 +108,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             // For social logins or if role is missing, fetch it from DB
             if (token?.email && !token?.role) {
+                const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
                 try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/passenger/find?email=${token.email}`);
+                    const res = await fetch(`${apiUrl}/passenger/find?email=${token.email}`);
                     if (res.ok) {
                         const userData = await res.json();
-                        const rawRole = userData.role || "user";
-                        token.role = rawRole === "passenger" ? "user" : rawRole;
-                        token.id = userData._id || userData.id || token.id;
+                        if (userData) {
+                            const rawRole = userData.role || "passenger";
+                            token.role = rawRole === "user" ? "passenger" : rawRole;
+                            token.id = userData._id?.toString() || userData.id || token.id;
+                        } else {
+                            token.role = "passenger";
+                        }
                     } else {
-                        token.role = "user"; // Fallback
+                        token.role = "passenger";
                     }
                 } catch (error) {
                     console.error("Error fetching role in JWT callback:", error);
-                    token.role = "user";
+                    token.role = "passenger";
                 }
             }
             return token;

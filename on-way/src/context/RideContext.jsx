@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import axios from "axios";
 
 const RideContext = createContext();
 
@@ -23,8 +24,9 @@ export const RideProvider = ({ children }) => {
   const [distance, setDistance] = useState(0);
   const [rideType, setRideType] = useState("classic");
   const [isPaid, setIsPaid] = useState(false);
+  const [bookingId, setBookingId] = useState(null);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount & AUTO-SYNC with Backend
   useEffect(() => {
     const savedRide = localStorage.getItem("onway_current_ride");
     if (savedRide) {
@@ -40,6 +42,8 @@ export const RideProvider = ({ children }) => {
       setDistance(data.distance);
       setRideType(data.rideType || "classic");
       setIsPaid(data.isPaid || false);
+      setBookingId(data.bookingId || null);
+      
     }
   }, []);
 
@@ -48,13 +52,13 @@ export const RideProvider = ({ children }) => {
     if (rideStatus !== "idle") {
       const rideData = {
         rideStatus, pickup, dropoff, assignedDriver,
-        routeGeometry, otp, fare, duration, distance, rideType, isPaid
+        routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId
       };
       localStorage.setItem("onway_current_ride", JSON.stringify(rideData));
     } else {
       localStorage.removeItem("onway_current_ride");
     }
-  }, [rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid]);
+  }, [rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId]);
 
   const startSearching = (details) => {
     setPickup(details.pickup);
@@ -64,26 +68,51 @@ export const RideProvider = ({ children }) => {
     setDuration(details.duration);
     setDistance(details.distance);
     setRideType(details.rideType);
+    setBookingId(details.bookingId || null);
     setRideStatus("searching");
     setIsPaid(false);
   };
 
-  const setMatched = (driver) => {
-    setAssignedDriver(driver || MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)]);
+  const setMatched = (driverData) => {
+    const driver = driverData || MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)];
+    setAssignedDriver(driver);
     setRideStatus("accepted");
-    // Generate mock OTP
-    setOtp(Math.floor(1000 + Math.random() * 9000).toString());
+    // Use driver's OTP if provided, otherwise generate one
+    if (driver.otp) {
+      setOtp(driver.otp);
+    } else {
+      setOtp(Math.floor(1000 + Math.random() * 9000).toString());
+    }
   };
 
   const setArriving = () => setRideStatus("arriving");
 
   const setOtpPending = () => setRideStatus("otp_pending");
 
-  const verifyOtp = () => setRideStatus("ongoing");
+  const verifyOtp = async () => {
+    // Call backend to persist trip start + enrich booking with rider/passenger details
+    if (bookingId) {
+      try {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        await axios.post(`${API_BASE_URL}/bookings/${bookingId}/start-trip`);
+      } catch (err) {
+        console.error("Failed to persist trip start:", err.message);
+        // Don't block the UI — trip still starts locally
+      }
+    }
+    setRideStatus("ongoing");
+  };
 
   const completeRide = () => setRideStatus("completed");
 
-  const markAsPaid = () => setIsPaid(true);
+  const markAsPaid = () => {
+    // Save bookingId so payment success page can redirect to active-ride
+    if (bookingId) localStorage.setItem("onway_pending_bookingId", bookingId);
+    const params = new URLSearchParams();
+    if (bookingId) params.set("bookingId", bookingId);
+    if (fare) params.set("amount", fare);
+    window.location.href = `/payment?${params.toString()}`;
+  };
 
   const cancelRide = () => {
     setRideStatus("idle");
@@ -98,8 +127,8 @@ export const RideProvider = ({ children }) => {
 
   return (
     <RideContext.Provider value={{
-      rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid,
-      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide,
+      rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
+      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide, setIsPaid,
       MOCK_DRIVERS
     }}>
       {children}

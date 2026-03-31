@@ -19,7 +19,7 @@ function ReviewFormContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API = process.env.NEXT_PUBLIC_API_URL;
-    const DASHBOARD_URL = "/dashboard/user";
+    const DASHBOARD_URL = "/dashboard/passenger";
     const handleSubmit = async (e) => {
         e.preventDefault();
 

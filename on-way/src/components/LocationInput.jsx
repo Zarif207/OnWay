@@ -34,8 +34,7 @@ const LocationInput = ({
   const lastSearchRef = useRef('');
   const cacheRef = useRef({}); // Simple in-memory cache for suggestions
 
-  // Increased debounce delay to 1000ms for heavy geocoding protection
-  const debouncedInputValue = useDebounce(inputValue, 1000);
+  const debouncedInputValue = useDebounce(inputValue, 10100);
 
   // Color scheme based on type
   const colorScheme = {

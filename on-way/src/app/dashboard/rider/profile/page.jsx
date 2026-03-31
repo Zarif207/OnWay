@@ -238,7 +238,12 @@ export default function ProfilePage() {
                             {uploadImageMutation.isPending ? (
                                 <Loader2 size={32} className="animate-spin text-primary" />
                             ) : formData.image ? (
-                                <img src={`${apiUrl.replace("/api", "")}${formData.image}`} alt="Profile" className="h-full w-full object-cover" crossOrigin="anonymous" />
+                                <img
+                                  src={formData.image?.startsWith("http") ? formData.image : `${apiUrl.replace("/api", "")}${formData.image}`}
+                                  alt="Profile"
+                                  className="h-full w-full object-cover"
+                                  crossOrigin="anonymous"
+                                />
                             ) : (
                                 <User size={48} className="text-gray-300" />
                             )}

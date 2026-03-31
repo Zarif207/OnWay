@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import { useRide } from "@/context/RideContext";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,13 +28,29 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
 });
 
 export default function PassengerRidePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            </div>
+        }>
+            <PassengerRideContent />
+        </Suspense>
+    );
+}
+
+function PassengerRideContent() {
     const router = useRouter();
     const {
         rideStatus, pickup, dropoff, assignedDriver, routeGeometry,
-        otp, fare, duration, distance, rideType, isPaid,
-        setArriving, setOtpPending, verifyOtp, completeRide, cancelRide, markAsPaid
+        otp, fare, duration, distance, rideType, isPaid, bookingId,
+        setArriving, setOtpPending, verifyOtp, completeRide, cancelRide, markAsPaid,
+        checkPaymentStatus, setIsPaid
     } = useRide();
 
+    const searchParams = useSearchParams();
+    const [booking, setBooking] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -55,56 +72,101 @@ export default function PassengerRidePage() {
         }
     }, [rideStatus, setArriving, setOtpPending, completeRide]);
 
-    // EMPTY STATE
-    if (rideStatus === "idle") {
-        return (
-            <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center p-6 text-center">
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="w-full max-w-md"
-                >
-                    <div className="w-56 h-56 bg-white rounded-[4rem] mx-auto mb-10 flex items-center justify-center relative group shadow-2xl border border-gray-100">
-                        <div className="absolute inset-0 bg-primary/5 rounded-[4rem] group-hover:scale-110 transition-transform duration-700 blur-3xl opacity-50" />
-                        
-                        {/* Custom Vehicle Visual for Empty State */}
-                        <div className="relative z-10 w-40 h-20 group-hover:scale-110 transition-transform duration-500">
-                            <svg viewBox="0 0 100 50" className="w-full h-full drop-shadow-2xl">
-                                <rect x="15" y="5" width="70" height="40" rx="12" fill="#0F172A" />
-                                <rect x="25" y="10" width="40" height="30" rx="6" fill="#1E293B" />
-                                <rect x="35" y="15" width="20" height="20" rx="4" fill="#334155" />
-                                {/* Detail Lights */}
-                                <rect x="78" y="10" width="4" height="8" rx="2" fill="#F87171" opacity="0.8" />
-                                <rect x="78" y="32" width="4" height="8" rx="2" fill="#F87171" opacity="0.8" />
-                                <rect x="18" y="10" width="3" height="10" rx="1" fill="#FCD34D" opacity="0.6" />
-                                <rect x="18" y="30" width="3" height="10" rx="1" fill="#FCD34D" opacity="0.6" />
-                            </svg>
-                        </div>
+    // --- 2. CRITICAL: Fetch Fresh Booking Data (Source of Truth) ---
+    useEffect(() => {
+        const fetchLatestBooking = async () => {
+            // Priority: URL Param > Context State
+            const targetId = searchParams.get("bookingId") || bookingId;
+            
+            if (!targetId) {
+                setLoading(false);
+                return;
+            }
 
-                        {/* Floating elements */}
-                        <motion.div 
-                            animate={{ y: [0, -10, 0] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className="absolute -top-4 -right-4 w-16 h-16 bg-primary/10 rounded-2xl backdrop-blur-md border border-white flex items-center justify-center shadow-lg"
-                        >
-                            <MapIcon size={24} className="text-primary" />
-                        </motion.div>
-                    </div>
-                    <h2 className="text-4xl font-black text-secondary tracking-tighter mb-4">Ready for your next trip?</h2>
-                    <p className="text-gray-500 font-medium mb-10 px-8 leading-relaxed text-lg">
-                        You don’t have any active rides right now. Book a ride to experience OnWay's premium service.
-                    </p>
-                    <button
-                        onClick={() => router.push("/onway-book")}
-                        className="group w-full py-6 bg-primary text-white font-black rounded-[2rem] hover:bg-primary/95 transition shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95"
-                    >
-                        START BOOKING <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </motion.div>
+            try {
+                setLoading(true);
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+                const res = await axios.get(`${API_BASE_URL}/bookings/${targetId}`);
+                
+                if (res.data.success && res.data.booking) {
+                    const freshBooking = res.data.booking;
+                    setBooking(freshBooking);
+                    
+                    // --- SYNC CONTEXT: Update global state if backend confirms payment ---
+                    if (freshBooking.paymentStatus === "paid") {
+                        setIsPaid(true);
+                    }
+                }
+            } catch (err) {
+                console.error("❌ Failed to fetch fresh booking data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLatestBooking();
+    }, [searchParams, bookingId, setIsPaid]);
+
+    // --- 3. BLOCK RENDER BEFORE DATA LOAD ---
+    if (loading && (searchParams.get("bookingId") || bookingId)) {
+        return (
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-6" />
+                <h2 className="text-2xl font-black text-secondary tracking-tight">Verifying Payment...</h2>
+                <p className="text-gray-400 font-medium mt-2">Connecting to secure gateway...</p>
             </div>
         );
     }
 
+    // NO ACTIVE RIDE — covers both idle and completed states
+    if (rideStatus === "idle" || rideStatus === "completed") {
+        const showPaymentButton = rideStatus === "completed" && booking?.paymentStatus !== "paid" && !isPaid;
+
+        return (
+            <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-full max-w-sm"
+                >
+                    <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8">
+                        <Car size={52} className="text-primary" />
+                    </div>
+
+                    <h2 className="text-3xl font-black text-secondary tracking-tighter mb-3">
+                        No active ride right now.
+                    </h2>
+                    <p className="text-gray-400 font-medium mb-10 leading-relaxed">
+                        You don&apos;t have any ongoing ride. Book a new ride to get started.
+                    </p>
+
+                    {showPaymentButton && (
+                        <button
+                            onClick={markAsPaid}
+                            className="w-full mb-4 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs shadow-lg shadow-amber-500/20"
+                        >
+                            <CreditCard size={18} /> Complete Pending Payment
+                        </button>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                            onClick={() => router.push("/onway-book")}
+                            className="flex-1 py-4 bg-primary hover:bg-accent text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
+                        >
+                            <MapPin size={16} /> Go OnWay-Book
+                        </button>
+                        <button
+                            onClick={() => router.push("/dashboard/passenger")}
+                            className="flex-1 py-4 bg-secondary hover:bg-secondary/90 text-white font-black rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-xs"
+                        >
+                            Dashboard Home
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
     const getStatusText = () => {
         switch (rideStatus) {
             case "accepted": return "Driver Assigned";
@@ -140,8 +202,23 @@ export default function PassengerRidePage() {
                     showCurrentLocationButton={false}
                 />
 
-                {/* Top Floating Status */}
-                <div className="absolute top-6 left-6 right-6 lg:left-8 lg:right-auto lg:w-80 z-10">
+                {/* Top Floating Status & Payment Banner */}
+                <div className="absolute top-6 left-6 right-6 lg:left-8 lg:right-auto lg:w-80 z-10 space-y-3">
+                    {(booking?.paymentStatus === "pending" || (!isPaid && !booking)) && (
+                        <motion.div
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            className="bg-amber-500 text-white p-3 rounded-2xl shadow-lg border border-amber-400 flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Clock size={14} className="animate-pulse" />
+                                <span className="font-bold text-[10px] uppercase tracking-wider">Payment Pending</span>
+                            </div>
+                            <button onClick={markAsPaid} className="bg-white text-amber-600 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-tighter hover:bg-amber-50 transition shadow-sm">
+                                Pay Now
+                            </button>
+                        </motion.div>
+                    )}
                     <motion.div
                         initial={{ y: -50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -344,7 +421,7 @@ export default function PassengerRidePage() {
                                         <span className="text-5xl font-black text-secondary tracking-tighter">৳{fare}</span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        {isPaid ? (
+                                        {booking?.paymentStatus === "paid" ? (
                                             <div className="px-5 py-2.5 bg-green-500 text-white rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-green-500/30">
                                                 <CreditCard size={16} /> Paid Successfully
                                             </div>
@@ -353,8 +430,8 @@ export default function PassengerRidePage() {
                                                 <AlertCircle size={16} /> Payment Pending
                                             </div>
                                         )}
-                                        {!isPaid && (
-                                            <button 
+                                        {booking?.paymentStatus !== "paid" && (
+                                            <button
                                                 onClick={markAsPaid}
                                                 className="px-5 py-2.5 bg-secondary text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition"
                                             >
@@ -366,40 +443,68 @@ export default function PassengerRidePage() {
 
                                 {/* Stats Summary */}
                                 <div className="bg-secondary text-white rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
-                                     <div className="absolute inset-0 bg-primary/5 opacity-20" />
-                                     <p className="text-primary font-black uppercase tracking-widest text-[10px] mb-8">Journey Stats</p>
-                                     <div className="space-y-6">
-                                         <div className="flex justify-between items-center group">
-                                             <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Distance</span>
-                                             <span className="text-2xl font-black tracking-tighter">{distance} km</span>
-                                         </div>
-                                         <div className="w-full h-px bg-white/10" />
-                                         <div className="flex justify-between items-center group">
-                                             <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Time Spent</span>
-                                             <span className="text-2xl font-black tracking-tighter">{duration} mins</span>
-                                         </div>
-                                         <div className="w-full h-px bg-white/10" />
-                                         <div className="flex justify-between items-center group">
-                                             <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Vehicle ID</span>
-                                             <span className="text-lg font-black uppercase tracking-widest text-primary">{assignedDriver?.plate}</span>
-                                         </div>
-                                     </div>
+                                    <div className="absolute inset-0 bg-primary/5 opacity-20" />
+                                    <p className="text-primary font-black uppercase tracking-widest text-[10px] mb-8">Journey Stats</p>
+                                    <div className="space-y-6">
+                                        <div className="flex justify-between items-center group">
+                                            <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Distance</span>
+                                            <span className="text-2xl font-black tracking-tighter">{distance} km</span>
+                                        </div>
+                                        <div className="w-full h-px bg-white/10" />
+                                        <div className="flex justify-between items-center group">
+                                            <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Time Spent</span>
+                                            <span className="text-2xl font-black tracking-tighter">{duration} mins</span>
+                                        </div>
+                                        <div className="w-full h-px bg-white/10" />
+                                        <div className="flex justify-between items-center group">
+                                            <span className="text-gray-400 font-bold group-hover:text-white transition-colors">Vehicle ID</span>
+                                            <span className="text-lg font-black uppercase tracking-widest text-primary">{assignedDriver?.plate}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4 w-full">
-                                <button
-                                    onClick={() => { cancelRide(); router.push("/onway-book"); }}
-                                    className="flex-1 py-7 bg-primary text-white font-black rounded-[2.5rem] hover:bg-primary/95 transition shadow-2xl shadow-primary/20 active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-4 group"
-                                >
-                                    BOOK AGAIN <RotateCw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
-                                </button>
-                                <button
-                                    onClick={() => { cancelRide(); router.push("/dashboard/passenger"); }}
-                                    className="flex-1 py-7 bg-secondary text-white font-black rounded-[2.5rem] hover:opacity-90 transition shadow-2xl active:scale-95 uppercase tracking-widest text-sm"
-                                >
-                                    BACK TO DASHBOARD
-                                </button>
+                                {isPaid || booking?.paymentStatus === "paid" ? (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                cancelRide();
+                                                window.location.href = "/onway-book";
+                                            }}
+                                            className="flex-1 py-7 bg-[#2FCA71] text-white font-black rounded-[2.5rem] hover:opacity-95 transition shadow-2xl shadow-green-500/20 active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-4 group"
+                                        >
+                                            BOOK AGAIN <RotateCw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                cancelRide();
+                                                window.location.href = "/dashboard/passenger";
+                                            }}
+                                            className="flex-1 py-7 bg-secondary text-white font-black rounded-[2.5rem] hover:opacity-90 transition shadow-2xl active:scale-95 uppercase tracking-widest text-sm"
+                                        >
+                                            BACK TO DASHBOARD
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={markAsPaid}
+                                            className="flex-1 py-7 bg-[#2FCA71] text-white font-black rounded-[2.5rem] hover:opacity-95 transition shadow-2xl shadow-green-500/20 active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-4 group"
+                                        >
+                                            COMPLETE PAYMENT <CreditCard size={20} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                cancelRide();
+                                                window.location.href = "/dashboard/passenger";
+                                            }}
+                                            className="flex-1 py-7 bg-secondary text-white font-black rounded-[2.5rem] hover:opacity-90 transition shadow-2xl active:scale-95 uppercase tracking-widest text-sm"
+                                        >
+                                            PAY & RETURN
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </motion.div>

@@ -221,9 +221,8 @@ const TrafficToggleButton = ({ showTraffic, onToggle }) => {
       ref={divRef}
       style={{
         position: "absolute",
-        top: "12px",
-        left: "50%",
-        transform: "translateX(-50%)",
+        bottom: "24px",
+        right: "24px",
         zIndex: 1000,
       }}
     >
@@ -278,8 +277,8 @@ const TrafficStatusCard = ({ trafficInfo, durationMin }) => {
   return (
     <div style={{
       position: "absolute",
-      bottom: "12px",
-      right: "12px",
+      bottom: "84px",
+      right: "24px",
       zIndex: 1000,
       background: bg,
       border: `1.5px solid ${color}40`,
@@ -313,18 +312,19 @@ const TrafficStatusCard = ({ trafficInfo, durationMin }) => {
 // Traffic Legend
 const TrafficLegend = () => (
   <div
-    style={{
-      position: "absolute",
-      bottom: "40px",
-      left: "12px",
-      zIndex: 1000,
-      background: "rgba(255,255,255,0.95)",
-      borderRadius: "8px",
-      padding: "8px 12px",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-      fontSize: "11px",
-      fontWeight: "500",
-    }}
+      style={{
+        position: "absolute",
+        bottom: "84px",
+        right: "24px",
+        zIndex: 1000,
+        background: "rgba(255,255,255,0.95)",
+        borderRadius: "16px",
+        padding: "12px 16px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+        fontSize: "11px",
+        fontWeight: "500",
+        border: "1px solid rgba(0,0,0,0.05)"
+      }}
   >
     <div style={{ fontWeight: "700", marginBottom: "5px", color: "#1F2937" }}>
       🚦 Traffic Flow
@@ -351,24 +351,34 @@ const RouteProgressIndicator = ({ progress, isPlaying, durationMin }) => {
   const remainingTime = Math.max(0, Math.round(durationMin * (1 - progress)));
 
   return (
-    <div className="route-progress">
+    <div className="route-progress" style={{
+      position: "absolute",
+      top: "120px",
+      right: "24px",
+      zIndex: 1000,
+      background: "white",
+      padding: "16px",
+      borderRadius: "20px",
+      boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+      width: "200px"
+    }}>
       <div className="flex items-center gap-2 mb-2">
         <div
-          className={`w-2 h-2 rounded-full ${isPlaying ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+          className={`w-2.5 h-2.5 rounded-full ${isPlaying ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`}
         ></div>
-        <span className="text-xs font-semibold text-gray-700">
+        <span className="text-[11px] font-black text-gray-900 uppercase tracking-widest">
           {isPlaying ? "En Route" : progress === 1 ? "Arrived" : "Ready"}
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
         <div
-          className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+          className="bg-blue-600 h-1.5 rounded-full transition-all duration-500 ease-out"
           style={{ width: `${progressPercentage}%` }}
         ></div>
       </div>
-      <div className="flex justify-between text-xs text-gray-600">
-        <span>{progressPercentage}%</span>
-        <span>{remainingTime}min left</span>
+      <div className="flex justify-between items-center text-[10px] font-bold">
+        <span className="text-blue-600">{progressPercentage}%</span>
+        <span className="text-gray-400">{remainingTime} min left</span>
       </div>
     </div>
   );

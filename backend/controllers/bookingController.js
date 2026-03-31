@@ -19,7 +19,12 @@ const bookingController = (collections) => {
                 const { passengerId, status, recent } = req.query;
                 let query = {};
 
-                if (passengerId) query.passengerId = new ObjectId(passengerId);
+                if (passengerId) {
+                    if (!ObjectId.isValid(passengerId)) {
+                        return res.status(400).json({ success: false, message: "Invalid passengerId" });
+                    }
+                    query.passengerId = new ObjectId(passengerId);
+                }
                 if (status) query.bookingStatus = status;
 
                 if (recent === "true") {
@@ -55,17 +60,21 @@ const bookingController = (collections) => {
 
                 // Zone check
                 const ALLOWED_ZONES = [
-                    { name: "Dhaka", minLat: 23.70, maxLat: 23.90, minLng: 90.35, maxLng: 90.50 },
-                    { name: "Chittagong", minLat: 22.28, maxLat: 22.45, minLng: 91.75, maxLng: 91.90 },
-                    { name: "Sylhet", minLat: 24.85, maxLat: 24.95, minLng: 91.82, maxLng: 91.92 },
-                    { name: "Rajshahi", minLat: 24.35, maxLat: 24.42, minLng: 88.55, maxLng: 88.65 },
+                    { name: "Dhaka", minLat: 23.60, maxLat: 24.05, minLng: 90.20, maxLng: 90.60 },
+                    { name: "Chittagong", minLat: 22.00, maxLat: 22.60, minLng: 91.50, maxLng: 92.10 },
+                    { name: "Sylhet", minLat: 24.70, maxLat: 25.10, minLng: 91.60, maxLng: 92.20 },
+                    { name: "Rajshahi", minLat: 24.15, maxLat: 24.60, minLng: 88.30, maxLng: 88.80 },
                 ];
 
-                const inZone = ALLOWED_ZONES.some(
-                    (z) =>
-                        pickupLocation.lat >= z.minLat && pickupLocation.lat <= z.maxLat &&
-                        pickupLocation.lng >= z.minLng && pickupLocation.lng <= z.maxLng
-                );
+                const inZone = ALLOWED_ZONES.some((z) => {
+                    const pLat = pickupLocation.lat;
+                    const pLng = pickupLocation.lng || pickupLocation.lon; // Handle both mapping styles
+                    
+                    return (
+                        pLat >= z.minLat && pLat <= z.maxLat &&
+                        pLng >= z.minLng && pLng <= z.maxLng
+                    );
+                });
 
                 if (!inZone) {
                     return res.status(400).json({
@@ -355,6 +364,106 @@ const bookingController = (collections) => {
                 });
             } catch (error) {
                 console.error("acceptRide error:", error);
+                res.status(500).json({ success: false, message: error.message });
+            }
+        },
+        // POST /api/bookings/:id/start-trip
+        // Called when passenger clicks "Verify & Start Trip".
+        // Enriches the booking with rider/passenger details and sets status to ongoing.
+        startTrip: async (req, res) => {
+            try {
+                const { id } = req.params;
+
+                const booking = await bookingModel.findById(id);
+                if (!booking) {
+                    return res.status(404).json({ success: false, message: "Booking not found" });
+                }
+
+                // Fetch rider details
+                let riderName    = null;
+                let riderImage   = null;
+                let vehicleName  = null;
+                let driverRating = null;
+
+                if (booking.riderId) {
+                    try {
+                        const rider = await riderModel.findById(booking.riderId.toString());
+                        if (rider) {
+                            riderName    = rider.name   || null;
+                            riderImage   = rider.image  || rider.profileImage || null;
+                            vehicleName  = rider.vehicle?.model || rider.vehicleDetails?.brand || rider.car || null;
+                            driverRating = rider.rating || null;
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch rider details:", e.message);
+                    }
+                }
+
+                // Fetch passenger details
+                let passengerName  = null;
+                let passengerImage = null;
+
+                if (booking.passengerId) {
+                    try {
+                        const passenger = await passengerModel.findById(booking.passengerId.toString());
+                        if (passenger) {
+                            passengerName  = passenger.name  || null;
+                            passengerImage = passenger.image || passenger.profileImage || null;
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch passenger details:", e.message);
+                    }
+                }
+
+                // Persist enriched data + status change
+                await collections.bookingsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: {
+                            bookingStatus: "ongoing",
+                            tripStartedAt: new Date(),
+                            updatedAt:     new Date(),
+                            riderName,
+                            riderImage,
+                            vehicleName,
+                            driverRating,
+                            passengerName,
+                            passengerImage,
+                        },
+                    }
+                );
+
+                // Notify via socket
+                if (req.io && booking.passengerId) {
+                    req.io.to(`passenger:${booking.passengerId}`).emit("trip_started", { bookingId: id });
+                    req.io.to(`user:${booking.passengerId}`).emit("ride:started",     { bookingId: id });
+                }
+
+                const updated = await bookingModel.findById(id);
+                console.log(`🚀 Trip started: ${id}`);
+
+                res.status(200).json({ success: true, message: "Trip started", booking: updated });
+            } catch (error) {
+                console.error("startTrip error:", error);
+                res.status(500).json({ success: false, message: error.message });
+            }
+        },
+
+        // GET /api/bookings/unpaid-check?passengerId=xxx
+        checkUnpaidBooking: async (req, res) => {
+            try {
+                const { passengerId } = req.query;
+                if (!passengerId) {
+                    return res.status(400).json({ success: false, message: "passengerId is required" });
+                }
+                const unpaid = await bookingModel.hasUnpaidBooking(passengerId);
+                res.status(200).json({
+                    success: true,
+                    hasUnpaid: !!unpaid,
+                    unpaidBookingId: unpaid ? unpaid._id.toString() : null,
+                });
+            } catch (error) {
+                console.error("checkUnpaidBooking error:", error);
                 res.status(500).json({ success: false, message: error.message });
             }
         },

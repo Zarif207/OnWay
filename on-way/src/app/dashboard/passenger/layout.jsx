@@ -1,34 +1,53 @@
 "use client";
-import RoleLayout from "@/components/dashboard/RoleLayout";
-import { useRide } from "@/context/RideContext";
-import {
-  LayoutDashboard,
-  MapPin,
-  History,
-  User,
-  Wallet,
-  MessageSquareMore,
-  Car,
-  RotateCcw
-} from "lucide-react";
+
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Loader2, ShieldX } from "lucide-react";
+
+// Role guard only — no payment gate.
+// Payment is optional and available via the payment page.
 
 export default function PassengerLayout({ children }) {
-  const { rideStatus } = useRide();
+  const { data: session, status: authStatus } = useSession();
+  const router = useRouter();
 
-  const menuItems = [
-    { label: "Dashboard", path: "/dashboard/user", icon: LayoutDashboard },
-    { label: "Book a Ride", path: "/onway-book", icon: MapPin },
-    ...(rideStatus !== "idle" ? [{ label: "Active Ride", path: "/dashboard/user/ride", icon: Car }] : []),
-    { label: "Ride History", path: "/dashboard/user/ride-history", icon: History },
-    { label: "Refund Request", path: "/dashboard/user/refund", icon: RotateCcw },
-    { label: "Inbox", path: "/dashboard/user/chat", icon: MessageSquareMore },
-    { label: "Profile", path: "/dashboard/user/profile", icon: User },
-    { label: "Wallet", path: "/dashboard/user/wallet", icon: Wallet },
-  ];
+  if (authStatus === "loading") {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  return (
-    <RoleLayout role="Passenger" menuItems={menuItems}>
-      {children}
-    </RoleLayout>
-  );
+  if (authStatus === "unauthenticated") {
+    router.replace("/login");
+    return null;
+  }
+
+  const rawRole = session?.user?.role;
+  const role    = rawRole === "user" ? "passenger" : rawRole;
+
+  if (role !== "passenger") {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl p-10 max-w-sm w-full text-center shadow-xl border border-gray-100">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <ShieldX size={32} className="text-red-500" />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tighter">Access Denied</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            This dashboard is only accessible to passengers.
+          </p>
+          <button
+            onClick={() => router.replace(`/dashboard/${role}`)}
+            className="w-full py-3 bg-primary hover:bg-accent text-white font-bold rounded-xl transition-all"
+          >
+            Go to My Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
 }

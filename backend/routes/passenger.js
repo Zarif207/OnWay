@@ -388,7 +388,49 @@ module.exports = (passengerCollection) => {
         }
     });
 
-    // 12. Update Profile (PUT - Comprehensive)
+    // 12. Reset Password (Forgot Password flow)
+    router.patch("/update-password", async (req, res) => {
+        try {
+            const { email, newPassword } = req.body;
+
+            if (!email || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Email and new password are required"
+                });
+            }
+
+            const user = await passengerCollection.findOne({ email });
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            await passengerCollection.updateOne(
+                { email },
+                { $set: { password: hashedPassword, updatedAt: new Date() } }
+            );
+
+            res.status(200).json({
+                success: true,
+                message: "Password reset successfully"
+            });
+
+        } catch (error) {
+            console.error("Reset password error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to reset password",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+    // 13. Update Profile (PUT - Comprehensive)
     router.put("/profile/update", async (req, res) => {
         try {
             const { userId, email, name, phone, address, language, notifications, image } = req.body;

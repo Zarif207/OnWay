@@ -1,11 +1,18 @@
 const express = require("express");
 const router = express.Router();
+const cors = require("cors");
 
-module.exports = function (paymentsCollection) {
+// SSLCommerz callback routes need to allow all origins (POST from SSLCommerz servers)
+const sslCors = cors({ origin: "*", methods: ["POST", "GET"] });
+
+module.exports = function (collections) {
+  const paymentsCollection = collections.paymentsCollection;
+  const bookingsCollection = collections.bookingsCollection;
+  const { ObjectId } = require("mongodb");
 
   router.post("/initiate", async (req, res) => {
     try {
-      const { amount, customerName, customerEmail, customerPhone, productName, paymentMethod } = req.body;
+      const { amount, customerName, customerEmail, customerPhone, productName, paymentMethod, bookingId } = req.body;
 
       // Cash on Service handle
       if (paymentMethod === "cash") {
@@ -17,11 +24,20 @@ module.exports = function (paymentsCollection) {
           customerPhone,
           productName,
           paymentMethod: "cash",
+          bookingId: bookingId || null,
           status: "pending",
           createdAt: new Date(),
         };
 
         await paymentsCollection.insertOne(cashPayment);
+
+        // Update booking status if bookingId exists
+        if (bookingId && ObjectId.isValid(bookingId)) {
+          await bookingsCollection.updateOne(
+            { _id: new ObjectId(bookingId) },
+            { $set: { paymentMethod: "cash", paymentStatus: "pending", updatedAt: new Date() } }
+          );
+        }
 
         return res.json({
           success: true,
@@ -43,9 +59,9 @@ module.exports = function (paymentsCollection) {
         total_amount: amount,
         currency: "BDT",
         tran_id: transactionId,
-        success_url: `${process.env.BACKEND_URL}/api/payment/success`,
-        fail_url: `${process.env.BACKEND_URL}/api/payment/fail`,
-        cancel_url: `${process.env.BACKEND_URL}/api/payment/cancel`,
+        success_url: `${process.env.FRONTEND_URL}/api/payment/success`,
+        fail_url: `${process.env.FRONTEND_URL}/api/payment/fail`,
+        cancel_url: `${process.env.FRONTEND_URL}/api/payment/cancel`,
         ipn_url: `${process.env.BACKEND_URL}/api/payment/ipn`,
         product_name: productName,
         product_category: "Service",
@@ -57,6 +73,7 @@ module.exports = function (paymentsCollection) {
         cus_country: "Bangladesh",
         shipping_method: "NO",
         product_profile: "general",
+        value_a: bookingId || "" // Use value_a to store bookingId
       };
 
       // Direct payment method routing
@@ -78,6 +95,7 @@ module.exports = function (paymentsCollection) {
       await paymentsCollection.insertOne({
         transactionId,
         ...paymentData,
+        bookingId: bookingId || null,
         paymentMethod,
         status: "initiated",
         createdAt: new Date(),
@@ -107,17 +125,50 @@ module.exports = function (paymentsCollection) {
     }
   });
 
+  // Helper to update booking status
+  const updateBookingPaymentStatus = async (transactionId, status) => {
+    try {
+      const payment = await paymentsCollection.findOne({ transactionId });
+      if (payment && payment.bookingId && ObjectId.isValid(payment.bookingId)) {
+        const result = await bookingsCollection.updateOne(
+          { _id: new ObjectId(payment.bookingId) },
+          { $set: { paymentStatus: status, updatedAt: new Date() } }
+        );
+        console.log(`✅ [PAYMENT] Booking ${payment.bookingId} update result:`, result.modifiedCount > 0 ? "success" : "no-change");
+        return result.modifiedCount > 0 || result.matchedCount > 0;
+      }
+    } catch (err) {
+      console.error("❌ Error updating booking payment status:", err);
+    }
+    return false;
+  };
+
   // Payment success callback
-  router.post("/success", async (req, res) => {
+  router.post("/success", sslCors, async (req, res) => {
     try {
       const { tran_id } = req.body;
 
+      // 1. Update Payment Record
       await paymentsCollection.updateOne(
         { transactionId: tran_id },
         { $set: { status: "success", updatedAt: new Date() } }
       );
 
-      res.redirect(`${process.env.FRONTEND_URL}/payment/success?transaction=${tran_id}`);
+      // 2. Update Booking Status & Await Result
+      const success = await updateBookingPaymentStatus(tran_id, "paid");
+
+      // 3. STRICT VERIFICATION: Fetch fresh data to confirm change is persisted
+      const payment = await paymentsCollection.findOne({ transactionId: tran_id });
+      const bookingId = payment?.bookingId;
+      
+      if (bookingId) {
+        const verifiedBooking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+        console.log(`🧐 [VERIFICATION] Booking ${bookingId} status is: ${verifiedBooking?.paymentStatus}`);
+      }
+
+      // 4. Redirect with bookingId safely in URL
+      const redirectUrl = `${process.env.FRONTEND_URL}/payment/success?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
+      res.redirect(redirectUrl);
     } catch (error) {
       console.error("Payment success error:", error);
       res.status(500).json({ success: false, message: "Error processing success" });
@@ -125,7 +176,7 @@ module.exports = function (paymentsCollection) {
   });
 
   // Payment fail callback
-  router.post("/fail", async (req, res) => {
+  router.post("/fail", sslCors, async (req, res) => {
     try {
       const { tran_id } = req.body;
 
@@ -134,7 +185,12 @@ module.exports = function (paymentsCollection) {
         { $set: { status: "failed", updatedAt: new Date() } }
       );
 
-      res.redirect(`${process.env.FRONTEND_URL}/payment/fail?transaction=${tran_id}`);
+      await updateBookingPaymentStatus(tran_id, "failed");
+
+      const payment = await paymentsCollection.findOne({ transactionId: tran_id });
+      const bookingId = payment?.bookingId;
+      const redirectUrl = `${process.env.FRONTEND_URL}/payment/fail?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
+      res.redirect(redirectUrl);
     } catch (error) {
       console.error("Payment fail error:", error);
       res.status(500).json({ success: false, message: "Error processing failure" });
@@ -142,7 +198,7 @@ module.exports = function (paymentsCollection) {
   });
 
   // Payment cancel callback
-  router.post("/cancel", async (req, res) => {
+  router.post("/cancel", sslCors, async (req, res) => {
     try {
       const { tran_id } = req.body;
 
@@ -151,7 +207,12 @@ module.exports = function (paymentsCollection) {
         { $set: { status: "cancelled", updatedAt: new Date() } }
       );
 
-      res.redirect(`${process.env.FRONTEND_URL}/payment/cancel?transaction=${tran_id}`);
+      await updateBookingPaymentStatus(tran_id, "cancelled");
+
+      const payment = await paymentsCollection.findOne({ transactionId: tran_id });
+      const bookingId = payment?.bookingId;
+      const redirectUrl = `${process.env.FRONTEND_URL}/payment/cancel?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
+      res.redirect(redirectUrl);
     } catch (error) {
       console.error("Payment cancel error:", error);
       res.status(500).json({ success: false, message: "Error processing cancellation" });
@@ -163,10 +224,15 @@ module.exports = function (paymentsCollection) {
     try {
       const { tran_id, status } = req.body;
 
+      const newStatus = status.toLowerCase();
       await paymentsCollection.updateOne(
         { transactionId: tran_id },
-        { $set: { status: status.toLowerCase(), ipnReceived: true, updatedAt: new Date() } }
+        { $set: { status: newStatus, ipnReceived: true, updatedAt: new Date() } }
       );
+
+      if (newStatus === "valid" || newStatus === "success") {
+        await updateBookingPaymentStatus(tran_id, "paid");
+      }
 
       res.json({ success: true });
     } catch (error) {

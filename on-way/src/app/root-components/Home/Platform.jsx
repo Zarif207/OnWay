@@ -8,6 +8,7 @@ import Container from "./Container";
 import { services } from "./homeData";
 
 import { StaggerContainer, AnimatedHeading } from "../MotionWrappers";
+import Link from "next/link";
 
 /**
  * Platform Component (V2 - 2026 Fintech Edition)
@@ -161,22 +162,23 @@ export default function Platform() {
                 </div>
 
                 <div className="mt-auto pt-12 flex flex-wrap gap-4">
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-3 bg-[#0A1F3D] text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-[#0A1F3D]/10 hover:shadow-[#0A1F3D]/20 transition-all group/btn"
-                  >
-                    {current.cta.label}
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </motion.button>
-                  <motion.button
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Link
+                      href="/onway-book"
+                      className="flex items-center gap-3 bg-[#0A1F3D] text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-[#0A1F3D]/10 hover:shadow-[#0A1F3D]/20 transition-all group/btn"
+                    >
+                      {current.cta.label}
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Link>
+                  </motion.div>
+                  {/* <motion.button
                     whileHover={{ backgroundColor: "rgba(0,0,0,0.03)" }}
                     whileTap={{ scale: 0.97 }}
                     className="flex items-center gap-3 bg-transparent border border-gray-200 text-[#0A1F3D] px-8 py-4 rounded-2xl font-bold transition-all"
                   >
                     <Download className="w-4 h-4 opacity-50" />
                     Get App
-                  </motion.button>
+                  </motion.button> */}
                 </div>
               </div>
             </motion.div>

@@ -104,7 +104,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-[60vh] flex items-center py-16 bg-white overflow-hidden "
+      className="relative min-h-[60vh] flex items-center py-16 bg-white overflow-hidden mt-12"
     >
       <Container className="relative z-20 w-full">
         <motion.div

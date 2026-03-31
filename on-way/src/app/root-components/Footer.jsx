@@ -35,9 +35,9 @@ const QUICK_LINKS = [
 
 const SERVICE_LINKS = [
   { label: "OnWay Ride Share", href: "/onway-book" },
-  { label: "Ride Categories", href: "/ride-category" },
+  { label: "Ride Categories", href: "/earn-with-onway" },
   { label: "Fare & Pricing", href: "/pricing" },
-  { label: "Safety Center", href: "/safety" },
+  { label: "Safety Center", href: "/Safety-Coverage" },
   { label: "Driver Registration", href: "/earn-with-onway" },
   { label: "Support & Help", href: "/help" },
 ];
@@ -351,19 +351,19 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-8">
             <Link
-              href="#"
+              href="/Privacy"
               className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors"
             >
               Privacy Policy
             </Link>
             <Link
-              href="#"
+              href="/Terms"
               className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors"
             >
               Terms of Service
             </Link>
             <Link
-              href="#"
+              href="/Safety-Coverage"
               className="text-xs font-bold text-gray-500 hover:text-[#2FCA71] transition-colors"
             >
               Safety Coverage

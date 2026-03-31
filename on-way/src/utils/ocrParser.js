@@ -232,3 +232,58 @@ export function processOCR(rawText) {
     _debug: { lines, nameCandidate }
   };
 }
+
+/**
+ * Alias for extractName — kept for backward compatibility.
+ * Some components import extractFullName directly.
+ */
+export function extractFullName(lines) {
+  return extractName(lines);
+}
+
+/**
+ * 9. parseDocument — Full pipeline with structured output.
+ * Used by API routes and DocumentOCR component.
+ * Returns a validated, structured result including isValid flag.
+ */
+export function parseDocument(rawText) {
+  if (!rawText) {
+    return {
+      isValid: false,
+      error: "No text provided",
+      fullName: "", firstName: "", lastName: "",
+      documentType: null, documentNumber: "",
+      dateOfBirth: "", bloodGroup: "",
+    };
+  }
+
+  const lines = cleanOCRText(rawText);
+  const documentType = detectDocumentType(rawText);
+
+  const nameCandidate = extractName(lines);
+  let fullName = cleanName(nameCandidate);
+  if (!validateName(fullName)) fullName = "";
+
+  const { firstName, lastName } = splitName(fullName);
+  const dateOfBirth = extractDOB(rawText);
+  const bloodGroup = extractBloodGroup(rawText);
+
+  // Extract document number (NID / passport / license number)
+  const docNumberMatch = rawText.match(/\b(\d{10,17})\b/);
+  const documentNumber = docNumberMatch ? docNumberMatch[1] : "";
+
+  const isValid = !!(documentType && (fullName || documentNumber));
+
+  return {
+    isValid,
+    error: isValid ? null : "Could not detect a valid document. Ensure the image is clear.",
+    fullName,
+    firstName,
+    lastName,
+    documentType,
+    documentNumber,
+    dateOfBirth,
+    bloodGroup,
+    _debug: { lines, nameCandidate },
+  };
+}

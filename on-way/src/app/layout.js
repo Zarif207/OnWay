@@ -58,15 +58,13 @@ import { usePathname } from "next/navigation";
 import ChatSupport from "./components/ChatBot/ChatSupport";
 import FloatingSOSButton from "@/components/FloatingSOSButton";
 import ScrollProgress from "./components/ScrollProgress";
-import { RideProvider } from "@/context/RideContext"; // ✅ add this
+import { RideProvider } from "@/context/RideContext";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 
-  const hideNavbarFooter =
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname.startsWith("/dashboard");
+  const hideNavbar = pathname === "/login" || pathname === "/register" || pathname.startsWith("/dashboard");
+  const hideFooter = hideNavbar || pathname === "/onway-book";
 
   return (
     <html lang="en" data-theme="onwaytheme">
@@ -81,20 +79,16 @@ export default function RootLayout({ children }) {
       <body>
         <QueryProvider>
           <AuthProvider>
-            {/* ✅ Wrap RideProvider here */}
             <RideProvider>
+              {!hideNavbar && <Navbar />}
               <ScrollProgress>
-                {!hideNavbarFooter && <Navbar />}
-
                 <main>
                   {children}
                   <ChatSupport />
                   <FloatingSOSButton />
                 </main>
-
                 <Toaster position="top-center" reverseOrder={false} />
-
-                {!hideNavbarFooter && <Footer />}
+                {!hideFooter && <Footer />}
               </ScrollProgress>
             </RideProvider>
           </AuthProvider>

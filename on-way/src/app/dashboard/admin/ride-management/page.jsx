@@ -255,11 +255,17 @@ const RideManagement = () => {
   };
 
   // Filter bookings
+  const getLocationString = (loc) => {
+    if (!loc) return "";
+    if (typeof loc === "string") return loc;
+    return loc.name || loc.address?.road || loc.address?.suburb || loc.address?.city || "";
+  };
+
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.pickupLocation?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.dropoffLocation?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getLocationString(booking.pickupLocation).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getLocationString(booking.dropoffLocation).toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.passengerId?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =

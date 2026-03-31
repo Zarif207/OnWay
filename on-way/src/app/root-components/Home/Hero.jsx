@@ -3,6 +3,8 @@
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Clock, MapPin, Navigation2, X, Check } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Container from "./Container";
 import AnimatedButton from "../AnimatedButton";
 
@@ -10,7 +12,23 @@ export default function Hero() {
   const [city, setCity] = useState("Detecting...");
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [pickupText, setPickupText] = useState("");
+  const [dropoffText, setDropoffText] = useState("");
   const inputRef = useRef(null);
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const handleRecentActivity = () => {
+    const role = session?.user?.role;
+    const routes = {
+      passenger:    "/dashboard/passenger/ride-history",
+      user:         "/dashboard/passenger/ride-history",
+      rider:        "/dashboard/rider/ride-history",
+      admin:        "/dashboard/admin/user-management",
+      supportAgent: "/dashboard/supportAgent/complaints",
+    };
+    router.push(routes[role] ?? "/login");
+  };
 
   // Auto-detect location on mount
   useEffect(() => {
@@ -49,15 +67,20 @@ export default function Hero() {
   };
 
   const handleConfirm = () => {
-    if (inputValue.trim()) {
-      setCity(inputValue.trim());
-    }
+    if (inputValue.trim()) setCity(inputValue.trim());
     setShowChangeModal(false);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleConfirm();
     if (e.key === "Escape") setShowChangeModal(false);
+  };
+
+  const handleSeePrices = () => {
+    const params = new URLSearchParams();
+    if (pickupText.trim())  params.set("pickup",  pickupText.trim());
+    if (dropoffText.trim()) params.set("dropoff", dropoffText.trim());
+    router.push(`/onway-book${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   // 3D Tilt Effect
@@ -81,7 +104,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-[60vh] flex items-center py-16 bg-white overflow-hidden pt-44"
+      className="relative min-h-[60vh] flex items-center py-16 bg-white overflow-hidden "
     >
       <Container className="relative z-20 w-full">
         <motion.div
@@ -188,6 +211,9 @@ export default function Hero() {
                   <input
                     type="text"
                     placeholder="Pickup location"
+                    value={pickupText}
+                    onChange={(e) => setPickupText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSeePrices()}
                     className="w-full bg-transparent text-[14px] font-semibold text-[#0A1F3D] placeholder-gray-400 outline-none"
                   />
                   <Navigation2 className="h-4 w-4 text-gray-400 group-focus-within:text-[#2FCA71]" />
@@ -199,6 +225,9 @@ export default function Hero() {
                   <input
                     type="text"
                     placeholder="Dropoff location"
+                    value={dropoffText}
+                    onChange={(e) => setDropoffText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSeePrices()}
                     className="w-full bg-transparent text-[14px] font-semibold text-[#0A1F3D] placeholder-gray-400 outline-none"
                   />
                 </div>
@@ -206,9 +235,9 @@ export default function Hero() {
 
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-4">
                 <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <AnimatedButton className="w-full">SEE PRICES</AnimatedButton>
+                  <AnimatedButton className="w-full" onClick={handleSeePrices}>Book Trip</AnimatedButton>
                 </motion.div>
-                <AnimatedButton>Recent Activity →</AnimatedButton>
+                <AnimatedButton onClick={handleRecentActivity}>Recent Activity →</AnimatedButton>
               </div>
             </motion.div>
           </div>

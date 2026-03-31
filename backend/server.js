@@ -5,6 +5,8 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const http = require("http");
 const { Server } = require("socket.io");
+const {setServers}  = require("node:dns/promises");
+
 
 const passengerRoutes = require("./routes/passenger");
 const blogRoutes = require("./routes/blog");
@@ -533,7 +535,7 @@ app.use("/api/refunds", (req, res, next) => {
 });
 
 app.use("/api/payment", (req, res, next) => {
-  paymentRoutes(req.collections.paymentsCollection)(req, res, next);
+  paymentRoutes(req.collections)(req, res, next);
 });
 
 app.use("/api/riders", (req, res, next) => {
@@ -639,3 +641,4 @@ if (require.main === module) {
 
 //  For Vercel serverless
 module.exports = app;
+setServers(["1.1.1.1", "8.8.8.8"]);

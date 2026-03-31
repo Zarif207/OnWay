@@ -309,9 +309,11 @@ export default function DashboardOverview() {
                     </div>
                     <div>
                       <p className="font-medium text-sm text-gray-900">
-                        {booking.pickupLocation?.address?.substring(0, 30) ||
-                          "N/A"}
-                        ...
+                        {(() => {
+                          const loc = booking.pickupLocation;
+                          const addr = loc?.name || loc?.address?.road || loc?.address?.suburb || loc?.address?.city || "N/A";
+                          return typeof addr === "string" ? addr.substring(0, 30) + (addr.length > 30 ? "..." : "") : "N/A";
+                        })()}
                       </p>
                       <p className="text-xs text-gray-500">
                         {new Date(booking.createdAt).toLocaleTimeString()}

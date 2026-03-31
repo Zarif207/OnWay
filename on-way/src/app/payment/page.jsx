@@ -1,421 +1,366 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
-export default function PaymentPage() {
-  const [paymentData, setPaymentData] = useState({
-    amount: "",
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    productName: "Ride Payment",
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+
+// ─── Payment Methods ──────────────────────────────────────────────────────────
+const PAYMENT_METHODS = [
+  { id: "bkash", name: "bKash", image: "https://i.ibb.co.com/T35XzZc/b-Kash-Icon-Vector-300x300.jpg" },
+  { id: "nagad", name: "Nagad", image: "https://i.ibb.co.com/s0tykNn/images.png" },
+  { id: "bank",  name: "Bank",  image: "https://i.ibb.co.com/v4tBXZvy/visa-logo-visa-icon-transparent-free-png.png" },
+  { id: "upay",  name: "Upay",  image: "https://i.ibb.co.com/TDCPrv99/images.jpg" },
+];
+
+// ─── Validation Rules ─────────────────────────────────────────────────────────
+const RULES = {
+  phone:     { regex: /^01[3-9][0-9]{8}$/,   msg: "Enter a valid BD phone number (e.g. 01XXXXXXXXX)" },
+  txnId:     { regex: /^[a-zA-Z0-9]{8,20}$/, msg: "Transaction ID must be 8-20 alphanumeric characters" },
+  accName:   { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Account name must be 3-50 letters only" },
+  accNumber: { regex: /^[0-9]{8,20}$/,        msg: "Account number must be 8-20 digits" },
+  bankName:  { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Bank name must be 3-50 letters only" },
+};
+
+function validate(fields) {
+  const errors = {};
+  Object.entries(fields).forEach(([key, { value, rule }]) => {
+    if (!value.trim()) {
+      errors[key] = "This field is required";
+    } else if (!RULES[rule].regex.test(value.trim())) {
+      errors[key] = RULES[rule].msg;
+    }
   });
+  return errors;
+}
 
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: "",
-    cardName: "",
-    expiryDate: "",
-    cvv: "",
-  });
+// ─── Reusable FormField ───────────────────────────────────────────────────────
+function FormField({ label, name, value, onChange, placeholder, error, type = "text" }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`w-full px-4 py-3 border rounded-xl outline-none transition-all focus:ring-2 focus:ring-primary focus:border-transparent ${
+          error ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:bg-white"
+        }`}
+      />
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
 
-  const [paymentMethod, setPaymentMethod] = useState("card");
-  const [loading, setLoading] = useState(false);
+// ─── Wallet Form (bKash / Nagad / Upay) ──────────────────────────────────────
+function WalletForm({ values, onChange, errors }) {
+  return (
+    <div className="space-y-4">
+      <FormField
+        label="Phone Number"
+        name="phone"
+        value={values.phone}
+        onChange={onChange}
+        placeholder="01XXXXXXXXX"
+        error={errors.phone}
+        type="tel"
+      />
+      <FormField
+        label="Transaction ID"
+        name="txnId"
+        value={values.txnId}
+        onChange={onChange}
+        placeholder="e.g. TXN12345678"
+        error={errors.txnId}
+      />
+    </div>
+  );
+}
 
-  const paymentMethods = [
-    {
-      id: "card",
-      name: "Card",
-      icon: "💳",
-      color: "from-blue-500 to-blue-600",
-    },
-    {
-      id: "bkash",
-      name: "bKash",
-      icon: "📱",
-      color: "from-pink-500 to-pink-600",
-    },
-    {
-      id: "nagad",
-      name: "Nagad",
-      icon: "💰",
-      color: "from-orange-500 to-orange-600",
-    },
-    {
-      id: "cash",
-      name: "Cash",
-      icon: "💵",
-      color: "from-green-500 to-green-600",
-    },
-  ];
+// ─── Bank Form ────────────────────────────────────────────────────────────────
+function BankForm({ values, onChange, errors }) {
+  return (
+    <div className="space-y-4">
+      <FormField
+        label="Account Name"
+        name="accName"
+        value={values.accName}
+        onChange={onChange}
+        placeholder="e.g. John Doe"
+        error={errors.accName}
+      />
+      <FormField
+        label="Account Number"
+        name="accNumber"
+        value={values.accNumber}
+        onChange={onChange}
+        placeholder="e.g. 12345678901"
+        error={errors.accNumber}
+      />
+      <FormField
+        label="Bank Name"
+        name="bankName"
+        value={values.bankName}
+        onChange={onChange}
+        placeholder="e.g. Dutch Bangla Bank"
+        error={errors.bankName}
+      />
+    </div>
+  );
+}
 
-  const handleChange = (e) => {
-    setPaymentData({
-      ...paymentData,
-      [e.target.name]: e.target.value,
-    });
+// ─── Spinner ──────────────────────────────────────────────────────────────────
+function Spinner() {
+  return (
+    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+}
+
+// ─── Main Content ─────────────────────────────────────────────────────────────
+function PaymentContent() {
+  const searchParams = useSearchParams();
+  const amountFromUrl = searchParams.get("amount");
+
+  const [amount, setAmount]               = useState(amountFromUrl || "");
+  const [paymentMethod, setPaymentMethod] = useState("bkash");
+  const [loading, setLoading]             = useState(false);
+  const [wallet, setWallet]               = useState({ phone: "", txnId: "" });
+  const [bank, setBank]                   = useState({ accName: "", accNumber: "", bankName: "" });
+  const [errors, setErrors]               = useState({});
+
+  useEffect(() => {
+    if (amountFromUrl) setAmount(amountFromUrl);
+  }, [amountFromUrl]);
+
+  const handleMethodChange = (id) => {
+    setPaymentMethod(id);
+    setErrors({});
   };
 
-  const handleCardChange = (e) => {
-    let value = e.target.value;
-    const name = e.target.name;
+  const handleWalletChange = (e) => {
+    setWallet((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+  };
 
-    // Card number formatting
-    if (name === "cardNumber") {
-      value = value
-        .replace(/\s/g, "")
-        .replace(/(\d{4})/g, "$1 ")
-        .trim();
-      if (value.length > 19) return;
+  const handleBankChange = (e) => {
+    setBank((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+  };
+
+  const getValidationFields = () => {
+    if (paymentMethod === "bank") {
+      return {
+        accName:   { value: bank.accName,   rule: "accName" },
+        accNumber: { value: bank.accNumber, rule: "accNumber" },
+        bankName:  { value: bank.bankName,  rule: "bankName" },
+      };
     }
-
-    // Expiry date formatting
-    if (name === "expiryDate") {
-      value = value.replace(/\D/g, "");
-      if (value.length >= 2) {
-        value = value.slice(0, 2) + "/" + value.slice(2, 4);
-      }
-      if (value.length > 5) return;
-    }
-
-    // CVV limit
-    if (name === "cvv" && value.length > 3) return;
-
-    setCardDetails({
-      ...cardDetails,
-      [name]: value,
-    });
+    return {
+      phone: { value: wallet.phone, rule: "phone" },
+      txnId: { value: wallet.txnId, rule: "txnId" },
+    };
   };
 
   const handlePayment = async (e) => {
     e.preventDefault();
+
+    const fieldErrors = validate(getValidationFields());
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const response = await fetch(`${apiUrl}/payment/initiate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: paymentData.amount,
-          customerName: paymentData.customerName,
-          customerEmail: paymentData.customerEmail,
-          customerPhone: paymentData.customerPhone,
-          productName: paymentData.productName,
-          paymentMethod: paymentMethod,
-          ...(paymentMethod === "card" && { cardDetails }),
-        }),
-      });
+      const payload = {
+        amount,
+        paymentMethod,
+        ...(paymentMethod === "bank" ? { bankDetails: bank } : { walletDetails: wallet }),
+      };
 
-      const data = await response.json();
+      const res  = await fetch(`${API_URL}/payment/initiate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
 
       if (data.success) {
-        if (paymentMethod === "cash") {
-          Swal.fire({
-            toast: true,
-            position: window.innerWidth < 768 ? "top" : "top-end",
-            icon: "success",
-            title: "Cash Payment Confirmed!",
-            text: "Payment will be collected during service.",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-          });
-        } else if (data.gatewayUrl) {
+        if (data.gatewayUrl) {
           window.location.href = data.gatewayUrl;
         } else {
-          Swal.fire({
-            toast: true,
-            position: window.innerWidth < 768 ? "top" : "top-end",
-            icon: "success",
-            title: "Payment Initiated!",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-          });
+          Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Payment Initiated!", showConfirmButton: false, timer: 3000, timerProgressBar: true });
         }
       } else {
-        Swal.fire({
-          toast: true,
-          position: window.innerWidth < 768 ? "top" : "top-end",
-          icon: "error",
-          title: "Payment Failed",
-          text: "Please try again.",
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-        });
+        Swal.fire({ toast: true, position: "top-end", icon: "error", title: "Payment Failed", text: "Please try again.", showConfirmButton: false, timer: 3000, timerProgressBar: true });
       }
-    } catch (error) {
-      console.error("Payment error:", error);
-      Swal.fire({
-        toast: true,
-        position: window.innerWidth < 768 ? "top" : "top-end",
-        icon: "error",
-        title: "Something went wrong!",
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
+    } catch {
+      Swal.fire({ toast: true, position: "top-end", icon: "error", title: "Something went wrong!", showConfirmButton: false, timer: 3000, timerProgressBar: true });
     } finally {
       setLoading(false);
     }
   };
 
+  const activeMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-10 px-4 pt-24">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
+
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Payment</h1>
-          <p className="text-gray-600 mt-1">Choose your payment method</p>
+          <h1 className="text-3xl font-bold text-secondary">Payment</h1>
+          <p className="text-gray-500 mt-1 text-sm">Choose your payment method and complete the details below.</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Side - Payment Methods & Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Payment Methods */}
+
+          {/* Left: Method Tabs + Form */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* Method Tabs */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Payment Method
-              </h2>
+              <h2 className="text-base font-semibold text-secondary mb-4">Payment Method</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {paymentMethods.map((method) => (
-                  <button
-                    key={method.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(method.id)}
-                    className={`relative p-4 rounded-xl transition-all ${
-                      paymentMethod === method.id
-                        ? `bg-linear-to-br ${method.color} text-white shadow-lg scale-105`
-                        : "bg-gray-50 hover:bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    <div className="text-3xl mb-2">{method.icon}</div>
-                    <div className="text-sm font-medium">{method.name}</div>
-                    {paymentMethod === method.id && (
-                      <div className="absolute top-2 right-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                {PAYMENT_METHODS.map((method) => {
+                  const isActive = paymentMethod === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => handleMethodChange(method.id)}
+                      className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        isActive
+                          ? "border-primary bg-primary/5 shadow-sm scale-[1.03]"
+                          : "border-gray-100 bg-gray-50 hover:border-primary/30 hover:bg-primary/5"
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex items-center justify-center shadow-sm border border-gray-100">
+                        <img
+                          src={method.image}
+                          alt={method.name}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
                       </div>
-                    )}
-                  </button>
-                ))}
+                      <span className={`text-xs font-semibold ${isActive ? "text-primary" : "text-gray-600"}`}>
+                        {method.name}
+                      </span>
+                      {isActive && (
+                        <span className="absolute top-2 right-2 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Card Details Form */}
-            {paymentMethod === "card" && (
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Card Details
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      value={cardDetails.cardNumber}
-                      onChange={handleCardChange}
-                      placeholder="1234 5678 9012 3456"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      name="cardName"
-                      value={cardDetails.cardName}
-                      onChange={handleCardChange}
-                      placeholder="John Doe"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        name="expiryDate"
-                        value={cardDetails.expiryDate}
-                        onChange={handleCardChange}
-                        placeholder="MM/YY"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        CVV
-                      </label>
-                      <input
-                        type="text"
-                        name="cvv"
-                        value={cardDetails.cvv}
-                        onChange={handleCardChange}
-                        placeholder="123"
-                        maxLength="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Customer Details */}
+            {/* Conditional Form */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Customer Details
-              </h2>
-              <form onSubmit={handlePayment} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="customerName"
-                    value={paymentData.customerName}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your name"
-                  />
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+                  <img src={activeMethod.image} alt={activeMethod.name} className="w-full h-full object-contain p-0.5" />
                 </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="customerEmail"
-                      value={paymentData.customerEmail}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="customerPhone"
-                      value={paymentData.customerPhone}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="+880 1XXX-XXXXXX"
-                    />
-                  </div>
-                </div>
+                <h2 className="text-base font-semibold text-secondary">{activeMethod.name} Details</h2>
+              </div>
+
+              <form onSubmit={handlePayment} noValidate>
+                {paymentMethod === "bank" ? (
+                  <BankForm values={bank} onChange={handleBankChange} errors={errors} />
+                ) : (
+                  <WalletForm values={wallet} onChange={handleWalletChange} errors={errors} />
+                )}
+                <button
+                  type="submit"
+                  disabled={loading || !amount}
+                  className="mt-6 w-full lg:hidden bg-primary hover:bg-accent text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  {loading ? <Spinner /> : `Pay ${amount || "0"} BDT`}
+                </button>
               </form>
             </div>
           </div>
 
-          {/* Right Side - Payment Summary */}
+          {/* Right: Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Payment Summary
-              </h2>
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Service</span>
-                  <span className="font-medium text-gray-900">
-                    {paymentData.productName}
-                  </span>
+            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24">
+              <h2 className="text-base font-semibold text-secondary mb-4">Summary</h2>
+
+              <div className="space-y-3 mb-6 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Service</span>
+                  <span className="font-medium text-gray-900">Ride Payment</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Amount</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Amount</span>
                   <input
                     type="number"
-                    name="amount"
-                    value={paymentData.amount}
-                    onChange={handleChange}
-                    required
-                    className="w-24 text-right px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-24 text-right px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none font-medium"
                     placeholder="0"
+                    min="0"
                   />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Processing Fee</span>
-                  <span className="font-medium text-gray-900">৳0</span>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Processing Fee</span>
+                  <span className="font-medium text-gray-900">0 BDT</span>
                 </div>
-                <div className="border-t pt-3 flex justify-between">
-                  <span className="font-semibold text-gray-900">Total</span>
-                  <span className="font-bold text-2xl text-blue-600">
-                    ৳{paymentData.amount || "0"}
-                  </span>
+                <div className="border-t border-gray-100 pt-3 flex justify-between items-end">
+                  <span className="font-semibold text-secondary">Total</span>
+                  <span className="font-black text-2xl text-primary">{amount || "0"} BDT</span>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2 mb-4">
+                <div className="w-6 h-6 rounded overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
+                  <img src={activeMethod.image} alt={activeMethod.name} className="w-full h-full object-contain" />
+                </div>
+                <span className="text-xs font-semibold text-primary">Paying via {activeMethod.name}</span>
               </div>
 
               <button
                 onClick={handlePayment}
-                disabled={loading || !paymentData.amount}
-                className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                disabled={loading || !amount}
+                className="hidden lg:flex w-full bg-primary hover:bg-accent text-white font-semibold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] items-center justify-center gap-2"
               >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin h-5 w-5 mr-3"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Processing...
-                  </span>
-                ) : paymentMethod === "cash" ? (
-                  "Confirm Cash Payment"
-                ) : (
-                  `Pay ৳${paymentData.amount || "0"}`
-                )}
+                {loading ? <Spinner /> : `Pay ${amount || "0"} BDT`}
               </button>
 
-              <p className="text-xs text-gray-500 text-center mt-4">
-                {paymentMethod === "cash"
-                  ? "💵 Pay when service is provided"
-                  : "🔒 Secured by SSLCommerz"}
-              </p>
+              <p className="text-xs text-gray-400 text-center mt-3">Secured by OnWay</p>
             </div>
           </div>
+
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Page Export ──────────────────────────────────────────────────────────────
+export default function PaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <PaymentContent />
+    </Suspense>
   );
 }

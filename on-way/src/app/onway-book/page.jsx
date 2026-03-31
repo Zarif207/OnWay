@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { getDrivingRoute } from "@/utils/routingService";
 import { calculateFare, FARE_RATES } from "@/utils/fareCalculator";
 import { reverseGeocode } from "@/utils/geocodingService";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import LocationInput from "@/components/LocationInput";
 import NetworkStatus from "@/components/NetworkStatus";
 import { MapPin, Clock, Route, DollarSign, Loader2, AlertTriangle, Car } from "lucide-react";
@@ -15,7 +15,8 @@ import '@/styles/location-dropdown.css';
 import { getDemandMultiplier } from "@/utils/demandService";
 import { useRide } from "@/context/RideContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Phone, MessageCircle, XCircle, ArrowRight, ShieldCheck } from "lucide-react";
+import { Star, Phone, MessageCircle, XCircle, ArrowRight, ShieldCheck, Wallet } from "lucide-react";
+import { geocodeAddress } from "@/utils/geocodingService";
 
 const MOCK_DRIVERS = [
   { id: 1, name: "Rahim", car: "Toyota Axio", plate: "DHK-12-3456", rating: 4.8, eta: "3 min", phone: "+8801700000001", avatar: "adventurer/svg?seed=Felix", vehicleType: "car" },
@@ -40,6 +41,18 @@ const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
 });
 
 export default function BookRidePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <BookRideContent />
+    </Suspense>
+  );
+}
+
+function BookRideContent() {
   // Location states
   const [pickupQuery, setPickupQuery] = useState("");
   const [dropoffQuery, setDropoffQuery] = useState("");
@@ -69,9 +82,34 @@ export default function BookRidePage() {
 
   const searchTimeoutRef = useRef(null);
   const { data: session } = useSession();
-
-
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ── Autofill from hero query params ──────────────────────────────────────
+  useEffect(() => {
+    const pickupParam  = searchParams.get("pickup");
+    const dropoffParam = searchParams.get("dropoff");
+    if (!pickupParam && !dropoffParam) return;
+
+    const resolve = async () => {
+      if (pickupParam) {
+        setPickupQuery(pickupParam);
+        try {
+          const loc = await geocodeAddress(pickupParam);
+          if (loc) setPickupLocation(loc);
+        } catch { /* silently ignore */ }
+      }
+      if (dropoffParam) {
+        setDropoffQuery(dropoffParam);
+        try {
+          const loc = await geocodeAddress(dropoffParam);
+          if (loc) setDropoffLocation(loc);
+        } catch { /* silently ignore */ }
+      }
+    };
+    resolve();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- 1. Comprehensive Surge Manager ---
   const updateSurgeAndFare = useCallback(async (lat, lon, address = "") => {
@@ -88,7 +126,7 @@ export default function BookRidePage() {
     try {
       // ── Weather API ──
       const res = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lsat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
       );
 
       weatherCondition = res.data.weather[0].main;
@@ -336,7 +374,6 @@ export default function BookRidePage() {
       setError("Please select both pickup and drop-off locations.");
       return;
     }
-
     if (!session?.user?.id) {
       setError("Please login to book a ride.");
       return;
@@ -345,27 +382,40 @@ export default function BookRidePage() {
     setIsSubmitting(true);
     setError("");
 
-    // Select driver based on ride type
-    const mappedType = rideType === "classic" ? "car" : rideType;
+    const currentFare    = fare > 0 ? fare : calculateFare(distance, rideType, surge.multiplier);
+    const mappedType     = rideType === "classic" ? "car" : rideType;
     const selectedDriver = MOCK_DRIVERS.find(d => d.vehicleType === mappedType) || MOCK_DRIVERS[0];
 
-    // Use global context to start searching
+    // Persist booking to MongoDB
+    let createdBookingId = null;
+    try {
+      const res = await axios.post(`${API_BASE_URL}/bookings`, {
+        passengerId:     session.user.id,
+        pickupLocation:  { ...pickupLocation,  lng: pickupLocation.lon  ?? pickupLocation.lng  },
+        dropoffLocation: { ...dropoffLocation, lng: dropoffLocation.lon ?? dropoffLocation.lng },
+        routeGeometry,
+        distance,
+        duration,
+        price:        currentFare,
+        rideType,
+        surgeApplied: surge.multiplier > 1.0,
+      });
+      if (res.data.success) createdBookingId = res.data.booking._id;
+    } catch (err) {
+      console.error("⚠️ Failed to save booking to DB:", err.message);
+      // Non-fatal — ride still works locally
+    }
+
     startSearching({
-      pickup: pickupLocation,
-      dropoff: dropoffLocation,
-      routeGeometry: routeGeometry,
-      fare: fare,
-      duration: duration,
-      distance: distance,
-      rideType: rideType
+      pickup: pickupLocation, dropoff: dropoffLocation,
+      routeGeometry, fare: currentFare, duration, distance, rideType,
+      bookingId: createdBookingId,
     });
 
-    // 1. Simulate "Searching" delay
     searchTimeoutRef.current = setTimeout(() => {
-      // 2. Trigger match in context with the specific driver
       setMatched(selectedDriver);
       setIsSubmitting(false);
-    }, 4500); // 4.5s delay for realism
+    }, 4500);
   };
 
   const handleCancelBooking = () => {
@@ -381,6 +431,19 @@ export default function BookRidePage() {
     };
   }, []);
 
+  // If payment was done or localStorage cleared, reset ride state
+  useEffect(() => {
+    const saved = localStorage.getItem("onway_current_ride");
+    if (!saved && rideStatus !== "idle") {
+      cancelRide();
+    }
+    // If paid, always reset
+    if (isPaid) {
+      cancelRide();
+      localStorage.removeItem("onway_current_ride");
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-10 px-3 sm:px-6 lg:px-8">
       <NetworkStatus />
@@ -390,7 +453,7 @@ export default function BookRidePage() {
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* MAP — top on mobile, right on desktop */}
-          <div className="order-1 lg:order-2 w-full lg:flex-1 h-[55vw] min-h-[280px] max-h-[420px] lg:max-h-none lg:min-h-[600px] rounded-2xl overflow-hidden shadow-lg border relative z-0">
+          <div className="order-1 lg:order-2 w-full lg:flex-1 h-[55vw] min-h-[280px] max-h-[420px] lg:max-h-none lg:min-h-[600px] rounded-2xl overflow-hidden shadow-lg border border-primary/20 relative z-0">
             <RideMap
               pickup={pickupLocation}
               dropoff={dropoffLocation}
@@ -473,12 +536,12 @@ export default function BookRidePage() {
                     key={key}
                     onClick={() => setRideType(key)}
                     className={`p-3 border-2 rounded-xl flex flex-col items-center justify-center transition-all ${rideType === key
-                      ? "border-black bg-gray-50 shadow-sm scale-[1.02]"
-                      : "border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-500"
+                      ? "border-primary bg-primary/5 shadow-sm scale-[1.02]"
+                      : "border-gray-100 hover:border-primary/40 hover:bg-primary/5 text-gray-500"
                       }`}
                   >
                     <span className="text-xl mb-0.5">{data.icon}</span>
-                    <span className="font-semibold capitalize text-gray-900 text-xs">{data.name}</span>
+                    <span className={`font-semibold capitalize text-xs ${rideType === key ? "text-primary" : "text-gray-900"}`}>{data.name}</span>
                     <span className="text-[10px] mt-0.5 text-gray-500">{data.perKm} ৳/km</span>
                   </button>
                 ))}
@@ -532,11 +595,11 @@ export default function BookRidePage() {
                 </div>
                 <div className="flex justify-between items-end pt-2 border-t border-white/10">
                   <span className="text-gray-300 text-sm font-medium">Estimated Fare</span>
-                  <span className={`font-bold text-3xl ${surge.multiplier > 1.0 ? 'text-orange-400' : 'text-emerald-400'}`}>{fare} ৳</span>
+                  <span className={`font-bold text-3xl ${surge.multiplier > 1.0 ? 'text-orange-400' : 'text-accent'}`}>{fare} ৳</span>
                 </div>
               </div>
             ) : (
-              <div className="bg-gray-50 p-4 rounded-xl border border-dashed flex items-center justify-center">
+              <div className="bg-gray-50 p-4 rounded-xl border border-dashed border-primary/20 flex items-center justify-center">
                 <div className="text-gray-400 text-sm">Select locations to see fare</div>
               </div>
             )}
@@ -545,7 +608,7 @@ export default function BookRidePage() {
             <button
               onClick={handleConfirmBooking}
               disabled={routeGeometry.length === 0 || isSubmitting}
-              className="w-full bg-linear-to-r from-primary to-blue-700 text-white py-3.5 rounded-xl font-semibold text-base hover:from-blue-700 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full bg-primary text-white py-3.5 rounded-xl font-semibold text-base hover:bg-accent transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
               {isSubmitting ? "Confirming..." : "Confirm Booking"}
@@ -606,7 +669,7 @@ export default function BookRidePage() {
               className="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl relative"
             >
               {/* Header Visual */}
-              <div className="bg-gradient-to-br from-primary to-indigo-700 p-8 text-white text-center relative overflow-hidden">
+              <div className="bg-gradient-to-br from-primary to-accent p-8 text-white text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10">
                   <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <path d="M0 0 L100 100 M100 0 L0 100" stroke="currentColor" strokeWidth="2" />
@@ -658,14 +721,14 @@ export default function BookRidePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => { markAsPaid(); router.push("/dashboard/user/ride"); }}
-                      className="py-3 bg-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition active:scale-95 flex items-center justify-center gap-2"
+                      onClick={() => { markAsPaid(); }}
+                      className="py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent transition active:scale-95 flex items-center justify-center gap-2"
                     >
                       <CreditCard size={14} /> Pay Now
                     </button>
                     <button
-                      onClick={() => router.push("/dashboard/user/ride")}
-                      className="py-3 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition active:scale-95"
+                      onClick={() => router.push("/dashboard/passenger/ride")}
+                      className="py-3 bg-white border border-primary/30 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition active:scale-95"
                     >
                       Pay Later
                     </button>
@@ -674,14 +737,8 @@ export default function BookRidePage() {
 
                 <div className="space-y-3">
                   <button
-                    onClick={() => router.push("/dashboard/passenger/ride")}
-                    className="w-full py-5 bg-primary text-white font-black rounded-2xl hover:bg-primary/95 transition active:scale-[0.98] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 uppercase tracking-tighter"
-                  >
-                    Track My Ride <ArrowRight size={20} />
-                  </button>
-                  <button
                     onClick={handleCancelBooking}
-                    className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-gray-100 hover:text-red-500 transition active:scale-[0.98] text-sm uppercase tracking-widest"
+                    className="w-full py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl hover:bg-red-50 hover:text-red-500 border border-transparent hover:border-red-100 transition active:scale-[0.98] text-sm uppercase tracking-widest"
                   >
                     Cancel Booking
                   </button>
@@ -701,10 +758,10 @@ function CreditCard({ size }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 24 24"Q
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2"QQ
       strokeLinecap="round"
       strokeLinejoin="round"
     >

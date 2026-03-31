@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createWorker } from "tesseract.js";
-import { parseDocument } from "@/utils/ocrParser";
+import { processOCR } from "@/utils/ocrParser";
 
 export async function POST(req) {
     let worker = null;
@@ -40,7 +40,7 @@ export async function POST(req) {
         console.log("OCR Result Length:", text.length);
 
         // Extract semi-structured data using our parser
-        const extracted = parseDocument(text);
+        const extracted = processOCR(text);
 
         return NextResponse.json({
             fullText: text || "",

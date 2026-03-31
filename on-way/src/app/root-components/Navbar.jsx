@@ -43,7 +43,6 @@ const NAV_ITEMS = [
   { label: "About", href: "/about", icon: Info },
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
-
 const HELP_ITEMS = [
   { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
   { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
@@ -155,7 +154,7 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const pathname = usePathname();
 
-  // Listen for profile image updates from any dashboard
+
   useEffect(() => {
     const saved = localStorage.getItem("navbar:profileImage");
     if (saved) setLocalImage(saved);
@@ -168,8 +167,8 @@ const Navbar = () => {
     return () => window.removeEventListener("profile:updated", handler);
   }, []);
 
-  const rawRole = user?.role || session?.user?.role || "user";
-  const role = useMemo(() => rawRole, [rawRole]);
+  const rawRole = user?.role || session?.user?.role || "passenger";
+  const role = useMemo(() => rawRole === "user" ? "passenger" : rawRole, [rawRole]);
 
   const dashboardHref = useMemo(() => {
     const href = `/dashboard/${role}`;

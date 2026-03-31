@@ -88,7 +88,9 @@ const OngoingRideCard = ({ ride }) => {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pickup Point</p>
-                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight text-pretty">{ride.pickupLocation?.address || ride.pickupLocation}</p>
+                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight text-pretty">
+                                        {ride.pickupLocation?.name || ride.pickupLocation?.address?.road || ride.pickupLocation?.address?.city || (typeof ride.pickupLocation === 'string' ? ride.pickupLocation : "Pickup Point")}
+                                    </p>
                                 </div>
                             </div>
 
@@ -98,7 +100,9 @@ const OngoingRideCard = ({ ride }) => {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Destination</p>
-                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight text-pretty">{ride.dropLocation?.address || ride.dropLocation}</p>
+                                    <p className="text-base font-bold text-gray-700 dark:text-gray-300 leading-tight text-pretty">
+                                        {ride.dropLocation?.name || ride.dropLocation?.address?.road || ride.dropLocation?.address?.city || (typeof ride.dropLocation === 'string' ? ride.dropLocation : "Destination")}
+                                    </p>
                                 </div>
                             </div>
                         </div>

@@ -30,7 +30,7 @@ const SidebarContent = ({ role, menuItems, onClose }) => {
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {menuItems?.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
           return (

@@ -337,10 +337,7 @@ export default function VehicleInfoPage() {
                           required: !formData?.documents?.license?.uploaded ? "License Number is required" : false
                         })}
                         onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            licenseNumber: e.target.value,
-                          }));
+                          updateFormData({ licenseNumber: e.target.value });
                           setValue("licenseNumber", e.target.value, { shouldValidate: true });
                         }}
                         className={`w-full rounded-xl px-4 py-3.5 bg-white text-[#0A1F3D] border outline-none transition focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] ${errors.licenseNumber ? "border-red-400" : "border-gray-200"}`}

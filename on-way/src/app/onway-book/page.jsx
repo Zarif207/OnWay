@@ -270,19 +270,19 @@ export default function BookRidePage() {
     setIsSubmitting(true);
     setError("");
     const currentFare = fare > 0 ? fare : calculateFare(distance, rideType, surge.multiplier);
-    
+
     let bookingId = null;
     try {
       const bookingData = {
-        pickupLocation: { 
-          lat: pickupLocation.lat, 
-          lng: pickupLocation.lon, 
-          address: pickupQuery || pickupLocation.address || "Pickup Point" 
+        pickupLocation: {
+          lat: pickupLocation.lat,
+          lng: pickupLocation.lng,
+          address: pickupQuery || pickupLocation.address || "Pickup Point"
         },
-        dropoffLocation: { 
-          lat: dropoffLocation.lat, 
-          lng: dropoffLocation.lon, 
-          address: dropoffQuery || dropoffLocation.address || "Drop-off Point" 
+        dropoffLocation: {
+          lat: dropoffLocation.lat,
+          lng: dropoffLocation.lng,
+          address: dropoffQuery || dropoffLocation.address || "Drop-off Point"
         },
         routeGeometry,
         distance,
@@ -294,10 +294,10 @@ export default function BookRidePage() {
       };
 
       const bookingRes = await axios.post(`${API_BASE_URL}/bookings`, bookingData);
-      
+
       if (bookingRes.data.success) {
         bookingId = bookingRes.data.booking._id;
-        
+
         // ONLY start searching if booking was created
         startSearching({
           pickup: pickupLocation,
@@ -347,7 +347,7 @@ export default function BookRidePage() {
           otp: Math.floor(1000 + Math.random() * 9000).toString()
         };
         setMatched(driver);
-        
+
         // Update booking in backend with riderId and accepted status
         if (bookingId) {
           try {
@@ -359,7 +359,7 @@ export default function BookRidePage() {
             console.error("Failed to update booking with rider:", patchErr);
           }
         }
-        
+
         setIsSubmitting(false);
       } catch (err) {
         setError("Matching failed.");
@@ -452,8 +452,8 @@ export default function BookRidePage() {
                     key={key}
                     onClick={() => setRideType(key)}
                     className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center justify-center gap-3 aspect-square group ${rideType === key
-                        ? "border-blue-600 bg-blue-50/20 text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02]"
-                        : "border-gray-50 bg-gray-50/50 hover:bg-gray-100 text-gray-400"
+                      ? "border-blue-600 bg-blue-50/20 text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02]"
+                      : "border-gray-50 bg-gray-50/50 hover:bg-gray-100 text-gray-400"
                       }`}
                   >
                     <span className="text-5xl mb-1 transform group-hover:scale-110 transition-transform">{data.icon}</span>
@@ -656,20 +656,20 @@ export default function BookRidePage() {
                       </div>
 
                       <div className="flex flex-col gap-3 pt-2">
-                        <button 
+                        <button
                           onClick={markAsPaid}
                           className="w-full py-5 bg-[#2FCA71] text-white font-black rounded-2xl hover:bg-[#28b363] transition shadow-xl text-xs uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center gap-3"
                         >
                           <CreditCard className="w-5 h-5" />
                           Pay Now
                         </button>
-                        <button 
+                        <button
                           onClick={() => router.push("/dashboard/passenger/ride")}
                           className="w-full py-4 bg-white text-gray-400 font-bold rounded-2xl border-2 border-gray-100 hover:bg-gray-50 transition text-[10px] uppercase tracking-widest"
                         >
                           Pay Later
                         </button>
-                        <button 
+                        <button
                           onClick={handleCancelBooking}
                           className="w-full py-3 text-gray-400 font-medium text-[9px] uppercase tracking-widest hover:text-red-500 transition-colors"
                         >

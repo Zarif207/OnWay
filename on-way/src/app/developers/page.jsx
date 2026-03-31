@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import {
-  Code2, Sparkles, ArrowRight,
+  Code2, ArrowRight,
   Terminal, Layers, Cpu, Globe2
 } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +15,7 @@ const DEVELOPERS = [
     name: "Zubaear Hasan",
     role: "Leader & Frontend",
     isLeader: true,
-    avatar: `https://ui-avatars.com/api/?name=Zubaear+Hasan&background=011421&color=2FCA71&size=128&bold=true&format=svg`,
+    avatar: "/Devs/JUBAEAR.jpeg",
     socials: {
       github:    "https://github.com",
       linkedin:  "https://linkedin.com",
@@ -27,18 +27,18 @@ const DEVELOPERS = [
     name: "Minhaj Islam",
     role: "Co-Leader & Fullstack",
     isCoLeader: true,
-    avatar: `https://ui-avatars.com/api/?name=Minhaj+Islam&background=0a1f3d&color=a78bfa&size=128&bold=true&format=svg`,
+    avatar: "/Devs/MINHAJ.jpeg",
     socials: {
-      github:    "https://github.com",
-      linkedin:  "https://linkedin.com",
-      facebook:  "https://facebook.com",
-      portfolio: "https://example.com",
+      github:    "https://github.com/minhaj-net",
+      linkedin:  "https://www.linkedin.com/in/minhaj-net/",
+      facebook:  "https://www.facebook.com/x.misuk",
+      portfolio: "https://minhaj-dev-xi.vercel.app/",
     },
   },
   {
     name: "Zarif Hasan",
     role: "System Developer",
-    avatar: `https://ui-avatars.com/api/?name=Zarif&background=011421&color=2FCA71&size=128&bold=true&format=svg`,
+    avatar: "/Devs/ZARIF.jpg",
     socials: {
       github:    "https://github.com/Zarif207",
       linkedin:  "https://www.linkedin.com/in/zarif-hasan5/",
@@ -49,18 +49,18 @@ const DEVELOPERS = [
   {
     name: "Shourov Hasan",
     role: "MERN Stack",
-    avatar: `https://ui-avatars.com/api/?name=Shourov+Hasan&background=1a0a2e&color=e879f9&size=128&bold=true&format=svg`,
+    avatar: "/Devs/SHOUROV.jpg",
     socials: {
-      github:    "https://github.com",
-      linkedin:  "https://linkedin.com",
-      facebook:  "https://facebook.com",
-      portfolio: "https://example.com",
+      github:    "https://github.com/shouravhasanshurjo8201",
+      linkedin:  "https://www.linkedin.com/in/shourav-hasan-22b948396/",
+      facebook:  "https://web.facebook.com/profile.php?id=100080296736228",
+      portfolio: "https://portfolio-shourav-hasan.netlify.app/",
     },
   },
   {
     name: "Isthiak Ahmed",
     role: "Frontend",
-    avatar: `https://ui-avatars.com/api/?name=Isthiak+Ahmed&background=0a1f3d&color=38bdf8&size=128&bold=true&format=svg`,
+    avatar: "/Devs/ISTHIAK.jpeg",
     socials: {
       github:    "https://github.com",
       linkedin:  "https://linkedin.com",
@@ -130,7 +130,7 @@ export default function DevelopersPage() {
           style={{ y: heroY, opacity: heroOpacity }}
           className="relative z-10 max-w-5xl mx-auto px-6 text-center"
         >
-          {/* Eyebrow badge */}
+          {/* Eyebrow badge
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -140,7 +140,7 @@ export default function DevelopersPage() {
             <span className="w-2 h-2 rounded-full bg-[#2FCA71] animate-pulse" />
             <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em]">OnWay · DevVibe Team</span>
             <Sparkles className="w-3.5 h-3.5 text-[#2FCA71]" />
-          </motion.div>
+          </motion.div> */}
 
           {/* Main heading */}
           <motion.h1

@@ -54,19 +54,25 @@ export default function DeveloperCard({ developer, index }) {
       )}
 
       <div className="flex flex-col items-center text-center px-8 pt-10 pb-8 gap-0 flex-1">
-        {/* Avatar ring */}
+        {/* Avatar */}
         <div className="relative mb-6">
-          <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${gradient} blur-md opacity-30 scale-110 group-hover:opacity-60 group-hover:scale-125 transition-all duration-500`} />
-          <div className={`relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br ${gradient}`}>
-            <div className="w-full h-full rounded-full overflow-hidden bg-white">
+          <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-100 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+            {avatar ? (
               <img
                 src={avatar}
                 alt={name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 onError={(e) => {
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=011421&color=2FCA71&size=128&bold=true&format=svg`;
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
                 }}
               />
+            ) : null}
+            <div
+              className="w-full h-full bg-gradient-to-br from-[#011421] to-[#0a1f3d] items-center justify-center text-3xl font-black text-[#2FCA71] select-none"
+              style={{ display: avatar ? "none" : "flex" }}
+            >
+              {name.charAt(0)}
             </div>
           </div>
           {/* Online indicator */}
@@ -81,8 +87,8 @@ export default function DeveloperCard({ developer, index }) {
           {role}
         </span>
 
-        {/* Team */}
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-6">DevVibe</p>
+        
+        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-6"></p>
 
         {/* Divider */}
         <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-6" />

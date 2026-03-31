@@ -187,7 +187,10 @@ module.exports = function (collections) {
 
       await updateBookingPaymentStatus(tran_id, "failed");
 
-      res.redirect(`${process.env.FRONTEND_URL}/payment/fail?transaction=${tran_id}`);
+      const payment = await paymentsCollection.findOne({ transactionId: tran_id });
+      const bookingId = payment?.bookingId;
+      const redirectUrl = `${process.env.FRONTEND_URL}/payment/fail?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
+      res.redirect(redirectUrl);
     } catch (error) {
       console.error("Payment fail error:", error);
       res.status(500).json({ success: false, message: "Error processing failure" });
@@ -206,7 +209,10 @@ module.exports = function (collections) {
 
       await updateBookingPaymentStatus(tran_id, "cancelled");
 
-      res.redirect(`${process.env.FRONTEND_URL}/payment/cancel?transaction=${tran_id}`);
+      const payment = await paymentsCollection.findOne({ transactionId: tran_id });
+      const bookingId = payment?.bookingId;
+      const redirectUrl = `${process.env.FRONTEND_URL}/payment/cancel?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
+      res.redirect(redirectUrl);
     } catch (error) {
       console.error("Payment cancel error:", error);
       res.status(500).json({ success: false, message: "Error processing cancellation" });

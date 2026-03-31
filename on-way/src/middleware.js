@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 const ROLE_ROUTES = {
   admin: "/dashboard/admin",
   rider: "/dashboard/rider",
+  
   passenger: "/dashboard/passenger",
   user: "/dashboard/passenger",
   supportAgent: "/dashboard/supportAgent",

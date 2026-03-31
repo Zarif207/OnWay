@@ -33,10 +33,8 @@ const LocationInput = ({
   const abortControllerRef = useRef(null);
   const lastSearchRef = useRef('');
   const cacheRef = useRef({}); // Simple in-memory cache for suggestions
-  const last429TimeRef = useRef(0); // Track last rate limit hit
 
-  // Increased debounce delay to 1000ms for heavy geocoding protection
-  const debouncedInputValue = useDebounce(inputValue, 1000);
+  const debouncedInputValue = useDebounce(inputValue, 10100);
 
   // Color scheme based on type
   const colorScheme = {
@@ -98,14 +96,6 @@ const LocationInput = ({
       setIsLoading(true);
       setError('');
 
-      // Cooldown check: if we hit a 429 recently, wait 5 seconds
-      const now = Date.now();
-      if (now - last429TimeRef.current < 5000) {
-        setIsLoading(false);
-        setError('Rate limit hit. Retrying in a few seconds...');
-        return;
-      }
-
       // Create new abort controller for this request
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -132,9 +122,8 @@ const LocationInput = ({
 
         // Handle rate limiting error specifically
         if (err.response?.status === 429 || err.message?.includes('429')) {
-          last429TimeRef.current = Date.now();
           setError('Too many requests. Please wait a moment and try again.');
-          console.warn('Rate limit hit, starting 5s cooldown');
+          console.warn('Rate limit hit, showing error to user');
         } else {
           setError(err.message || 'Failed to search locations');
         }

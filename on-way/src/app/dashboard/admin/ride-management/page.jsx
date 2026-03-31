@@ -9,11 +9,13 @@ import OnWayLoading from "@/app/components/Loading/page";
 
 const RideManagement = () => {
   const [bookings, setBookings] = useState([]);
-  console.log("State Data",bookings);
+  console.log("State Data", bookings);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [selectedBookings, setSelectedBookings] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rideManagementPage = 10;
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/bookings`;
 
@@ -22,20 +24,20 @@ const RideManagement = () => {
     try {
       setLoading(true);
       console.log("Fetching from:", API_URL);
-      
+
       const response = await axios.get(API_URL, {
         timeout: 10000, // 10 second timeout
       });
-      
+
       console.log("Response received:", response.data);
-      
+
       if (response.data.success) {
         setBookings(response.data.data);
         console.log("Bookings set:", response.data.data);
       }
     } catch (error) {
       console.error("Fetch bookings error:", error);
-      
+
       // Only show error if it's not an abort error
       if (error.code !== 'ERR_CANCELED') {
         Swal.fire({
@@ -53,19 +55,19 @@ const RideManagement = () => {
   useEffect(() => {
     // Use AbortController to prevent double-fetch in React Strict Mode
     const controller = new AbortController();
-    
+
     const loadBookings = async () => {
       try {
         setLoading(true);
         console.log("Fetching from:", API_URL);
-        
+
         const response = await axios.get(API_URL, {
           timeout: 10000,
           signal: controller.signal,
         });
-        
+
         console.log("Response received:", response.data);
-        
+
         if (response.data.success) {
           setBookings(response.data.data);
           console.log("Bookings set:", response.data.data);
@@ -76,9 +78,9 @@ const RideManagement = () => {
           console.log("Request was cancelled (likely due to React Strict Mode)");
           return;
         }
-        
+
         console.error("Fetch bookings error:", error);
-        
+
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -89,9 +91,9 @@ const RideManagement = () => {
         setLoading(false);
       }
     };
-    
+
     loadBookings();
-    
+
     // Cleanup function to abort request if component unmounts
     return () => {
       controller.abort();
@@ -273,7 +275,7 @@ const RideManagement = () => {
 
     return matchesSearch && matchesStatus;
   });
-console.log("filter  booking.pickupLocation", filteredBookings);
+  console.log("filter  booking.pickupLocation", filteredBookings);
   // Calculate stats
   const stats = {
     total: bookings.length,
@@ -298,12 +300,18 @@ console.log("filter  booking.pickupLocation", filteredBookings);
         return "bg-gray-100 text-gray-600";
     }
   };
-   if (loading) {
-      return (
-        <OnWayLoading></OnWayLoading>
-        
-      );
-    }
+  // Pagination logic
+  const itemsPerPage = rideManagementPage;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  if (loading) {
+    return (
+      <OnWayLoading></OnWayLoading>
+
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] px-6 py-8">
@@ -322,9 +330,8 @@ console.log("filter  booking.pickupLocation", filteredBookings);
           <div className="flex gap-3 w-full md:w-auto">
             <Button
               variant="outline"
-              className={`w-full md:w-auto ${
-                selectedBookings.length > 0 ? "border-red-500 text-red-500" : ""
-              }`}
+              className={`w-full md:w-auto ${selectedBookings.length > 0 ? "border-red-500 text-red-500" : ""
+                }`}
               onClick={handleBulkDelete}
             >
               {selectedBookings.length > 0
@@ -437,12 +444,11 @@ console.log("filter  booking.pickupLocation", filteredBookings);
                 </thead>
 
                 <tbody>
-                  {filteredBookings.map((booking) => (
+                  {currentBookings.map((booking) => (
                     <tr
                       key={booking._id}
-                      className={`border-b hover:bg-gray-50 transition ${
-                        selectedBookings.includes(booking._id) ? "bg-green-50" : ""
-                      }`}
+                      className={`border-b hover:bg-gray-50 transition ${selectedBookings.includes(booking._id) ? "bg-green-50" : ""
+                        }`}
                     >
                       <td className="p-4">
                         <input
@@ -534,6 +540,44 @@ console.log("filter  booking.pickupLocation", filteredBookings);
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        <div className="flex justify-end mt-8">
+          <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-2xl">
+            {/* Prev Button */}
+            <button
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 text-gray-500 font-medium rounded-xl hover:bg-gray-200 disabled:opacity-40 flex items-center gap-1"
+            >
+              ‹ Prev
+            </button>
+
+            {/* Page Numbers */}
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl font-semibold transition-all
+                            ${currentPage === i + 1
+                  ? "bg-green-500 text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 text-white bg-green-500 rounded-xl font-medium hover:bg-green-600 disabled:opacity-40 flex items-center gap-1"
+            >
+              Next ›
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -543,9 +587,8 @@ const StatCard = ({ title, value, color }) => (
   <div className="bg-white p-6 rounded-xl shadow-sm">
     <p className="text-gray-500 text-sm">{title}</p>
     <h2
-      className={`text-3xl font-bold mt-2 ${
-        color || "text-[var(--color-primary)]"
-      }`}
+      className={`text-3xl font-bold mt-2 ${color || "text-[var(--color-primary)]"
+        }`}
     >
       {value}
     </h2>

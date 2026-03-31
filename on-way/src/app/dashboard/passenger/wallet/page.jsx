@@ -37,12 +37,18 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const ADD_AMOUNTS = [100, 200, 500, 1000];
+
 export default function WalletPage() {
   const { data: session } = useSession();
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedAmount, setSelectedAmount] = useState(500);
+  const [customAmount, setCustomAmount] = useState("");
+  const [addingMoney, setAddingMoney] = useState(false);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -58,8 +64,19 @@ export default function WalletPage() {
         axios.get(`${API_BASE_URL}/payment/user/${session.user.id}`)
       ]);
 
-      if (userRes.data.success) setUser(userRes.data.data);
-      if (transRes.data.success) setTransactions(transRes.data.data);
+      if (userRes.data.success) {
+        const serverUser = userRes.data.data;
+        // Merge with localStorage mock balance
+        const savedBalance = localStorage.getItem(`wallet_balance_${session.user.id}`);
+        if (savedBalance) serverUser.walletBalance = parseInt(savedBalance);
+        setUser(serverUser);
+      }
+      if (transRes.data.success) {
+        const serverTxns = transRes.data.data;
+        // Merge with localStorage mock transactions
+        const savedTxns = JSON.parse(localStorage.getItem(`wallet_txns_${session.user.id}`) || "[]");
+        setTransactions([...savedTxns, ...serverTxns]);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to load wallet data");
@@ -68,10 +85,36 @@ export default function WalletPage() {
     }
   };
 
-  const handleAddMoney = () => {
-    toast.success("Redirecting to payment gateway...");
-    // Mock initiation
-    window.location.href = `${API_BASE_URL}/payment/initiate-demo?userId=${session.user.id}&amount=500`;
+  const handleAddMoney = async () => {
+    const amount = customAmount ? parseInt(customAmount) : selectedAmount;
+    if (!amount || amount < 10) {
+      toast.error("Minimum amount is ৳10");
+      return;
+    }
+    setAddingMoney(true);
+    await new Promise(r => setTimeout(r, 1000));
+
+    const mockTxn = {
+      transactionId: `TXN-${Date.now()}`,
+      product_name: "Wallet Top-up",
+      status: "success",
+      total_amount: amount,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save to localStorage so it persists on refresh
+    const newBalance = (user?.walletBalance || 0) + amount;
+    localStorage.setItem(`wallet_balance_${session.user.id}`, newBalance.toString());
+    const savedTxns = JSON.parse(localStorage.getItem(`wallet_txns_${session.user.id}`) || "[]");
+    localStorage.setItem(`wallet_txns_${session.user.id}`, JSON.stringify([mockTxn, ...savedTxns]));
+
+    setUser(prev => ({ ...prev, walletBalance: newBalance }));
+    setTransactions(prev => [mockTxn, ...prev]);
+    setAddingMoney(false);
+    setShowAddModal(false);
+    setCustomAmount("");
+    setSelectedAmount(500);
+    toast.success(`৳${amount} added to your wallet!`);
   };
 
   if (loading) {
@@ -91,7 +134,34 @@ export default function WalletPage() {
           <h1 className="text-4xl font-black text-secondary tracking-tighter">My Wallet</h1>
           <p className="text-gray-400 font-medium">Manage your funds and viewing billing history</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-4 bg-white border border-gray-100 text-secondary rounded-[1.5rem] hover:bg-gray-50 transition shadow-sm font-black text-xs uppercase tracking-widest">
+        <button
+          onClick={() => {
+            const last5 = transactions.slice(0, 5);
+            if (!last5.length) { toast.error("No transactions to download"); return; }
+
+            const rows = [
+              ["Transaction ID", "Description", "Date", "Status", "Amount (BDT)"],
+              ...last5.map(t => [
+                t.transactionId || t.tran_id || "-",
+                t.product_name || "Wallet Top-up",
+                new Date(t.createdAt).toLocaleString(),
+                t.status,
+                (t.total_amount || t.amount || 0).toString()
+              ])
+            ];
+
+            const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `onway-statement-${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success("Statement downloaded!");
+          }}
+          className="flex items-center gap-2 px-6 py-4 bg-white border border-gray-100 text-secondary rounded-[1.5rem] hover:bg-gray-50 transition shadow-sm font-black text-xs uppercase tracking-widest"
+        >
           <Download size={18} />
           Statement
         </button>
@@ -122,13 +192,10 @@ export default function WalletPage() {
 
             <div className="flex gap-4">
               <button
-                onClick={handleAddMoney}
+                onClick={() => setShowAddModal(true)}
                 className="flex-1 bg-primary text-white py-5 rounded-[1.8rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-[#25A65B] transition-all shadow-xl shadow-primary/20 active:scale-95"
               >
                 <Plus size={18} /> Add Money
-              </button>
-              <button className="flex-1 bg-white/10 backdrop-blur-md text-white py-5 rounded-[1.8rem] font-black uppercase tracking-widest text-xs hover:bg-white/20 transition-all border border-white/10">
-                Withdraw
               </button>
             </div>
           </div>
@@ -189,7 +256,6 @@ export default function WalletPage() {
               <tr className="border-b border-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <th className="pb-6 px-4">Transaction</th>
                 <th className="pb-6 px-4">Date & Time</th>
-                <th className="pb-6 px-4">Method</th>
                 <th className="pb-6 px-4">Status</th>
                 <th className="pb-6 px-4 text-right">Amount</th>
               </tr>
@@ -212,9 +278,6 @@ export default function WalletPage() {
                     <p className="text-xs font-bold text-gray-500">{new Date(txn.createdAt).toLocaleDateString()}</p>
                     <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{new Date(txn.createdAt).toLocaleTimeString()}</p>
                   </td>
-                  <td className="py-6 px-4">
-                    <p className="text-xs font-black text-secondary uppercase tracking-widest">{txn.paymentMethod || 'SSLCommerz'}</p>
-                  </td>
                   <td className="py-6 px-4"><StatusBadge status={txn.status} /></td>
                   <td className="py-6 px-4 text-right">
                     <span className={`text-xl font-black tracking-tight ${txn.status === 'success' ? 'text-primary' : 'text-secondary'}`}>
@@ -224,7 +287,7 @@ export default function WalletPage() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="5" className="py-20 text-center">
+                  <td colSpan="4" className="py-20 text-center">
                     <div className="flex flex-col items-center justify-center gap-4 opacity-20">
                       <FileText size={48} />
                       <p className="text-xs font-black uppercase tracking-widest">No recent transactions</p>
@@ -236,6 +299,59 @@ export default function WalletPage() {
           </table>
         </div>
       </div>
+
+      {/* ADD MONEY MODAL */}
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/60 backdrop-blur-sm"
+            onClick={() => setShowAddModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 30, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl"
+            >
+              <h3 className="text-2xl font-black text-secondary tracking-tighter mb-2">Add Money</h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-6">Select or enter amount</p>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {ADD_AMOUNTS.map(amt => (
+                  <button
+                    key={amt}
+                    onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
+                    className={`py-4 rounded-2xl font-black text-sm transition-all ${selectedAmount === amt && !customAmount ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-gray-50 text-secondary hover:bg-gray-100'}`}
+                  >
+                    ৳{amt}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                type="number"
+                placeholder="Custom amount"
+                value={customAmount}
+                onChange={e => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                className="w-full px-4 py-4 border border-gray-200 rounded-2xl text-secondary font-black text-sm focus:outline-none focus:border-primary mb-6"
+              />
+
+              <button
+                onClick={handleAddMoney}
+                disabled={addingMoney}
+                className="w-full py-5 bg-primary text-white font-black rounded-2xl uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-[#25A65B] transition-all disabled:opacity-50"
+              >
+                {addingMoney ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                {addingMoney ? "Processing..." : `Add ৳${customAmount || selectedAmount || 0}`}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

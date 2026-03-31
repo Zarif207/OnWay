@@ -19,9 +19,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/a
 const StatusBadge = ({ status }) => {
   const configs = {
     completed: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    cancelled:  "bg-red-50 text-red-600 border-red-100",
-    searching:  "bg-blue-50 text-blue-600 border-blue-100",
-    arriving:   "bg-amber-50 text-amber-600 border-amber-100",
+    cancelled: "bg-red-50 text-red-600 border-red-100",
+    searching: "bg-blue-50 text-blue-600 border-blue-100",
+    arriving: "bg-amber-50 text-amber-600 border-amber-100",
   };
   const cls = configs[status] || "bg-slate-50 text-slate-600 border-slate-100";
   return (
@@ -44,12 +44,12 @@ export default function PassengerDashboard() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const [pickup,        setPickup]        = useState("");
-  const [dropoff,       setDropoff]       = useState("");
-  const [stats,         setStats]         = useState([]);
-  const [recentRides,   setRecentRides]   = useState([]);
-  const [loadingStats,  setLoadingStats]  = useState(true);
-  const [isSearching,   setIsSearching]   = useState(false);
+  const [pickup, setPickup] = useState("");
+  const [dropoff, setDropoff] = useState("");
+  const [stats, setStats] = useState([]);
+  const [recentRides, setRecentRides] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [matchedDriver, setMatchedDriver] = useState(null);
   const [rideStatus,    setRideStatus]    = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -59,7 +59,7 @@ export default function PassengerDashboard() {
 
   const getGreeting = () => {
     const h = new Date().getHours();
-    if (h < 5)  return "Good night";
+    if (h < 5) return "Good night";
     if (h < 12) return "Good morning";
     if (h < 18) return "Good afternoon";
     return "Good evening";
@@ -97,15 +97,15 @@ export default function PassengerDashboard() {
     if (!/^[a-f\d]{24}$/i.test(passengerId)) { setLoadingStats(false); return; }
     (async () => {
       try {
-        const res   = await axios.get(`${API_BASE_URL}/bookings?passengerId=${passengerId}`);
+        const res = await axios.get(`${API_BASE_URL}/bookings?passengerId=${passengerId}`);
         const rides = res.data.data || [];
         const completed = rides.filter((r) => r.bookingStatus === "completed").length;
         const totalDist = rides.reduce((acc, r) => acc + (r.distance || 0), 0);
         setStats([
-          { label: "Bookings", value: rides.length,         icon: Car,          color: "text-emerald-500", bg: "bg-emerald-50" },
-          { label: "Done",     value: completed,            icon: CheckCircle2, color: "text-blue-500",    bg: "bg-blue-50"    },
-          { label: "Km",       value: totalDist.toFixed(1), icon: Route,        color: "text-slate-900",   bg: "bg-slate-100"  },
-          { label: "Rating",   value: "4.9",                icon: Star,         color: "text-amber-500",   bg: "bg-amber-50"   },
+          { label: "Bookings", value: rides.length, icon: Car, color: "text-emerald-500", bg: "bg-emerald-50" },
+          { label: "Done", value: completed, icon: CheckCircle2, color: "text-blue-500", bg: "bg-blue-50" },
+          { label: "Km", value: totalDist.toFixed(1), icon: Route, color: "text-slate-900", bg: "bg-slate-100" },
+          { label: "Rating", value: "4.9", icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
         ]);
         setRecentRides(rides.slice(0, 3));
       } catch (err) {
@@ -140,18 +140,18 @@ export default function PassengerDashboard() {
       toast.error("No drivers found nearby.");
     };
 
-    socket.on("ride:accepted",  onAccepted);
-    socket.on("rideAccepted",   onAccepted);
-    socket.on("trip_started",   onTripStarted);
-    socket.on("ride:started",   onTripStarted);
-    socket.on("ride-expired",   onExpired);
+    socket.on("ride:accepted", onAccepted);
+    socket.on("rideAccepted", onAccepted);
+    socket.on("trip_started", onTripStarted);
+    socket.on("ride:started", onTripStarted);
+    socket.on("ride-expired", onExpired);
 
     return () => {
-      socket.off("ride:accepted",  onAccepted);
-      socket.off("rideAccepted",   onAccepted);
-      socket.off("trip_started",   onTripStarted);
-      socket.off("ride:started",   onTripStarted);
-      socket.off("ride-expired",   onExpired);
+      socket.off("ride:accepted", onAccepted);
+      socket.off("rideAccepted", onAccepted);
+      socket.off("trip_started", onTripStarted);
+      socket.off("ride:started", onTripStarted);
+      socket.off("ride-expired", onExpired);
     };
   }, [passengerId, router]);
 
@@ -249,24 +249,24 @@ export default function PassengerDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {loadingStats
               ? [...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-slate-50 rounded-2xl h-28 animate-pulse" />
-                ))
+                <div key={i} className="bg-slate-50 rounded-2xl h-28 animate-pulse" />
+              ))
               : stats.map((stat, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-primary/20 transition-colors"
+                >
                   <div
-                    key={i}
-                    className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-primary/20 transition-colors"
+                    className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}
                   >
-                    <div
-                      className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}
-                    >
-                      <stat.icon size={20} />
-                    </div>
-                    <span className="text-xl font-black text-slate-900 tracking-tighter">{stat.value}</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                      {stat.label}
-                    </span>
+                    <stat.icon size={20} />
                   </div>
-                ))}
+                  <span className="text-xl font-black text-slate-900 tracking-tighter">{stat.value}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
           </div>
 
           {/* Recent Rides */}
@@ -303,10 +303,10 @@ export default function PassengerDashboard() {
                         </div>
                         <p className="font-bold text-slate-900 text-sm line-clamp-1">
                           {ride.dropoffLocation?.name ||
-                           ride.dropoffLocation?.address?.road ||
-                           ride.dropoffLocation?.address?.suburb ||
-                           ride.dropoffLocation?.address?.city ||
-                           "Destination"}
+                            ride.dropoffLocation?.address?.road ||
+                            ride.dropoffLocation?.address?.suburb ||
+                            ride.dropoffLocation?.address?.city ||
+                            "Destination"}
                         </p>
                       </div>
                     </div>

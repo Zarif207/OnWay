@@ -1,113 +1,78 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import Lenis from "@studio-freight/lenis";
 
 const ScrollProgress = ({ children }) => {
     const [progress, setProgress] = useState(0);
     const [scrolling, setScrolling] = useState(false);
     const scrollTimeout = useRef(null);
+    const lenisRef = useRef(null);
 
     useEffect(() => {
-        const handleScroll = () => {
-            const scrollTop =
-                window.scrollY ||
-                document.documentElement.scrollTop;
+        const lenis = new Lenis({
+            duration: 1.5,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            lerp: 0.5,
+            wheelMultiplier: 1.1,
+            touchMultiplier: 1.5,
+        });
 
-            const scrollHeight =
-                document.documentElement.scrollHeight -
-                document.documentElement.clientHeight;
+        lenisRef.current = lenis;
 
-            const percent =
-                scrollHeight > 0
-                    ? (scrollTop / scrollHeight) * 100
-                    : 0;
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
 
+        lenis.on("scroll", ({ scroll, limit }) => {
+            const percent = limit > 0 ? (scroll / limit) * 100 : 0;
             setProgress(percent);
 
-            // scrolling detect
             setScrolling(true);
-            clearTimeout(scrollTimeout.current);
+            if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
             scrollTimeout.current = setTimeout(() => {
                 setScrolling(false);
-            }, 700);
+            }, 500);
+        });
+
+        return () => {
+            lenis.destroy();
+            if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
         };
-
-        window.addEventListener("scroll", handleScroll);
-        handleScroll();
-
-        return () =>
-            window.removeEventListener("scroll", handleScroll);
     }, []);
 
     const scrollToTop = () => {
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth",
-        });
+        lenisRef.current?.scrollTo(0, { duration: 1.5 });
     };
-
-    const radius = 20;
-    const stroke = 4;
-    const normalizedRadius = radius - stroke * 0.5;
-    const circumference =
-        normalizedRadius * 2 * Math.PI;
-
-    const strokeDashoffset =
-        circumference - (progress / 100) * circumference;
 
     return (
         <>
-            {/* Floating Circle */}
             <div
                 onClick={scrollToTop}
-                className="fixed bottom-14 left-4 z-9999 cursor-pointer group"
+                className="fixed bottom-14 left-4 z-9999 cursor-pointer group scale-90 hover:scale-100 transition-transform active:scale-95"
             >
-                <svg
-                    height={radius * 2}
-                    width={radius * 2}
-                    className="drop-shadow-xl"
-                >
-                    {/* bg */}
-                    <circle
-                        stroke="#e5e7eb"
-                        fill="#fffcfd"
-                        strokeWidth={stroke}
-                        r={normalizedRadius}
-                        cx={radius}
-                        cy={radius}
-                    />
-
-                    {/* progress */}
+                <svg height="45" width="45" className="drop-shadow-xl">
+                    <circle stroke="#e5e7eb" fill="#fff" strokeWidth="4" r="18" cx="22.5" cy="22.5" />
                     <circle
                         stroke="#2cbe6b"
                         fill="transparent"
-                        strokeWidth={stroke}
-                        strokeDasharray={`${circumference} ${circumference}`}
+                        strokeWidth="4"
+                        strokeDasharray="113"
                         style={{
-                            strokeDashoffset,
-                            transition: "stroke-dashoffset .2s linear",
+                            strokeDashoffset: 113 - (progress / 100) * 113,
+                            transition: "stroke-dashoffset 0.1s linear",
                             transform: "rotate(-90deg)",
-                            transformOrigin: "50% 50%",
+                            transformOrigin: "22.5px 22.5px",
                         }}
-                        r={normalizedRadius}
-                        cx={radius}
-                        cy={radius}
+                        r="18" cx="22.5" cy="22.5"
                     />
-
-                    {/* dynamic text */}
-                    <text
-                        x="50%"
-                        y="60%"
-                        textAnchor="middle"
-                        fontSize="16px"
-                        fontWeight="bold"
-                        fill="#001820"
-                    >
+                    <text x="50%" y="58%" textAnchor="middle" fontSize="12px" fontWeight="bold" fill="#0a1f3d">
                         {scrolling ? `${Math.round(progress)}` : "▲"}
                     </text>
                 </svg>
             </div>
-
-            {/* Page Content */}
             {children}
         </>
     );

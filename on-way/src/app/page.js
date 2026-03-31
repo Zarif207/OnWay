@@ -17,31 +17,32 @@ import Transportation from "./root-components/Home/Transportation";
 export default function Home() {
   return (
     <>
-      <HomeClientEffects />
-      <main className="bg-white">
-        {/* <MainHero /> */}
+      <HomeClientEffects > </HomeClientEffects>
+        <main className="bg-white">
+          {/* <MainHero /> */}
 
-        {/* Reveal Container */}
-        <motion.div
-          initial={{ opacity: 0, y: 100 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.01 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="relative z-30 bg-white"
-        >
-          <Hero />
-          <Transportation />
-          <Platform />
-          <div className="pb-10">
-            <Stats />
-          </div>
-          <Safety />
-          <HowItWorks />
-          <Earn />
-          <HomeLatestReviews />
-          <Contact />
-        </motion.div>
-      </main>
+          {/* Reveal Container */}
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.01 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="relative z-30 bg-white"
+          >
+            <Hero />
+            <Transportation />
+            <Platform />
+            <div className="pb-10">
+              <Stats />
+            </div>
+            <Safety />
+            <HowItWorks />
+            <Earn />
+            <HomeLatestReviews />
+            <Contact />
+          </motion.div>
+        </main>
+     
     </>
   );
 }

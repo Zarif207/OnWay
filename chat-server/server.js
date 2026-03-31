@@ -4,9 +4,10 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const {setServers}  = require("node:dns/promises");
 
-setServers(["1.1.1.1", "8.8.8.8"]);
+// const {setServers}  = require("node:dns/promises");
+
+// setServers(["1.1.1.1", "8.8.8.8"]);
 
 const PORT = process.env.SOCKET_PORT || 4002;
 const uri = process.env.MONGODB_URI;
@@ -147,7 +148,7 @@ async function startChatServer() {
                 if (targetSocket) {
                     io.to(targetSocket).emit("incomingCall", {
                         fromUserId,
-                        fromUserName: fromUserName || "Unknown",
+                        fromUserName: fromUserName || "Unknown", // ✅ caller-এর নাম
                         offer,
                         callType,
                         toUserId: resolvedTarget,
@@ -491,19 +492,72 @@ async function startChatServer() {
             res.json([...adminUsers.keys()].map(u => ({ userId: u, status: "online" })));
         });
 
-        app.get("/", (req, res) => {
-            res.json({
-                status: "Chat Server Running",
-                timestamp: new Date().toISOString(),
-                environment: process.env.NODE_ENV || 'development'
-            });
+        // ════════════════════════════════════════════════════════
+        //  REST — EDIT MESSAGE
+        // ════════════════════════════════════════════════════════
+        app.patch("/api/chat/message/:id", async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { message, userId } = req.body;
+                if (!message?.trim()) return res.status(400).json({ error: "Empty message" });
+
+                const { ObjectId } = require("mongodb");
+                const doc = await chatCollection.findOne({ _id: new ObjectId(id) });
+                if (!doc) return res.status(404).json({ error: "Not found" });
+                if (String(doc.senderId) !== String(userId))
+                    return res.status(403).json({ error: "Not your message" });
+
+                await chatCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { message: message.trim(), edited: true, editedAt: new Date() } }
+                );
+
+                const updated = { ...doc, message: message.trim(), edited: true };
+                // ✅ broadcast to room
+                io.to(doc.roomId).emit("messageEdited", updated);
+
+                res.json(updated);
+            } catch (err) {
+                console.error("edit:", err);
+                res.status(500).json({ error: "Failed" });
+            }
+        });
+
+        // ════════════════════════════════════════════════════════
+        //  REST — DELETE MESSAGE
+        // ════════════════════════════════════════════════════════
+        app.delete("/api/chat/message/:id", async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { userId } = req.body;
+
+                const { ObjectId } = require("mongodb");
+                const doc = await chatCollection.findOne({ _id: new ObjectId(id) });
+                if (!doc) return res.status(404).json({ error: "Not found" });
+                if (String(doc.senderId) !== String(userId))
+                    return res.status(403).json({ error: "Not your message" });
+
+                // Soft delete — message text replace করো
+                await chatCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { message: "", deleted: true, deletedAt: new Date() } }
+                );
+
+                const updated = { ...doc, message: "", deleted: true };
+                // ✅ broadcast to room
+                io.to(doc.roomId).emit("messageDeleted", { _id: id, roomId: doc.roomId });
+
+                res.json({ success: true });
+            } catch (err) {
+                console.error("delete:", err);
+                res.status(500).json({ error: "Failed" });
+            }
         });
 
         // ── Start ────────────────────────────────────────────────
-        server.listen(PORT, () => {
-            console.log(`🚀 Chat server running on port ${PORT}`);
-            console.log(`   Root:   http://localhost:${PORT}/`);
-        });
+        server.listen(PORT, () =>
+            console.log(`🚀 Chat server on port ${PORT}`)
+        );
     } catch (err) {
         console.error("FATAL:", err);
         process.exit(1);

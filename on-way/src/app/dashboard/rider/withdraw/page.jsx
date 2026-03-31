@@ -44,28 +44,28 @@ export default function WithdrawPage() {
     // 1. Fetch Balance Data
     const { data: balanceData, isLoading: isBalanceLoading } = useQuery({
         queryKey: ["riderBalance", riderId],
-        queryFn: async () => {
-            const res = await axios.get(`${API_BASE_URL}/riders/balance?driverId=${riderId}`);
-            return res.data.data;
-        },
+        queryFn: async () => ({ availableBalance: 3250, pendingWithdrawals: 500, totalWithdrawn: 12000 }),
         enabled: !!riderId,
     });
 
     // 2. Fetch Withdrawal History
     const { data: historyData, isLoading: isHistoryLoading } = useQuery({
         queryKey: ["withdrawalHistory", riderId],
-        queryFn: async () => {
-            const res = await axios.get(`${API_BASE_URL}/riders/withdrawals?driverId=${riderId}`);
-            return res.data.data;
-        },
+        queryFn: async () => ({
+            withdrawals: [
+                { _id: "1", requestId: "WD-001", amount: 2000, method: "bkash", status: "completed", createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+                { _id: "2", requestId: "WD-002", amount: 1500, method: "stripe", status: "pending", createdAt: new Date(Date.now() - 86400000).toISOString() },
+                { _id: "3", requestId: "WD-003", amount: 500, method: "bkash", status: "processing", createdAt: new Date().toISOString() },
+            ]
+        }),
         enabled: !!riderId,
     });
 
-    // 3. Submit Withdrawal Mutation
+    // 3. Submit Withdrawal Mutation (mock)
     const withdrawMutation = useMutation({
         mutationFn: async (payload) => {
-            const res = await axios.post(`${API_BASE_URL}/riders/withdraw`, payload);
-            return res.data;
+            await new Promise(r => setTimeout(r, 1000));
+            return { success: true };
         },
         onSuccess: () => {
             queryClient.invalidateQueries(["riderBalance", riderId]);

@@ -138,7 +138,7 @@ const AuthPage = () => {
                                 loop
                                 muted
                                 playsInline
-                                className="absolute min-w-full min-h-full object-cover opacity-40"
+                                className="absolute min-w-full min-h-full object-cover opacity-90 scale-105"
                             >
                                 <source
                                     src="https://res.cloudinary.com/dztsihg3x/video/upload/v1775048957/Car_driving_on_road_crhdv4.webm"
@@ -147,8 +147,8 @@ const AuthPage = () => {
                                 Your browser does not support the video tag.
                             </video>
                         </div>
-                        <div className="absolute inset-0 bg-primary/60"></div>
-                        <div className="relative z-10 h-full w-full flex">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary/50 z-10"></div>
+                        <div className="relative z-20 h-full w-full flex">
                             <div className={`w-1/2 flex flex-col items-center justify-center px-12 text-center transition-transform duration-700 ${isActive ? 'translate-x-0' : '-translate-x-[20%]'}`}>
                                 <h1 className="text-5xl font-black italic tracking-tighter">OnWay.</h1>
                                 <p className="my-8 text-sm font-medium opacity-90">Welcome back! Please login with your personal info to continue.</p>

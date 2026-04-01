@@ -100,15 +100,7 @@ const AboutUs = () => {
               <p className="text-gray-300 leading-relaxed mb-6">
                 &ldquo;OnWay was born from a simple frustration &mdash; getting around Dhaka shouldn&apos;t be this hard. We set out to build something that puts people first: fair prices, safe rides, and drivers who are treated with respect. That mission hasn&apos;t changed.&rdquo;
               </p>
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#2FCA71]/30 shrink-0">
-                  <img src="/Devs/JUBAEAR.jpeg" alt="CEO" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <p className="font-black text-white">Md Zubaear Hasan</p>
-                  <p className="text-gray-400 text-sm">Co-Founder & CEO, OnWay</p>
-                </div>
-              </div>
+              
               <motion.button
                 onClick={() => setShowTeam(true)}
                 whileHover={{ scale: 1.04 }}

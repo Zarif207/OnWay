@@ -79,6 +79,7 @@ export default function PricingPage() {
                 tag="OnWay Plans"
                 title="Fare & Pricing"
                 subtitle="Transparent, fair pricing for every ride type. No hidden fees, ever."
+                pills={["Starter", "Standard", "Premium", "Pay-per-ride", "No Hidden Fees"]}
             />
             <div className="py-16 sm:py-20">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">

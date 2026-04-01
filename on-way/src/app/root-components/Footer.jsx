@@ -38,7 +38,7 @@ const SERVICE_LINKS = [
   { label: "Ride Categories", href: "/ride-categories" },
   { label: "Fare & Pricing", href: "/pricing" },
   { label: "Safety Center", href: "/Safety-Coverage" },
-  { label: "Driver Registration", href: "/driver-register" },
+  { label: "Driver Registration", href: "/earn-with-onway" },
   { label: "Support & Help", href: "/help" },
 ];
 

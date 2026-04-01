@@ -43,7 +43,7 @@ export default function AdminSettings() {
       if (status === "loading") return;
 
       if (status === "unauthenticated") {
-        router.push("/login");
+        router.push("/authPage");
         return;
       }
 
@@ -255,7 +255,7 @@ export default function AdminSettings() {
     });
 
     if (result.isConfirmed) {
-      await signOut({ callbackUrl: "/login" });
+      await signOut({ callbackUrl: "/authPage" });
     }
   };
 

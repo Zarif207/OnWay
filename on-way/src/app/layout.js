@@ -15,7 +15,7 @@ import { RideProvider } from "@/context/RideContext";
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 
-  const hideNavbarFooter = pathname === "/login" || pathname === "/register" || pathname.startsWith("/dashboard");
+  const hideNavbarFooter = pathname === "/authPage" || pathname.startsWith("/dashboard");
 
   return (
     <html lang="en" data-theme="onwaytheme">

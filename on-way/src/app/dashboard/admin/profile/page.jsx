@@ -57,7 +57,7 @@ export default function AdminProfile() {
       if (status === "loading") return;
 
       if (status === "unauthenticated") {
-        router.push("/login");
+        router.push("/authPage");
         return;
       }
 

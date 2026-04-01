@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast, { Toaster } from "react-hot-toast";
+import ReviewModal from "../review/page";
+
 
 export default function RideHistoryPage() {
   const { data: session } = useSession();
@@ -36,10 +38,12 @@ export default function RideHistoryPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [lostItemStatuses, setLostItemStatuses] = useState({});
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRideId, setReviewRideId] = useState(null);
+  const [reviewDriverId, setReviewDriverId] = useState(null);
 
   const router = useRouter();
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -62,7 +66,6 @@ export default function RideHistoryPage() {
       setLoading(true);
       setError(null);
 
-      // Guard: skip if not a valid MongoDB ObjectId
       if (passengerId && !/^[a-f\d]{24}$/i.test(passengerId)) {
         setRides([]);
         return;
@@ -74,7 +77,6 @@ export default function RideHistoryPage() {
 
       const res = await fetch(url);
 
-      // Parse JSON safely
       let data;
       try {
         data = await res.json();
@@ -101,7 +103,7 @@ export default function RideHistoryPage() {
       return;
     }
     setActiveHelpId(rideId);
-    
+
     if (lostItemStatuses[rideId] === undefined) {
       try {
         const res = await fetch(`${API_BASE}/lost-items?rideId=${rideId}&passengerId=${session?.user?.id}`);
@@ -117,25 +119,13 @@ export default function RideHistoryPage() {
     }
   };
 
-  // ---------- Location Formatter ----------
-  // Format location function
   const formatLocation = (location) => {
     if (!location) return "";
-
-    // যদি string হয়
-    if (typeof location === "string") {
-      return location;
-    }
-
-
-    if (typeof location === "object") {
-      return location.name || "";
-    }
-
+    if (typeof location === "string") return location;
+    if (typeof location === "object") return location.name || "";
     return "";
   };
 
-  // ---------- Single Invoice ----------
   const generateInvoice = (ride) => {
     try {
       setDownloadingId(ride._id);
@@ -166,7 +156,6 @@ export default function RideHistoryPage() {
     }
   };
 
-  // ---------- Full History PDF ----------
   const downloadFullHistoryPDF = () => {
     try {
       setDownloadingId("all");
@@ -193,28 +182,20 @@ export default function RideHistoryPage() {
     }
   };
 
-  // ---------- Filter ----------
-  // Filter rides
   const filteredRides = rides.filter((ride) => {
     const term = searchTerm.toLowerCase();
-
     const pickup = formatLocation(ride.pickupLocation).toLowerCase();
-    const drop = formatLocation(ride.dropLocation).toLowerCase(); // Fixed dropoffLocation reference
-
+    const drop = formatLocation(ride.dropLocation).toLowerCase();
     return pickup.includes(term) || drop.includes(term);
   });
 
-  // ---------- Submit Lost Item ----------
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setIsUploading(true);
     const uploadData = new FormData();
     uploadData.append("file", file);
-    uploadData.append(
-      "upload_preset",
-      process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "onway_preset"
-    );
+    uploadData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "onway_preset");
     try {
       const res = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
@@ -271,6 +252,13 @@ export default function RideHistoryPage() {
     }
   };
 
+  const handleReviewSubmitSuccess = () => {
+    setShowReviewModal(false);
+    setReviewRideId(null);
+    setReviewDriverId(null);
+    if (session?.user?.id) fetchRides(session.user.id);
+  };
+
   if (error)
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -295,17 +283,27 @@ export default function RideHistoryPage() {
   return (
     <div className="min-h-screen p-2">
       <Toaster position="top-right" />
+
+      {/*  Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => {
+          setShowReviewModal(false);
+          setReviewRideId(null);
+          setReviewDriverId(null);
+        }}
+        rideId={reviewRideId}
+        driverId={reviewDriverId}
+        onSubmitSuccess={handleReviewSubmitSuccess}
+      />
+
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
           <div>
-            <h1 className="text-4xl font-black text-slate-900">
-              Ride History
-            </h1>
-            <p className="text-slate-400 mt-1">
-              Review and manage your previous trips
-            </p>
+            <h1 className="text-4xl font-black text-slate-900">Ride History</h1>
+            <p className="text-slate-400 mt-1">Review and manage your previous trips</p>
           </div>
 
           <div className="relative">
@@ -341,15 +339,9 @@ export default function RideHistoryPage() {
                 className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex flex-col lg:flex-row justify-between gap-6"
               >
                 <div>
-                  <p className="font-bold text-slate-700">
-                    {formatLocation(ride.pickupLocation)}
-                  </p>
-                  <p className="text-slate-400">
-                    {formatLocation(ride.dropLocation)}
-                  </p>
-                  <p className="text-sm text-slate-400 mt-1">
-                    {new Date(ride.createdAt).toLocaleDateString()}
-                  </p>
+                  <p className="font-bold text-slate-700">{formatLocation(ride.pickupLocation)}</p>
+                  <p className="text-slate-400">{formatLocation(ride.dropLocation)}</p>
+                  <p className="text-sm text-slate-400 mt-1">{new Date(ride.createdAt).toLocaleDateString()}</p>
                 </div>
 
                 <div className="flex items-center gap-6">
@@ -370,8 +362,8 @@ export default function RideHistoryPage() {
                     <button
                       onClick={() => handleHelpClick(ride._id)}
                       className={`p-3 rounded-xl transition-all duration-300 flex items-center gap-2 ${activeHelpId === ride._id
-                        ? "bg-slate-900 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          ? "bg-slate-900 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       title="Help & Support"
                     >
@@ -404,11 +396,10 @@ export default function RideHistoryPage() {
                                   <p className="text-xs text-slate-500">{new Date(lostItemStatuses[ride._id].createdAt).toLocaleDateString()}</p>
                                 </div>
                                 <div className="mt-3">
-                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${
-                                    lostItemStatuses[ride._id].status === "Recovered" ? "bg-emerald-100 text-emerald-700" :
-                                    lostItemStatuses[ride._id].status === "Not Found" ? "bg-red-100 text-red-700" :
-                                    "bg-amber-100 text-amber-700"
-                                  }`}>
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${lostItemStatuses[ride._id].status === "Recovered" ? "bg-emerald-100 text-emerald-700" :
+                                      lostItemStatuses[ride._id].status === "Not Found" ? "bg-red-100 text-red-700" :
+                                        "bg-amber-100 text-amber-700"
+                                    }`}>
                                     {lostItemStatuses[ride._id].status}
                                   </span>
                                 </div>
@@ -428,19 +419,6 @@ export default function RideHistoryPage() {
                                 Report Lost Item
                               </button>
                             )}
-                            {/* <button 
-                              onClick={() => {
-                                // Logic for forgotten item
-                                console.log("Forgot Something for ride:", ride._id);
-                                setActiveHelpId(null);
-                              }}
-                              className="w-full text-left px-4 py-3 hover:bg-blue-50 hover:text-blue-700 text-sm font-bold text-slate-700 flex items-center gap-3 transition-colors"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <AlertCircle className="w-4 h-4 text-blue-600" />
-                              </div>
-                              Forgot Something?
-                            </button> */}
                           </div>
                         </motion.div>
                       )}
@@ -449,12 +427,23 @@ export default function RideHistoryPage() {
 
                   {!ride.rating ? (
                     <button
-                      onClick={() =>
-                        router.push(
-                          `/review?rideId=${ride._id}&driverId=${ride.driverId}`
-                        )
-                      }
-                      className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl font-bold"
+                      onClick={() => {
+                        // Debug: console e full ride object dekhaben
+                        console.log("RIDE OBJECT:", JSON.stringify(ride, null, 2));
+                        const driverId =
+                          ride.driverId ||
+                          ride.riderId ||
+                          ride.driver?._id ||
+                          ride.driver?.id ||
+                          ride.assignedRider ||
+                          ride.assignedDriver ||
+                          null;
+                        console.log("RESOLVED driverId:", driverId);
+                        setReviewRideId(ride._id);
+                        setReviewDriverId(driverId);
+                        setShowReviewModal(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100 transition-colors"
                     >
                       <Star className="w-4 h-4 fill-amber-600" />
                       Rate
@@ -472,9 +461,7 @@ export default function RideHistoryPage() {
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
               <Car className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-              <p className="text-slate-400 font-bold">
-                No ride history found
-              </p>
+              <p className="text-slate-400 font-bold">No ride history found</p>
             </div>
           )}
         </div>
@@ -495,18 +482,14 @@ export default function RideHistoryPage() {
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative"
             >
-              <h2 className="text-2xl font-black text-slate-900 mb-2">
-                Report Lost Item
-              </h2>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Report Lost Item</h2>
               <p className="text-sm text-slate-500 mb-6">
                 Left something in the car? Report it here and we&apos;ll help you find it.
               </p>
 
               <form onSubmit={handleLostItemSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">
-                    Ride ID
-                  </label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Ride ID</label>
                   <input
                     type="text"
                     readOnly
@@ -556,11 +539,8 @@ export default function RideHistoryPage() {
                   />
                 </div>
 
-                {/*  Image Upload */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">
-                    Upload Image
-                  </label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Upload Image</label>
                   <input
                     type="file"
                     accept="image/*"

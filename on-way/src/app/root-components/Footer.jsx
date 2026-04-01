@@ -148,7 +148,6 @@ export default function Footer() {
 
   return (
     <footer className="relative bg-[#0B1E3C] pt-24 pb-12 overflow-hidden">
-      <Toaster position="bottom-right" />
 
       {/* --- BACKGROUND LAYERS --- */}
       {/* 1. Background Image */}

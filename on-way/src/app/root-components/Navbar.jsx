@@ -311,7 +311,9 @@ const Navbar = () => {
               ? isDarkPage
                 ? "bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
                 : "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
-              : "bg-transparent border-transparent"}`}
+              : (pathname.startsWith("/about") || pathname.startsWith("/help"))
+                ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+                : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="absolute left-6 flex items-center group">
@@ -320,19 +322,15 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
-                    ? "brightness-0 invert"
-                    : "mix-blend-multiply"
-                  }`}
+                className={`object-contain transition-all duration-300 ${isDarkPage ? "brightness-0 invert" : "mix-blend-multiply"}`}
                 priority
               />
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি, অথবা error page (dark bg) */}
           {(() => {
-            const isOnHero = ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage;
+            const isOnHero = isDarkPage;
             return (
               <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
                 ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>

@@ -554,6 +554,14 @@ async function startChatServer() {
             }
         });
 
+        app.get("/", (req, res) => {
+            res.json({
+                status: "Socket Server Running",
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV || 'Production',
+            });
+        });
+
         // ── Start ────────────────────────────────────────────────
         server.listen(PORT, () =>
             console.log(`🚀 Chat server on port ${PORT}`)

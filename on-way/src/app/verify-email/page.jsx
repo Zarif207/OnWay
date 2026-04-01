@@ -21,7 +21,7 @@ const VerifyEmail = () => {
         const storedData = localStorage.getItem("tempUser");
         if (!storedData) {
             toast.error("No pending registration found!");
-            router.push("/register");
+            router.push("/authPage");
         } else {
             setTempUser(JSON.parse(storedData));
         }
@@ -68,7 +68,7 @@ const VerifyEmail = () => {
                 if (result.success) {
                     toast.success("Registration Successful!", { id: toastId });
                     localStorage.removeItem("tempUser");
-                    router.push("/login");
+                    router.push("/authPage");
                 } else {
                     toast.error(result.message || "Failed to register", { id: toastId });
                 }
@@ -96,7 +96,7 @@ const VerifyEmail = () => {
             <div className="max-w-md w-full bg-white shadow-2xl rounded-[2.5rem] p-8 lg:p-12 border border-gray-100">
 
                 <button
-                    onClick={() => router.push('/register')}
+                    onClick={() => router.push('/authPage')}
                     className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-primary transition-colors mb-8"
                 >
                     <FaArrowLeft /> BACK TO REGISTER

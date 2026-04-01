@@ -44,9 +44,9 @@ const NAV_ITEMS = [
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
 const HELP_ITEMS = [
-  { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
-  { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
-  { label: "Walk-In Support Centers", href: "/help?tab=walkin", icon: MapPin, desc: "Find a support center" },
+  { label: "Passenger Help", href: "/help/user", icon: Users, desc: "Help for passengers" },
+  { label: "Rider Help", href: "/help/rider", icon: Bike, desc: "Help for riders" },
+  { label: "Walk-In Support", href: "/help/walk-in-support", icon: MapPin, desc: "Find a support center" },
 ];
 
 const MORE_ITEMS = [
@@ -251,7 +251,7 @@ const Navbar = () => {
   const profileRef = useRef(null);
 
   const confirmLogout = () => {
-    signOut({ callbackUrl: "/login" });
+    signOut({ callbackUrl: "/authPage" });
   };
 
   const handleSignOut = () => {
@@ -311,7 +311,9 @@ const Navbar = () => {
               ? isDarkPage
                 ? "bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
                 : "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
-              : "bg-transparent border-transparent"}`}
+              : (pathname.startsWith("/about") || pathname.startsWith("/help"))
+                ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+                : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="absolute left-6 flex items-center group">
@@ -320,19 +322,15 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
-                    ? "brightness-0 invert"
-                    : "mix-blend-multiply"
-                  }`}
+                className={`object-contain transition-all duration-300 ${isDarkPage ? "brightness-0 invert" : "mix-blend-multiply"}`}
                 priority
               />
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
-          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি, অথবা error page (dark bg) */}
           {(() => {
-            const isOnHero = ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage;
+            const isOnHero = isDarkPage;
             return (
               <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
                 ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>
@@ -465,13 +463,7 @@ const Navbar = () => {
             {!session ? (
               <div className="flex items-center gap-1.5">
                 <Link
-                  href="/login"
-                  className="hidden sm:inline-flex px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 transition-all active:scale-95"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
+                  href="/authPage"
                   className="px-7 py-3 bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-full hover:bg-black transition-all transform hover:scale-[1.03] active:scale-95 shadow-[0_10px_25px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.15)]"
                 >
                   Join OnWay
@@ -817,14 +809,14 @@ const Navbar = () => {
                 {!session ? (
                   <div className="flex flex-col gap-3">
                     <Link
-                      href="/register"
+                      href="/authPage"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center justify-center h-14 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
                     >
                       Join OnWay
                     </Link>
                     <Link
-                      href="/login"
+                      href="/authPage"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center justify-center h-14 bg-gray-50 text-gray-900 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all border border-gray-100"
                     >

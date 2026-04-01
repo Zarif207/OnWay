@@ -44,9 +44,9 @@ const NAV_ITEMS = [
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
 const HELP_ITEMS = [
-  { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
-  { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
-  { label: "Walk-In Support Centers", href: "/help?tab=walkin", icon: MapPin, desc: "Find a support center" },
+  { label: "Passenger Help", href: "/help/user", icon: Users, desc: "Help for passengers" },
+  { label: "Rider Help", href: "/help/rider", icon: Bike, desc: "Help for riders" },
+  { label: "Walk-In Support", href: "/help/walk-in-support", icon: MapPin, desc: "Find a support center" },
 ];
 
 const MORE_ITEMS = [

@@ -270,6 +270,29 @@ const bookingController = (collections) => {
                             req.io.to(`passenger:${booking.passengerId}`).emit(`ride:${status}`, { bookingId: id });
                         }
                     }
+
+                    // ── Passenger notification ────────────────────────────────────
+                    if (booking?.passengerId && req.collections?.notificationsCollection) {
+                        const notificationHelper = require("../utils/notificationHelper");
+                        if (status === "completed") {
+                            await notificationHelper.notifyPassenger(
+                                req.collections.notificationsCollection,
+                                booking.passengerId.toString(),
+                                "RIDE_COMPLETED",
+                                `Your ride has been completed. Total fare: ৳${booking.price || 0}`,
+                                { bookingId: id, fare: booking.price }
+                            );
+                        } else if (status === "cancelled") {
+                            await notificationHelper.notifyPassenger(
+                                req.collections.notificationsCollection,
+                                booking.passengerId.toString(),
+                                "BOOKING_CANCELLED_PASSENGER",
+                                "Your booking has been cancelled.",
+                                { bookingId: id }
+                            );
+                        }
+                    }
+                    // ─────────────────────────────────────────────────────────────
                 }
 
                 res.status(200).json({ success: true, message: "Status updated", bookingStatus: status });

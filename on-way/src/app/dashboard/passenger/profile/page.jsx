@@ -22,7 +22,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 // import OnWayLoading from "@/app/components/Loading/page";
 
@@ -216,7 +216,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 px-4 py-8 md:p-10 lg:p-12">
-      <Toaster position="top-right" reverseOrder={false} />
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}

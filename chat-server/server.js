@@ -5,9 +5,9 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
-// const {setServers}  = require("node:dns/promises");
+const {setServers}  = require("node:dns/promises");
 
-// setServers(["1.1.1.1", "8.8.8.8"]);
+setServers(["1.1.1.1", "8.8.8.8"]);
 
 const PORT = process.env.SOCKET_PORT || 4002;
 const uri = process.env.MONGODB_URI;

@@ -148,25 +148,34 @@ module.exports = function (collections) {
     try {
       const { tran_id } = req.body;
 
-      // 1. Update Payment Record
       await paymentsCollection.updateOne(
         { transactionId: tran_id },
         { $set: { status: "success", updatedAt: new Date() } }
       );
 
-      // 2. Update Booking Status & Await Result
       const success = await updateBookingPaymentStatus(tran_id, "paid");
 
-      // 3. STRICT VERIFICATION: Fetch fresh data to confirm change is persisted
       const payment = await paymentsCollection.findOne({ transactionId: tran_id });
       const bookingId = payment?.bookingId;
-      
+
       if (bookingId) {
         const verifiedBooking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         console.log(`🧐 [VERIFICATION] Booking ${bookingId} status is: ${verifiedBooking?.paymentStatus}`);
+
+        // ── Passenger notification ────────────────────────────────────────────
+        if (verifiedBooking?.passengerId && req.collections?.notificationsCollection) {
+          const notificationHelper = require("../utils/notificationHelper");
+          await notificationHelper.notifyPassenger(
+            req.collections.notificationsCollection,
+            verifiedBooking.passengerId.toString(),
+            "PAYMENT_SUCCESS",
+            `Payment of ৳${verifiedBooking.price || payment?.total_amount || 0} received successfully.`,
+            { bookingId, transactionId: tran_id }
+          );
+        }
+        // ─────────────────────────────────────────────────────────────────────
       }
 
-      // 4. Redirect with bookingId safely in URL
       const redirectUrl = `${process.env.FRONTEND_URL}/payment/success?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
       res.redirect(redirectUrl);
     } catch (error) {
@@ -189,6 +198,23 @@ module.exports = function (collections) {
 
       const payment = await paymentsCollection.findOne({ transactionId: tran_id });
       const bookingId = payment?.bookingId;
+
+      // ── Passenger notification ──────────────────────────────────────────────
+      if (bookingId) {
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+        if (booking?.passengerId && req.collections?.notificationsCollection) {
+          const notificationHelper = require("../utils/notificationHelper");
+          await notificationHelper.notifyPassenger(
+            req.collections.notificationsCollection,
+            booking.passengerId.toString(),
+            "PAYMENT_FAILED",
+            "Your payment could not be processed. Please try again.",
+            { bookingId, transactionId: tran_id }
+          );
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       const redirectUrl = `${process.env.FRONTEND_URL}/payment/fail?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
       res.redirect(redirectUrl);
     } catch (error) {

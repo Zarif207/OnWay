@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 export default function RideHistoryPage() {
   const { data: session } = useSession();
@@ -294,7 +294,6 @@ export default function RideHistoryPage() {
 
   return (
     <div className="min-h-screen p-2">
-      <Toaster position="top-right" />
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}

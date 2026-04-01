@@ -22,6 +22,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useSocket } from "@/hooks/useSocket";
 import { useSession } from "next-auth/react";
+import ReviewModal from "../review/ReviewModal"; //  FIXED: correct import
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -43,8 +44,9 @@ function ActiveRideContent() {
   const [passengerLocation, setPassengerLocation] = useState(null);
   const [eta, setEta] = useState(null);
   const [distance, setDistance] = useState(null);
-  const [status, setStatus] = useState("loading"); // loading | searching | accepted | started | completed | cancelled
+  const [status, setStatus] = useState("loading");
   const [loading, setLoading] = useState(true);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   // 1. Fetch Booking Initial State
   useEffect(() => {
@@ -94,12 +96,9 @@ function ActiveRideContent() {
     const onLocationUpdate = (data) => {
       console.log("📍 [LOCATION UPDATE]", data);
       if (data.rideId === bookingId || data.bookingId === bookingId) {
-        // Handle both lat/lng (old) and latitude/longitude (new) formats
         const lat = data.latitude || data.lat;
         const lng = data.longitude || data.lng;
-        if (lat && lng) {
-          setDriverLocation([lat, lng]);
-        }
+        if (lat && lng) setDriverLocation([lat, lng]);
         if (data.eta) setEta(data.eta);
         if (data.distance) setDistance(data.distance);
       }
@@ -110,9 +109,7 @@ function ActiveRideContent() {
       if (data.rideId === bookingId || data.bookingId === bookingId) {
         const lat = data.latitude || data.lat;
         const lng = data.longitude || data.lng;
-        if (lat && lng) {
-          setDriverLocation([lat, lng]);
-        }
+        if (lat && lng) setDriverLocation([lat, lng]);
         if (data.eta) setEta(data.eta);
         if (data.distance) setDistance(data.distance);
       }
@@ -153,24 +150,21 @@ function ActiveRideContent() {
         toast.success("Driver has arrived!");
       }
     });
-
     on("ride:started", (data) => {
       if (data.bookingId === bookingId || data.rideId === bookingId) {
         setStatus("started");
         toast.success("Ride started!");
       }
     });
-
     on("ride:completed", (data) => {
       if (data.bookingId === bookingId || data.rideId === bookingId) {
         setStatus("completed");
         toast.success("Ride completed!");
+        setTimeout(() => setShowReviewModal(true), 800);
       }
     });
-
     on("ride:status:updated", handleStatusUpdate);
 
-    // Initial Join
     emit("join:room", { room: `ride:${bookingId}` });
 
     return () => {
@@ -185,24 +179,15 @@ function ActiveRideContent() {
 
   // 3. Passenger Live Geolocation
   useEffect(() => {
-    if (!navigator.geolocation) {
-      console.warn("Geolocation is not supported by this browser");
-      return;
-    }
+    if (!navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setPassengerLocation([latitude, longitude]);
       },
-      (error) => {
-        console.error("Passenger Geolocation Error:", error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-      }
+      (error) => console.error("Passenger Geolocation Error:", error),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
@@ -245,23 +230,23 @@ function ActiveRideContent() {
     );
   }
 
-  if (status === "completed") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-[3rem] shadow-xl border border-gray-100">
-        <div className="w-24 h-24 bg-green-100 text-[#2FCA71] rounded-full flex items-center justify-center mb-6">
-          <CheckCircle2 size={48} />
-        </div>
-        <h2 className="text-4xl font-black text-secondary mb-4 tracking-tighter">Ride Finished!</h2>
-        <p className="text-gray-500 font-medium mb-8 max-w-md">How was your trip with Michael Johnson? Your feedback helps us improve.</p>
-        <button onClick={() => router.push('/dashboard/passenger/ride-history')} className="px-10 py-5 bg-secondary text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-[#011421] transition-colors shadow-2xl">
-          Rate & Review
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-24">
+
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => {
+          setShowReviewModal(false);
+          router.push("/dashboard/passenger/ride-history");
+        }}
+        rideId={bookingId}
+        driverId={booking?.riderId || booking?.driverId}
+        onSubmitSuccess={() => {
+          setShowReviewModal(false);
+          router.push("/dashboard/passenger/ride-history");
+        }}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -334,10 +319,10 @@ function ActiveRideContent() {
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Destination</p>
                 <p className="text-lg font-black text-secondary tracking-tight line-clamp-1">
                   {booking.dropoffLocation?.name ||
-                   booking.dropoffLocation?.address?.road ||
-                   booking.dropoffLocation?.address?.suburb ||
-                   booking.dropoffLocation?.address?.city ||
-                   "Destination"}
+                    booking.dropoffLocation?.address?.road ||
+                    booking.dropoffLocation?.address?.suburb ||
+                    booking.dropoffLocation?.address?.city ||
+                    "Destination"}
                 </p>
               </div>
             </div>

@@ -251,7 +251,7 @@ const Navbar = () => {
   const profileRef = useRef(null);
 
   const confirmLogout = () => {
-    signOut({ callbackUrl: "/login" });
+    signOut({ callbackUrl: "/authPage" });
   };
 
   const handleSignOut = () => {
@@ -463,13 +463,7 @@ const Navbar = () => {
             {!session ? (
               <div className="flex items-center gap-1.5">
                 <Link
-                  href="/login"
-                  className="hidden sm:inline-flex px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 transition-all active:scale-95"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
+                  href="/authPage"
                   className="px-7 py-3 bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-full hover:bg-black transition-all transform hover:scale-[1.03] active:scale-95 shadow-[0_10px_25px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.15)]"
                 >
                   Join OnWay
@@ -815,14 +809,14 @@ const Navbar = () => {
                 {!session ? (
                   <div className="flex flex-col gap-3">
                     <Link
-                      href="/register"
+                      href="/authPage"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center justify-center h-14 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
                     >
                       Join OnWay
                     </Link>
                     <Link
-                      href="/login"
+                      href="/authPage"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center justify-center h-14 bg-gray-50 text-gray-900 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all border border-gray-100"
                     >

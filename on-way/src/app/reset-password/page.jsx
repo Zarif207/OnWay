@@ -42,7 +42,7 @@ const ResetPassword = () => {
             if (result.success) {
                 localStorage.removeItem("resetData");
                 toast.success("Password Reset Successful! Please Login.", { id: toastId });
-                router.push("/login");
+                router.push("/authPage");
             } else {
                 toast.error(result.message || "Failed to reset password", { id: toastId });
             }

@@ -40,6 +40,8 @@ const AboutUs = () => {
           tag="Who We Are"
           title="About OnWay"
           subtitle="Reimagining urban mobility across Bangladesh — one safe, smart ride at a time."
+          pills={["Our Mission", "Sustainability", "Safety First", "Driver Welfare", "Bangladesh Built"]}
+          waveFill="#ffffff"
         />
 
         {/* 2. MISSION STATEMENT */}
@@ -131,7 +133,7 @@ const AboutUs = () => {
               </p>
             </motion.div>
             <motion.div variants={fadeUp} className="overflow-hidden rounded-2xl h-72">
-              <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&auto=format&fit=crop" alt="Riders" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-14499654F08869-eaa3f722e40d?w=800&auto=format&fit=crop" alt="Riders" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
             </motion.div>
           </motion.div>
         </section>

@@ -38,7 +38,7 @@ const SERVICE_LINKS = [
   { label: "Ride Categories", href: "/ride-categories" },
   { label: "Fare & Pricing", href: "/pricing" },
   { label: "Safety Center", href: "/Safety-Coverage" },
-  { label: "Driver Registration", href: "/driver-register" },
+  { label: "Driver Registration", href: "/earn-with-onway" },
   { label: "Support & Help", href: "/help" },
 ];
 
@@ -378,8 +378,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Extreme Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-[#2FCA71] via-blue-500 to-emerald-500 opacity-50" />
+      
     </footer>
   );
 }

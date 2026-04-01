@@ -20,6 +20,7 @@ import {
   Zap,
   Star,
 } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
 import logoImage from "../../../public/onway_logo.png";
 
 // ================= CONSTANTS & DATA =================
@@ -43,10 +44,34 @@ const SERVICE_LINKS = [
 ];
 
 const SOCIAL_LINKS = [
-  { icon: Facebook, href: "#", color: "hover:bg-blue-600" },
-  { icon: Instagram, href: "#", color: "hover:bg-pink-600" },
-  { icon: Linkedin, href: "#", color: "hover:bg-blue-700" },
-  { icon: Youtube, href: "#", color: "hover:bg-red-600" },
+  {
+    Icon: FaFacebookF,
+    href: "https://www.facebook.com/",
+    label: "Facebook",
+    hover: "hover:bg-blue-600 hover:text-white hover:border-blue-600",
+    iconHover: "group-hover:text-white",
+  },
+  {
+    Icon: FaInstagram,
+    href: "https://www.instagram.com/",
+    label: "Instagram",
+    hover: "hover:bg-pink-600 hover:text-white hover:border-pink-600",
+    iconHover: "group-hover:text-white",
+  },
+  {
+    Icon: FaLinkedinIn,
+    href: "https://www.instagram.com/",
+    label: "LinkedIn",
+    hover: "hover:bg-blue-700 hover:text-white hover:border-blue-700",
+    iconHover: "group-hover:text-white",
+  },
+  {
+    Icon: FaYoutube,
+    href: "https://www.youtube.com/",
+    label: "YouTube",
+    hover: "hover:bg-red-600 hover:text-white hover:border-red-600",
+    iconHover: "group-hover:text-white",
+  },
 ];
 
 const OPENING_HOURS = [
@@ -236,14 +261,17 @@ export default function Footer() {
               mobility solutions. Join the network that moves you better.
             </p>
             <div className="flex items-center gap-3">
-              {SOCIAL_LINKS.map((social, idx) => (
-                <Link
-                  key={idx}
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.label}
                   href={social.href}
-                  className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 ${social.color} hover:scale-110 shadow-lg`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  className={`group w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 transition-all duration-300 hover:scale-110 shadow-lg ${social.hover}`}
                 >
-                  <social.icon size={18} />
-                </Link>
+                  <social.Icon size={16} />
+                </a>
               ))}
             </div>
           </div>

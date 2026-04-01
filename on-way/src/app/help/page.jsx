@@ -2,7 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Car, CreditCard, Shield, User, ChevronDown, Mail, Phone, MessageCircle, ArrowRight, Search } from "lucide-react";
+import Link from "next/link";
+import { Car, CreditCard, Shield, User, ChevronDown, Mail, Phone, MessageCircle, ArrowRight, Search, Bike, MapPin } from "lucide-react";
 import PageBanner from "../components/PageBanner";
 
 const CATEGORIES = [
@@ -54,6 +55,30 @@ export default function HelpPage() {
             className="w-full pl-14 pr-5 py-4 rounded-2xl bg-white border border-gray-200 shadow-lg text-[#011421] text-sm font-medium placeholder-gray-400 outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 transition-all"
           />
         </motion.div>
+      </section>
+
+      {/* Help Sections */}
+      <section className="max-w-4xl mx-auto px-6 pb-10">
+        <div className="grid md:grid-cols-3 gap-5">
+          {[
+            { href: "/help/user", icon: User, label: "Passenger Help", desc: "Booking, payments, safety & account support for passengers", color: "bg-blue-500/10 text-blue-500" },
+            { href: "/help/rider", icon: Bike, label: "Rider Help", desc: "Earnings, rides, documents & account support for riders", color: "bg-[#2FCA71]/10 text-[#2FCA71]" },
+            { href: "/help/walk-in-support", icon: MapPin, label: "Walk-In Support", desc: "Find a physical support center near you", color: "bg-amber-400/10 text-amber-500" },
+          ].map((item, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+              <Link href={item.href} className="block p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#2FCA71]/30 transition-all duration-300 group">
+                <div className={`w-12 h-12 rounded-2xl ${item.color} flex items-center justify-center mb-4`}>
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <h3 className="font-black text-[#011421] mb-2 group-hover:text-[#2FCA71] transition-colors">{item.label}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
+                <div className="flex items-center gap-1 mt-4 text-[#2FCA71] text-xs font-bold">
+                  View FAQs <ArrowRight className="w-3 h-3" />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* Categories */}

@@ -12,6 +12,8 @@ const Privacy = () => {
         tag="Legal Center"
         title="Privacy Policy"
         subtitle="We are committed to protecting your personal data. Your privacy is our priority."
+        pills={["Data Collection", "Usage Policy", "Your Rights", "Security", "Contact"]}
+        waveFill="#F6F6F6"
       />
 
       <div className="max-w-[1200px] mx-auto py-12 px-6 md:py-16 flex flex-col md:flex-row gap-16">

@@ -34,10 +34,11 @@ export default function HelpPage() {
         tag="Support Center"
         title="How can we help?"
         subtitle="Find answers, get support, and resolve issues — we're here 24/7."
+        pills={["Rides", "Payments", "Safety", "Account", "Refunds", "Live Chat"]}
       />
 
       {/* Search bar */}
-      <section className="max-w-2xl mx-auto px-6 -mt-6 relative z-20 mb-16">
+      <section className="max-w-2xl mx-auto px-6 pt-12 relative z-20 mb-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

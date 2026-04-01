@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Car,
@@ -10,13 +10,14 @@ import {
     Phone,
     ArrowRight
 } from "lucide-react";
-import Image from "next/image";
 import PageBanner from "../components/PageBanner";
+import PricingModal from "../components/PricingModal";
 
 /**
  * Pricing Page Component
  */
 export default function PricingPage() {
+    const [selectedPlan, setSelectedPlan] = useState(null);
     const containerVariants = {
         hidden: { opacity: 0 },
         show: {
@@ -74,6 +75,7 @@ export default function PricingPage() {
     ];
 
     return (
+        <>
         <div className="min-h-screen bg-[#F8FAFC]">
             <PageBanner
                 tag="OnWay Plans"
@@ -94,10 +96,10 @@ export default function PricingPage() {
 
                     {/* ================= LEFT COLUMN: CONTENT ================= */}
                     <motion.div variants={itemVariants} className="space-y-8">
-                        <div className="flex items-center gap-2 text-[#22c55e] font-black uppercase tracking-[0.2em] text-xs">
+                        {/* <div className="flex items-center gap-2 text-[#22c55e] font-black uppercase tracking-[0.2em] text-xs">
                             <Car size={16} fill="currentColor" />
                             Pricing Plan
-                        </div>
+                        </div> */}
 
                         <h1 className="text-4xl md:text-6xl font-black text-[#0A1F3D] tracking-tighter leading-[1.1]">
                             Leading premium <br /> mobility and <br /> transport agency
@@ -123,13 +125,8 @@ export default function PricingPage() {
                         </ul>
 
                         <div className="flex items-center gap-5 pt-4">
-                            <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#22c55e] shadow-xl">
-                                <Image
-                                    src="https://plus.unsplash.com/premium_photo-1683121366620-dc435057967c?auto=format&fit=crop&q=80&w=200&h=200"
-                                    alt="Support"
-                                    fill
-                                    className="object-cover"
-                                />
+                            <div className="w-14 h-14 rounded-full bg-[#0A1F3D] border-2 border-[#22c55e] shadow-xl flex items-center justify-center shrink-0">
+                                <Phone size={22} className="text-white" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-zinc-400 text-sm font-bold uppercase tracking-widest">Call Us for any Inquiry</span>
@@ -169,7 +166,9 @@ export default function PricingPage() {
                                     </div>
 
                                     {/* Button Inside Card - Aligned to bottom-left relative to content */}
-                                    <button className={`mt-8 flex items-center gap-2 px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${plan.highlight
+                    <button
+                                        onClick={() => setSelectedPlan(plan)}
+                                        className={`mt-8 flex items-center gap-2 px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${plan.highlight
                                             ? "bg-white text-[#0A1F3D] hover:bg-[#22c55e] hover:text-white"
                                             : "bg-zinc-100 text-[#0A1F3D] hover:bg-[#22c55e] hover:text-white"
                                         }`}>
@@ -203,18 +202,16 @@ export default function PricingPage() {
 
                 </motion.div>
 
-                {/* ================= BOTTOM DECORATION (Drone/Packages) - Placeholder ================= */}
-                <motion.div
-                    initial={{ opacity: 0, x: -50 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    className="mt-20 opacity-20 pointer-events-none hidden lg:block"
-                >
-                    <Car size={160} className="text-[#22c55e]" strokeWidth={0.5} />
-                </motion.div>
-
             </div>
             </div>
         </div>
+
+        {selectedPlan && (
+            <PricingModal
+                plan={selectedPlan}
+                onClose={() => setSelectedPlan(null)}
+            />
+        )}
+        </>
     );
 }

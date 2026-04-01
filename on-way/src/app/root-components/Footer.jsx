@@ -378,8 +378,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Extreme Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-[#2FCA71] via-blue-500 to-emerald-500 opacity-50" />
+      
     </footer>
   );
 }

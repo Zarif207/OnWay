@@ -27,7 +27,8 @@ import {
   Bike,
   Users,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import logoImage from "../../../public/onway_logo.png"
@@ -50,6 +51,7 @@ const HELP_ITEMS = [
 ];
 
 const MORE_ITEMS = [
+  { label: "Vision", href: "/vision", icon: Zap, desc: "Our mission and roadmap" },
   { label: "Guidelines", href: "/rideSharing-guidlines", icon: FileText, desc: "Ride sharing standards" },
   { label: "Safety", href: "/Safety-Coverage", icon: ShieldCheck, desc: "Our protection policy" },
   { label: "Pricing", href: "/pricing", icon: Tag, desc: "Fare and rate details" },

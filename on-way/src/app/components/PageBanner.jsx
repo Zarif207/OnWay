@@ -15,7 +15,7 @@ const GRAIN_SVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='h
  * @param {string}   tag      — eyebrow badge text (optional)
  * @param {string}   waveFill — SVG wave fill color (default #f4f6f9, match page bg)
  */
-export default function PageBanner({ title, subtitle, tag, pills, waveFill = "#f4f6f9" }) {
+export default function PageBanner({ title, subtitle, tag, pills, waveFill = "#f4f6f9", titleSize = "text-6xl sm:text-7xl md:text-8xl" }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y       = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -89,7 +89,7 @@ export default function PageBanner({ title, subtitle, tag, pills, waveFill = "#f
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="text-6xl sm:text-7xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] mb-8"
+          className={`${titleSize} font-black text-white tracking-tighter leading-[0.9] mb-8`}
         >
           {title}
         </motion.h1>

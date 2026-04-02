@@ -16,11 +16,11 @@ const PAYMENT_METHODS = [
 
 // ─── Validation Rules ─────────────────────────────────────────────────────────
 const RULES = {
-  phone:     { regex: /^01[3-9][0-9]{8}$/,   msg: "Enter a valid BD phone number (e.g. 01XXXXXXXXX)" },
-  txnId:     { regex: /^[a-zA-Z0-9]{8,20}$/, msg: "Transaction ID must be 8-20 alphanumeric characters" },
-  accName:   { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Account name must be 3-50 letters only" },
-  accNumber: { regex: /^[0-9]{8,20}$/,        msg: "Account number must be 8-20 digits" },
-  bankName:  { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Bank name must be 3-50 letters only" },
+  walletName: { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Name must be 3-50 letters only" },
+  phone:      { regex: /^01[3-9][0-9]{8}$/,   msg: "Enter a valid BD phone number (e.g. 01XXXXXXXXX)" },
+  accName:    { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Account name must be 3-50 letters only" },
+  accNumber:  { regex: /^[0-9]{8,20}$/,        msg: "Account number must be 8-20 digits" },
+  bankName:   { regex: /^[A-Za-z\s]{3,50}$/,  msg: "Bank name must be 3-50 letters only" },
 };
 
 function validate(fields) {
@@ -60,6 +60,14 @@ function WalletForm({ values, onChange, errors }) {
   return (
     <div className="space-y-4">
       <FormField
+        label="Account Holder Name"
+        name="walletName"
+        value={values.walletName}
+        onChange={onChange}
+        placeholder="e.g. Rahim Uddin"
+        error={errors.walletName}
+      />
+      <FormField
         label="Phone Number"
         name="phone"
         value={values.phone}
@@ -67,14 +75,6 @@ function WalletForm({ values, onChange, errors }) {
         placeholder="01XXXXXXXXX"
         error={errors.phone}
         type="tel"
-      />
-      <FormField
-        label="Transaction ID"
-        name="txnId"
-        value={values.txnId}
-        onChange={onChange}
-        placeholder="e.g. TXN12345678"
-        error={errors.txnId}
       />
     </div>
   );
@@ -134,7 +134,7 @@ function PaymentContent() {
   const [amount, setAmount]               = useState(amountFromUrl || "");
   const [paymentMethod, setPaymentMethod] = useState("bkash");
   const [loading, setLoading]             = useState(false);
-  const [wallet, setWallet]               = useState({ phone: "", txnId: "" });
+  const [wallet, setWallet]               = useState({ walletName: "", phone: "" });
   const [bank, setBank]                   = useState({ accName: "", accNumber: "", bankName: "" });
   const [errors, setErrors]               = useState({});
 
@@ -166,8 +166,8 @@ function PaymentContent() {
       };
     }
     return {
-      phone: { value: wallet.phone, rule: "phone" },
-      txnId: { value: wallet.txnId, rule: "txnId" },
+      walletName: { value: wallet.walletName, rule: "walletName" },
+      phone:      { value: wallet.phone,      rule: "phone" },
     };
   };
 

@@ -164,7 +164,7 @@ export default function BlogPage() {
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
             <div>
-              <p className="text-[17px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-0.5">News & Blogs</p>
+              <p className="text-[17px] font-bold text-black uppercase tracking-[0.2em] mt-0.5">News & Blogs</p>
             </div>
             {/* Search */}
             <div className="relative max-w-xs w-full">

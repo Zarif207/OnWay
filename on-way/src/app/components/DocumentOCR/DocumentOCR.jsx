@@ -215,6 +215,7 @@ export default function DocumentOCR({ onExtractionComplete }) {
 
             setFormData(prev => ({
                 ...prev,
+                fullName: fullName || [firstName, lastName].filter(Boolean).join(" ").trim(),
                 firstName,
                 lastName,
                 dateOfBirth,

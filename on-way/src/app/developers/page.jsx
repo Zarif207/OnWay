@@ -58,7 +58,7 @@ const DEVELOPERS = [
     },
   },
   {
-    name: "Isthiak Ahmed",
+    name: "Istheak Ahmed",
     role: "Frontend Developer",
     avatar: "/Devs/ISTHIAK.jpeg",
     socials: {

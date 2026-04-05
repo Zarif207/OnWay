@@ -20,6 +20,8 @@ export default function ReviewManagement() {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const reviewPageSize = 10;
 
     const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -87,6 +89,18 @@ export default function ReviewManagement() {
             `${r.review} ${r.passengerName} ${r.driverId}`.toLowerCase().includes(search.toLowerCase())
         );
     }, [reviews, search]);
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search]);
+
+    // Pagination logic
+    const itemsPerPage = reviewPageSize;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentReviews = filteredReviews.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
  if (loading) {
     return (
       <OnWayLoading></OnWayLoading>   
@@ -133,7 +147,7 @@ export default function ReviewManagement() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     <AnimatePresence mode="popLayout">
-                                        {filteredReviews.map((review) => (
+                                        {currentReviews.map((review) => (
                                             <motion.tr
                                                 key={review._id}
                                                 initial={{ opacity: 0, y: 10 }}
@@ -192,6 +206,46 @@ export default function ReviewManagement() {
                                     </div>
                                     <h3 className="text-slate-800 font-bold">No reviews found</h3>
                                     <p className="text-slate-400 text-sm">Try searching with different keywords.</p>
+                                </div>
+                            )}
+
+                            {/* Pagination */}
+                            {!loading && filteredReviews.length > 0 && (
+                                <div className="flex justify-center mt-8 pb-6">
+                                    <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl">
+                                        {/* Prev Button */}
+                                        <button
+                                            onClick={() => setCurrentPage(prev => prev - 1)}
+                                            disabled={currentPage === 1}
+                                            className="px-4 py-2 text-slate-500 font-medium rounded-xl hover:bg-slate-200 disabled:opacity-40 flex items-center gap-1"
+                                        >
+                                            ‹ Prev
+                                        </button>
+
+                                        {/* Page Numbers */}
+                                        {[...Array(totalPages)].map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setCurrentPage(i + 1)}
+                                                className={`w-10 h-10 flex items-center justify-center rounded-xl font-semibold transition-all ${
+                                                    currentPage === i + 1
+                                                        ? "bg-green-500 text-white shadow-md"
+                                                        : "text-slate-600 hover:bg-slate-200"
+                                                }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+
+                                        {/* Next Button */}
+                                        <button
+                                            onClick={() => setCurrentPage(prev => prev + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="px-4 py-2 text-white bg-green-500 rounded-xl font-medium hover:bg-green-600 disabled:opacity-40 flex items-center gap-1"
+                                        >
+                                            Next ›
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

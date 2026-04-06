@@ -242,8 +242,20 @@ function PaymentContent() {
 
         if (data.success) {
           setWalletBalance(data.newBalance);
-          // Sync localStorage so wallet page stays consistent
+          // Sync balance to localStorage
           localStorage.setItem(`wallet_balance_${session.user.id}`, data.newBalance.toString());
+          // Save debit transaction to localStorage so wallet page shows it
+          const debitTxn = {
+            transactionId: data.transactionId,
+            product_name: `Ride Payment${bookingIdFromUrl ? ` #${bookingIdFromUrl.slice(-6)}` : ""}`,
+            status: "success",
+            total_amount: payAmt,
+            amount: payAmt,
+            type: "debit",
+            createdAt: new Date().toISOString(),
+          };
+          const existingTxns = JSON.parse(localStorage.getItem(`wallet_txns_${session.user.id}`) || "[]");
+          localStorage.setItem(`wallet_txns_${session.user.id}`, JSON.stringify([debitTxn, ...existingTxns]));
           // Store for success page redirect
           if (bookingIdFromUrl) localStorage.setItem("onway_pending_bookingId", bookingIdFromUrl);
           localStorage.setItem("onway_post_payment_redirect", bookingIdFromUrl ? "ride" : "dashboard");

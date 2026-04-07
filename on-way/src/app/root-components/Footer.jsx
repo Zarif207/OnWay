@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast, Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import {
   Facebook,
   Instagram,
@@ -148,7 +148,6 @@ export default function Footer() {
 
   return (
     <footer className="relative bg-[#0B1E3C] pt-24 pb-12 overflow-hidden">
-
       {/* --- BACKGROUND LAYERS --- */}
       {/* 1. Background Image */}
       <div className="absolute inset-0 z-0 bg-[url('/home-3.webp')] bg-cover bg-center bg-no-repeat opacity-40 grayscale" />

@@ -22,7 +22,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useSocket } from "@/hooks/useSocket";
 import { useSession } from "next-auth/react";
-import ReviewModal from "../review/ReviewModal"; //  FIXED: correct import
+import ReviewModal from "../review/page";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 

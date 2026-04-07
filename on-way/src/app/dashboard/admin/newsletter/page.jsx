@@ -11,13 +11,15 @@ import {
     RefreshCcw,
     UserCheck
 } from "lucide-react";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
 export default function AdminNewsletter() {
     const [subscribers, setSubscribers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const newsletterPageSize = 10;
 
     const fetchSubscribers = async () => {
         setLoading(true);
@@ -74,10 +76,15 @@ export default function AdminNewsletter() {
         sub.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Pagination logic
+    const itemsPerPage = newsletterPageSize;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentSubscribers = filteredSubscribers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredSubscribers.length / itemsPerPage);
+
     return (
         <div className="min-h-screen text-slate-800 p-4">
-            <Toaster />
-
             <div className="relative z-10 max-w-6xl mx-auto">
 
                 {/* Header Section */}
@@ -133,8 +140,8 @@ export default function AdminNewsletter() {
                                                 <RefreshCcw className="animate-spin inline mr-2" /> Loading database...
                                             </td>
                                         </tr>
-                                    ) : filteredSubscribers.length > 0 ? (
-                                        filteredSubscribers.map((sub, index) => (
+                                    ) : currentSubscribers.length > 0 ? (
+                                        currentSubscribers.map((sub, index) => (
                                             <motion.tr
                                                 key={sub._id}
                                                 initial={{ opacity: 0, x: -10 }}
@@ -181,6 +188,50 @@ export default function AdminNewsletter() {
                                 </AnimatePresence>
                             </tbody>
                         </table>
+
+                        {/* Pagination */}
+                        {!loading && filteredSubscribers.length > 0 && (
+                            <div className="flex justify-center mt-8 pb-6">
+                                <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl">
+                                    {/* Prev Button */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => prev - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-4 py-2 text-slate-500 font-medium rounded-xl hover:bg-slate-200 disabled:opacity-40 flex items-center gap-1"
+                                    >
+                                        ‹ Prev
+                                    </button>
+
+                                    {/* Page Numbers */}
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentPage(i + 1)}
+                                            className={`w-10 h-10 flex items-center justify-center rounded-xl font-semibold transition-all ${
+                                                currentPage === i + 1
+                                                    ? "bg-green-500 text-white shadow-md"
+                                                    : "text-slate-600 hover:bg-slate-200"
+                                            }`}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+
+                                    {/* Next Button */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => prev + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-4 py-2 text-white bg-green-500 rounded-xl font-medium hover:bg-green-600 disabled:opacity-40 flex items-center gap-1"
+                                    >
+                                        Next ›
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {!loading && filteredSubscribers.length === 0 && (
+                            <div className="p-20 text-center text-slate-400 font-bold">No active subscribers found.</div>
+                        )}
                     </div>
                 </motion.div>
             </div>

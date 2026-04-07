@@ -13,6 +13,8 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const userManagementPage = 10;
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/passenger`;
 
@@ -204,6 +206,13 @@ const UserManagement = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Pagination logic
+  const itemsPerPage = userManagementPage;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
   const getStatusStyle = (status) => {
     switch (status) {
       case 'Active': return 'bg-green-100 text-green-700';
@@ -289,7 +298,7 @@ const UserManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user) => (
+                  {currentUsers.map((user) => (
                     <tr key={user._id} className={`border-b border-gray-200 hover:bg-gray-50 transition ${selectedUsers.includes(user._id) ? 'bg-green-50' : ''}`}>
                       <td className="p-4">
                         <input
@@ -338,6 +347,50 @@ const UserManagement = () => {
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              {!loading && filteredUsers.length > 0 && (
+                <div className="flex justify-center mt-8 pb-6">
+                  <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-2xl">
+                    {/* Prev Button */}
+                    <button
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 text-gray-500 font-medium rounded-xl hover:bg-gray-200 disabled:opacity-40 flex items-center gap-1"
+                    >
+                      ‹ Prev
+                    </button>
+
+                    {/* Page Numbers */}
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl font-semibold transition-all ${
+                          currentPage === i + 1
+                            ? "bg-green-500 text-white shadow-md"
+                            : "text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 text-white bg-green-500 rounded-xl font-medium hover:bg-green-600 disabled:opacity-40 flex items-center gap-1"
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!loading && filteredUsers.length === 0 && (
+                <div className="p-10 text-center text-gray-500">No users found.</div>
+              )}
             </div>
           )}
         </div>

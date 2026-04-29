@@ -1,35 +1,19 @@
 "use client";
 import React from "react";
+import PageBanner from "../components/PageBanner";
 
 const RideSharingGuidelines = () => {
   return (
-    <div className=" mx-auto px-4 pt-20">
+    <div className="mx-auto">
 
-      {/* ✅ Banner Section */}
-      <div className="">
-        <div className="relative h-[600px] w-full overflow-hidden">
-          {/* Background Image */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "url('/guildelince.jpeg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
-
-          {/* Gradient Overlay (Makes text pop without ruining image quality) */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
-
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center h-full text-white">
-            <h1 className="text-5xl font-bold">Ride Sharing Guidelines</h1>
-            <p>Follow rules, stay safe, and enjoy a smooth ride experience.</p>
-          </div>
-        </div>
-      </div>
+      <PageBanner
+        tag="Safety First"
+        title="Ride Sharing Guidelines"
+        subtitle="Follow rules, stay safe, and enjoy a smooth ride experience."
+        waveFill="#ffffff"
+      />
       {/* Intro */}
-      <div className="w-7xl mx-auto">
+      <div className="w-7xl mx-auto px-4 py-10">
         <div className="rounded-xl p-6 mb-8 shadow-md border border-gray-100 bg-white/60 backdrop-blur-sm">
           <p className="text-lg">
             This page provides important information about ride-sharing policies,

@@ -5,7 +5,7 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const http = require("http");
 const { Server } = require("socket.io");
-const {setServers}  = require("node:dns/promises");
+const { setServers } = require("node:dns/promises");
 
 
 const passengerRoutes = require("./routes/passenger");
@@ -332,7 +332,7 @@ io.on("connection", (socket) => {
         riderId,
         driverId: riderId,
         driver: driverDetails,
-        otp: booking.otp,       
+        otp: booking.otp,
       };
 
       io.to(`passenger:${passengerId}`).emit("ride:accepted", acceptancePayload);
@@ -482,6 +482,7 @@ app.use(async (req, res, next) => {
       lostItemsCollection: database.collection("lostItems"),
       refundsCollection: database.collection("refunds"),
       noticeCollection: database.collection("notice"),
+      newsletterCollection: database.collection("newsletter"),
     };
     next();
   } catch (error) {
@@ -579,10 +580,13 @@ app.use("/api/notifications", (req, res, next) => {
 
 app.use("/api/notice", (req, res, next) => {
   notice(
-    req.collections.noticeCollection, 
+    req.collections.noticeCollection,
     req.collections.passengerCollection,
     transporter
   )(req, res, next);
+});
+app.use("/api/newsletter", (req, res, next) => {
+  newsletterRoute(req.collections.newsletterCollection)(req, res, next);
 });
 
 app.use("/api/search", (req, res, next) => {

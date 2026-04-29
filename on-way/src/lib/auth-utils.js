@@ -29,7 +29,7 @@ export async function requireAuth(callbackUrl = "/") {
   const user = await getCurrentUser();
   
   if (!user) {
-    redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+    redirect(`/authPage?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
   
   return user;

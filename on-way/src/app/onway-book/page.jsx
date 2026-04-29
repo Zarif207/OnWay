@@ -19,10 +19,26 @@ import { Star, Phone, MessageCircle, XCircle, ArrowRight, ShieldCheck, Wallet } 
 import { geocodeAddress } from "@/utils/geocodingService";
 
 const MOCK_DRIVERS = [
-  { id: 1, name: "Rahim", car: "Toyota Axio", plate: "DHK-12-3456", rating: 4.8, eta: "3 min", phone: "+8801700000001", avatar: "adventurer/svg?seed=Felix", vehicleType: "car" },
-  { id: 2, name: "Karim", car: "Honda Fit", plate: "DHK-56-7890", rating: 4.7, eta: "2 min", phone: "+8801700000002", avatar: "adventurer/svg?seed=Aneka", vehicleType: "suv" },
-  { id: 3, name: "Sakib", car: "Nissan Sunny", plate: "DHK-23-4567", rating: 4.9, eta: "4 min", phone: "+8801700000003", avatar: "adventurer/svg?seed=Jack", vehicleType: "bike" },
-  { id: 4, name: "Dr. Asif", car: "Emergency Unit", plate: "AMB-99-1122", rating: 5.0, eta: "5 min", phone: "+8801700000004", avatar: "adventurer/svg?seed=Doc", vehicleType: "ambulance" }
+  // Cars
+  { id: 1,  name: "Rahim Uddin",    car: "Toyota Axio",      plate: "DHK-12-3456", rating: 4.8, eta: "3 min", phone: "+8801700000001", avatar: "adventurer/svg?seed=Rahim",    vehicleType: "car" },
+  { id: 2,  name: "Farhan Ahmed",   car: "Honda City",       plate: "DHK-34-7821", rating: 4.6, eta: "5 min", phone: "+8801700000002", avatar: "adventurer/svg?seed=Farhan",   vehicleType: "car" },
+  { id: 3,  name: "Tanvir Hossain", car: "Toyota Premio",    plate: "DHK-55-1234", rating: 4.9, eta: "2 min", phone: "+8801700000003", avatar: "adventurer/svg?seed=Tanvir",   vehicleType: "car" },
+  { id: 4,  name: "Milon Sheikh",   car: "Mitsubishi Lancer",plate: "DHK-78-9900", rating: 4.5, eta: "6 min", phone: "+8801700000004", avatar: "adventurer/svg?seed=Milon",    vehicleType: "car" },
+  { id: 5,  name: "Rashed Kabir",   car: "Toyota Allion",    plate: "DHK-91-4567", rating: 4.7, eta: "4 min", phone: "+8801700000005", avatar: "adventurer/svg?seed=Rashed",   vehicleType: "car" },
+  // SUVs
+  { id: 6,  name: "Karim Molla",    car: "Honda Fit",        plate: "DHK-56-7890", rating: 4.7, eta: "2 min", phone: "+8801700000006", avatar: "adventurer/svg?seed=Karim",    vehicleType: "suv" },
+  { id: 7,  name: "Jahangir Ali",   car: "Toyota Noah",      plate: "DHK-44-3322", rating: 4.8, eta: "7 min", phone: "+8801700000007", avatar: "adventurer/svg?seed=Jahangir", vehicleType: "suv" },
+  { id: 8,  name: "Sohel Rana",     car: "Mitsubishi Pajero",plate: "DHK-67-1100", rating: 4.6, eta: "5 min", phone: "+8801700000008", avatar: "adventurer/svg?seed=Sohel",    vehicleType: "suv" },
+  // Bikes
+  { id: 9,  name: "Sakib Hassan",   car: "Yamaha FZS",       plate: "DHK-23-4567", rating: 4.9, eta: "4 min", phone: "+8801700000009", avatar: "adventurer/svg?seed=Sakib",    vehicleType: "bike" },
+  { id: 10, name: "Nayeem Islam",   car: "Honda CB Hornet",  plate: "DHK-11-8899", rating: 4.7, eta: "3 min", phone: "+8801700000010", avatar: "adventurer/svg?seed=Nayeem",   vehicleType: "bike" },
+  { id: 11, name: "Arif Billah",    car: "Bajaj Pulsar",     plate: "DHK-33-5566", rating: 4.5, eta: "2 min", phone: "+8801700000011", avatar: "adventurer/svg?seed=Arif",     vehicleType: "bike" },
+  { id: 12, name: "Sumon Dey",      car: "TVS Apache",       plate: "DHK-88-2211", rating: 4.8, eta: "5 min", phone: "+8801700000012", avatar: "adventurer/svg?seed=Sumon",    vehicleType: "bike" },
+  // Classic (sedan/standard)
+  { id: 13, name: "Polash Sarker",  car: "Toyota Corolla",   plate: "DHK-22-6677", rating: 4.6, eta: "4 min", phone: "+8801700000013", avatar: "adventurer/svg?seed=Polash",   vehicleType: "classic" },
+  { id: 14, name: "Imran Haque",    car: "Nissan Sunny",     plate: "DHK-99-3344", rating: 4.7, eta: "3 min", phone: "+8801700000014", avatar: "adventurer/svg?seed=Imran",    vehicleType: "classic" },
+  // Ambulance
+  { id: 15, name: "Dr. Asif Kamal", car: "Emergency Unit",   plate: "AMB-99-1122", rating: 5.0, eta: "5 min", phone: "+8801700000015", avatar: "adventurer/svg?seed=Asif",     vehicleType: "ambulance" },
 ];
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -383,8 +399,10 @@ function BookRideContent() {
     setError("");
 
     const currentFare    = fare > 0 ? fare : calculateFare(distance, rideType, surge.multiplier);
-    const mappedType     = rideType === "classic" ? "car" : rideType;
-    const selectedDriver = MOCK_DRIVERS.find(d => d.vehicleType === mappedType) || MOCK_DRIVERS[0];
+    const mappedType     = rideType === "classic" ? "classic" : rideType;
+    const matchingDrivers = MOCK_DRIVERS.filter(d => d.vehicleType === mappedType);
+    const pool           = matchingDrivers.length > 0 ? matchingDrivers : MOCK_DRIVERS;
+    const selectedDriver = pool[Math.floor(Math.random() * pool.length)];
 
     // Persist booking to MongoDB
     let createdBookingId = null;
@@ -758,10 +776,10 @@ function CreditCard({ size }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"Q
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"QQ
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >

@@ -110,13 +110,20 @@ async function createAndEmitNotification(
  * Notification type constants
  */
 const NOTIFICATION_TYPES = {
-  USER_REGISTRATION: "user_registration",
-  RIDER_REGISTRATION: "rider_registration",
-  BOOKING_CREATED: "booking_created",
-  BOOKING_CANCELLED: "booking_cancelled",
-  PAYMENT_RECEIVED: "payment_received",
-  EMERGENCY_ALERT: "emergency_alert",
-  SYSTEM_ALERT: "system_alert",
+  USER_REGISTRATION:             "user_registration",
+  RIDER_REGISTRATION:            "rider_registration",
+  BOOKING_CREATED:               "booking_created",
+  BOOKING_CANCELLED:             "booking_cancelled",
+  PAYMENT_RECEIVED:              "payment_received",
+  EMERGENCY_ALERT:               "emergency_alert",
+  SYSTEM_ALERT:                  "system_alert",
+  // Passenger-specific
+  RIDE_COMPLETED:                "RIDE_COMPLETED",
+  PAYMENT_SUCCESS:               "PAYMENT_SUCCESS",
+  PAYMENT_FAILED:                "PAYMENT_FAILED",
+  BOOKING_CANCELLED_PASSENGER:   "BOOKING_CANCELLED_PASSENGER",
+  DRIVER_ASSIGNED:               "DRIVER_ASSIGNED",
+  DRIVER_ARRIVED:                "DRIVER_ARRIVED",
 };
 
 /**
@@ -205,6 +212,62 @@ async function notifyBookingCancelled(collections, bookingData) {
   );
 }
 
+/**
+ * Send a real-time notification directly to a specific passenger.
+ * Saves to DB and emits via socket to the passenger's room.
+ * Uses HTTP dispatch to the socket-server (port 4001) since passengers
+ * connect there, not to the main backend server.
+ */
+async function notifyPassenger(notificationsCollection, passengerId, type, message, metadata = {}) {
+  if (!passengerId) {
+    console.warn("⚠️ notifyPassenger: passengerId is required");
+    return null;
+  }
+
+  try {
+    const notification = {
+      userId:    passengerId.toString(),
+      role:      "passenger",
+      type,
+      message,
+      metadata,
+      isRead:    false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sentBy:    "system",
+    };
+
+    // 1. Persist to MongoDB
+    const result = await notificationsCollection.insertOne(notification);
+    const saved  = { _id: result.insertedId.toString(), ...notification };
+
+    // 2. Emit via main backend io (covers sockets connected to port 5000)
+    if (io) {
+      io.to(`user_${passengerId}`).emit("passenger:notification", saved);
+      io.to(`passenger:${passengerId}`).emit("passenger:notification", saved);
+    }
+
+    // 3. Dispatch to socket-server (port 4001) — passengers connect here
+    const axios = require("axios");
+    const socketUrl = process.env.SOCKET_URL || "http://localhost:4001";
+    try {
+      await axios.post(`${socketUrl}/api/notify-passenger`, {
+        passengerId: passengerId.toString(),
+        notification: saved,
+      }, { timeout: 3000 });
+    } catch (dispatchErr) {
+      // Non-fatal — socket-server may not be running in all envs
+      console.warn("⚠️ Could not dispatch to socket-server:", dispatchErr.message);
+    }
+
+    console.log(`🔔 Passenger notification → ${passengerId}: [${type}] ${message}`);
+    return saved;
+  } catch (error) {
+    console.error("❌ notifyPassenger error:", error);
+    return null;
+  }
+}
+
 module.exports = {
   setSocketIO,
   getAdminUserIds,
@@ -213,5 +276,6 @@ module.exports = {
   notifyRiderRegistration,
   notifyBookingCreated,
   notifyBookingCancelled,
+  notifyPassenger,
   NOTIFICATION_TYPES,
 };

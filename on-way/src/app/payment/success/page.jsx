@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -10,17 +10,28 @@ function PaymentSuccessContent() {
   const router = useRouter();
 
   useEffect(() => {
-    toast.success("Payment Successful! Redirecting to your dashboard.", {
+    const bookingId    = localStorage.getItem("onway_pending_bookingId");
+    const postRedirect = localStorage.getItem("onway_post_payment_redirect");
+
+    localStorage.removeItem("onway_pending_bookingId");
+    localStorage.removeItem("onway_post_payment_redirect");
+
+    toast.success("Payment Successful!", {
       duration: 3000,
       style: { borderRadius: "15px", background: "#011421", color: "#fff" },
       icon: "🎉",
     });
 
-    // Clean up any pending booking reference
-    localStorage.removeItem("onway_pending_bookingId");
-
     const timer = setTimeout(() => {
-      router.push("/dashboard/passenger");
+      if (postRedirect === "ride") {
+        // Pay Now flow → show active ride
+        router.push(bookingId
+          ? `/dashboard/passenger/ride?bookingId=${bookingId}`
+          : "/dashboard/passenger/ride");
+      } else {
+        // Pay Later (after ride) or default → dashboard overview
+        router.push("/dashboard/passenger");
+      }
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -28,7 +39,6 @@ function PaymentSuccessContent() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4">
-      <Toaster position="top-center" />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +56,7 @@ function PaymentSuccessContent() {
           </div>
         )}
 
-        <p className="text-sm text-gray-400 animate-pulse">Redirecting to your dashboard...</p>
+        <p className="text-sm text-gray-400 animate-pulse">Redirecting...</p>
       </div>
     </div>
   );

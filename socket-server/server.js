@@ -825,7 +825,7 @@ function setupRoutes(app, collections) {
     res.json({
       status: "Socket Server Running",
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'Production',
     });
   });
 

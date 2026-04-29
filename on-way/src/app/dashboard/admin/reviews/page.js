@@ -12,7 +12,7 @@ import {
     Filter
 } from "lucide-react";
 import Swal from "sweetalert2";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import OnWayLoading from "@/app/components/Loading/page";
 
@@ -94,8 +94,6 @@ export default function ReviewManagement() {
   }
     return (
         <div className="min-h-screen p-2">
-            <Toaster position="top-center" reverseOrder={false} />
-
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                     <div className="space-y-2">

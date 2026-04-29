@@ -28,6 +28,7 @@ export default function ServicesPage() {
         tag="OnWay Platform"
         title="Our Services"
         subtitle="Everything you need for a smarter, safer, and more comfortable journey — all in one platform."
+        pills={["Ride Share", "Express", "Safety", "Categories", "Live Tracking", "Payments"]}
       />
 
       {/* Stats strip */}

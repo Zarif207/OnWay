@@ -104,7 +104,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-[60vh] flex items-center py-16 bg-white overflow-hidden mt-12"
+      className="relative min-h-[60vh] flex items-center py-16 bg-white overflow-hidden"
     >
       <Container className="relative z-20 w-full">
         <motion.div
@@ -248,7 +248,7 @@ export default function Hero() {
             className="flex items-center justify-center lg:justify-end"
           >
             <div className="max-w-[560px] w-full rounded-2xl overflow-hidden shadow-lg aspect-video lg:aspect-square xl:aspect-[4/3] bg-black">
-              <video autoPlay loop muted playsInline className="w-full h-full object-cover">
+              <video autoPlay loop muted playsInline className="w-full h-full object-cover" key="/porsche-vid.mp4">
                 <source src="/porsche-vid.mp4" type="video/mp4" />
               </video>
             </div>

@@ -30,7 +30,7 @@ export function useAuth() {
  * Hook to require authentication - redirects to login if not authenticated
  * @param {string} redirectTo - URL to redirect to if not authenticated
  */
-export function useRequireAuth(redirectTo = "/login") {
+export function useRequireAuth(redirectTo = "/authPage") {
   const { user, status } = useAuth();
   const router = useRouter();
 
@@ -58,7 +58,7 @@ export function useRequireRole(allowedRoles, redirectTo = "/") {
     if (status === "loading") return;
     
     if (!user) {
-      router.push("/login");
+      router.push("/authPage");
       return;
     }
 

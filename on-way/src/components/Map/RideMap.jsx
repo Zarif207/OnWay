@@ -980,14 +980,7 @@ export default function RideMap({
       />
       <MapClickHandler onMapClick={onMapClick} />
 
-      {/* Route Progress Indicator */}
-      {showCarAnimation && routeGeometry && routeGeometry.length > 0 && (
-        <RouteProgressIndicator
-          progress={animationProgress}
-          isPlaying={isAnimationPlaying}
-          durationMin={durationMin}
-        />
-      )}
+      {/* Route Progress Indicator removed — status is shown in the right-side panel */}
 
       {/* Current Location Button */}
       {showCurrentLocationButton && (

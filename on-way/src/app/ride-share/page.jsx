@@ -28,6 +28,7 @@ export default function RideSharePage() {
         tag="OnWay Ride Share"
         title="Your Ride, Your Way"
         subtitle="Safe, affordable, and reliable rides connecting you to every corner of the city — on demand."
+        pills={["Instant Booking", "Verified Drivers", "Live Tracking", "24/7 Support", "Safe Rides"]}
       />
 
       {/* Timeline — step-by-step */}

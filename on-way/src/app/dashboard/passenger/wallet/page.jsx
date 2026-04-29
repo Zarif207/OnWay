@@ -266,7 +266,7 @@ export default function WalletPage() {
                   <td className="py-6 px-4">
                     <div className="flex items-center gap-4">
                       <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${txn.status === 'success' ? 'bg-[#2FCA71]/10 text-[#2FCA71]' : 'bg-gray-100 text-gray-400'}`}>
-                        {txn.total_amount > 0 ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                        {txn.type === 'debit' ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />}
                       </div>
                       <div>
                         <p className="font-black text-secondary text-sm uppercase tracking-tight">{txn.product_name || 'Wallet Top-up'}</p>
@@ -280,8 +280,8 @@ export default function WalletPage() {
                   </td>
                   <td className="py-6 px-4"><StatusBadge status={txn.status} /></td>
                   <td className="py-6 px-4 text-right">
-                    <span className={`text-xl font-black tracking-tight ${txn.status === 'success' ? 'text-primary' : 'text-secondary'}`}>
-                      ৳{(txn.total_amount || txn.amount).toLocaleString()}
+                    <span className={`text-xl font-black tracking-tight ${txn.type === 'debit' ? 'text-red-500' : 'text-primary'}`}>
+                      {txn.type === 'debit' ? '-' : '+'}৳{(txn.total_amount || txn.amount || 0).toLocaleString()}
                     </span>
                   </td>
                 </tr>

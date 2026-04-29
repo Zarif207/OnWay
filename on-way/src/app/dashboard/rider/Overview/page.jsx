@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Star, Car, DollarSign, Loader2 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const Overview = ({ riderId = "driver_345678" }) => {
   const [isOnline, setIsOnline] = useState(true);
@@ -86,7 +86,6 @@ const Overview = ({ riderId = "driver_345678" }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <Toaster />
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>

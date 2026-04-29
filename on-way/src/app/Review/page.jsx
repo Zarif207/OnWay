@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Star, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 function ReviewFormContent() {
@@ -78,8 +78,6 @@ function ReviewFormContent() {
 
     return (
         <div className="max-w-xl mx-auto my-8 px-4">
-            <Toaster position="top-center" />
-
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

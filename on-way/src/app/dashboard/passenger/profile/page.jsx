@@ -22,7 +22,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 // import OnWayLoading from "@/app/components/Loading/page";
 
@@ -208,7 +208,7 @@ export default function Profile() {
           <ShieldCheck size={48} className="mx-auto mb-4 text-red-500" />
           <h2 className="text-2xl font-black">Access Denied</h2>
           <p className="text-zinc-500 mb-6">Please sign in to view your profile.</p>
-          <Button className="w-full" onClick={() => (window.location.href = "/login")}>Go to Login</Button>
+          <Button className="w-full" onClick={() => (window.location.href = "/authPage")}>Go to Login</Button>
         </Card>
       </div>
     );
@@ -216,7 +216,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 px-4 py-8 md:p-10 lg:p-12">
-      <Toaster position="top-right" reverseOrder={false} />
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}

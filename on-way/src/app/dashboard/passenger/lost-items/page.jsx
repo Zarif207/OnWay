@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Search, CheckCircle, Phone, XCircle, AlertCircle } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import OnWayLoading from "@/app/components/Loading/page";
 
 export default function LostItemsAdminPage() {
@@ -86,7 +86,6 @@ export default function LostItemsAdminPage() {
 
   return (
     <div className="min-h-screen p-4 bg-slate-50">
-      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
         
         {/* Header */}

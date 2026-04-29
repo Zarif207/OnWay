@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 function PaymentFailContent() {
   const searchParams = useSearchParams();
@@ -22,7 +22,6 @@ function PaymentFailContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 flex items-center justify-center px-4">
-      <Toaster position="top-center" />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
 
         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">

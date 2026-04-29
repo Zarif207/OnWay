@@ -1,13 +1,14 @@
 const express = require("express");
-const router = express.Router();
 const cors = require("cors");
 
 // SSLCommerz callback routes need to allow all origins (POST from SSLCommerz servers)
 const sslCors = cors({ origin: "*", methods: ["POST", "GET"] });
 
 module.exports = function (collections) {
+  const router = express.Router();
   const paymentsCollection = collections.paymentsCollection;
   const bookingsCollection = collections.bookingsCollection;
+  const passengerCollection = collections.passengerCollection;
   const { ObjectId } = require("mongodb");
 
   router.post("/initiate", async (req, res) => {
@@ -148,25 +149,34 @@ module.exports = function (collections) {
     try {
       const { tran_id } = req.body;
 
-      // 1. Update Payment Record
       await paymentsCollection.updateOne(
         { transactionId: tran_id },
         { $set: { status: "success", updatedAt: new Date() } }
       );
 
-      // 2. Update Booking Status & Await Result
       const success = await updateBookingPaymentStatus(tran_id, "paid");
 
-      // 3. STRICT VERIFICATION: Fetch fresh data to confirm change is persisted
       const payment = await paymentsCollection.findOne({ transactionId: tran_id });
       const bookingId = payment?.bookingId;
-      
+
       if (bookingId) {
         const verifiedBooking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
         console.log(`🧐 [VERIFICATION] Booking ${bookingId} status is: ${verifiedBooking?.paymentStatus}`);
+
+        // ── Passenger notification ────────────────────────────────────────────
+        if (verifiedBooking?.passengerId && req.collections?.notificationsCollection) {
+          const notificationHelper = require("../utils/notificationHelper");
+          await notificationHelper.notifyPassenger(
+            req.collections.notificationsCollection,
+            verifiedBooking.passengerId.toString(),
+            "PAYMENT_SUCCESS",
+            `Payment of ৳${verifiedBooking.price || payment?.total_amount || 0} received successfully.`,
+            { bookingId, transactionId: tran_id }
+          );
+        }
+        // ─────────────────────────────────────────────────────────────────────
       }
 
-      // 4. Redirect with bookingId safely in URL
       const redirectUrl = `${process.env.FRONTEND_URL}/payment/success?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
       res.redirect(redirectUrl);
     } catch (error) {
@@ -189,6 +199,23 @@ module.exports = function (collections) {
 
       const payment = await paymentsCollection.findOne({ transactionId: tran_id });
       const bookingId = payment?.bookingId;
+
+      // ── Passenger notification ──────────────────────────────────────────────
+      if (bookingId) {
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
+        if (booking?.passengerId && req.collections?.notificationsCollection) {
+          const notificationHelper = require("../utils/notificationHelper");
+          await notificationHelper.notifyPassenger(
+            req.collections.notificationsCollection,
+            booking.passengerId.toString(),
+            "PAYMENT_FAILED",
+            "Your payment could not be processed. Please try again.",
+            { bookingId, transactionId: tran_id }
+          );
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       const redirectUrl = `${process.env.FRONTEND_URL}/payment/fail?transaction=${tran_id}${bookingId ? `&bookingId=${bookingId}` : ''}`;
       res.redirect(redirectUrl);
     } catch (error) {
@@ -238,6 +265,96 @@ module.exports = function (collections) {
     } catch (error) {
       console.error("IPN error:", error);
       res.status(500).json({ success: false });
+    }
+  });
+
+  // Wallet Payment — deduct from passenger wallet balance
+  router.post("/wallet-pay", async (req, res) => {
+    try {
+      const { passengerId, amount, bookingId, productName, currentBalance } = req.body;
+
+      if (!passengerId || !amount) {
+        return res.status(400).json({ success: false, message: "passengerId and amount are required" });
+      }
+
+      if (!ObjectId.isValid(passengerId)) {
+        return res.status(400).json({ success: false, message: "Invalid passengerId" });
+      }
+
+      const payAmount = parseFloat(amount);
+
+      // Use frontend-provided balance (localStorage) as source of truth since wallet is client-side
+      // If currentBalance not provided, fall back to DB
+      let effectiveBalance = currentBalance !== undefined ? parseFloat(currentBalance) : null;
+
+      if (effectiveBalance === null) {
+        const passenger = await passengerCollection.findOne({ _id: new ObjectId(passengerId) });
+        if (!passenger) {
+          return res.status(404).json({ success: false, message: "Passenger not found" });
+        }
+        effectiveBalance = passenger.walletBalance || 0;
+      }
+
+      if (effectiveBalance < payAmount) {
+        return res.status(400).json({
+          success: false,
+          message: "Insufficient wallet balance",
+          currentBalance: effectiveBalance,
+          required: payAmount,
+        });
+      }
+
+      const newBalance = effectiveBalance - payAmount;
+      const transactionId = `WALLET-${Date.now()}`;
+
+      // Sync new balance to DB
+      await passengerCollection.updateOne(
+        { _id: new ObjectId(passengerId) },
+        {
+          $set: { walletBalance: newBalance, updatedAt: new Date() },
+          $push: {
+            walletTransactions: {
+              transactionId,
+              type: "debit",
+              amount: payAmount,
+              description: productName || "Ride Payment",
+              bookingId: bookingId || null,
+              status: "success",
+              createdAt: new Date(),
+            },
+          },
+        }
+      );
+
+      // Record in payments collection
+      await paymentsCollection.insertOne({
+        transactionId,
+        amount: payAmount,
+        passengerId,
+        bookingId: bookingId || null,
+        productName: productName || "Ride Payment",
+        paymentMethod: "wallet",
+        status: "success",
+        createdAt: new Date(),
+      });
+
+      // Update booking payment status
+      if (bookingId && ObjectId.isValid(bookingId)) {
+        await bookingsCollection.updateOne(
+          { _id: new ObjectId(bookingId) },
+          { $set: { paymentMethod: "wallet", paymentStatus: "paid", updatedAt: new Date() } }
+        );
+      }
+
+      return res.json({
+        success: true,
+        message: "Wallet payment successful",
+        transactionId,
+        newBalance,
+      });
+    } catch (error) {
+      console.error("Wallet pay error:", error);
+      res.status(500).json({ success: false, message: "Wallet payment failed" });
     }
   });
 

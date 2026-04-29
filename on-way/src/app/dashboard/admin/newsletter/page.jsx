@@ -11,7 +11,7 @@ import {
     RefreshCcw,
     UserCheck
 } from "lucide-react";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
 export default function AdminNewsletter() {
@@ -76,8 +76,6 @@ export default function AdminNewsletter() {
 
     return (
         <div className="min-h-screen text-slate-800 p-4">
-            <Toaster />
-
             <div className="relative z-10 max-w-6xl mx-auto">
 
                 {/* Header Section */}

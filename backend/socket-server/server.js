@@ -391,6 +391,24 @@ function setupRoutes(app, collections) {
 
   // Health Check
   app.get("/api/health", (req, res) => res.json({ status: "OnWay Socket Server Running", timestamp: new Date() }));
+
+  // Passenger notification dispatch — called by main backend
+  app.post("/api/notify-passenger", (req, res) => {
+    try {
+      const { passengerId, notification } = req.body;
+      if (!passengerId || !notification) {
+        return res.status(400).json({ success: false, message: "passengerId and notification required" });
+      }
+      // Emit to all rooms the passenger may have joined
+      io.to(`user_${passengerId}`).emit("passenger:notification", notification);
+      io.to(`passenger:${passengerId}`).emit("passenger:notification", notification);
+      console.log(`🔔 [Socket-Server] Dispatched passenger:notification → ${passengerId}: [${notification.type}]`);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("notify-passenger error:", err);
+      res.status(500).json({ success: false });
+    }
+  });
 }
 
 // ------------------- SERVER STARTUP -------------------

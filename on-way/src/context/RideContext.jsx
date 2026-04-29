@@ -105,8 +105,19 @@ export const RideProvider = ({ children }) => {
 
   const completeRide = () => setRideStatus("completed");
 
+  // Pay Now — payment before ride, redirect to active ride after success
   const markAsPaid = () => {
-    // Save bookingId so payment success page can redirect to active-ride
+    localStorage.setItem("onway_post_payment_redirect", "ride");
+    if (bookingId) localStorage.setItem("onway_pending_bookingId", bookingId);
+    const params = new URLSearchParams();
+    if (bookingId) params.set("bookingId", bookingId);
+    if (fare) params.set("amount", fare);
+    window.location.href = `/payment?${params.toString()}`;
+  };
+
+  // Pay Later — payment after ride, redirect to dashboard after success
+  const markAsPaidAfterRide = () => {
+    localStorage.setItem("onway_post_payment_redirect", "dashboard");
     if (bookingId) localStorage.setItem("onway_pending_bookingId", bookingId);
     const params = new URLSearchParams();
     if (bookingId) params.set("bookingId", bookingId);
@@ -128,7 +139,7 @@ export const RideProvider = ({ children }) => {
   return (
     <RideContext.Provider value={{
       rideStatus, pickup, dropoff, assignedDriver, routeGeometry, otp, fare, duration, distance, rideType, isPaid, bookingId,
-      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, cancelRide, setIsPaid,
+      startSearching, setMatched, setArriving, setOtpPending, verifyOtp, completeRide, markAsPaid, markAsPaidAfterRide, cancelRide, setIsPaid,
       MOCK_DRIVERS
     }}>
       {children}

@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 const ROLE_ROUTES = {
   admin: "/dashboard/admin",
   rider: "/dashboard/rider",
-  
+
   passenger: "/dashboard/passenger",
   user: "/dashboard/passenger",
   supportAgent: "/dashboard/supportAgent",
@@ -26,8 +26,7 @@ export default auth(async function middleware(req) {
   // Allow public routes
   if (
     pathname === "/" ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
+    pathname.startsWith("/authPage") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/static")
@@ -37,7 +36,7 @@ export default auth(async function middleware(req) {
 
   // Redirect to login if not authenticated and trying to access protected routes
   if (!session?.user && pathname.startsWith("/dashboard")) {
-    const loginUrl = new URL("/login", req.url);
+    const loginUrl = new URL("/authPage", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }

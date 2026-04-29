@@ -20,7 +20,7 @@ export default function PassengerLayout({ children }) {
   }
 
   if (authStatus === "unauthenticated") {
-    router.replace("/login");
+    router.replace("/authPage");
     return null;
   }
 

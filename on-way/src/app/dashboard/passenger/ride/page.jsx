@@ -13,7 +13,8 @@ import {
     ArrowRight, ShieldCheck, Heart, CreditCard,
     DollarSign, Clock, Map as MapIcon, RotateCw
 } from "lucide-react";
-    
+import Link from "next/link";
+
 // Dynamically import the Map component to avoid SSR issues
 const RideMap = dynamic(() => import("@/components/Map/RideMap"), {
     ssr: false,
@@ -44,7 +45,7 @@ function PassengerRideContent() {
     const {
         rideStatus, pickup, dropoff, assignedDriver, routeGeometry,
         otp, fare, duration, distance, rideType, isPaid, bookingId,
-        setArriving, setOtpPending, verifyOtp, completeRide, cancelRide, markAsPaid,
+        setArriving, setOtpPending, verifyOtp, completeRide, cancelRide, markAsPaid, markAsPaidAfterRide,
         checkPaymentStatus, setIsPaid
     } = useRide();
 
@@ -53,6 +54,7 @@ function PassengerRideContent() {
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [showCallConfirm, setShowCallConfirm] = useState(false);
 
     // Transition simulations for the demo
     useEffect(() => {
@@ -67,6 +69,7 @@ function PassengerRideContent() {
         }
 
         if (rideStatus === "ongoing") {
+            // Auto-complete after 15s — completion overlay handles navigation
             const timer = setTimeout(() => completeRide(), 15000);
             return () => clearTimeout(timer);
         }
@@ -77,7 +80,7 @@ function PassengerRideContent() {
         const fetchLatestBooking = async () => {
             // Priority: URL Param > Context State
             const targetId = searchParams.get("bookingId") || bookingId;
-            
+
             if (!targetId) {
                 setLoading(false);
                 return;
@@ -87,11 +90,11 @@ function PassengerRideContent() {
                 setLoading(true);
                 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
                 const res = await axios.get(`${API_BASE_URL}/bookings/${targetId}`);
-                
+
                 if (res.data.success && res.data.booking) {
                     const freshBooking = res.data.booking;
                     setBooking(freshBooking);
-                    
+
                     // --- SYNC CONTEXT: Update global state if backend confirms payment ---
                     if (freshBooking.paymentStatus === "paid") {
                         setIsPaid(true);
@@ -118,10 +121,8 @@ function PassengerRideContent() {
         );
     }
 
-    // NO ACTIVE RIDE — covers both idle and completed states
-    if (rideStatus === "idle" || rideStatus === "completed") {
-        const showPaymentButton = rideStatus === "completed" && booking?.paymentStatus !== "paid" && !isPaid;
-
+    // NO ACTIVE RIDE — idle only; completed is handled by the overlay below
+    if (rideStatus === "idle") {
         return (
             <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
                 <motion.div
@@ -139,15 +140,6 @@ function PassengerRideContent() {
                     <p className="text-gray-400 font-medium mb-10 leading-relaxed">
                         You don&apos;t have any ongoing ride. Book a new ride to get started.
                     </p>
-
-                    {showPaymentButton && (
-                        <button
-                            onClick={markAsPaid}
-                            className="w-full mb-4 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs shadow-lg shadow-amber-500/20"
-                        >
-                            <CreditCard size={18} /> Complete Pending Payment
-                        </button>
-                    )}
 
                     <div className="flex flex-col sm:flex-row gap-3">
                         <button
@@ -219,19 +211,6 @@ function PassengerRideContent() {
                             </button>
                         </motion.div>
                     )}
-                    <motion.div
-                        initial={{ y: -50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className={`p-4 rounded-3xl shadow-2xl backdrop-blur-xl border ${getStatusColorClass()} flex items-center justify-between`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full animate-ping bg-current" />
-                            <span className="font-black uppercase tracking-widest text-[10px]">{getStatusText()}</span>
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
-                            <ShieldCheck size={16} className="text-primary" />
-                        </div>
-                    </motion.div>
                 </div>
             </div>
 
@@ -310,7 +289,55 @@ function PassengerRideContent() {
                     {/* DYNAMIC CONTENT AREA */}
                     <div className="flex-1">
                         <AnimatePresence mode="wait">
-                            {(rideStatus === "arriving" || rideStatus === "otp_pending" || rideStatus === "accepted") && (
+
+                            {/* ACCEPTED — driver heading to pickup */}
+                            {rideStatus === "accepted" && (
+                                <motion.div
+                                    key="en-route"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-[2.5rem] border-2 border-primary/20 bg-primary/5 p-8 text-center relative overflow-hidden"
+                                >
+                                    {/* Animated car icon */}
+                                    <div className="relative w-20 h-20 mx-auto mb-5">
+                                        <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-30" />
+                                        <div className="relative w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
+                                            <Car size={36} className="text-white" />
+                                        </div>
+                                    </div>
+
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">Driver En Route</p>
+                                    <h3 className="text-2xl font-black text-secondary tracking-tighter mb-1">
+                                        {assignedDriver?.name} is coming!
+                                    </h3>
+                                    <p className="text-gray-400 text-sm font-medium mb-6">
+                                        Your driver is heading to your pickup point.
+                                    </p>
+
+                                    {/* ETA bar */}
+                                    <div className="bg-white rounded-2xl p-4 border border-primary/10 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ETA</span>
+                                            <span className="text-sm font-black text-primary">{assignedDriver?.eta || `${duration} min`}</span>
+                                        </div>
+                                        {/* Animated progress bar */}
+                                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <motion.div
+                                                className="h-full bg-primary rounded-full"
+                                                initial={{ width: "5%" }}
+                                                animate={{ width: "40%" }}
+                                                transition={{ duration: 4, ease: "easeInOut" }}
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-gray-400 font-medium mt-2 text-left">
+                                            {assignedDriver?.car} · {assignedDriver?.plate}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* ARRIVING / OTP PENDING — driver at pickup */}
+                            {(rideStatus === "arriving" || rideStatus === "otp_pending") && (
                                 <motion.div
                                     key="security"
                                     initial={{ opacity: 0, y: 20 }}
@@ -367,16 +394,22 @@ function PassengerRideContent() {
 
                     {/* Action Bar */}
                     <div className="mt-10 flex gap-4 pt-8 border-t border-gray-100">
-                        <button className="flex-1 py-6 bg-secondary text-white font-black rounded-3xl hover:bg-secondary/95 transition flex items-center justify-center gap-4 shadow-xl active:scale-95 group">
+                        <button
+                            onClick={() => setShowCallConfirm(true)}
+                            className="flex-1 py-6 px-4 bg-secondary text-white font-black rounded-3xl hover:bg-secondary/95 transition flex items-center justify-center gap-4 shadow-xl active:scale-95 group"
+                        >
                             <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Phone size={20} />
                             </div>
                             <span className="uppercase tracking-widest text-xs">Call Driver</span>
                         </button>
+
                         <div className="flex gap-4">
+                            <Link href={"/dashboard/passenger/chat"}>
                             <button className="w-20 h-20 bg-gray-50 text-secondary rounded-3xl hover:bg-gray-100 transition flex items-center justify-center shadow-sm border border-gray-100 active:scale-95">
                                 <MessageCircle size={28} />
                             </button>
+                            </Link>
                             <button
                                 onClick={() => setShowCancelConfirm(true)}
                                 className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl hover:bg-red-100 transition flex items-center justify-center shadow-sm border border-red-100 active:scale-95"
@@ -489,7 +522,7 @@ function PassengerRideContent() {
                                 ) : (
                                     <>
                                         <button
-                                            onClick={markAsPaid}
+                                            onClick={markAsPaidAfterRide}
                                             className="flex-1 py-7 bg-[#2FCA71] text-white font-black rounded-[2.5rem] hover:opacity-95 transition shadow-2xl shadow-green-500/20 active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-4 group"
                                         >
                                             COMPLETE PAYMENT <CreditCard size={20} />
@@ -507,6 +540,57 @@ function PassengerRideContent() {
                                 )}
                             </div>
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* --- CALL DRIVER CONFIRMATION --- */}
+            <AnimatePresence>
+                {showCallConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
+                        onClick={() => setShowCallConfirm(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.92, opacity: 0, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white w-full max-w-sm rounded-3xl p-10 text-center shadow-2xl border border-gray-100"
+                        >
+                            {/* Question mark icon */}
+                            <div className="w-16 h-16 rounded-full border-2 border-blue-300 flex items-center justify-center mx-auto mb-6">
+                                <span className="text-blue-400 text-3xl font-black">?</span>
+                            </div>
+
+                            <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
+                                Call Driver?
+                            </h3>
+                            <p className="text-gray-500 text-sm mb-8">
+                                Calling {assignedDriver?.name || "Driver"} — {assignedDriver?.phone || "N/A"}
+                            </p>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowCallConfirm(false);
+                                        window.open(`tel:${assignedDriver?.phone || ""}`, "_self");
+                                    }}
+                                    className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl transition-all active:scale-95"
+                                >
+                                    Call Now
+                                </button>
+                                <button
+                                    onClick={() => setShowCallConfirm(false)}
+                                    className="flex-1 py-3 bg-gray-400 hover:bg-gray-500 text-white font-black rounded-xl transition-all active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>

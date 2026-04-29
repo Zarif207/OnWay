@@ -27,6 +27,7 @@ export default function ContactPage() {
         tag="Get in Touch"
         title="Contact Us"
         subtitle="Have a question, feedback, or safety concern? Our team is here to help — always."
+        pills={["24/7 Support", "Email", "Phone", "Live Chat", "Chattogram, BD"]}
       />
 
       <section className="max-w-6xl mx-auto px-6 py-20">
@@ -121,7 +122,7 @@ export default function ContactPage() {
               </motion.div>
             ))}
 
-            {/* Dark card */}
+            {/* Dark card
             <div className="relative p-6 rounded-2xl bg-[#011421] overflow-hidden">
               <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-[#2FCA71]/10 blur-[50px] rounded-full pointer-events-none" />
               <div className="relative z-10">
@@ -132,7 +133,7 @@ export default function ContactPage() {
                   Start Chat
                 </button>
               </div>
-            </div>
+            </div> */}
           </motion.div>
         </div>
       </section>

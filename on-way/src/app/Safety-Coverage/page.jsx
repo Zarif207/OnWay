@@ -1,164 +1,250 @@
-"use client"
-import React, { useEffect } from 'react';
-import { ShieldCheck, HeartPulse, HardHat, Car, Smartphone, CheckCircle2, ShieldAlert } from 'lucide-react';
-import AOS from 'aos';
-import PageBanner from '../components/PageBanner';
+"use client";
 
-const coverageDetails = [
-    {
-        title: "Accidental Medical Expense",
-        desc: "Financial coverage for immediate medical assistance in case of any accident.",
-        icon: <HeartPulse className="text-secondary" size={32} />,
-        limit: "Up to 50,000 TK"
-    },
-    {
-        title: "Permanent Disability",
-        desc: "Special benefits for both riders and drivers in cases of accident-related permanent disability.",
-        icon: <ShieldCheck className="text-accent" size={32} />,
-        limit: "Up to 2,00,000 TK"
-    },
-    {
-        title: "Ride Monitoring",
-        desc: "Every trip is monitored 24/7 from our control room.",
-        icon: <Smartphone className="text-blue-400" size={32} />,
-        limit: "Live Tracking"
-    }
+import { motion } from "framer-motion";
+import {
+  ShieldCheck, HeartPulse, Smartphone, Car,
+  Siren, MapPin, Lock, CheckCircle, ArrowRight, Users,
+} from "lucide-react";
+import Link from "next/link";
+import PageBanner from "../components/PageBanner";
+
+// ─── Coverage cards ────────────────────────────────────────────────────────────
+const COVERAGE = [
+  {
+    icon: HeartPulse,
+    title: "Accidental Medical Expense",
+    desc: "Immediate financial coverage for medical treatment following any accident during an OnWay trip.",
+    limit: "Up to ৳50,000",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Permanent Disability",
+    desc: "Comprehensive benefits for riders and drivers in cases of accident-related permanent disability.",
+    limit: "Up to ৳2,00,000",
+  },
+  {
+    icon: Smartphone,
+    title: "24/7 Ride Monitoring",
+    desc: "Every trip is tracked in real-time from our control room. Our team can intervene within minutes.",
+    limit: "Live Tracking",
+  },
+  {
+    icon: Siren,
+    title: "Emergency SOS",
+    desc: "One-tap SOS button connects you directly to our safety team and local emergency services instantly.",
+    limit: "Instant Response",
+  },
+  {
+    icon: MapPin,
+    title: "Live Location Sharing",
+    desc: "Share your real-time trip location with up to 3 emergency contacts at any point during a ride.",
+    limit: "Real-Time",
+  },
+  {
+    icon: Lock,
+    title: "Driver Verification",
+    desc: "Every driver passes NID checks, BRTA license verification, and AI face recognition before activation.",
+    limit: "100% Verified",
+  },
 ];
 
-const OnWaySafetyCoverage = () => {
-    useEffect(() => {
-        AOS.init({ duration: 1000 });
-    }, []);
+// ─── Safety pillars ────────────────────────────────────────────────────────────
+const PILLARS = [
+  "Verified and trained drivers on every trip",
+  "In-app SOS emergency button, always accessible",
+  "Live location sharing with emergency contacts",
+  "Safety gear and hygiene kits are mandatory",
+  "Accident insurance coverage on every ride",
+  "24/7 control room monitoring all active trips",
+];
 
-    return (
-        <section className="bg-[#f4f6f9] overflow-hidden">
-            <PageBanner
-                tag="Your Protection"
-                title="Safety Coverage"
-                subtitle="Every OnWay trip is backed by comprehensive safety systems and insurance coverage."
-            />
-            <div className="max-w-6xl mx-auto px-4 py-20">
-                
-                {/* --- UNIQUE SECTION HEADER START --- */}
-                <div className="relative mb-20 text-center md:text-left" data-aos="fade-right">
-                    {/* Background Watermark */}
-                    <span className="absolute -top-12 left-0 text-[6rem] md:text-[10rem] font-black text-primary opacity-[0.03] select-none pointer-events-none hidden md:block uppercase">
-                        Protection
-                    </span>
+// ─── Stats ─────────────────────────────────────────────────────────────────────
+const STATS = [
+  { value: "500K+", label: "Safe Journeys" },
+  { value: "2K+",   label: "Verified Drivers" },
+  { value: "24/7",  label: "Live Monitoring" },
+  { value: "< 2min", label: "SOS Response" },
+];
 
-                    <div className="relative z-10 flex flex-col md:flex-row items-center md:items-end gap-6">
-                        {/* Main Bold Title */}
-                        <div className="shrink-0">
-                            <h2 className="text-6xl md:text-8xl font-black uppercase italic tracking-tighter leading-none flex flex-col md:flex-row">
-                                <span className="text-primary">On</span>
-                                <span className="text-accent md:ml-2 relative">
-                                    Way
-                                    <span className="absolute bottom-2 left-0 w-full h-3 bg-secondary/40 -z-10 rounded-full"></span>
-                                </span>
-                            </h2>
-                        </div>
+const fadeUp = (i = 0) => ({
+  initial: { opacity: 0, y: 32 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.55, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
+});
 
-                        {/* Vertical Accent Line */}
-                        <div className="hidden md:block h-20 w-2 bg-secondary rounded-full transform -skew-x-12"></div>
+export default function SafetyCoveragePage() {
+  return (
+    <main className="bg-[#f4f6f9] min-h-screen overflow-hidden">
+      <PageBanner
+        tag="Your Protection"
+        title="Safety Coverage"
+        subtitle="Every OnWay trip is backed by comprehensive safety systems, insurance, and 24/7 monitoring."
+        pills={["Medical Coverage", "Disability Benefits", "Live Monitoring", "SOS Button", "Verified Drivers"]}
+      />
 
-                        {/* Heading Text & Desc */}
-                        <div className="max-w-xl">
-                            <h3 className="text-2xl md:text-3xl font-bold text-primary flex items-center justify-center md:justify-start gap-3 uppercase tracking-wider">
-                                <ShieldAlert className="text-accent animate-pulse" /> Safety Coverage
-                            </h3>
-                            <p className="mt-3 text-gray-500 font-medium leading-relaxed italic">
-                               We provide special safety measures to make each of your journeys secure.
-                                <span className="text-primary font-bold block md:inline md:ml-1">OnWay means maximum safety</span>
-                            </p>
-                        </div>
-                    </div>
-                    {/* Bottom Gradient Line */}
-                    <div className="mt-8 h-1.5 w-full max-w-sm bg-linear-to-r from-accent via-secondary to-transparent rounded-full mx-auto md:mx-0"></div>
+      {/* ── Stats strip ── */}
+      <section className="max-w-5xl mx-auto px-6 py-14">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {STATS.map((s, i) => (
+            <motion.div key={s.label} {...fadeUp(i)}
+              className="text-center p-6 rounded-2xl bg-white border border-gray-100 shadow-sm"
+            >
+              <p className="text-3xl font-black text-[#011421]">{s.value}</p>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">{s.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Coverage grid ── */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <motion.div {...fadeUp()} className="mb-12">
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#2FCA71] mb-2">What's Covered</p>
+          <h2 className="text-4xl md:text-5xl font-black text-[#011421] tracking-tight">
+            Your protection, in detail
+          </h2>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {COVERAGE.map((item, i) => (
+            <motion.div key={item.title} {...fadeUp(i)}
+              className="group relative p-7 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden"
+            >
+              {/* top accent line */}
+              <div className="absolute top-0 left-0 w-0 group-hover:w-full h-0.5 bg-[#2FCA71] transition-all duration-500 rounded-full" />
+
+              <div className="w-12 h-12 rounded-2xl bg-[#2FCA71]/10 flex items-center justify-center mb-5">
+                <item.icon className="w-5 h-5 text-[#2FCA71]" />
+              </div>
+
+              <h3 className="text-base font-black text-[#011421] mb-2 leading-snug">{item.title}</h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-6">{item.desc}</p>
+
+              <div className="flex items-center justify-between pt-4 border-t border-dashed border-gray-100">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-[#2FCA71]" />
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Coverage</span>
                 </div>
-                {/* --- UNIQUE SECTION HEADER END --- */}
+                <span className="px-3 py-1 rounded-full bg-[#2FCA71]/10 text-[#2FCA71] text-[11px] font-black">
+                  {item.limit}
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
-                {/* Coverage Cards Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
-                    {coverageDetails.map((item, index) => (
-                        <div 
-                            key={index}
-                            className="relative group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl hover:shadow-accent/20 transition-all duration-500 hover:-translate-y-2"
-                            data-aos="fade-up"
-                            data-aos-delay={index * 150}
-                        >
-                            <div className="absolute -right-6 -top-6 w-24 h-24 bg-accent/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-                            
-                            <div className="mb-6 inline-block p-5 bg-primary rounded-3xl shadow-lg group-hover:rotate-6 transition-transform">
-                                {item.icon}
-                            </div>
-                            
-                            <h3 className="text-primary text-2xl font-bold mb-3 tracking-tight">{item.title}</h3>
-                            <p className="text-gray-500 text-sm leading-relaxed mb-8">
-                                {item.desc}
-                            </p>
-                            
-                            <div className="flex items-center justify-between pt-5 border-t border-dashed border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 size={18} className="text-accent" />
-                                    <span className="text-primary font-extrabold text-sm uppercase tracking-tighter">Coverage Amount</span>
-                                </div>
-                                <span className="bg-secondary/20 text-primary px-3 py-1 rounded-lg font-black text-xs">
-                                    {item.limit}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+      {/* ── Why OnWay safety — split section ── */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <motion.div {...fadeUp()}
+          className="relative rounded-[2.5rem] bg-[#011421] overflow-hidden"
+        >
+          {/* Glow orbs */}
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#2FCA71]/8 blur-[100px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-600/6 blur-[80px] rounded-full pointer-events-none" />
 
-                {/* Bottom Banner Section */}
-                <div className="bg-primary rounded-[4rem] p-10 md:p-16 text-white relative overflow-hidden shadow-2xl shadow-primary/30">
-                    {/* Decorative Elements */}
-                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none rotate-12">
-                        <HardHat size={200} />
+          <div className="relative z-10 grid md:grid-cols-2 gap-0">
+            {/* Left — pillars */}
+            <div className="p-10 md:p-14 border-b md:border-b-0 md:border-r border-white/5">
+              <p className="text-[11px] font-black text-[#2FCA71] uppercase tracking-[0.25em] mb-3">Our Commitment</p>
+              <h3 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight mb-8">
+                Why OnWay safety<br />
+                <span className="text-[#2FCA71]">is the best</span>
+              </h3>
+              <ul className="space-y-4">
+                {PILLARS.map((p, i) => (
+                  <motion.li
+                    key={p}
+                    initial={{ opacity: 0, x: -16 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.07, duration: 0.45 }}
+                    className="flex items-start gap-3 group"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-[#2FCA71]/15 border border-[#2FCA71]/30 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#2FCA71]/25 transition-colors">
+                      <CheckCircle className="w-3 h-3 text-[#2FCA71]" />
                     </div>
-                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl"></div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative z-10">
-                        <div data-aos="fade-right">
-                            <h3 className="text-4xl md:text-5xl font-black mb-8 italic leading-tight">
-                             Why is our safety<br />
-                                <span className="text-secondary uppercase not-italic">the best? </span>
-                            </h3>
-                            <ul className="space-y-6">
-                                {[
-                                    "Verified and trained drivers are ensured.",
-                                    "In-app SOS emergency button feature.",
-                                    "Keep your family updated with live location.",
-                                    "Safety gear and hygiene kits are mandatory."
-                                ].map((list, i) => (
-                                    <li key={i} className="flex items-center gap-4 group">
-                                        <div className="bg-accent group-hover:bg-secondary transition-colors rounded-xl p-2 shrink-0 shadow-lg shadow-accent/20">
-                                            <CheckCircle2 size={18} className="text-white group-hover:text-primary" />
-                                        </div>
-                                        <span className="text-gray-300 font-semibold text-lg">{list}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        
-                        <div className="flex justify-center" data-aos="zoom-in">
-                            <div className="relative group">
-                                <div className="absolute inset-0 bg-accent blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                                <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-10 md:p-14 rounded-[3.5rem] text-center transform transition-transform group-hover:scale-105">
-                                    <div className="bg-secondary w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12 shadow-xl shadow-secondary/20">
-                                        <Car size={45} className="text-primary -rotate-12" />
-                                    </div>
-                                    <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.3em] mb-2">Confidence of</p>
-                                    <h4 className="text-5xl md:text-6xl font-black text-white mb-2">500K+</h4>
-                                    <p className="text-accent font-bold text-sm tracking-widest uppercase">Safe Journeys</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <span className="text-gray-300 text-sm leading-relaxed">{p}</span>
+                  </motion.li>
+                ))}
+              </ul>
             </div>
-        </section>
-    );
-};
 
-export default OnWaySafetyCoverage;
+            {/* Right — stat card + CTA */}
+            <div className="p-10 md:p-14 flex flex-col justify-between gap-10">
+              {/* Big stat */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-sm text-center group hover:bg-white/8 transition-colors duration-300"
+              >
+                <div className="absolute inset-0 rounded-[2rem] bg-[#2FCA71]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-[#2FCA71]/10 flex items-center justify-center mx-auto mb-5">
+                    <Car className="w-8 h-8 text-[#2FCA71]" />
+                  </div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-2">Confidence of</p>
+                  <p className="text-6xl font-black text-white tracking-tighter mb-1">500K+</p>
+                  <p className="text-[#2FCA71] text-xs font-black uppercase tracking-widest">Safe Journeys Completed</p>
+                </div>
+              </motion.div>
+
+              {/* Driver count */}
+              <div className="flex items-center gap-4 p-5 rounded-2xl bg-white/5 border border-white/10">
+                <div className="w-10 h-10 rounded-xl bg-[#2FCA71]/10 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-[#2FCA71]" />
+                </div>
+                <div>
+                  <p className="text-white font-black text-sm">2,000+ Verified Drivers</p>
+                  <p className="text-gray-500 text-xs">All background-checked & AI-verified</p>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <Link
+                href="/onway-book"
+                className="inline-flex items-center justify-center gap-2 bg-[#2FCA71] text-[#011421] font-black text-sm uppercase tracking-widest px-6 py-4 rounded-2xl hover:bg-[#26b861] transition-colors shadow-lg shadow-[#2FCA71]/20"
+              >
+                Book a Safe Ride <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Emergency CTA strip ── */}
+      <section className="max-w-6xl mx-auto px-6 pb-24">
+        <motion.div {...fadeUp()}
+          className="relative rounded-[2rem] bg-white border border-gray-100 shadow-sm overflow-hidden p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8"
+        >
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#2FCA71] rounded-l-[2rem]" />
+          <div className="pl-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Siren className="w-5 h-5 text-[#2FCA71]" />
+              <p className="text-[11px] font-black text-[#2FCA71] uppercase tracking-[0.25em]">Emergency</p>
+            </div>
+            <h3 className="text-2xl font-black text-[#011421] mb-1">Need immediate help?</h3>
+            <p className="text-gray-500 text-sm">Our safety team is available 24/7. Use the SOS button in-app or call us directly.</p>
+          </div>
+          <div className="flex gap-3 shrink-0 flex-wrap">
+            <a
+              href="tel:+8801234567890"
+              className="inline-flex items-center gap-2 bg-[#011421] text-white font-black text-xs uppercase tracking-widest px-5 py-3 rounded-2xl hover:bg-[#2FCA71] transition-colors duration-300"
+            >
+              Call Safety Line
+            </a>
+            <Link
+              href="/help"
+              className="inline-flex items-center gap-2 bg-gray-100 text-[#011421] font-black text-xs uppercase tracking-widest px-5 py-3 rounded-2xl hover:bg-gray-200 transition-colors duration-300"
+            >
+              Help Center <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+    </main>
+  );
+}

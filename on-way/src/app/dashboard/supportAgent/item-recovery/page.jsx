@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import SupportLoading from "../SupportLoading";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const STATUS_OPTIONS = ["Pending", "Recovered", "Not Found"];
 
@@ -129,8 +129,6 @@ export default function ItemRecoveryPage() {
 
   return (
     <div className="p-6 space-y-6 min-h-screen bg-gray-50">
-      <Toaster position="top-right" />
-
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

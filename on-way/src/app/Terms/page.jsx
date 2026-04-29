@@ -97,6 +97,8 @@ const Terms = () => {
         tag="Legal Center"
         title="Terms of Service"
         subtitle="Please read these terms carefully before using our platform."
+        pills={["Acceptance", "Eligibility", "Payments", "Safety", "Conduct", "Privacy"]}
+        waveFill="#f4f6f9"
       />
       <div className="max-w-6xl mx-auto px-4 py-16">
 

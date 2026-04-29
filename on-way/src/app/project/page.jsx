@@ -36,6 +36,7 @@ export default function ProjectPage() {
         tag="About the Project"
         title="The OnWay System"
         subtitle="A full-stack ride-sharing platform built from the ground up by the DevVibe team — designed for Bangladesh's urban mobility."
+        pills={["Next.js", "Node.js", "MongoDB", "Socket.io", "face-api.js", "Tailwind CSS"]}
       />
 
       {/* System flow */}

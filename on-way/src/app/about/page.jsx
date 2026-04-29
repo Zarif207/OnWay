@@ -24,11 +24,11 @@ const AboutUs = () => {
   const [showTeam, setShowTeam] = useState(false);
 
   const team = [
-    { name: "Md Zubaear Hasan", role: "Co-Founder & CEO", quote: "OnWay was born from a simple frustration — getting around Dhaka shouldn't be this hard. We set out to build something that puts people first: fair prices, safe rides, and drivers who are treated with respect. That mission hasn't changed.", avatar: "ZH" },
-    { name: "Minhaj Islam", role: "Co-Founder & COO", quote: "Every day I wake up thinking about how we can make the lives of our drivers better. When drivers thrive, passengers get better service — it's that simple.", avatar: "MI" },
-    { name: "Zarif Hasan", role: "Co-Founder & CTO", quote: "We're not just building an app — we're building infrastructure for Bangladesh's future. Every line of code we write brings us closer to a smarter, safer city.", avatar: "ZH" },
-    { name: "Shourov Hasan", role: "Co-Founder & CPO", quote: "Good design is invisible. Our goal is that every passenger feels like OnWay just works — no confusion, no friction, just a ride when you need it.", avatar: "SH" },
-    { name: "Ishteak Ahmed", role: "Co-Founder & CMO", quote: "Bangladesh deserves a world-class ride-sharing platform built by Bangladeshis. We're proving that every single day.", avatar: "IA" },
+    { name: "Md Zubaear Hasan", role: "Co-Founder & CEO", quote: "OnWay was born from a simple frustration — getting around Dhaka shouldn't be this hard. We set out to build something that puts people first: fair prices, safe rides, and drivers who are treated with respect. That mission hasn't changed.", avatar: "ZH", photo: "/Devs/JUBAEAR.jpeg" },
+    { name: "Minhaj Islam", role: "Co-Founder & COO", quote: "Every day I wake up thinking about how we can make the lives of our drivers better. When drivers thrive, passengers get better service — it's that simple.", avatar: "MI", photo: "/Devs/MINHAJ.jpeg" },
+    { name: "Zarif Hasan", role: "Co-Founder & CTO", quote: "We're not just building an app — we're building infrastructure for Bangladesh's future. Every line of code we write brings us closer to a smarter, safer city.", avatar: "ZH", photo: "/Devs/ZARIF.jpg" },
+    { name: "Shourov Hasan", role: "Co-Founder & CPO", quote: "Good design is invisible. Our goal is that every passenger feels like OnWay just works — no confusion, no friction, just a ride when you need it.", avatar: "SH", photo: "/Devs/SHOUROV.jpg" },
+    { name: "Ishteak Ahmed", role: "Co-Founder & CMO", quote: "Bangladesh deserves a world-class ride-sharing platform built by Bangladeshis. We're proving that every single day.", avatar: "IA", photo: "/Devs/ISTHIAK.jpeg" },
   ];
 
   return (
@@ -40,6 +40,8 @@ const AboutUs = () => {
           tag="Who We Are"
           title="About OnWay"
           subtitle="Reimagining urban mobility across Bangladesh — one safe, smart ride at a time."
+          pills={["Our Mission", "Sustainability", "Safety First", "Driver Welfare", "Bangladesh Built"]}
+          waveFill="#ffffff"
         />
 
         {/* 2. MISSION STATEMENT */}
@@ -63,13 +65,26 @@ const AboutUs = () => {
         <section className="bg-[#0a1628] text-white">
           <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-0">
             <motion.div
-              className="relative h-80 md:h-auto overflow-hidden"
+              className="relative flex flex-col justify-center p-10 md:p-16 gap-8"
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&auto=format&fit=crop" alt="CEO" className="w-full h-full object-cover" />
+              {/* Big quote mark */}
+              <div className="text-[#2FCA71]/20 text-[10rem] font-black leading-none select-none absolute top-4 left-8">&ldquo;</div>
+              <div className="relative z-10 space-y-6">
+                {[
+                  { value: "50K+", label: "Rides Completed" },
+                  { value: "10K+", label: "Active Riders" },
+                  { value: "4.8★", label: "Average Rating" },
+                ].map((stat, i) => (
+                  <div key={i} className="flex items-center gap-5 border-b border-white/10 pb-5 last:border-0 last:pb-0">
+                    <span className="text-4xl font-black text-[#2FCA71] tracking-tighter">{stat.value}</span>
+                    <span className="text-gray-400 font-medium text-sm uppercase tracking-widest">{stat.label}</span>
+                  </div>
+                ))}
+              </div>
             </motion.div>
             <motion.div
               className="p-10 md:p-16 flex flex-col justify-center"
@@ -85,13 +100,14 @@ const AboutUs = () => {
               <p className="text-gray-300 leading-relaxed mb-6">
                 &ldquo;OnWay was born from a simple frustration &mdash; getting around Dhaka shouldn&apos;t be this hard. We set out to build something that puts people first: fair prices, safe rides, and drivers who are treated with respect. That mission hasn&apos;t changed.&rdquo;
               </p>
+              
               <motion.button
                 onClick={() => setShowTeam(true)}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 className="self-start bg-[#2FCA71] text-white font-bold px-6 py-3 rounded-full hover:bg-[#25a85e] transition-colors"
               >
-                Read more
+                Meet the Team
               </motion.button>
             </motion.div>
           </div>
@@ -284,8 +300,12 @@ const AboutUs = () => {
               <motion.div className="space-y-6" variants={stagger} initial="hidden" animate="visible">
                 {team.map((member, i) => (
                   <motion.div key={i} variants={fadeUp} className="flex gap-5 p-6 rounded-2xl bg-gray-50 hover:bg-[#2FCA71]/5 transition-colors">
-                    <div className="w-12 h-12 rounded-full bg-[#2FCA71] flex items-center justify-center text-white font-black text-sm shrink-0">
-                      {member.avatar}
+                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-[#2FCA71]/30">
+                      {member.photo ? (
+                        <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-[#2FCA71] flex items-center justify-center text-white font-black text-sm">{member.avatar}</div>
+                      )}
                     </div>
                     <div>
                       <p className="font-black text-[#0a1628]">{member.name}</p>

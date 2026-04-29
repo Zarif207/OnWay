@@ -11,7 +11,7 @@ const SidebarContent = ({ role, menuItems, onClose }) => {
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/login" });
+    await signOut({ callbackUrl: "/authPage" });
   };
 
   return (

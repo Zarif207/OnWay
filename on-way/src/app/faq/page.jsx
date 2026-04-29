@@ -1,383 +1,362 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { ChevronDown, Search, MessageCircle, Mail, Phone, HelpCircle, Shield, User, CreditCard, MapPin } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PageBanner from '../components/PageBanner';
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronDown, Search, HelpCircle, MapPin,
+  CreditCard, Shield, User, Car, Mail, Phone, MessageCircle,
+} from "lucide-react";
+import Link from "next/link";
+import PageBanner from "../components/PageBanner";
 
-const FAQ = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('general');
-    const [expandedItem, setExpandedItem] = useState(null);
+// ─── Data ─────────────────────────────────────────────────────────────────────
+const CATEGORIES = [
+  {
+    key: "general",
+    label: "General",
+    icon: HelpCircle,
+    accent: "text-blue-500",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    activeBg: "bg-blue-500",
+    questions: [
+      { id: "g1", q: "What is OnWay?", a: "OnWay is a modern ride-sharing platform that connects passengers with verified drivers across Bangladesh. We provide safe, affordable, and reliable transportation for daily commutes and special occasions." },
+      { id: "g2", q: "How does OnWay work?", a: "Open the app, enter your pickup and destination, choose a ride type, and confirm. Our algorithm instantly matches you with the nearest verified driver. You can track the ride live and pay digitally or with cash." },
+      { id: "g3", q: "Is OnWay available in my city?", a: "OnWay currently operates in Dhaka, Chattogram, Sylhet, and is rapidly expanding to other major cities across Bangladesh. Check the app for the latest coverage map." },
+      { id: "g4", q: "Do I need to create an account?", a: "Yes, a free account is required to book rides. Sign up with your phone number or email, verify your identity, and you're ready to go in under 2 minutes." },
+      { id: "g5", q: "Can I use OnWay for corporate travel?", a: "Absolutely. OnWay offers corporate accounts with centralized billing, ride analytics, and dedicated support. Contact our business team at business@onway.com for details." },
+    ],
+  },
+  {
+    key: "booking",
+    label: "Booking",
+    icon: MapPin,
+    accent: "text-[#2FCA71]",
+    bg: "bg-[#2FCA71]/10",
+    border: "border-[#2FCA71]/20",
+    activeBg: "bg-[#2FCA71]",
+    questions: [
+      { id: "b1", q: "How do I book a ride?", a: "Open the app, tap 'Book a Ride', enter your pickup and drop-off locations, select your preferred ride category, and confirm. You'll see driver details and ETA within seconds." },
+      { id: "b2", q: "Can I schedule a ride in advance?", a: "Yes! Tap 'Schedule for Later' when booking, pick your date and time (up to 7 days ahead), and we'll match you with a driver 15 minutes before your scheduled pickup." },
+      { id: "b3", q: "How do I cancel a ride?", a: "Tap the active ride card and select 'Cancel Ride'. Cancellations before the driver departs are free. A small fee applies if the driver is already on the way to you." },
+      { id: "b4", q: "Can I add multiple stops?", a: "Yes. After entering your destination, tap 'Add Stop' to include intermediate locations. Fares are calculated based on the total route distance." },
+      { id: "b5", q: "What if my driver doesn't show up?", a: "If your driver hasn't arrived within the estimated time, you can contact them directly via the app or cancel and rebook. Our support team is available 24/7 if you need assistance." },
+      { id: "b6", q: "Can I request a specific driver?", a: "You can mark favourite drivers in the app. While we can't guarantee a specific driver, the system will prioritise your favourites when they're available nearby." },
+    ],
+  },
+  {
+    key: "payments",
+    label: "Payments",
+    icon: CreditCard,
+    accent: "text-violet-500",
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20",
+    activeBg: "bg-violet-500",
+    questions: [
+      { id: "p1", q: "What payment methods are accepted?", a: "We accept cash, debit/credit cards, bKash, Nagad, and Rocket. You can manage your preferred payment method in Account Settings before booking." },
+      { id: "p2", q: "How is my fare calculated?", a: "Fares are based on base rate + distance + estimated time. The full estimated fare is shown before you confirm. Final fare may vary slightly due to traffic or route changes." },
+      { id: "p3", q: "Can I use promo codes?", a: "Yes. Enter your promo code in the 'Offers' section of the app before booking. Discounts are applied automatically at checkout. Each code has its own terms and expiry." },
+      { id: "p4", q: "How do I get a refund?", a: "Refund requests can be submitted via Help > Payments > Request Refund. Valid refunds are processed within 3–5 business days to your original payment method." },
+      { id: "p5", q: "Will I receive a receipt?", a: "Yes. A detailed receipt is sent to your registered email and is also available in the app under Trip History immediately after each completed ride." },
+      { id: "p6", q: "Is there a cancellation fee?", a: "Cancellations made before the driver departs are free. If the driver is already en route, a fee of ৳20–৳50 may apply depending on the ride category." },
+    ],
+  },
+  {
+    key: "safety",
+    label: "Safety",
+    icon: Shield,
+    accent: "text-amber-500",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    activeBg: "bg-amber-500",
+    questions: [
+      { id: "s1", q: "How are drivers verified?", a: "Every driver undergoes NID verification, BRTA license check, vehicle inspection, and AI-powered face verification before activation. We re-verify drivers periodically." },
+      { id: "s2", q: "What is the Emergency SOS feature?", a: "Tap the SOS button in any active ride to instantly alert our safety team and share your live location. The feature also provides a direct line to local emergency services." },
+      { id: "s3", q: "Can I share my trip with someone?", a: "Yes. Tap 'Share Trip' during an active ride to send a live tracking link to any contact. They can follow your journey in real-time without needing the OnWay app." },
+      { id: "s4", q: "What if I feel unsafe during a ride?", a: "Use the in-app SOS button immediately. You can also call our 24/7 safety hotline. All rides are GPS-tracked and our team can intervene within minutes." },
+      { id: "s5", q: "Are vehicles inspected?", a: "Yes. All vehicles must pass a physical inspection covering brakes, tyres, lights, and seatbelts before being approved. Inspections are repeated every 6 months." },
+      { id: "s6", q: "How do I report a driver?", a: "After your trip, tap 'Rate & Review', then 'Report an Issue'. You can also go to Help > Report a Safety Concern. All reports are reviewed within 24 hours." },
+    ],
+  },
+  {
+    key: "account",
+    label: "Account",
+    icon: User,
+    accent: "text-pink-500",
+    bg: "bg-pink-500/10",
+    border: "border-pink-500/20",
+    activeBg: "bg-pink-500",
+    questions: [
+      { id: "a1", q: "How do I create an account?", a: "Download the OnWay app, tap 'Sign Up', enter your phone number or email, verify with OTP, and complete your profile. The whole process takes under 2 minutes." },
+      { id: "a2", q: "How do I update my profile?", a: "Go to Account > Edit Profile to update your name, photo, phone number, emergency contacts, and preferred payment method at any time." },
+      { id: "a3", q: "I forgot my password. What do I do?", a: "On the login screen, tap 'Forgot Password', enter your registered email or phone, and follow the OTP verification steps to set a new password." },
+      { id: "a4", q: "Can I have multiple accounts?", a: "Each phone number and email can only be linked to one account. If you need a separate corporate account, contact our business team." },
+      { id: "a5", q: "How do I delete my account?", a: "Go to Account > Settings > Delete Account. Your data will be permanently removed within 30 days as per our privacy policy. Active rides or pending payments must be resolved first." },
+      { id: "a6", q: "How do I add an emergency contact?", a: "Go to Account > Safety > Emergency Contacts and add up to 3 contacts. They'll be notified automatically if you use the SOS feature during a ride." },
+    ],
+  },
+  {
+    key: "driver",
+    label: "Drivers",
+    icon: Car,
+    accent: "text-teal-500",
+    bg: "bg-teal-500/10",
+    border: "border-teal-500/20",
+    activeBg: "bg-teal-500",
+    questions: [
+      { id: "d1", q: "How do I become an OnWay driver?", a: "Visit /driver-register, fill out the application form with your personal details and vehicle info, upload required documents, and complete face verification. Approval takes up to 48 hours." },
+      { id: "d2", q: "What documents are required?", a: "You'll need a valid NID, BRTA driving license, vehicle registration certificate, and a recent photo of yourself and your vehicle." },
+      { id: "d3", q: "How do drivers get paid?", a: "Earnings are calculated per trip and transferred to your registered mobile banking account (bKash/Nagad) weekly. You can also track daily earnings in the driver app." },
+      { id: "d4", q: "What is the commission structure?", a: "OnWay takes a transparent platform fee per trip. The exact percentage is shown in the driver app and varies slightly by ride category. There are no hidden deductions." },
+      { id: "d5", q: "Can I drive part-time?", a: "Absolutely. OnWay is fully flexible — you choose when to go online and offline. There are no minimum hour requirements." },
+      { id: "d6", q: "What support is available for drivers?", a: "Drivers have access to a dedicated support line, in-app help centre, and a community forum. Our driver relations team is available Mon–Sat 9am–7pm." },
+    ],
+  },
+];
 
-    const faqData = {
-        general: {
-            icon: HelpCircle,
-            label: 'General',
-            color: 'from-blue-500 to-blue-600',
-            questions: [
-                {
-                    id: 'gen-1',
-                    question: 'What is this ride-sharing service?',
-                    answer: 'Our ride-sharing service is a modern, convenient platform that connects riders with verified drivers. We provide safe, affordable, and reliable transportation options for your daily commute and special occasions.'
-                },
-                {
-                    id: 'gen-2',
-                    question: 'How does the platform work?',
-                    answer: 'Simply download our app, create an account, enter your pickup and destination locations, and request a ride. Our advanced matching algorithm connects you with the nearest available driver who will pick you up and safely transport you to your destination.'
-                }
-            ]
-        },
-        booking: {
-            icon: MapPin,
-            label: 'Booking Ride',
-            color: 'from-green-500 to-green-600',
-            questions: [
-                {
-                    id: 'book-1',
-                    question: 'How can I book a ride?',
-                    answer: 'Open the app, enter your pickup location and destination, select your preferred ride type, and confirm the booking. You\'ll see the driver details and estimated arrival time immediately.'
-                },
-                {
-                    id: 'book-2',
-                    question: 'Can I schedule a ride in advance?',
-                    answer: 'Yes! You can schedule rides up to 7 days in advance. Simply select the "Schedule for later" option when booking, choose your preferred date and time, and we\'ll match you with a driver accordingly.'
-                },
-                {
-                    id: 'book-3',
-                    question: 'How do I cancel a ride?',
-                    answer: 'You can cancel before the driver arrives without any charges. After the driver starts driving towards you, a cancellation fee may apply. Tap the cancel button in the app to cancel your current ride.'
-                }
-            ]
-        },
-        payments: {
-            icon: CreditCard,
-            label: 'Payments',
-            color: 'from-purple-500 to-purple-600',
-            questions: [
-                {
-                    id: 'pay-1',
-                    question: 'What payment methods are available?',
-                    answer: 'We accept credit cards, debit cards, digital wallets (Apple Pay, Google Pay), and cash payments. You can add and manage multiple payment methods in your account settings.'
-                },
-                {
-                    id: 'pay-2',
-                    question: 'Can I apply promo codes?',
-                    answer: 'Absolutely! You can apply promo codes during checkout. Go to your account, select "Promo Codes", enter the code, and it will be applied to your next ride. Check our offers page for ongoing promotions.'
-                },
-                {
-                    id: 'pay-3',
-                    question: 'How are fares calculated?',
-                    answer: 'Our fares are calculated based on distance, duration, current demand, and ride type. The estimated fare is shown before you confirm your booking, and the final amount may vary slightly based on actual route taken.'
-                }
-            ]
-        },
-        safety: {
-            icon: Shield,
-            label: 'Driver & Safety',
-            color: 'from-red-500 to-red-600',
-            questions: [
-                {
-                    id: 'safe-1',
-                    question: 'Are drivers verified?',
-                    answer: 'Yes, all drivers undergo thorough background checks, vehicle inspections, and license verification before joining our platform. We continuously monitor driver ratings and maintain high quality standards.'
-                },
-                {
-                    id: 'safe-2',
-                    question: 'What safety features are available?',
-                    answer: 'Safety features include real-time ride tracking, emergency call button, driver and rider verification, GPS location sharing with emergency contacts, and our 24/7 support team ready to assist.'
-                },
-                {
-                    id: 'safe-3',
-                    question: 'How can I report an issue?',
-                    answer: 'You can report issues through the app under "Help & Support" > "Report an Issue". Provide details about the incident, and our support team will investigate and respond within 24 hours.'
-                }
-            ]
-        },
-        account: {
-            icon: User,
-            label: 'Account & Profile',
-            color: 'from-orange-500 to-orange-600',
-            questions: [
-                {
-                    id: 'acc-1',
-                    question: 'How do I create an account?',
-                    answer: 'Download the app, tap "Sign Up", enter your email or phone number, create a password, and complete the verification process. Add your profile photo and basic details to get started.'
-                },
-                {
-                    id: 'acc-2',
-                    question: 'How can I update my profile?',
-                    answer: 'Go to Account Settings in the app, select "Edit Profile", and update your information such as name, phone number, profile picture, emergency contacts, and payment methods.'
-                },
-                {
-                    id: 'acc-3',
-                    question: 'I forgot my password, what should I do?',
-                    answer: 'On the login screen, tap "Forgot Password", enter your registered email or phone number, and follow the verification steps. We\'ll send you a password reset link to create a new password.'
-                }
-            ]
-        }
-    };
+// ─── Accordion Item ────────────────────────────────────────────────────────────
+function AccordionItem({ item, isOpen, onToggle, accent, border }) {
+  return (
+    <div className={`rounded-2xl bg-white border ${isOpen ? border : "border-gray-100"} shadow-sm overflow-hidden transition-all duration-300`}>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-6 py-5 text-left gap-4 group"
+      >
+        <span className={`font-black text-sm leading-snug transition-colors duration-200 ${isOpen ? "text-[#011421]" : "text-gray-700 group-hover:text-[#011421]"}`}>
+          {item.q}
+        </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 ${isOpen ? "bg-[#2FCA71]/10" : "bg-gray-100 group-hover:bg-gray-200"}`}
+        >
+          <ChevronDown className={`w-4 h-4 transition-colors duration-200 ${isOpen ? "text-[#2FCA71]" : "text-gray-400"}`} />
+        </motion.div>
+      </button>
 
-    // Search functionality
-    const filteredFAQs = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return faqData[activeCategory].questions;
-        }
-
-        const query = searchQuery.toLowerCase();
-        let results = [];
-
-        Object.values(faqData).forEach(category => {
-            results = results.concat(
-                category.questions.filter(
-                    q => q.question.toLowerCase().includes(query) ||
-                        q.answer.toLowerCase().includes(query)
-                )
-            );
-        });
-
-        return results;
-    }, [searchQuery, activeCategory]);
-
-    const currentCategory = faqData[activeCategory];
-    const CurrentIcon = currentCategory.icon;
-
-    const toggleExpand = (id) => {
-        setExpandedItem(expandedItem === id ? null : id);
-    };
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1,
-                delayChildren: 0.2,
-            },
-        },
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: { duration: 0.5 },
-        },
-    };
-
-    return (
-        <div className="min-h-screen bg-[#f4f6f9]">
-            <PageBanner
-                tag="OnWay Support"
-                title="FAQ"
-                subtitle="Find answers to common questions about our ride-sharing service."
-            />
-            {/* Hero Section — replaced by banner above, keep search */}
-            <div className="max-w-4xl mx-auto px-6 pt-12 pb-4">
-                <motion.div
-                    className="max-w-2xl mx-auto"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                >
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#2FCA71] transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Search FAQs..."
-                            value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setActiveCategory('general'); }}
-                            className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-200 bg-white text-[#011421] placeholder-gray-400 focus:outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 shadow-sm transition-all"
-                        />
-                    </div>
-                </motion.div>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="answer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-6 pt-1">
+              <div className={`w-8 h-0.5 ${accent.replace("text-", "bg-")} rounded-full mb-3`} />
+              <p className="text-gray-500 text-sm leading-relaxed">{item.a}</p>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
-            {/* Main Content */}
-            <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-                {/* Category Tabs */}
-                {!searchQuery && (
-                    <motion.div
-                        className="flex flex-wrap gap-3 mb-12 justify-center"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                    >
-                        {Object.entries(faqData).map(([key, category]) => {
-                            const Icon = category.icon;
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => setActiveCategory(key)}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                                        activeCategory === key
-                                            ? `bg-gradient-to-r ${category.color} text-white shadow-lg scale-105`
-                                            : 'bg-white text-color-neutral border-2 border-transparent hover:border-primary/30 shadow-md hover:shadow-lg'
-                                    }`}
-                                >
-                                    <Icon className="w-5 h-5" />
-                                    <span>{category.label}</span>
-                                </button>
-                            );
-                        })}
-                    </motion.div>
-                )}
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+export default function FAQPage() {
+  const [activeKey, setActiveKey] = useState("general");
+  const [openId, setOpenId] = useState(null);
+  const [query, setQuery] = useState("");
 
-                {/* FAQ Items */}
-                <motion.div
-                    className="space-y-4"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                >
-                    <AnimatePresence mode="wait">
-                        {filteredFAQs.length > 0 ? (
-                            filteredFAQs.map((item) => (
-                                <motion.div
-                                    key={item.id}
-                                    variants={itemVariants}
-                                    layout
-                                    className="group"
-                                >
-                                    <button
-                                        onClick={() => toggleExpand(item.id)}
-                                        className="w-full text-left"
-                                    >
-                                        <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-transparent group-hover:border-primary">
-                                            <div className="flex items-center justify-between gap-4">
-                                                <h3 className="text-lg font-semibold text-color-neutral pr-4">
-                                                    {item.question}
-                                                </h3>
-                                                <motion.div
-                                                    animate={{ rotate: expandedItem === item.id ? 180 : 0 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="flex-shrink-0"
-                                                >
-                                                    <ChevronDown className="w-6 h-6 text-primary" />
-                                                </motion.div>
-                                            </div>
-                                        </div>
-                                    </button>
+  const activeCategory = CATEGORIES.find((c) => c.key === activeKey);
 
-                                    <AnimatePresence>
-                                        {expandedItem === item.id && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className="bg-base-100 border-l-4 border-primary rounded-b-xl p-6 mt-1">
-                                                    <p className="text-color-neutral/80 leading-relaxed">
-                                                        {item.answer}
-                                                    </p>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            ))
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="text-center py-12"
-                            >
-                                <Search className="w-16 h-16 text-color-neutral/30 mx-auto mb-4" />
-                                <p className="text-color-neutral/60 text-lg">
-                                    No FAQs found matching "{searchQuery}"
-                                </p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
-            </section>
-
-            {/* Contact Support Section */}
-            <motion.section
-                className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/5 to-accent/5"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-            >
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-12">
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl sm:text-4xl font-bold text-color-neutral mb-4">
-                                Still have questions?
-                            </h2>
-                            <p className="text-lg text-color-neutral/70">
-                                Our dedicated support team is here to help you. Reach out to us through any of these channels.
-                            </p>
-                        </div>
-
-                        <div className="grid md:grid-cols-3 gap-8">
-                            {/* Email Support */}
-                            <motion.a
-                                href="mailto:support@onway.com"
-                                whileHover={{ y: -10 }}
-                                className="group text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-lg transition-all duration-300 border border-blue-200/50"
-                            >
-                                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                    <Mail className="w-8 h-8 text-white" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-color-neutral mb-2">Email Support</h3>
-                                <p className="text-color-neutral/70 mb-3">support@onway.com</p>
-                                <p className="text-sm text-color-neutral/60">Response within 24 hours</p>
-                            </motion.a>
-
-                            {/* Phone Support */}
-                            <motion.a
-                                href="tel:+1234567890"
-                                whileHover={{ y: -10 }}
-                                className="group text-center p-6 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 hover:shadow-lg transition-all duration-300 border border-green-200/50"
-                            >
-                                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                    <Phone className="w-8 h-8 text-white" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-color-neutral mb-2">Phone Support</h3>
-                                <p className="text-color-neutral/70 mb-3">+1 (234) 567-890</p>
-                                <p className="text-sm text-color-neutral/60">Available 24/7</p>
-                            </motion.a>
-
-                            {/* Live Chat */}
-                            <motion.button
-                                onClick={() => {
-                                    // You can integrate Intercom, Zendesk, or similar here
-                                    alert('Live chat feature would be integrated with your support platform');
-                                }}
-                                whileHover={{ y: -10 }}
-                                className="group text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100/50 hover:shadow-lg transition-all duration-300 border border-purple-200/50"
-                            >
-                                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                    <MessageCircle className="w-8 h-8 text-white" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-color-neutral mb-2">Live Chat</h3>
-                                <p className="text-color-neutral/70 mb-3">Chat with us instantly</p>
-                                <p className="text-sm text-color-neutral/60">Average response: 2 minutes</p>
-                            </motion.button>
-                        </div>
-
-                        {/* Action Button */}
-                        <motion.div
-                            className="text-center mt-12"
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                        >
-                            <button className="px-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                                Contact Our Support Team
-                            </button>
-                        </motion.div>
-                    </div>
-                </div>
-            </motion.section>
-        </div>
+  const displayed = useMemo(() => {
+    if (!query.trim()) return activeCategory.questions;
+    const q = query.toLowerCase();
+    return CATEGORIES.flatMap((c) =>
+      c.questions.filter((item) =>
+        item.q.toLowerCase().includes(q) || item.a.toLowerCase().includes(q)
+      )
     );
-};
+  }, [query, activeKey]);
 
-export default FAQ;
+  const isSearching = query.trim().length > 0;
+
+  const handleCategoryChange = (key) => {
+    setActiveKey(key);
+    setOpenId(null);
+  };
+
+  return (
+    <main className="min-h-screen bg-[#f4f6f9]">
+      <PageBanner
+        tag="OnWay Support"
+        title="Frequently Asked Questions"
+        subtitle="Everything you need to know about OnWay — rides, payments, safety, and more."
+        pills={["General", "Booking", "Payments", "Safety", "Account", "Drivers"]}
+      />
+
+      <div className="max-w-6xl mx-auto px-6 py-16">
+
+        {/* Search */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative max-w-2xl mx-auto mb-14"
+        >
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search any question..."
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpenId(null); }}
+            className="w-full pl-14 pr-5 py-4 rounded-2xl bg-white border border-gray-200 shadow-sm text-[#011421] text-sm font-medium placeholder-gray-400 outline-none focus:border-[#2FCA71] focus:ring-2 focus:ring-[#2FCA71]/20 transition-all"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none"
+            >
+              ×
+            </button>
+          )}
+        </motion.div>
+
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+          {/* Sidebar — category tabs */}
+          {!isSearching && (
+            <motion.aside
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="w-full lg:w-56 shrink-0 lg:sticky lg:top-24"
+            >
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 px-1">Categories</p>
+              <div className="flex flex-row lg:flex-col gap-2 flex-wrap">
+                {CATEGORIES.map((cat) => {
+                  const isActive = cat.key === activeKey;
+                  return (
+                    <button
+                      key={cat.key}
+                      onClick={() => handleCategoryChange(cat.key)}
+                      className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm font-black transition-all duration-200 text-left ${
+                        isActive
+                          ? `${cat.activeBg} text-white shadow-md`
+                          : "bg-white text-gray-500 hover:text-[#011421] hover:bg-gray-50 border border-gray-100"
+                      }`}
+                    >
+                      <cat.icon className="w-4 h-4 shrink-0" />
+                      <span>{cat.label}</span>
+                      <span className={`ml-auto text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"}`}>
+                        {cat.questions.length}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.aside>
+          )}
+
+          {/* Accordion panel */}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            {!isSearching && (
+              <motion.div
+                key={activeKey}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex items-center gap-3 mb-6"
+              >
+                <div className={`w-10 h-10 rounded-2xl ${activeCategory.bg} flex items-center justify-center`}>
+                  <activeCategory.icon className={`w-5 h-5 ${activeCategory.accent}`} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-[#011421]">{activeCategory.label}</h2>
+                  <p className="text-xs text-gray-400">{activeCategory.questions.length} questions</p>
+                </div>
+              </motion.div>
+            )}
+
+            {isSearching && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-sm text-gray-400 mb-6"
+              >
+                {displayed.length} result{displayed.length !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
+              </motion.p>
+            )}
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={isSearching ? "search" : activeKey}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="space-y-3"
+              >
+                {displayed.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                    <Search className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                    <p className="font-black text-gray-400">No results found</p>
+                    <p className="text-sm text-gray-300 mt-1">Try different keywords</p>
+                  </div>
+                ) : (
+                  displayed.map((item, i) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.35 }}
+                    >
+                      <AccordionItem
+                        item={item}
+                        isOpen={openId === item.id}
+                        onToggle={() => setOpenId(openId === item.id ? null : item.id)}
+                        accent={isSearching ? "text-[#2FCA71]" : activeCategory.accent}
+                        border={isSearching ? "border-[#2FCA71]/20" : activeCategory.border}
+                      />
+                    </motion.div>
+                  ))
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mt-20 relative rounded-[2.5rem] bg-[#011421] overflow-hidden p-10 md:p-14"
+        >
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#2FCA71]/8 blur-[80px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-violet-600/8 blur-[60px] rounded-full pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div>
+              <p className="text-[11px] font-black text-[#2FCA71] uppercase tracking-[0.25em] mb-2">Still need help?</p>
+              <h3 className="text-3xl font-black text-white mb-2">Can't find your answer?</h3>
+              <p className="text-gray-400 text-sm max-w-sm">Our support team is available 24/7 across email, phone, and live chat.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              {[
+                { icon: Mail,          label: "Email Us",  href: "mailto:support@onway.com",  style: "bg-white/5 border border-white/10 text-white hover:bg-white/10" },
+                { icon: Phone,         label: "Call Us",   href: "tel:+8801234567890",         style: "bg-white/5 border border-white/10 text-white hover:bg-white/10" },
+                { icon: MessageCircle, label: "Live Chat", href: "/help",                      style: "bg-[#2FCA71] text-[#011421] hover:bg-[#26b861] shadow-lg shadow-[#2FCA71]/20" },
+              ].map((ch) => (
+                <Link
+                  key={ch.label}
+                  href={ch.href}
+                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-200 ${ch.style}`}
+                >
+                  <ch.icon className="w-4 h-4" />
+                  {ch.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </main>
+  );
+}

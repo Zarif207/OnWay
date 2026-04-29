@@ -45,8 +45,7 @@ export default function EarnWithOnWayPage() {
   } = useForm({
     defaultValues: {
       vehicleType: formData.vehicleType || "",
-      firstName: formData.firstName || "",
-      lastName: formData.lastName || "",
+      fullName: formData.fullName || "",
       mobileNumber: formData.mobileNumber || "",
       email: formData.email || "",
       district: formData.district || "Dhaka",
@@ -162,6 +161,9 @@ export default function EarnWithOnWayPage() {
     const docType = extracted.documentType; // Use the exact string from parser
 
     setFormData((prev) => {
+      const fullName = (extracted.fullName || extracted.name ||
+        [extracted.firstName, extracted.lastName].filter(Boolean).join(" ")).trim();
+
       const updates = {
         documentType: docType,
         documentFile: results.file,
@@ -181,13 +183,10 @@ export default function EarnWithOnWayPage() {
         },
         profile: {
           ...prev.profile,
-          firstName: extracted.firstName || "",
-          lastName: extracted.lastName || "",
+          fullName,
           dateOfBirth: extracted.dateOfBirth || "",
         },
-        // Legacy flat fields for direct form sync
-        firstName: extracted.firstName || "",
-        lastName: extracted.lastName || "",
+        fullName,
         identityNumber: extracted.documentNumber || "",
         dateOfBirth: extracted.dateOfBirth || "",
         identityType: docType,
@@ -196,9 +195,11 @@ export default function EarnWithOnWayPage() {
       return { ...prev, ...updates };
     });
 
-    // Sync React Hook Form (Strict Mapping)
-    setValue("firstName", extracted.firstName || "", { shouldValidate: true });
-    setValue("lastName", extracted.lastName || "", { shouldValidate: true });
+    // Sync React Hook Form
+    const fullName = (extracted.fullName || extracted.name ||
+      [extracted.firstName, extracted.lastName].filter(Boolean).join(" ")).trim();
+
+    setValue("fullName", fullName, { shouldValidate: true });
     setValue("identityNumber", extracted.documentNumber || "", { shouldValidate: true });
     setValue("identityType", docType, { shouldValidate: true });
   };
@@ -208,6 +209,7 @@ export default function EarnWithOnWayPage() {
 
     updateFormData({
       ...data,
+      fullName: data.fullName?.trim(),
       activeCategory,
       selectedModel,
     });
@@ -343,42 +345,35 @@ after:blur-2xl after:opacity-20 after:-z-10"
                     />
                   </div>
 
-                  {/* Name Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
-                        First Name <span className="text-[#2FCA71]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.firstName || ""}
-                        {...register("firstName", {
-                          required: "First Name is required",
-                        })}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateFormData({ firstName: val });
-                          setValue("firstName", val, { shouldValidate: true });
-                        }}
-                        className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.lastName || ""}
-                        {...register("lastName")}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateFormData({ lastName: val });
-                          setValue("lastName", val, { shouldValidate: true });
-                        }}
-                        className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
-                      />
-                    </div>
+                  {/* Full Name */}
+                  <div className="flex flex-col gap-2 relative z-10">
+                    <label className="text-[13px] font-bold text-gray-600 tracking-wide uppercase">
+                      Full Name <span className="text-[#2FCA71]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.fullName || ""}
+                      placeholder="Enter your full name"
+                      {...register("fullName", {
+                        required: "Full Name is required",
+                        minLength: { value: 3, message: "Name must be at least 3 characters" },
+                        validate: (v) => !/^\d+$/.test(v) || "Name cannot be numbers only",
+                      })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateFormData({ fullName: val });
+                        setValue("fullName", val, { shouldValidate: true });
+                      }}
+                      className="w-full rounded-xl px-4 py-4 text-gray-900 bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2FCA71]/40 focus:bg-white focus:border-[#2FCA71] transition-all shadow-inner shadow-gray-100/50"
+                    />
+                    {formData.fullName && (
+                      <p className="text-[11px] text-[#2FCA71] font-medium flex items-center gap-1">
+                        ✦ Auto-filled from your document
+                      </p>
+                    )}
+                    {errors.fullName && (
+                      <p className="text-red-500 text-xs">{errors.fullName.message}</p>
+                    )}
                   </div>
 
                   {/* Mobile Number */}

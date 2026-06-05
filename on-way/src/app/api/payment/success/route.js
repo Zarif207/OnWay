@@ -5,8 +5,8 @@ export async function POST(req) {
     const body = await req.formData();
     const tran_id = body.get("tran_id") || "";
 
+    // Update payment status in backend
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-
     try {
       await fetch(`${apiUrl}/payment/update-status`, {
         method: "POST",
@@ -16,12 +16,9 @@ export async function POST(req) {
     } catch (_) {}
 
     return NextResponse.redirect(
-      `https://onway-5g8a.onrender.com/payment/success?transaction=${tran_id}`
+      new URL(`/payment/success?transaction=${tran_id}`, req.url)
     );
-
   } catch {
-    return NextResponse.redirect(
-      "https://onway-5g8a.onrender.com/payment/success"
-    );
+    return NextResponse.redirect(new URL("/payment/success", req.url));
   }
 }

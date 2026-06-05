@@ -20,7 +20,8 @@ export default function PersonalInfoPage() {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      fullName: formData.fullName || "",
+      firstName: formData.firstName || "",
+      lastName: formData.lastName || "",
       mobileNumber: formData.mobileNumber || "",
       email: formData.email || "",
       gender: formData.gender || "Male",
@@ -110,7 +111,7 @@ export default function PersonalInfoPage() {
   };
 
   const onSubmit = (data) => {
-    updateFormData({ ...data, fullName: data.fullName?.trim() });
+    updateFormData(data);
     router.push("/earn-with-onway/face-verification");
   };
 
@@ -249,35 +250,46 @@ export default function PersonalInfoPage() {
                     Contact Profile
                   </h3>
 
-                  <div className="grid grid-cols-1 gap-5 lg:gap-6 mb-5 lg:mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 mb-5 lg:mb-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-[13px] font-bold text-[#001820] tracking-wide">
-                        Full Name <span className="text-[#31ca71]">*</span>
+                        First Name <span className="text-[#31ca71]">*</span>
                       </label>
                       <input
                         type="text"
-                        placeholder="Enter your full name"
-                        value={formData.fullName || ""}
-                        {...register("fullName", {
-                          required: "Full Name is required",
-                          minLength: { value: 3, message: "Name must be at least 3 characters" },
-                          validate: (v) => !/^\d+$/.test(v) || "Name cannot be numbers only",
+                        placeholder="rider first name"
+                        value={formData.firstName || ""}
+                        {...register("firstName", {
+                          required: "First Name is required",
                         })}
                         onChange={(e) => {
                           const val = e.target.value;
-                          updateFormData({ fullName: val });
-                          setValue("fullName", val, { shouldValidate: true });
+                          updateFormData({ firstName: val });
+                          setValue("firstName", val, { shouldValidate: true });
                         }}
-                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${
-                          errors.fullName ? "border-red-400 bg-red-50/50" : "border-gray-200"
-                        }`}
+                        className={`w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm ${errors.firstName
+                          ? "border-red-400 bg-red-50/50"
+                          : "border-gray-200"
+                          }`}
                       />
-                      {formData.fullName && (
-                        <p className="text-[11px] text-[#31ca71] font-medium">✦ Auto-filled from your document</p>
-                      )}
-                      {errors.fullName && (
-                        <span className="text-red-500 text-sm">{errors.fullName.message}</span>
-                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-bold text-[#001820] tracking-wide">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="rider last name"
+                        value={formData.lastName || ""}
+                        {...register("lastName")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateFormData({ lastName: val });
+                          setValue("lastName", val, { shouldValidate: true });
+                        }}
+                        className="w-full rounded-xl px-4 py-3.5 text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#31ca71]/40 focus:border-[#31ca71] transition-all shadow-sm"
+                      />
                     </div>
                   </div>
 

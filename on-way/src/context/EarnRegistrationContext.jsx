@@ -11,7 +11,6 @@ export function EarnRegistrationProvider({ children }) {
     vehicleType: "",
     activeCategory: null,
     selectedModel: "",
-    fullName: "",
     firstName: "",
     lastName: "",
     mobileNumber: "",
@@ -106,7 +105,7 @@ export function EarnRegistrationProvider({ children }) {
   // Sync to localStorage on change
   useEffect(() => {
     // Don't save if it's the very initial empty state to avoid overwriting
-    if (formData.fullName || formData.firstName || formData.email || formData.mobileNumber) {
+    if (formData.firstName || formData.email || formData.mobileNumber) {
       const dataToSave = { ...formData };
       delete dataToSave.riderImage; // Remove non-serializable data
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));

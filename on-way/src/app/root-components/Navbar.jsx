@@ -27,8 +27,7 @@ import {
   Bike,
   Users,
   MapPin,
-  AlertCircle,
-  Zap
+  AlertCircle
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import logoImage from "../../../public/onway_logo.png"
@@ -45,13 +44,12 @@ const NAV_ITEMS = [
   { label: "Blog", href: "/blog", icon: Newspaper },
 ];
 const HELP_ITEMS = [
-  { label: "Passenger Help", href: "/help/user", icon: Users, desc: "Help for passengers" },
-  { label: "Rider Help", href: "/help/rider", icon: Bike, desc: "Help for riders" },
-  { label: "Walk-In Support", href: "/help/walk-in-support", icon: MapPin, desc: "Find a support center" },
+  { label: "Rider Help Center", href: "/help?tab=rider", icon: Bike, desc: "Help for riders" },
+  { label: "Passenger Help Center", href: "/help?tab=passenger", icon: Users, desc: "Help for passengers" },
+  { label: "Walk-In Support Centers", href: "/help?tab=walkin", icon: MapPin, desc: "Find a support center" },
 ];
 
 const MORE_ITEMS = [
-  { label: "Vision", href: "/vision", icon: Zap, desc: "Our mission and roadmap" },
   { label: "Guidelines", href: "/rideSharing-guidlines", icon: FileText, desc: "Ride sharing standards" },
   { label: "Safety", href: "/Safety-Coverage", icon: ShieldCheck, desc: "Our protection policy" },
   { label: "Pricing", href: "/pricing", icon: Tag, desc: "Fare and rate details" },
@@ -313,9 +311,7 @@ const Navbar = () => {
               ? isDarkPage
                 ? "bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
                 : "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
-              : (pathname.startsWith("/about") || pathname.startsWith("/help"))
-                ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
-                : "bg-transparent border-transparent"}`}
+              : "bg-transparent border-transparent"}`}
         >
           {/* ================= LEFT: LOGO ================= */}
           <Link href="/" className="absolute left-6 flex items-center group">
@@ -324,15 +320,19 @@ const Navbar = () => {
                 src={logoImage}
                 alt="OnWay Logo"
                 fill
-                className={`object-contain transition-all duration-300 ${isDarkPage ? "brightness-0 invert" : "mix-blend-multiply"}`}
+                className={`object-contain transition-all duration-300 ${((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage
+                    ? "brightness-0 invert"
+                    : "mix-blend-multiply"
+                  }`}
                 priority
               />
             </div>
           </Link>
 
           {/* ================= CENTER: NAVIGATION ================= */}
+          {/* isOnHero = about/help page এ hero section এর মধ্যে আছি, অথবা error page (dark bg) */}
           {(() => {
-            const isOnHero = isDarkPage;
+            const isOnHero = ((pathname.startsWith("/about") || pathname.startsWith("/help")) && !isPastHero) || isDarkPage;
             return (
               <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full border transition-all duration-300
                 ${isOnHero ? "bg-white/10 border-white/20" : "bg-gray-50/50 border-gray-100"}`}>

@@ -27,7 +27,7 @@ export default function Hero() {
       admin:        "/dashboard/admin/user-management",
       supportAgent: "/dashboard/supportAgent/complaints",
     };
-    router.push(routes[role] ?? "/login");
+    router.push(routes[role] ?? "/authPage");
   };
 
   // Auto-detect location on mount

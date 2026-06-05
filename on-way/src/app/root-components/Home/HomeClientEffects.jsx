@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import AOS from "aos";
-import Lenis from "lenis";
+import Lenis from "@studio-freight/lenis";
 
 export default function HomeClientEffects() {
   useEffect(() => {

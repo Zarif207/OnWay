@@ -22,7 +22,11 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useSocket } from "@/hooks/useSocket";
 import { useSession } from "next-auth/react";
+<<<<<<< HEAD
 import ReviewModal from "../review/page";
+=======
+import ReviewModal from "../review/ReviewModal"; //  FIXED: correct import
+>>>>>>> 3e818c83f7253c0450c54868d2314f2b3cf10d0c
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 

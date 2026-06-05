@@ -17,20 +17,12 @@ export default function RootLayout({ children }) {
 
   const hideNavbarFooter = pathname === "/authPage" || pathname.startsWith("/dashboard");
 
-  // Build page title from pathname
-  const getPageTitle = () => {
-    const segment = pathname.split("/").filter(Boolean).pop();
-    if (!segment) return "OnWay";
-    const name = segment.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    return `OnWay - ${name}`;
-  };
-
   return (
     <html lang="en" data-theme="onwaytheme">
       <head>
-        <title>{getPageTitle()}</title>
+        <title>OnWay - Your Journey, Your Way</title>
         <meta name="description" content="Book rides, travel in comfort, get food delivered, and pay securely — all inside OnWay." />
-        <link rel="icon" type="image/png" href="/nav3.png" />
+        <link rel="icon" href="/favicon.png" />
       </head>
       <body>
         <QueryProvider>
